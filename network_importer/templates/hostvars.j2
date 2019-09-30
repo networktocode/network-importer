@@ -3,14 +3,14 @@
 #  DO NOT EDIT IT Manually or your changes will be lost
 # -----------------------------------------------
 
-AS_Path_Access_Lists: {{AS_Path_Access_Lists|toyaml}}
-Authentication_Key_Chains: {{Authentication_Key_Chains|toyaml}}
+AS_Path_Access_Lists: {{AS_Path_Access_Lists|to_yaml_list}}
+Authentication_Key_Chains: {{Authentication_Key_Chains|to_yaml_list}}
 
-Community_Lists: {{Community_Lists|toyaml}}
+Community_Lists: {{Community_Lists|to_yaml_list}}
 
-IP6_Access_Lists: {{IP6_Access_Lists|toyaml}}
-IP_Access_Lists: {{IP_Access_Lists|toyaml}}
-PBR_Policies: {{PBR_Policies|toyaml}}
+IP6_Access_Lists: {{IP6_Access_Lists|to_yaml_list}}
+IP_Access_Lists: {{IP_Access_Lists|to_yaml_list}}
+PBR_Policies: {{PBR_Policies|to_yaml_list}}
 
 vendor_family: {{Vendor_Family}}
 configuration_format: {{Configuration_Format}}
@@ -22,11 +22,11 @@ configuration_format: {{Configuration_Format}}
 device_type: {{Device_Type}}
 domain_name: {{Domain_Name}}
 
-{{NTP|toyaml}}
-{{SNMP|toyaml}}
-{{Syslog|toyaml}}
-{{TACACS|toyaml}}
-{{DNS|toyaml}}
+{{NTP|to_yaml_dict}}
+{{SNMP|to_yaml_dict}}
+{{Syslog|to_yaml_dict}}
+{{TACACS|to_yaml_dict}}
+{{DNS|to_yaml_dict}}
 
 VRFs:
 - TESUTO
@@ -36,10 +36,10 @@ VRFs:
 # Routing Information
 #   BGP, routes filters 
 # -----------------------------------------------
-BGP:
-  {{BGP|toyaml|lower}}
-
-routing_policies: {{Routing_Policies|toyaml}}
-route_filter_lists: {{Route_Filter_Lists|toyaml}}
-route6_filter_lists: {{Route6_Filter_Lists|toyaml}}
+BGP: 
+  {{BGP|to_yaml_dict|lower}}
+  
+routing_policies: {{Routing_Policies|to_yaml_list}}
+route_filter_lists: {{Route_Filter_Lists|to_yaml_list}}
+route6_filter_lists: {{Route6_Filter_Lists|to_yaml_list}}
 

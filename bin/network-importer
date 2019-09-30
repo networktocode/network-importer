@@ -112,9 +112,12 @@ def parse_args(args=sys.argv[1:]):
     return parser.parse_args(args)
 
 
-def jinja_filter_toyaml(value):
+def jinja_filter_toyaml_list(value):
     return yaml.dump(value, default_flow_style=None)
 
+
+def jinja_filter_toyaml_dict(value):
+    return yaml.dump(value, default_flow_style=False)
 
 def main():
 
@@ -356,19 +359,20 @@ def main():
             dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
 
             # pdb.set_trace()
-
             # Load Jinja2 template
-            env = Environment(
-                loader=FileSystemLoader(TPL_DIR), trim_blocks=True, lstrip_blocks=True
-            )
-            env.filters["toyaml"] = jinja_filter_toyaml
-            template = env.get_template("hostvars.j2")
-            hostvars_str = template.render(dev_facts)
+            # env = Environment(
+            #     loader=FileSystemLoader(TPL_DIR), trim_blocks=True, lstrip_blocks=True
+            # )
+            # env.filters["to_yaml_list"] = jinja_filter_toyaml_list
+            # env.filters["to_yaml_dict"] = jinja_filter_toyaml_dict
+            # template = env.get_template("hostvars.j2")
+            # hostvars_str = template.render(dev_facts)
 
             with open(
                 f"{options.output}/{dev.name}/network_importer.yaml", "w"
             ) as out_file:
-                out_file.write(hostvars_str)
+                out_file.write( yaml.dump(dev_facts, default_flow_style=False))
+                # out_file.write( hostvars_str)
                 logger.debug(
                     f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
                 )
