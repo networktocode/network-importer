@@ -15,6 +15,7 @@ import logging
 
 logger = logging.getLogger("network-importer")
 
+
 class NetworkImporterDevice(object):
     def __init__(
         self,
@@ -25,7 +26,7 @@ class NetworkImporterDevice(object):
         role=None,
         bf=None,
         nb=None,
-        vendor=None
+        vendor=None,
     ):
 
         self.name = name
@@ -66,40 +67,45 @@ class NetworkImporterDevice(object):
         """
         Update remote system, currently Netbox to match what is defined locally
         """
-            
+
         logger.debug(f"Device {self.name}, Updating remote (Netbox) ... ")
 
         # Update or Create all Interfaces
         for intf in self.interfaces.values():
 
             intf_properties = intf.get_netbox_properties()
-            
+
             # Hack for VMX to set the interface type properly
             if self.vendor and self.vendor == "juniper" and "." not in intf.name:
                 intf_properties["type"] = 1100
 
             if "untagged_vlan" in intf_properties and intf_properties["untagged_vlan"]:
-                intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(intf_properties["untagged_vlan"])
-            
+                intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
+                    intf_properties["untagged_vlan"]
+                )
+
             if "tagged_vlans" in intf_properties:
-                intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(intf_properties["tagged_vlans"])
-            
+                intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
+                    intf_properties["tagged_vlans"]
+                )
+
             if not intf.exist_remote:
                 intf_properties["device"] = self.remote.id
                 intf_properties["name"] = intf.name
 
                 intf.remote = self.nb.dcim.interfaces.create(**intf_properties)
                 logger.debug(f"{self.name} - Interface {intf.name} created in Netbox")
-                
+
             else:
                 intf_updated = intf.remote.update(data=intf_properties)
                 logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
-               
+
             for ip in intf.ips.values():
                 if not ip.exist_remote:
-                    ip.remote = self.nb.ipam.ip_addresses.create(address=ip.address, interface=intf.remote.id)
+                    ip.remote = self.nb.ipam.ip_addresses.create(
+                        address=ip.address, interface=intf.remote.id
+                    )
                     logger.debug(f"{self.name} - IP {ip.address} created in Netbox")
-
 
     def add_interface(self, intf):
         """
@@ -215,7 +221,6 @@ class NetworkImporterInterface(object):
         self.bf = None
         self.remote = None
 
-      
     def add_ip(self, ip):
         """
         Add new IP address to the interface
@@ -246,7 +251,7 @@ class NetworkImporterInterface(object):
 
         intf_properties["mtu"] = self.mtu
 
-         # TODO Add a check here to see what is the current status
+        # TODO Add a check here to see what is the current status
         if self.switchport_mode == "ACCESS":
             intf_properties["mode"] = 100
             intf_properties["untagged_vlan"] = self.bf.Access_VLAN
@@ -255,6 +260,7 @@ class NetworkImporterInterface(object):
             intf_properties["tagged_vlans"] = self.bf.Allowed_VLANs
 
         return intf_properties
+
 
 # TODO need to find a way to build a table to convert back and forth
 # # Interface types
@@ -357,7 +363,6 @@ class NetworkImporterSite(object):
         logger.debug(f"Site {self.name}, Updating remote (Netbox) ... ")
         self.create_vlans_remote()
 
-
     def add_vlan(self, vlan):
         """
         Add Vlan to site, for each new vlan we'll try to match it with an existing vlan in Netbox
@@ -391,7 +396,6 @@ class NetworkImporterSite(object):
 
         return [self.convert_vid_to_nid(vid) for vid in vids]
 
-
     def convert_vid_to_nid(self, vid):
         """
         Convert Vlan IDs into Vlan Netbox IDs
@@ -405,9 +409,8 @@ class NetworkImporterSite(object):
 
         if not self.vlans[vid].exist_remote:
             return None
-        
-        return self.vlans[vid].remote.id
 
+        return self.vlans[vid].remote.id
 
     def create_vlans_remote(self):
         """
@@ -420,8 +423,6 @@ class NetworkImporterSite(object):
                     vid=vlan.vid, name=f"vlan-{vlan.vid}", site=self.remote.id
                 )
                 vlan.exist_remote = True
-
-
 
     def _get_remote_vlans_list(self):
         """
@@ -467,4 +468,3 @@ class NetworkImporterIP(object):
         self.family = None
         self.remote = None
         self.exist_remote = False
-

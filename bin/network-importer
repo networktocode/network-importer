@@ -92,9 +92,7 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
-        "--limit",
-        type=str,
-        help="limit the execution on a specific device"
+        "--limit", type=str, help="limit the execution on a specific device"
     )
 
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
@@ -156,8 +154,7 @@ def main():
     SNAPSHOT_PATH = options.configs
 
     bf_session.host = BATFISH_ADDR
-    
-    
+
     try:
         load_questions()
     except requests.exceptions.ConnectionError:
@@ -238,7 +235,9 @@ def main():
 
     for bf_dev in bfq.nodeProperties().answer().frame().itertuples():
 
-        dev = NetworkImporterDevice(name=bf_dev.Hostname, bf=bf_dev, nb=nb, vendor=bf_dev.Vendor_Family.lower())
+        dev = NetworkImporterDevice(
+            name=bf_dev.Hostname, bf=bf_dev, nb=nb, vendor=bf_dev.Vendor_Family.lower()
+        )
 
         if options.limit and dev.name != options.limit:
             continue
@@ -246,7 +245,7 @@ def main():
         nb_dev = nb.dcim.devices.get(name=dev.name)
 
         logger.info(f"Processing {dev.name} data, local and remote .. ")
-        
+
         if nb_dev:
             dev.remote = nb_dev
             dev.exist_remote = True
@@ -354,17 +353,13 @@ def main():
                     f"Directory {options.output}/{dev.name} was missing, created it"
                 )
 
-            dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][
-                dev.name
-            ]
+            dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
 
             # pdb.set_trace()
-            
+
             # Load Jinja2 template
             env = Environment(
-                loader=FileSystemLoader(TPL_DIR),
-                trim_blocks=True,
-                lstrip_blocks=True,
+                loader=FileSystemLoader(TPL_DIR), trim_blocks=True, lstrip_blocks=True
             )
             env.filters["toyaml"] = jinja_filter_toyaml
             template = env.get_template("hostvars.j2")
@@ -420,9 +415,7 @@ def main():
 
                 for ip in intf.ips.values():
                     if ip.exist_remote:
-                        print(
-                            "{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT)
-                        )
+                        print("{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT))
                     else:
                         print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
             print("  ")
@@ -435,7 +428,7 @@ def main():
     p2p_links = bfq.layer3Edges().answer()
 
     already_connected_links = {}
-    
+
     for link in p2p_links.frame().itertuples():
         try:
             local_host = link.Interface.hostname
@@ -458,38 +451,52 @@ def main():
                 continue
 
             if local_intf not in devs[local_host].interfaces.keys():
-                logger.warning(f"LINK: {local_host}:{local_intf} not present in interfaces list")
+                logger.warning(
+                    f"LINK: {local_host}:{local_intf} not present in interfaces list"
+                )
                 continue
             elif remote_intf not in devs[remote_host].interfaces.keys():
-                logger.warning(f"LINK: {remote_host}:{remote_intf} not present in interfaces list")
+                logger.warning(
+                    f"LINK: {remote_host}:{remote_intf} not present in interfaces list"
+                )
                 continue
 
             if not devs[local_host].interfaces[local_intf].remote:
-                logger.warning(f"LINK: {local_host}:{local_intf} remote object not present SKIPPING")
+                logger.warning(
+                    f"LINK: {local_host}:{local_intf} remote object not present SKIPPING"
+                )
                 continue
             elif not devs[remote_host].interfaces[remote_intf].remote:
-                logger.warning(f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING")
+                logger.warning(
+                    f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING"
+                )
                 continue
-            
+
             ## Check if both interfaces are already connected or not
 
             if devs[local_host].interfaces[local_intf].remote.connection_status:
                 remote_host_reported = (
-                    devs[local_host] 
+                    devs[local_host]
                     .interfaces[local_intf]
                     .remote.connected_endpoint.device.name
                 )
                 remote_int_reported = (
-                    devs[local_host].interfaces[local_intf].remote.connected_endpoint.name
+                    devs[local_host]
+                    .interfaces[local_intf]
+                    .remote.connected_endpoint.name
                 )
 
                 if remote_host_reported != remote_host:
-                    logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})")
+                    logger.warning(
+                        f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})"
+                    )
                 elif (
                     remote_host_reported == remote_host
                     and remote_intf != remote_int_reported
                 ):
-                    logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})")
+                    logger.warning(
+                        f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})"
+                    )
 
                 continue
 
@@ -500,13 +507,22 @@ def main():
                     .remote.connected_endpoint.device.name
                 )
                 local_int_reported = (
-                    devs[remote_host].interfaces[remote_intf].remote.connected_endpoint.name
+                    devs[remote_host]
+                    .interfaces[remote_intf]
+                    .remote.connected_endpoint.name
                 )
 
                 if local_host_reported != local_host:
-                    logger.warning(f"LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})")
-                elif local_host_reported == local_host and local_intf != local_int_reported:
-                    logger.warning(f"LINK:  {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})" )
+                    logger.warning(
+                        f"LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})"
+                    )
+                elif (
+                    local_host_reported == local_host
+                    and local_intf != local_int_reported
+                ):
+                    logger.warning(
+                        f"LINK:  {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})"
+                    )
 
                 continue
 
@@ -518,13 +534,18 @@ def main():
                     termination_a_type="dcim.interface",
                     termination_a_id=devs[local_host].interfaces[local_intf].remote.id,
                     termination_b_type="dcim.interface",
-                    termination_b_id=devs[remote_host].interfaces[remote_intf].remote.id,
+                    termination_b_id=devs[remote_host]
+                    .interfaces[remote_intf]
+                    .remote.id,
                 )
 
                 already_connected_links[unique_id] = 1
         except:
-            logger.warning(f"Something went wrong while processing the link {unique_id}", exc_info=True)
-            
+            logger.warning(
+                f"Something went wrong while processing the link {unique_id}",
+                exc_info=True,
+            )
+
     # pdb.set_trace()
 
 
