@@ -111,6 +111,10 @@ def parse_args(args=sys.argv[1:]):
 
     return parser.parse_args(args)
 
+find_digit = re.compile("\D?(\d+)\D?")
+def sort_by_digits(if_name):
+    return tuple(map(int, find_digit.findall(if_name)))
+
 
 def jinja_filter_toyaml_list(value):
     return yaml.dump(value, default_flow_style=None)
@@ -411,7 +415,8 @@ def main():
             else:
                 print("{:4}{:42}{:12}".format("", f"Device {dev.name}", ABSENT))
 
-            for intf in dev.interfaces.values():
+            for intf_name in sorted(dev.interfaces.keys(), key=sort_by_digits):
+                intf = dev.interfaces[intf_name]
                 if intf.exist_remote:
                     print("{:8}{:38}{:12}".format("", f"{intf.name}", PRESENT))
                 else:
