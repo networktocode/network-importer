@@ -1,13 +1,23 @@
 #!/usr/bin/env python
 
 """
+(c) 2019 Network To Code
 
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
 """
 
 import argparse
 import sys
 import os
-import json 
+import json
 import yaml
 import logging
 import random  # noqa: F401
@@ -19,67 +29,84 @@ from collections import defaultdict
 import pandas as pd
 
 from pybatfish.client.commands import *
+
 # noinspection PyUnresolvedReferences
 from pybatfish.datamodel import Edge, Interface
 from pybatfish.client.session import Session
 from pybatfish.datamodel.answer import TableAnswer
-from pybatfish.datamodel.flow import (HeaderConstraints,
-                                      PathConstraints)  # noqa: F401
+from pybatfish.datamodel.flow import HeaderConstraints, PathConstraints  # noqa: F401
 from pybatfish.question import bfq, list_questions, load_questions  # noqa: F401
 from pybatfish.util import get_html
 
+from termcolor import colored
+
 import pynetbox
+import requests
 
 from nornir import InitNornir
 
 import network_importer
-from network_importer.device import NetworkImporterDevice, NetworkImporterInterface
+from network_importer.model import (
+    NetworkImporterDevice,
+    NetworkImporterInterface,
+    NetworkImporterSite,
+    NetworkImporterVlan,
+)
 
 from jinja2 import Template, Environment, FileSystemLoader
 
-__author__ = 'Damien Garros <damien.garros@networktocode.com>'
+__author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
-class CustomFormatter(argparse.RawDescriptionHelpFormatter,
-                      argparse.ArgumentDefaultsHelpFormatter):
+PRESENT = colored("PRESENT", "green")
+ABSENT = colored("ABSENT", "yellow")
+
+
+class CustomFormatter(
+    argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
+):
     pass
+
 
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
     parser = argparse.ArgumentParser(
-        description=sys.modules[__name__].__doc__,
-        formatter_class=CustomFormatter)
+        description=sys.modules[__name__].__doc__, formatter_class=CustomFormatter
+    )
 
-    parser.add_argument("--configs",
+    parser.add_argument(
+        "--configs",
         metavar="DIR",
         type=str,
         help="Directory where to find the configurations (in batfish format)",
-        default=False)
+        default=False,
+    )
 
-    parser.add_argument("--output",
+    parser.add_argument(
+        "--output",
         metavar="DIR",
         type=str,
         help="Directory where to save the device variables",
-        default="host_vars")
+        default="host_vars",
+    )
 
-    parser.add_argument("--inventory",
-        help="Inventory file",
-        type=str,
-        default=False)
+    parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
 
     g = parser.add_mutually_exclusive_group(required=True)
-    g.add_argument("--check",
-        action='store_true',
+    g.add_argument(
+        "--check",
+        action="store_true",
         default=False,
-        help="Display what are the differences but do not save them")
+        help="Display what are the differences but do not save them",
+    )
 
-    g.add_argument("--apply",
-        action='store_true',
-        default=False,
-        help="Save changes in Backend")
+    g.add_argument(
+        "--apply", action="store_true", default=False, help="Save changes in Backend"
+    )
 
     return parser.parse_args(args)
+
 
 def vlan_ids__to__nb_ids(vids, nb_vlans):
     """
@@ -91,7 +118,7 @@ def vlan_ids__to__nb_ids(vids, nb_vlans):
     Output: 
         List of integrer (nb ids for vlans)
     """
-    
+
     nb_ids = []
 
     for vid in vids:
@@ -101,7 +128,7 @@ def vlan_ids__to__nb_ids(vids, nb_vlans):
                 nb_ids.append(vlan.id)
                 found = True
                 continue
-        
+
         if not foun:
             logger.warn(f"Unable to find a Vlan in Netbox for {vid}")
 
@@ -124,18 +151,22 @@ def main():
     NETBOX_ADDR = os.environ.get("NETBOX_ADDRESS", None)
     NETBOX_TOKEN = os.environ.get("NETBOX_TOKEN", None)
     BATFISH_ADDR = os.environ.get("BATFISH_ADDRESS", "localhost")
-    
+
     if not NETBOX_ADDR:
-        print("Please provide the location of the netbox server using the environment variables NETBOX_ADDRESS ")
+        print(
+            "Please provide the location of the netbox server using the environment variables NETBOX_ADDRESS "
+        )
         exit()
     elif not NETBOX_TOKEN:
-        print("Please provide a valid netbox token using the environment variables NETBOX_TOKEN ")
+        print(
+            "Please provide a valid netbox token using the environment variables NETBOX_TOKEN "
+        )
         exit()
 
     ## Setup logging
-    logging.getLogger('pybatfish').setLevel(logging.ERROR)
+    logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
-    
+
     logger.setLevel(logging.DEBUG)
 
     # ------------------------------------------------------------
@@ -146,11 +177,13 @@ def main():
     SNAPSHOT_PATH = options.configs
 
     bf_session.host = BATFISH_ADDR
-    
+
     try:
         load_questions()
     except requests.exceptions.ConnectionError:
-        logger.critical(f"Unable to connect to the batfish service ({BATFISH_ADDR}) .. please check if it's running")
+        logger.critical(
+            f"Unable to connect to the batfish service ({BATFISH_ADDR}) .. please check if it's running"
+        )
         sys.exit(1)
 
     bf_set_network(NETWORK_NAME)
@@ -163,41 +196,44 @@ def main():
     # ------------------------------------------------------------
     # Initialize Netbox, and pull existing devices
     # ------------------------------------------------------------
-    nb = pynetbox.api(
-        NETBOX_ADDR,
-        token=NETBOX_TOKEN
-    )
-    try: 
+    nb = pynetbox.api(NETBOX_ADDR, token=NETBOX_TOKEN)
+    try:
         nb.dcim.devices.get(name="notpresent")
     except requests.exceptions.ConnectionError:
-        logger.critical("Unable to connect to the netbox server, please check the NETBOX_ADDRESS env variable")
+        logger.critical(
+            "Unable to connect to the netbox server, please check the NETBOX_ADDRESS env variable"
+        )
         sys.exit(1)
     except pynetbox.core.query.RequestError as e:
         print(e)
-        logger.critical("Unable to complete a query to the netbox server, please check the env variables")
+        logger.critical(
+            "Unable to complete a query to the netbox server, please check the env variables"
+        )
         sys.exit(1)
     except requests.exceptions.RequestException as e:
-        logger.critical("Unable to connect to the netbox server, please check the address and the token")
+        logger.critical(
+            "Unable to connect to the netbox server, please check the address and the token"
+        )
         print(e)
         sys.exit(1)
-    
+
     # ------------------------------------------------------------
     # Initialize Netbox, and pull existing devices
     # ------------------------------------------------------------
-    #TODO manage exception for Nornir and the validity of the inventory file
+    # TODO manage exception for Nornir and the validity of the inventory file
     if options.inventory:
         nr = InitNornir(
             core={"num_workers": 2},
             inventory={
                 "plugin": "nornir.plugins.inventory.ansible.AnsibleInventory",
-                "options": { "hostsfile": options.inventory }
-                }
-            )
+                "options": {"hostsfile": options.inventory},
+            },
+        )
 
-    sites = {}
-    vlans = defaultdict(list)
+    sites = dict()
+    devs = dict()
 
-    #TODO Add check to only create directory if required 
+    # TODO Add check to only create directory if required
     if options.apply and not os.path.exists(f"{options.output}"):
         os.makedirs(f"{options.output}")
         logger.debug(f"Directory {options.output} was missing, created it")
@@ -208,30 +244,33 @@ def main():
     #      devices are expected to existing netbox already
     #      Fail if device is not present
     #  - if Nornir and Batfish
-    #      if the device is not present in netbox, 
+    #      if the device is not present in netbox,
     #          check if site, model and role info are present
-    #          try to create the device  
+    #          try to create the device
     #      check if the site is defined in nornir
-    #       
-    #  - If only Nornir 
-    #     Not supported yet    
+    #
+    #  - If only Nornir
+    #     Not supported Yet
     # ------------------------------------------------------------
-    devs = {}
 
     for bf_dev in bfq.nodeProperties().answer().frame().itertuples():
 
-        dev = NetworkImporterDevice(
-                    name=bf_dev.Hostname, 
-                    bf=bf_dev,
-                    nb=nb
-                )
-    
+        dev = NetworkImporterDevice(name=bf_dev.Hostname, bf=bf_dev, nb=nb)
+
         nb_dev = nb.dcim.devices.get(name=dev.name)
         if nb_dev:
             dev.remote = nb_dev
             dev.exist_remote = True
 
-            dev.site = nb_dev.site.slug
+            ## Check if site and vlans information are already in cache
+            if nb_dev.site.slug not in sites.keys():
+                site = NetworkImporterSite(name=nb_dev.site.slug, nb=nb)
+                sites[site.name] = site
+                dev.site = site
+                logger.debug(f"Created site {site.name}")
+
+            else:
+                dev.site = sites[nb_dev.site.slug]
 
         if options.inventory and bf_dev.Hostname in nr.inventory.hosts.keys():
             dev.nr = nr.inventory.hosts[dev.name]
@@ -242,248 +281,256 @@ def main():
                 dev.platform = dev.nr.get("platform")
                 dev.model = dev.nr.get("model")
                 dev.role = dev.nr.get("role")
-                dev.site = dev.nr.get("site")
 
-                if dev.site == None or dev.model  == None  or dev.role == None:
-                    logger.warning(f"{dev.name} is not present in netbox and some information are missing to create it .. SKIPPING")
+                # TODO impriove hte site management
+                # Should check if already exist first
+                if dev.nr.get("site") not in sites.keys():
+                    site = NetworkImporterSite(name=dev.nr.get("site"), nb=nb)
+                    dev.site = site
+                    sites[site.name] = site
+
+                if dev.site == None or dev.model == None or dev.role == None:
+                    logger.warning(
+                        f"{dev.name} is not present in netbox and some information are missing to create it .. SKIPPING"
+                    )
                     continue
 
-                if options.apply:   
+                # TODO move this section inside the NI Device Object
+                if options.apply:
                     try:
                         dev.remote = nb.dcim.devices.create(
-                                name=dev.name, 
-                                device_type={"slug": dev.model}, 
-                                device_role={"slug": dev.role }, 
-                                site={"slug": dev.site }
+                            name=dev.name,
+                            device_type={"slug": dev.model},
+                            device_role={"slug": dev.role},
+                            site={"slug": dev.site.name},
                         )
-                        logger.info(f"{dev.name} created in Netbox (site: {dev.site}, Role: {dev.role})")
-                        
+                        logger.info(
+                            f"{dev.name} created in Netbox (site: {dev.site.name}, Role: {dev.role})"
+                        )
+
                     except:
-                        logger.error(f"Unable to create the device {dev.name} in netbox, please check that 'site', 'model' and 'role' are properly defined in the inventory and are matching existing resources in netbox .. SKIPPING")
+                        logger.error(
+                            f"Unable to create the device {dev.name} in netbox, please check that 'site', 'model' and 'role' are properly defined in the inventory and are matching existing resources in netbox .. SKIPPING"
+                        )
                         continue
-                
+
         elif options.inventory and not dev.exist_remote:
-            logger.error(f"The device {dev.name} doesn't exist in netbox and no inventory have been provided ... SKIPPING ")
+            logger.error(
+                f"The device {dev.name} doesn't exist in netbox and no inventory have been provided ... SKIPPING "
+            )
             continue
 
-        ## Check if site and vlans information are already in cache
-        if dev.exist_remote and dev.site not in sites.keys():
-            sites[dev.site] = nb.dcim.sites.get(slug=dev.site)
-            logger.debug(f"Imported site {dev.site}'s data'")
-
-        if dev.exist_remote and dev.site not in vlans.keys():
-            vlans[dev.site] = nb.ipam.vlans.filter(site=dev.site)
-            logger.debug(f"Imported {len(vlans[dev.site])} vlans for site:{dev.site}")
-
-        devs[dev.name] = dev
-
-        ## Add interfaces from Batfish
-        ## Add interfaces from Netbox
-        # intf = nb.dcim.interfaces.filter(device=dev.name)
-
-    ## ------------------------------------------------------------
-    ## For each devices returned by Batfish
-    ##   Find the matching device in Netbox
-    ##     Get the list of interfaces and IPs from netbox and BF
-    ##     Compare the interfaces
-    ## ------------------------------------------------
-    for dev in devs.values():
-
-        logger.info(f"{dev.name} - {dev.bf.Configuration_Format} - {len(dev.bf.Interfaces)} Interfaces")
-
-        # if dev.exist_remote:
-        #     nb_intfs = nb.dcim.interfaces.filter(device=dev.name)
-        #     nb_ips = nb.ipam.ip_addresses.filter(device=dev.name)
-            
         bf_ints = bfq.interfaceProperties(nodes=dev.name).answer()
-        bf_vlans = bfq.switchedVlanProperties(nodes=dev.name).answer()
-
-        # Check if Vlans already exist in netbox
-        # if not, create it
-        for vlan in bf_vlans.frame().itertuples():
-            found_vlan = False
-
-            for v in vlans[dev.site]:
-
-                if vlan.VLAN_ID != v.vid:
-                    continue
-                logger.debug(f"{dev.name} - Found Vlan {vlan.VLAN_ID} in netbox ....")
-                found_vlan = True
-                
-            if not found_vlan:
-                logger.info(f"{dev.name} - Couldn't find Vlan {vlan.VLAN_ID} ({dev.site}) in netbox, will will create it")
-
-                if options.apply:
-                    resp = nb.ipam.vlans.create(vid=vlan.VLAN_ID, name=f"vlan-{vlan.VLAN_ID}", site=d.site.id)
-                    vlans[dev.site].append(resp)
 
         for bf_intf in bf_ints.frame().itertuples():
             found_intf = False
 
             intf_name = bf_intf.Interface.interface
 
-            intf = NetworkImporterInterface(name=intf_name)
+            intf = NetworkImporterInterface(
+                name=intf_name,
+                device_name=dev.name,
+                speed=bf_intf.Speed,
+                mtu=bf_intf.MTU,
+                switchport_mode=bf_intf.Switchport_Mode,
+            )
 
             intf.bf = bf_intf
-
             dev.add_interface(intf)
 
             for prfx in bf_intf.All_Prefixes:
-                found_ip = False
-                for ip in nb_ips:
-                    if ip.address != prfx:
-                        continue
-
-                    found_ip = True
-                
-                if options.apply and not found_ip:
-                    print(f"{dev.name} - IP {prfx} ({intf_name}) not found in netbox, will create it ...")
-                    nb.ipam.ip_addresses.create(address=prfx, interface=i.id)
-
-            ## TODO Compare interface to check if all parameters are the same
-
-            if options.apply and not found_intf:
-                print(f"{dev.name} - Interface {intf_name} not found in netbox, will create it ...")
-
-                # TODO Add support for Interface type, speed, mac address ... 
-
-                resp = nb.dcim.interfaces.create(
-                    device=dev.remote.id, 
-                    name=intf_name
-                )
-                ## TODO add check to ensure interface has bene properly created
-                devs[dev.name].interfaces[resp.name] = resp
+                dev.add_ip(intf_name=intf.name, address=prfx)
 
             # Updating Interface properly
             # logger.info(f"{dev.name} - Interface {bf_intf.Interface.interface} configured in access mode, vlan {bf_intf.Access_VLAN}")
             # ## Update interface with vlan
 
-            intf_properties = {}
+            bf_vlans = bfq.switchedVlanProperties(nodes=dev.name).answer()
+            for vlan in bf_vlans.frame().itertuples():
+                if vlan.VLAN_ID not in dev.site.vlans.keys():
+                    dev.site.add_vlan(
+                        NetworkImporterVlan(
+                            name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID
+                        )
+                    )
 
-            if bf_intf.Speed == None and devs[dev.name].interfaces[intf_name].type.value != 0:
-                intf_properties["type"] = 0
-            elif bf_intf.Speed == 1000000000 and devs[dev.name].interfaces[intf_name].type.value != 1100:
-                intf_properties["type"] = 1100
+        devs[dev.name] = dev
 
-            if bf_intf.Switchport_Mode == "ACCESS" and bf_intf.Access_VLAN:
-                intf_properties["mode"] = 100
-                intf_properties["untagged_vlan"] = vlan_ids__to__nb_ids([bf_intf.Access_VLAN], vlans[dev.site])[0]
-            elif bf_intf.Switchport_Mode == "TRUNK":
-                intf_properties["mode"] == 200
-                intf_properties["tagged_vlans"] = vlan_ids__to__nb_ids(bf_intf.Allowed_VLANs, vlans[dev.site])
-
-            if bf_intf.MTU != devs[dev.name].interfaces[intf_name].mtu:
-                intf_properties["mtu"] = bf_intf.MTU
-
-            if len(intf_properties.keys()) > 0:
-                devs[dev.name].interfaces[intf_name].update(intf_properties)
-                # nb.dcim.interfaces.update(**intf_properties)
-                logger.info(f"{dev.name} - Updating Interface {intf_name} {intf_properties} ")
-                
-            continue
-            
-        # Save device variables in file
-        if options.apply and not os.path.exists(f"{options.output}/{dev.name}"):
-            os.makedirs(f"{options.output}/{dev.name}")
-            logger.debug(f"Directory {options.output}/{dev.name} was missing, created it")
-    
         if options.apply:
-            dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
 
-            #Load Jinja2 template
-            env = Environment(loader = FileSystemLoader(TPL_DIR), trim_blocks=True, lstrip_blocks=True)
-            env.filters['toyaml'] = jinja_filter_toyaml
-            template = env.get_template('hostvars.j2')
-            hostvars_str = template.render(dev_facts)
+            # Save device variables in file
+            if not os.path.exists(f"{options.output}/{dev.name}"):
+                os.makedirs(f"{options.output}/{dev.name}")
+                logger.debug(
+                    f"Directory {options.output}/{dev.name} was missing, created it"
+                )
 
-            with open(f'{options.output}/{dev.name}/network_importer.yaml', "w") as out_file:
-                out_file.write(hostvars_str)
-                logger.debug(f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml")
+                dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][
+                    dev.name
+                ]
 
-    ## -------------------------------------------------------------
-    ## Extract P2P links from BF and create connection in Netbox
-    ## -------------------------------------------------------------
+                # Load Jinja2 template
+                env = Environment(
+                    loader=FileSystemLoader(TPL_DIR),
+                    trim_blocks=True,
+                    lstrip_blocks=True,
+                )
+                env.filters["toyaml"] = jinja_filter_toyaml
+                template = env.get_template("hostvars.j2")
+                hostvars_str = template.render(dev_facts)
+
+                with open(
+                    f"{options.output}/{dev.name}/network_importer.yaml", "w"
+                ) as out_file:
+                    out_file.write(hostvars_str)
+                    logger.debug(
+                        f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
+                    )
+
+    # ------------------------------------------------------------------------------------
+    # Update Remote if apply is enabled
+    #   First create all vlans per site to ensure they exist
+    # ------------------------------------------------------------------------------------
+    if options.apply:
+        for site in sites.values():
+            site.update_remote()
+
+        for dev in devs.values():
+            dev.update_remote()
+
+    # ------------------------------------------------------------------------------------
+    # Print on Screen all devices, interfaces and IPs and how their current status compare to remote
+    #   Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
+    #   This print function might be better off in the device object ...
+    # ------------------------------------------------------------------------------------
+    for site in sites.values():
+        print(f" -- Site {site.name} -- ")
+        for vlan in site.vlans.values():
+            if vlan.exist_remote:
+                print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", PRESENT))
+            else:
+                print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", ABSENT))
+
+        print("  ")
+
+        for dev in devs.values():
+            if dev.site.name != site.name:
+                continue
+            if dev.exist_remote:
+                print("{:4}{:42}{:12}".format("", f"Device {dev.name}", PRESENT))
+            else:
+                print("{:4}{:42}{:12}".format("", f"Device {dev.name}", ABSENT))
+
+            for intf in dev.interfaces.values():
+                if intf.exist_remote:
+                    print("{:8}{:38}{:12}".format("", f"{intf.name}", PRESENT))
+                else:
+                    print("{:8}{:38}{:12}".format("", f"{intf.name}", ABSENT))
+
+                for ip in intf.ips.values():
+                    if ip.exist_remote:
+                        print(
+                            "{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT)
+                        )
+                    else:
+                        print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
+
+
+    # -------------------------------------------------------------
+    # Build cabling
+    #   Currently we are only getting the information from the L3 EDGE in Batfish
+    #   We need to pull LLDP data as well using Nornir to complement that
+    # -------------------------------------------------------------
     p2p_links = bfq.layer3Edges().answer()
 
     already_connected_links = {}
 
     for link in p2p_links.frame().itertuples():
 
-        # Check if both devices and interfaces are 
-        local_host = link.Interface.hostname 
-        local_intf = re.sub("\.\d+$", "", link.Interface.interface) 
+        local_host = link.Interface.hostname
+        local_intf = re.sub("\.\d+$", "", link.Interface.interface)
         remote_host = link.Remote_Interface.hostname
         remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
 
-        unique_id = "_".join(sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"]))
+        unique_id = "_".join(
+            sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
+        )
         if unique_id in already_connected_links:
             print(f"Link {unique_id} already connected .. SKIPPING")
             continue
 
         if local_host not in devs.keys():
-            print(f"ERROR:LINK: {local_host} not present in devices list")
+            logger.warning(f"LINK: {local_host} not present in devices list")
             continue
         elif remote_host not in devs.keys():
-            print(f"ERROR:LINK: {remote_host} not present in devices list")
+            logger.warning(f"LINK: {remote_host} not present in devices list")
             continue
-        
+
         if local_intf not in devs[local_host].interfaces.keys():
-            print(f"ERROR:LINK: {local_host}:{local_intf} not present in interfaces list")
+            logger.warning(f"LINK: {local_host}:{local_intf} not present in interfaces list")
             continue
         elif remote_intf not in devs[remote_host].interfaces.keys():
-            print(f"ERROR:LINK: {remote_host}:{remote_intf} not present in interfaces list")
+            logger.warning(f"LINK: {remote_host}:{remote_intf} not present in interfaces list")
             continue
-        
+
         ## Check if both interfaces are already connected or not
 
-        if devs[local_host].interfaces[local_intf].connection_status:
-            remote_host_reported = devs[local_host].interfaces[local_intf].connected_endpoint.device.name
-            remote_int_reported = devs[local_host].interfaces[local_intf].connected_endpoint.name
+        if devs[local_host].interfaces[local_intf].remote.connection_status:
+            remote_host_reported = (
+                devs[local_host]
+                .interfaces[local_intf]
+                .remote.connected_endpoint.device.name
+            )
+            remote_int_reported = (
+                devs[local_host].interfaces[local_intf].remote.connected_endpoint.name
+            )
 
             if remote_host_reported != remote_host:
-                print(f"ERROR:LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})")
-            elif remote_host_reported == remote_host and remote_intf != remote_int_reported:
-                print(f"ERROR:LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})")
-            
+                logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})")
+            elif (
+                remote_host_reported == remote_host
+                and remote_intf != remote_int_reported
+            ):
+                logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})")
+
             continue
-        
-        elif devs[remote_host].interfaces[remote_intf].connection_status:
-            local_host_reported = devs[remote_host].interfaces[remote_intf].connected_endpoint.device.name
-            local_int_reported = devs[remote_host].interfaces[remote_intf].connected_endpoint.name
+
+        elif devs[remote_host].interfaces[remote_intf].remote.connection_status:
+            local_host_reported = (
+                devs[remote_host]
+                .interfaces[remote_intf]
+                .remote.connected_endpoint.device.name
+            )
+            local_int_reported = (
+                devs[remote_host].interfaces[remote_intf].remote.connected_endpoint.name
+            )
 
             if local_host_reported != local_host:
-                print(f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})")
+                print(
+                    f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})"
+                )
             elif local_host_reported == local_host and local_intf != local_int_reported:
-                print(f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})")
-            
+                print(
+                    f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})"
+                )
+
             continue
-        
+
         else:
-            print(f"Link not present will create it in netbox ({local_host}:{local_intf} || {remote_host}:{remote_intf}) ")
+            print(
+                f"Link not present will create it in netbox ({local_host}:{local_intf} || {remote_host}:{remote_intf}) "
+            )
             link = nb.dcim.cables.create(
                 termination_a_type="dcim.interface",
-                termination_a_id=devs[local_host].interfaces[local_intf].id,
+                termination_a_id=devs[local_host].interfaces[local_intf].remote.id,
                 termination_b_type="dcim.interface",
-                termination_b_id=devs[remote_host].interfaces[remote_intf].id
+                termination_b_id=devs[remote_host].interfaces[remote_intf].remote.id,
             )
 
             already_connected_links[unique_id] = 1
 
+    # pdb.set_trace()
 
 
-    pdb.set_trace()
-
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
