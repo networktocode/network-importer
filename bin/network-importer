@@ -91,6 +91,12 @@ def parse_args(args=sys.argv[1:]):
         default="host_vars",
     )
 
+    parser.add_argument(
+        "--limit",
+        type=str,
+        help="limit the execution on a specific device"
+    )
+
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
 
     g = parser.add_mutually_exclusive_group(required=True)
@@ -108,35 +114,8 @@ def parse_args(args=sys.argv[1:]):
     return parser.parse_args(args)
 
 
-def vlan_ids__to__nb_ids(vids, nb_vlans):
-    """
-    Convert a list of Vlan ids to a list of IDs for Vlan in Netbox
-    Inputs:
-        vids: List of integer
-        nb_vlans: List of NB Vlans objects
-    
-    Output: 
-        List of integrer (nb ids for vlans)
-    """
-
-    nb_ids = []
-
-    for vid in vids:
-        found = False
-        for vlan in nb_vlans:
-            if vid == vlan.vid:
-                nb_ids.append(vlan.id)
-                found = True
-                continue
-
-        if not foun:
-            logger.warn(f"Unable to find a Vlan in Netbox for {vid}")
-
-    return nb_ids
-
-
 def jinja_filter_toyaml(value):
-    return yaml.dump(value, default_flow_style=False)
+    return yaml.dump(value, default_flow_style=None)
 
 
 def main():
@@ -177,7 +156,8 @@ def main():
     SNAPSHOT_PATH = options.configs
 
     bf_session.host = BATFISH_ADDR
-
+    
+    
     try:
         load_questions()
     except requests.exceptions.ConnectionError:
@@ -185,6 +165,8 @@ def main():
             f"Unable to connect to the batfish service ({BATFISH_ADDR}) .. please check if it's running"
         )
         sys.exit(1)
+
+    logger.info("Importing and analyzing all configurations ... ")
 
     bf_set_network(NETWORK_NAME)
     bf_init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
@@ -257,9 +239,13 @@ def main():
     for bf_dev in bfq.nodeProperties().answer().frame().itertuples():
 
         dev = NetworkImporterDevice(name=bf_dev.Hostname, bf=bf_dev, nb=nb, vendor=bf_dev.Vendor_Family.lower())
+
+        if options.limit and dev.name != options.limit:
+            continue
+
         nb_dev = nb.dcim.devices.get(name=dev.name)
 
-        logger.info(f"Processing {dev.name} configuration data and remote information ")
+        logger.info(f"Processing {dev.name} data, local and remote .. ")
         
         if nb_dev:
             dev.remote = nb_dev
@@ -368,27 +354,29 @@ def main():
                     f"Directory {options.output}/{dev.name} was missing, created it"
                 )
 
-                dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][
-                    dev.name
-                ]
+            dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][
+                dev.name
+            ]
 
-                # Load Jinja2 template
-                env = Environment(
-                    loader=FileSystemLoader(TPL_DIR),
-                    trim_blocks=True,
-                    lstrip_blocks=True,
+            # pdb.set_trace()
+            
+            # Load Jinja2 template
+            env = Environment(
+                loader=FileSystemLoader(TPL_DIR),
+                trim_blocks=True,
+                lstrip_blocks=True,
+            )
+            env.filters["toyaml"] = jinja_filter_toyaml
+            template = env.get_template("hostvars.j2")
+            hostvars_str = template.render(dev_facts)
+
+            with open(
+                f"{options.output}/{dev.name}/network_importer.yaml", "w"
+            ) as out_file:
+                out_file.write(hostvars_str)
+                logger.debug(
+                    f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
                 )
-                env.filters["toyaml"] = jinja_filter_toyaml
-                template = env.get_template("hostvars.j2")
-                hostvars_str = template.render(dev_facts)
-
-                with open(
-                    f"{options.output}/{dev.name}/network_importer.yaml", "w"
-                ) as out_file:
-                    out_file.write(hostvars_str)
-                    logger.debug(
-                        f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
-                    )
 
     # ------------------------------------------------------------------------------------
     # Update Remote if apply is enabled
@@ -463,10 +451,10 @@ def main():
                 continue
 
             if local_host not in devs.keys():
-                logger.warning(f"LINK: {local_host} not present in devices list")
+                logger.debug(f"LINK: {local_host} not present in devices list")
                 continue
             elif remote_host not in devs.keys():
-                logger.warning(f"LINK: {remote_host} not present in devices list")
+                logger.debug(f"LINK: {remote_host} not present in devices list")
                 continue
 
             if local_intf not in devs[local_host].interfaces.keys():
@@ -480,7 +468,7 @@ def main():
                 logger.warning(f"LINK: {local_host}:{local_intf} remote object not present SKIPPING")
                 continue
             elif not devs[remote_host].interfaces[remote_intf].remote:
-                logger.warning(f"LINK: {remote_host}:{remote_intf}remote object not present SKIPPING")
+                logger.warning(f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING")
                 continue
             
             ## Check if both interfaces are already connected or not
@@ -536,9 +524,8 @@ def main():
                 already_connected_links[unique_id] = 1
         except:
             logger.warning(f"Something went wrong while processing the link {unique_id}", exc_info=True)
-            # pdb.set_trace()
             
-    pdb.set_trace()
+    # pdb.set_trace()
 
 
 if __name__ == "__main__":
