@@ -12,7 +12,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import pdb
 
 logger = logging.getLogger("network-importer")
 
@@ -418,7 +417,7 @@ class NetworkImporterSite(object):
             if not vlan.exist_remote:
                 # TODO add check to ensure the vlan is properly created
                 vlan.remote = self.nb.ipam.vlans.create(
-                    vid=vlan.vid, name=f"vlan-{vlan.vid}", site=self.name
+                    vid=vlan.vid, name=f"vlan-{vlan.vid}", site=self.remote.id
                 )
                 vlan.exist_remote = True
 
