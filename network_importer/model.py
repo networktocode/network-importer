@@ -12,9 +12,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+import pdb
 
 logger = logging.getLogger("network-importer")
-
 
 class NetworkImporterDevice(object):
     def __init__(
@@ -26,6 +26,7 @@ class NetworkImporterDevice(object):
         role=None,
         bf=None,
         nb=None,
+        vendor=None
     ):
 
         self.name = name
@@ -33,6 +34,7 @@ class NetworkImporterDevice(object):
         self.platform = platform
         self.model = model
         self.role = role
+        self.vendor = vendor
 
         self.changed = False
 
@@ -72,7 +74,11 @@ class NetworkImporterDevice(object):
         for intf in self.interfaces.values():
 
             intf_properties = intf.get_netbox_properties()
-                
+            
+            # Hack for VMX to set the interface type properly
+            if self.vendor and self.vendor == "juniper" and "." not in intf.name:
+                intf_properties["type"] = 1100
+
             if "untagged_vlan" in intf_properties and intf_properties["untagged_vlan"]:
                 intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(intf_properties["untagged_vlan"])
             
@@ -86,9 +92,9 @@ class NetworkImporterDevice(object):
                 intf.remote = self.nb.dcim.interfaces.create(**intf_properties)
                 logger.debug(f"{self.name} - Interface {intf.name} created in Netbox")
                 
-            # else:
-            #     intf.remote = intf.remote.update(**intf_properties)
-            #     logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
+            else:
+                intf_updated = intf.remote.update(data=intf_properties)
+                logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
                
             for ip in intf.ips.values():
                 if not ip.exist_remote:

@@ -167,7 +167,7 @@ def main():
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # ------------------------------------------------------------
     # Initialize Batfish (TODO If configs have been provided)
@@ -224,6 +224,7 @@ def main():
     if options.inventory:
         nr = InitNornir(
             core={"num_workers": 2},
+            logging={"enabled": False},
             inventory={
                 "plugin": "nornir.plugins.inventory.ansible.AnsibleInventory",
                 "options": {"hostsfile": options.inventory},
@@ -255,9 +256,11 @@ def main():
 
     for bf_dev in bfq.nodeProperties().answer().frame().itertuples():
 
-        dev = NetworkImporterDevice(name=bf_dev.Hostname, bf=bf_dev, nb=nb)
-
+        dev = NetworkImporterDevice(name=bf_dev.Hostname, bf=bf_dev, nb=nb, vendor=bf_dev.Vendor_Family.lower())
         nb_dev = nb.dcim.devices.get(name=dev.name)
+
+        logger.info(f"Processing {dev.name} configuration data and remote information ")
+        
         if nb_dev:
             dev.remote = nb_dev
             dev.exist_remote = True
@@ -434,7 +437,7 @@ def main():
                         )
                     else:
                         print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
-
+            print("  ")
 
     # -------------------------------------------------------------
     # Build cabling
@@ -444,92 +447,98 @@ def main():
     p2p_links = bfq.layer3Edges().answer()
 
     already_connected_links = {}
-
+    
     for link in p2p_links.frame().itertuples():
+        try:
+            local_host = link.Interface.hostname
+            local_intf = re.sub("\.\d+$", "", link.Interface.interface)
+            remote_host = link.Remote_Interface.hostname
+            remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
 
-        local_host = link.Interface.hostname
-        local_intf = re.sub("\.\d+$", "", link.Interface.interface)
-        remote_host = link.Remote_Interface.hostname
-        remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
-
-        unique_id = "_".join(
-            sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
-        )
-        if unique_id in already_connected_links:
-            print(f"Link {unique_id} already connected .. SKIPPING")
-            continue
-
-        if local_host not in devs.keys():
-            logger.warning(f"LINK: {local_host} not present in devices list")
-            continue
-        elif remote_host not in devs.keys():
-            logger.warning(f"LINK: {remote_host} not present in devices list")
-            continue
-
-        if local_intf not in devs[local_host].interfaces.keys():
-            logger.warning(f"LINK: {local_host}:{local_intf} not present in interfaces list")
-            continue
-        elif remote_intf not in devs[remote_host].interfaces.keys():
-            logger.warning(f"LINK: {remote_host}:{remote_intf} not present in interfaces list")
-            continue
-
-        ## Check if both interfaces are already connected or not
-
-        if devs[local_host].interfaces[local_intf].remote.connection_status:
-            remote_host_reported = (
-                devs[local_host]
-                .interfaces[local_intf]
-                .remote.connected_endpoint.device.name
+            unique_id = "_".join(
+                sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
             )
-            remote_int_reported = (
-                devs[local_host].interfaces[local_intf].remote.connected_endpoint.name
-            )
+            if unique_id in already_connected_links:
+                logger.debug(f"Link {unique_id} already connected .. SKIPPING")
+                continue
 
-            if remote_host_reported != remote_host:
-                logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})")
-            elif (
-                remote_host_reported == remote_host
-                and remote_intf != remote_int_reported
-            ):
-                logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})")
+            if local_host not in devs.keys():
+                logger.warning(f"LINK: {local_host} not present in devices list")
+                continue
+            elif remote_host not in devs.keys():
+                logger.warning(f"LINK: {remote_host} not present in devices list")
+                continue
 
-            continue
+            if local_intf not in devs[local_host].interfaces.keys():
+                logger.warning(f"LINK: {local_host}:{local_intf} not present in interfaces list")
+                continue
+            elif remote_intf not in devs[remote_host].interfaces.keys():
+                logger.warning(f"LINK: {remote_host}:{remote_intf} not present in interfaces list")
+                continue
 
-        elif devs[remote_host].interfaces[remote_intf].remote.connection_status:
-            local_host_reported = (
-                devs[remote_host]
-                .interfaces[remote_intf]
-                .remote.connected_endpoint.device.name
-            )
-            local_int_reported = (
-                devs[remote_host].interfaces[remote_intf].remote.connected_endpoint.name
-            )
+            if not devs[local_host].interfaces[local_intf].remote:
+                logger.warning(f"LINK: {local_host}:{local_intf} remote object not present SKIPPING")
+                continue
+            elif not devs[remote_host].interfaces[remote_intf].remote:
+                logger.warning(f"LINK: {remote_host}:{remote_intf}remote object not present SKIPPING")
+                continue
+            
+            ## Check if both interfaces are already connected or not
 
-            if local_host_reported != local_host:
-                print(
-                    f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})"
+            if devs[local_host].interfaces[local_intf].remote.connection_status:
+                remote_host_reported = (
+                    devs[local_host] 
+                    .interfaces[local_intf]
+                    .remote.connected_endpoint.device.name
                 )
-            elif local_host_reported == local_host and local_intf != local_int_reported:
-                print(
-                    f"ERROR:LINK: {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})"
+                remote_int_reported = (
+                    devs[local_host].interfaces[local_intf].remote.connected_endpoint.name
                 )
 
-            continue
+                if remote_host_reported != remote_host:
+                    logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})")
+                elif (
+                    remote_host_reported == remote_host
+                    and remote_intf != remote_int_reported
+                ):
+                    logger.warning(f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})")
 
-        else:
-            print(
-                f"Link not present will create it in netbox ({local_host}:{local_intf} || {remote_host}:{remote_intf}) "
-            )
-            link = nb.dcim.cables.create(
-                termination_a_type="dcim.interface",
-                termination_a_id=devs[local_host].interfaces[local_intf].remote.id,
-                termination_b_type="dcim.interface",
-                termination_b_id=devs[remote_host].interfaces[remote_intf].remote.id,
-            )
+                continue
 
-            already_connected_links[unique_id] = 1
+            elif devs[remote_host].interfaces[remote_intf].remote.connection_status:
+                local_host_reported = (
+                    devs[remote_host]
+                    .interfaces[remote_intf]
+                    .remote.connected_endpoint.device.name
+                )
+                local_int_reported = (
+                    devs[remote_host].interfaces[remote_intf].remote.connected_endpoint.name
+                )
 
-    # pdb.set_trace()
+                if local_host_reported != local_host:
+                    logger.warning(f"LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})")
+                elif local_host_reported == local_host and local_intf != local_int_reported:
+                    logger.warning(f"LINK:  {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})" )
+
+                continue
+
+            else:
+                logger.info(
+                    f"Link not present will create it in netbox ({local_host}:{local_intf} || {remote_host}:{remote_intf}) "
+                )
+                link = nb.dcim.cables.create(
+                    termination_a_type="dcim.interface",
+                    termination_a_id=devs[local_host].interfaces[local_intf].remote.id,
+                    termination_b_type="dcim.interface",
+                    termination_b_id=devs[remote_host].interfaces[remote_intf].remote.id,
+                )
+
+                already_connected_links[unique_id] = 1
+        except:
+            logger.warning(f"Something went wrong while processing the link {unique_id}", exc_info=True)
+            # pdb.set_trace()
+            
+    pdb.set_trace()
 
 
 if __name__ == "__main__":
