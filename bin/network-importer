@@ -26,17 +26,13 @@ import re
 
 from collections import defaultdict
 
-import pandas as pd
-
 from pybatfish.client.commands import *
 
 # noinspection PyUnresolvedReferences
 from pybatfish.datamodel import Edge, Interface
 from pybatfish.client.session import Session
-from pybatfish.datamodel.answer import TableAnswer
 from pybatfish.datamodel.flow import HeaderConstraints, PathConstraints  # noqa: F401
 from pybatfish.question import bfq, list_questions, load_questions  # noqa: F401
-from pybatfish.util import get_html
 
 from termcolor import colored
 
@@ -54,6 +50,8 @@ from network_importer.model import (
 )
 
 from jinja2 import Template, Environment, FileSystemLoader
+
+
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -156,7 +154,8 @@ def main():
     # ------------------------------------------------------------
     # Initialize Batfish (TODO If configs have been provided)
     # ------------------------------------------------------------
-    NETWORK_NAME = "network-importer"
+    CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
+    NETWORK_NAME = f"network-importer-{CURRENT_DIRECTORY}"
     SNAPSHOT_NAME = "network-importer"
     SNAPSHOT_PATH = options.configs
 
@@ -228,7 +227,7 @@ def main():
     # ------------------------------------------------------------
     # Build inventory
     #  - if only batfish
-    #      devices are expected to existing netbox already
+    #      devices are expected to exist in netbox already
     #      Fail if device is not present
     #  - if Nornir and Batfish
     #      if the device is not present in netbox,
@@ -324,21 +323,14 @@ def main():
 
             intf = NetworkImporterInterface(
                 name=intf_name,
-                device_name=dev.name,
-                speed=bf_intf.Speed,
-                mtu=bf_intf.MTU,
-                switchport_mode=bf_intf.Switchport_Mode,
+                device_name=dev.name
             )
 
-            intf.bf = bf_intf
+            intf.add_bf_intf(bf_intf)
             dev.add_interface(intf)
 
             for prfx in bf_intf.All_Prefixes:
                 dev.add_ip(intf_name=intf.name, address=prfx)
-
-            # Updating Interface properly
-            # logger.info(f"{dev.name} - Interface {bf_intf.Interface.interface} configured in access mode, vlan {bf_intf.Access_VLAN}")
-            # ## Update interface with vlan
 
             bf_vlans = bfq.switchedVlanProperties(nodes=dev.name).answer()
             for vlan in bf_vlans.frame().itertuples():
@@ -361,7 +353,7 @@ def main():
                 )
 
             dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
-
+            del dev_facts["Interfaces"]
             # pdb.set_trace()
             # Load Jinja2 template
             # env = Environment(
@@ -470,6 +462,17 @@ def main():
                 )
                 continue
 
+            if devs[local_host].interfaces[local_intf].is_virtual :
+                logger.debug(
+                    f"LINK: {local_host}:{local_intf} is a virtual interface, can't be used for cabling SKIPPING"
+                )
+                continue
+            elif devs[remote_host].interfaces[remote_intf].is_virtual:
+                logger.debug(
+                    f"LINK: {remote_host}:{remote_intf} is a virtual interface, can't be used for cabling SKIPPING"
+                )
+                continue
+
             if not devs[local_host].interfaces[local_intf].remote:
                 logger.warning(
                     f"LINK: {local_host}:{local_intf} remote object not present SKIPPING"
@@ -480,6 +483,8 @@ def main():
                     f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING"
                 )
                 continue
+
+            
 
             ## Check if both interfaces are already connected or not
 
