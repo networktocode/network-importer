@@ -12,9 +12,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+import pdb
 
 logger = logging.getLogger("network-importer")
-
 
 class NetworkImporterDevice(object):
     def __init__(
@@ -63,6 +63,11 @@ class NetworkImporterDevice(object):
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
 
+    # def __repr__(self):
+    #     return "Test()"
+    # def __str__(self):
+    #      return "member of Test"
+
     def update_remote(self):
         """
         Update remote system, currently Netbox to match what is defined locally
@@ -71,41 +76,77 @@ class NetworkImporterDevice(object):
         logger.debug(f"Device {self.name}, Updating remote (Netbox) ... ")
 
         # Update or Create all Interfaces
-        for intf in self.interfaces.values():
+        intfs_lags = [ intf for intf in self.interfaces.values() if intf.is_lag]
+        intfs_lag_members = [ intf for intf in self.interfaces.values() if intf.is_lag_member]
+        intfs_regs = [ intf for intf in self.interfaces.values() if not intf.is_lag_member and not intf.is_lag]
 
-            intf_properties = intf.get_netbox_properties()
+        for intf in intfs_regs:
+            logger.info(f"{self.name} - REG - Updating Interface {intf.name}")
+            self.update_interface_remote(intf)
 
-            # Hack for VMX to set the interface type properly
-            if self.vendor and self.vendor == "juniper" and "." not in intf.name:
-                intf_properties["type"] = 1100
+        for intf in intfs_lags:
+            logger.info(f"{self.name} - LAG - Updating Interface {intf.name}")
+            self.update_interface_remote(intf)
 
-            if "untagged_vlan" in intf_properties and intf_properties["untagged_vlan"]:
-                intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
-                    intf_properties["untagged_vlan"]
-                )
+        for intf in intfs_lag_members:
+            logger.info(f"{self.name} - MEM - Updating Interface {intf.name} ")
+            self.update_interface_remote(intf)
 
-            if "tagged_vlans" in intf_properties:
-                intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
-                    intf_properties["tagged_vlans"]
-                )
 
-            if not intf.exist_remote:
-                intf_properties["device"] = self.remote.id
-                intf_properties["name"] = intf.name
+    def update_interface_remote(self, intf):
+        """
+        Update Interface on the mote system
+        """
 
-                intf.remote = self.nb.dcim.interfaces.create(**intf_properties)
-                logger.debug(f"{self.name} - Interface {intf.name} created in Netbox")
+        intf_properties = intf.get_netbox_properties()
 
+        # Hack for VMX to set the interface type properly
+        if self.vendor and self.vendor == "juniper" and "." not in intf.name:
+            intf_properties["type"] = 1100
+
+        if intf.mode in ["TRUNK", "ACCESS"] and intf.access_vlan:
+            intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
+                intf.access_vlan
+            )
+
+        if intf.mode == "TRUNK" and intf.allowed_vlans:
+            intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
+                intf.allowed_vlans
+            )
+
+        if intf.is_lag_member:
+            # pdb.set_trace()
+            if intf.parent in self.interfaces.keys():
+                if not self.interfaces[intf.parent].exist_remote:
+                    logger.warning(f"{self.name} - Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} do not exist remotely")
+                else:
+                    intf_properties["lag"] = self.interfaces[intf.parent].remote.id
+                
             else:
-                intf_updated = intf.remote.update(data=intf_properties)
-                logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
+                logger.warning(f"{self.name} - Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} is not in the list")
+            
+        if not intf.exist_remote:
+            intf_properties["device"] = self.remote.id
+            intf_properties["name"] = intf.name
 
-            for ip in intf.ips.values():
-                if not ip.exist_remote:
-                    ip.remote = self.nb.ipam.ip_addresses.create(
-                        address=ip.address, interface=intf.remote.id
-                    )
-                    logger.debug(f"{self.name} - IP {ip.address} created in Netbox")
+            ## TODO add check to ensure the interface got properly created
+            intf.remote = self.nb.dcim.interfaces.create(**intf_properties)
+            intf.exist_remote = True
+            intf.remote_id = intf.remote.id
+            logger.debug(f"{self.name} - Interface {intf.name} created in Netbox")
+
+        else:
+            intf_updated = intf.remote.update(data=intf_properties)
+            logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
+
+        for ip in intf.ips.values():
+            if not ip.exist_remote:
+                ip.remote = self.nb.ipam.ip_addresses.create(
+                    address=ip.address, interface=intf.remote.id
+                )
+                ip.exist_remote = True
+                logger.debug(f"{self.name} - IP {ip.address} created in Netbox")
+
 
     def add_interface(self, intf):
         """
@@ -203,23 +244,114 @@ class NetworkImporterDevice(object):
 
 
 class NetworkImporterInterface(object):
-    def __init__(self, name, device_name, speed=None, mtu=None, switchport_mode=None):
+    def __init__(self, name, device_name):
 
         self.name = name
         self.device_name = device_name
 
-        self.type = None
+        self.mode = None    # TRUNK, ACCESS, L3
         self.remote_id = None
 
-        self.speed = speed
-        self.mtu = mtu
-        self.switchport_mode = switchport_mode
+        self.is_virtual = None
 
+        self.active = None
+        self.is_lag_member = None
+        self.parent = None
+        self.is_lag = None
+        self.lag_members = None
+
+        self.description = None
+        self.speed = None
+        self.mtu = None
+        self.switchport_mode = None
+
+        self.access_vlan = None
+        self.allowed_vlans = None
         self.ips = dict()
 
         self.exist_remote = False
         self.bf = None
         self.remote = None
+
+
+    def add_bf_intf(self, bf):
+        """
+        Add a Batfish Interface Object and extract all relevant information of not already defined
+
+        Input
+            Batfish interfaceProperties object
+        """
+
+        self.bf = bf
+
+        if self.speed is None and bf.Speed is None:
+            self.is_virtual = True
+        elif self.speed is None:
+            self.speed = bf.Speed
+
+        if self.mtu is None:
+            self.mtu = bf.MTU
+
+        if self.switchport_mode is None:
+            self.switchport_mode = bf.Switchport_Mode
+
+        if self.active is None:
+            self.active = bf.Active
+
+        if self.description is None:
+            self.description = bf.Description
+
+        if self.is_lag is None and self.lag_members is None and len(list(bf.Channel_Group_Members)) != 0:
+            self.lag_members = list(bf.Channel_Group_Members)
+            self.is_lag = True
+        else:
+            self.is_lag = False
+    
+        if self.mode is None and self.switchport_mode:
+            self.mode = self.switchport_mode
+        
+        if self.mode == "TRUNK":
+            self.allowed_vlans = self.expand_vlans_list(bf.Allowed_VLANs)
+            if bf.Access_VLAN: 
+                self.access_vlan = bf.Access_VLAN
+                 
+        elif self.mode == "ACCESS" and bf.Access_VLAN:
+            self.access_vlan = bf.Access_VLAN
+        
+        if self.is_lag is False and self.is_lag_member is None and bf.Channel_Group :
+            self.parent = bf.Channel_Group
+            self.is_lag_member = True
+
+    @staticmethod   
+    def expand_vlans_list(vlans):
+        """
+        Input:
+            String (TODO add support for list)
+
+        Return List
+        """
+        raw_vlans_list = []
+        clean_vlans_list = []
+
+        vlans_csv = str(vlans).split(",")
+
+        for vlan in vlans_csv:
+            min_max = str(vlan).split("-")       
+            if len(min_max) == 1:
+                raw_vlans_list.append(vlan)
+            elif len(min_max) == 2:
+                raw_vlans_list.extend(range(int(min_max[0]), int(min_max[1]))) 
+            
+            # Pass if min_max biggest than 2 
+        
+        for v in raw_vlans_list:
+            try:
+                clean_vlans_list.append(int(v))
+            except ValueError as e:
+                logger.debug(f"expand_vlans_list() Unable to convert {v} as integer .. skipping")
+
+        return sorted(clean_vlans_list)
+
 
     def add_ip(self, ip):
         """
@@ -242,23 +374,40 @@ class NetworkImporterInterface(object):
         minus the vlans IDs that needs to be converted
         """
 
-        intf_properties = {}
+        intf_properties = dict()
 
-        if self.speed == None:
+        if self.is_lag:
+            intf_properties["type"] = 200
+        elif self.is_virtual:
             intf_properties["type"] = 0
         elif self.speed == 1000000000:
+            intf_properties["type"] = 800
+        elif self.speed == 1000000000:
+            intf_properties["type"] = 1100
+        elif self.speed == 10000000000:
+            intf_properties["type"] = 1200
+        elif self.speed == 25000000000:
+            intf_properties["type"] = 1350
+        elif self.speed == 40000000000:
+            intf_properties["type"] = 1400
+        elif self.speed == 100000000000:
+            intf_properties["type"] = 1600
+        else:
             intf_properties["type"] = 1100
 
-        intf_properties["mtu"] = self.mtu
+        if self.mtu:
+            intf_properties["mtu"] = self.mtu
+
+        if self.description:
+            intf_properties["description"] = self.description
 
         # TODO Add a check here to see what is the current status
         if self.switchport_mode == "ACCESS":
             intf_properties["mode"] = 100
-            intf_properties["untagged_vlan"] = self.bf.Access_VLAN
-        elif self.switchport_mode == "TRUNK":
-            intf_properties["mode"] == 200
-            intf_properties["tagged_vlans"] = self.bf.Allowed_VLANs
 
+        elif self.switchport_mode == "TRUNK":
+            intf_properties["mode"] = 200
+ 
         return intf_properties
 
 
@@ -291,47 +440,6 @@ class NetworkImporterInterface(object):
 # IFACE_TYPE_200GE_CFP2 = 1650
 # IFACE_TYPE_200GE_QSFP56 = 1700
 # IFACE_TYPE_400GE_QSFP_DD = 1750
-# # Wireless
-# IFACE_TYPE_80211A = 2600
-# IFACE_TYPE_80211G = 2610
-# IFACE_TYPE_80211N = 2620
-# IFACE_TYPE_80211AC = 2630
-# IFACE_TYPE_80211AD = 2640
-# # Cellular
-# IFACE_TYPE_GSM = 2810
-# IFACE_TYPE_CDMA = 2820
-# IFACE_TYPE_LTE = 2830
-# # SONET
-# IFACE_TYPE_SONET_OC3 = 6100
-# IFACE_TYPE_SONET_OC12 = 6200
-# IFACE_TYPE_SONET_OC48 = 6300
-# IFACE_TYPE_SONET_OC192 = 6400
-# IFACE_TYPE_SONET_OC768 = 6500
-# IFACE_TYPE_SONET_OC1920 = 6600
-# IFACE_TYPE_SONET_OC3840 = 6700
-# # Fibrechannel
-# IFACE_TYPE_1GFC_SFP = 3010
-# IFACE_TYPE_2GFC_SFP = 3020
-# IFACE_TYPE_4GFC_SFP = 3040
-# IFACE_TYPE_8GFC_SFP_PLUS = 3080
-# IFACE_TYPE_16GFC_SFP_PLUS = 3160
-# IFACE_TYPE_32GFC_SFP28 = 3320
-# IFACE_TYPE_128GFC_QSFP28 = 3400
-# # Serial
-# IFACE_TYPE_T1 = 4000
-# IFACE_TYPE_E1 = 4010
-# IFACE_TYPE_T3 = 4040
-# IFACE_TYPE_E3 = 4050
-# # Stacking
-# IFACE_TYPE_STACKWISE = 5000
-# IFACE_TYPE_STACKWISE_PLUS = 5050
-# IFACE_TYPE_FLEXSTACK = 5100
-# IFACE_TYPE_FLEXSTACK_PLUS = 5150
-# IFACE_TYPE_JUNIPER_VCP = 5200
-# IFACE_TYPE_SUMMITSTACK = 5300
-# IFACE_TYPE_SUMMITSTACK128 = 5310
-# IFACE_TYPE_SUMMITSTACK256 = 5320
-# IFACE_TYPE_SUMMITSTACK512 = 5330
 
 
 class NetworkImporterSite(object):
@@ -394,7 +502,16 @@ class NetworkImporterSite(object):
         Output: Netbox Vlan ID
         """
 
-        return [self.convert_vid_to_nid(vid) for vid in vids]
+        output = []
+
+        for vid in vids:
+
+            nvid = self.convert_vid_to_nid(vid)
+
+            if isinstance(nvid, int):
+                output.append(nvid)
+        
+        return output
 
     def convert_vid_to_nid(self, vid):
         """
