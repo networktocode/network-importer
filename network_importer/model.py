@@ -27,6 +27,7 @@ class NetworkImporterDevice(object):
         bf=None,
         nb=None,
         vendor=None,
+        pull_cache=False
     ):
 
         self.name = name
@@ -59,7 +60,7 @@ class NetworkImporterDevice(object):
         self._cache_intfs = None
         self._cache_ips = None
 
-        if self.nb:
+        if self.nb and pull_cache:
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
 
@@ -312,8 +313,8 @@ class NetworkImporterInterface(object):
         
         if self.mode == "TRUNK":
             self.allowed_vlans = self.expand_vlans_list(bf.Allowed_VLANs)
-            if bf.Access_VLAN: 
-                self.access_vlan = bf.Access_VLAN
+            if bf.Native_VLAN: 
+                self.access_vlan = bf.Native_VLAN
                  
         elif self.mode == "ACCESS" and bf.Access_VLAN:
             self.access_vlan = bf.Access_VLAN
@@ -340,7 +341,7 @@ class NetworkImporterInterface(object):
             if len(min_max) == 1:
                 raw_vlans_list.append(vlan)
             elif len(min_max) == 2:
-                raw_vlans_list.extend(range(int(min_max[0]), int(min_max[1]))) 
+                raw_vlans_list.extend(range(int(min_max[0]), int(min_max[1])+1)) 
             
             # Pass if min_max biggest than 2 
         
@@ -407,7 +408,10 @@ class NetworkImporterInterface(object):
 
         elif self.switchport_mode == "TRUNK":
             intf_properties["mode"] = 200
- 
+
+        if not self.active is None:
+            intf_properties["enabled"] = self.active
+
         return intf_properties
 
 
@@ -460,7 +464,6 @@ class NetworkImporterSite(object):
             self.remote = self.nb.dcim.sites.get(slug=self.name)
             if self.remote:
                 self.exist_remote = True
-
                 self._get_remote_vlans_list()
 
     def update_remote(self):

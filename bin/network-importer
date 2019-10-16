@@ -42,6 +42,8 @@ import requests
 from nornir import InitNornir
 
 import network_importer
+import network_importer.config as config
+
 from network_importer.model import (
     NetworkImporterDevice,
     NetworkImporterInterface,
@@ -52,14 +54,12 @@ from network_importer.model import (
 from jinja2 import Template, Environment, FileSystemLoader
 
 
-
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
 PRESENT = colored("PRESENT", "green")
 ABSENT = colored("ABSENT", "yellow")
-
 
 class CustomFormatter(
     argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
@@ -74,10 +74,17 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
+        "--config",
+        type=str,
+        help="Network Importer Configuration file (TOML format)",
+        default="network_importer.toml",
+    )
+
+    parser.add_argument(
         "--configs",
         metavar="DIR",
         type=str,
-        help="Directory where to find the configurations (in batfish format)",
+        help="Directory where to find the network configurations (in batfish format)",
         default=False,
     )
 
@@ -91,6 +98,13 @@ def parse_args(args=sys.argv[1:]):
 
     parser.add_argument(
         "--limit", type=str, help="limit the execution on a specific device"
+    )
+
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Keep the script in interactive mode once finished for troubleshooting",
     )
 
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
@@ -121,6 +135,28 @@ def jinja_filter_toyaml_list(value):
 def jinja_filter_toyaml_dict(value):
     return yaml.dump(value, default_flow_style=False)
 
+
+def initialize_devices(task):
+
+    nb = pynetbox.api(config.netbox.get("address"), token=config.netbox.get("token"))
+
+    # TODO add check to ensure device is present
+    # Also only pull the cache if the object exist already
+    nb_dev = nb.dcim.devices.get(name=task.host.name)
+
+    dev = NetworkImporterDevice(
+        name=task.host.name, nb=nb, pull_cache=True
+    )
+
+    logger.info(f"Initializing Device {dev.name} .. ")
+
+    if nb_dev:
+        dev.remote = nb_dev
+        dev.exist_remote = True
+
+    return dev
+
+
 def main():
 
     module_path = os.path.dirname(network_importer.__file__)
@@ -128,24 +164,11 @@ def main():
 
     options = parse_args()
 
-    ## Check if all environment variables have been provided
+    config.load_config(options.config)
 
-    NETBOX_ADDR = os.environ.get("NETBOX_ADDRESS", None)
-    NETBOX_TOKEN = os.environ.get("NETBOX_TOKEN", None)
-    BATFISH_ADDR = os.environ.get("BATFISH_ADDRESS", "localhost")
-
-    if not NETBOX_ADDR:
-        print(
-            "Please provide the location of the netbox server using the environment variables NETBOX_ADDRESS "
-        )
-        exit()
-    elif not NETBOX_TOKEN:
-        print(
-            "Please provide a valid netbox token using the environment variables NETBOX_TOKEN "
-        )
-        exit()
-
-    ## Setup logging
+    # ------------------------------------------------------------
+    # Setup Logging
+    # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
 
@@ -179,9 +202,9 @@ def main():
     batfish_session.set_snapshot(SNAPSHOT_NAME)
 
     # ------------------------------------------------------------
-    # Initialize Netbox, and pull existing devices
+    # Initialize Netbox and check if all parameters are correct
     # ------------------------------------------------------------
-    nb = pynetbox.api(NETBOX_ADDR, token=NETBOX_TOKEN)
+    nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
     try:
         nb.dcim.devices.get(name="notpresent")
     except requests.exceptions.ConnectionError:
@@ -203,7 +226,7 @@ def main():
         sys.exit(1)
 
     # ------------------------------------------------------------
-    # Initialize Netbox, and pull existing devices
+    # Build Inventories
     # ------------------------------------------------------------
     # TODO manage exception for Nornir and the validity of the inventory file
     if options.inventory:
@@ -216,13 +239,18 @@ def main():
             },
         )
 
+    # If Batfish is the primary source of information
+    nrt = InitNornir( 
+            core={"num_workers": 2},
+            logging={"enabled": False},
+            inventory={
+                "plugin": "network_importer.inventory.NornirInventoryFromBatfish",
+                "options": {"devices": bfq.nodeProperties().answer().frame() }
+            },
+        )
+
     sites = dict()
     devs = dict()
-
-    # TODO Add check to only create directory if required
-    if options.apply and not os.path.exists(f"{options.output}"):
-        os.makedirs(f"{options.output}")
-        logger.debug(f"Directory {options.output} was missing, created it")
 
     # ------------------------------------------------------------
     # Build inventory
@@ -238,81 +266,47 @@ def main():
     #  - If only Nornir
     #     Not supported Yet
     # ------------------------------------------------------------
+    results = nrt.run(task=initialize_devices)
 
-    for bf_dev in bfq.nodeProperties().answer().frame().itertuples():
-
-        dev = NetworkImporterDevice(
-            name=bf_dev.Hostname, bf=bf_dev, nb=nb, vendor=bf_dev.Vendor_Family.lower()
-        )
-
-        if options.limit and dev.name != options.limit:
+    for dev_name, items in results.items():
+        if items[0].failed:
+            logger.warning(f"Something went wrong while trying to pull the device information for {dev_name}")
             continue
 
-        nb_dev = nb.dcim.devices.get(name=dev.name)
+        dev = items[0].result
+        
+        # TODO convert this action to a function to be able to properly extract
+        dev.bf = bfq.nodeProperties(nodes=dev.name).answer().frame().loc[0 , : ]
+        devs[dev_name] = dev
 
+    # TODO Add check to only create directory if required
+    if options.apply and not os.path.exists(options.output) and config.main["generate_hostvars"]:
+        os.makedirs(options.output)
+        logger.debug(f"Directory {options.output} was missing, created it")
+
+    # Initialize the site information
+    for dev in devs.values():
+
+        if not dev.exist_remote:
+            continue
+
+        ## Check if site and vlans information are already in cache
+        if dev.remote.site.slug not in sites.keys():
+            site = NetworkImporterSite(name=dev.remote.site.slug, nb=nb)
+            sites[site.name] = site
+            dev.site = site
+            logger.debug(f"Created site {site.name}")
+
+        else:
+            dev.site = sites[dev.remote.site.slug]
+
+
+    # ----------------------------------------------------------------------
+    # For each device, process the list of interfaces / Ips from batfish
+    # ----------------------------------------------------------------------
+    for dev in devs.values():
+    
         logger.info(f"Processing {dev.name} data, local and remote .. ")
-
-        if nb_dev:
-            dev.remote = nb_dev
-            dev.exist_remote = True
-
-            ## Check if site and vlans information are already in cache
-            if nb_dev.site.slug not in sites.keys():
-                site = NetworkImporterSite(name=nb_dev.site.slug, nb=nb)
-                sites[site.name] = site
-                dev.site = site
-                logger.debug(f"Created site {site.name}")
-
-            else:
-                dev.site = sites[nb_dev.site.slug]
-
-        if options.inventory and bf_dev.Hostname in nr.inventory.hosts.keys():
-            dev.nr = nr.inventory.hosts[dev.name]
-
-            # Check if we have everything to create the device in netbox
-            # Shoudl probably move this logic inside the object
-            if not dev.exist_remote:
-                dev.platform = dev.nr.get("platform")
-                dev.model = dev.nr.get("model")
-                dev.role = dev.nr.get("role")
-
-                # TODO impriove hte site management
-                # Should check if already exist first
-                if dev.nr.get("site") not in sites.keys():
-                    site = NetworkImporterSite(name=dev.nr.get("site"), nb=nb)
-                    dev.site = site
-                    sites[site.name] = site
-
-                if dev.site == None or dev.model == None or dev.role == None:
-                    logger.warning(
-                        f"{dev.name} is not present in netbox and some information are missing to create it .. SKIPPING"
-                    )
-                    continue
-
-                # TODO move this section inside the NI Device Object
-                if options.apply:
-                    try:
-                        dev.remote = nb.dcim.devices.create(
-                            name=dev.name,
-                            device_type={"slug": dev.model},
-                            device_role={"slug": dev.role},
-                            site={"slug": dev.site.name},
-                        )
-                        logger.info(
-                            f"{dev.name} created in Netbox (site: {dev.site.name}, Role: {dev.role})"
-                        )
-
-                    except:
-                        logger.error(
-                            f"Unable to create the device {dev.name} in netbox, please check that 'site', 'model' and 'role' are properly defined in the inventory and are matching existing resources in netbox .. SKIPPING"
-                        )
-                        continue
-
-        elif options.inventory and not dev.exist_remote:
-            logger.error(
-                f"The device {dev.name} doesn't exist in netbox and no inventory have been provided ... SKIPPING "
-            )
-            continue
 
         bf_ints = bfq.interfaceProperties(nodes=dev.name).answer()
 
@@ -329,8 +323,9 @@ def main():
             intf.add_bf_intf(bf_intf)
             dev.add_interface(intf)
 
-            for prfx in bf_intf.All_Prefixes:
-                dev.add_ip(intf_name=intf.name, address=prfx)
+            if config.main["import_ips"]:
+                for prfx in bf_intf.All_Prefixes:
+                    dev.add_ip(intf_name=intf.name, address=prfx)
 
             bf_vlans = bfq.switchedVlanProperties(nodes=dev.name).answer()
             for vlan in bf_vlans.frame().itertuples():
@@ -341,9 +336,7 @@ def main():
                         )
                     )
 
-        devs[dev.name] = dev
-
-        if options.apply:
+        if options.apply and config.main["generate_hostvars"]:
 
             # Save device variables in file
             if not os.path.exists(f"{options.output}/{dev.name}"):
@@ -354,6 +347,7 @@ def main():
 
             dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
             del dev_facts["Interfaces"]
+
             # pdb.set_trace()
             # Load Jinja2 template
             # env = Environment(
@@ -426,8 +420,8 @@ def main():
     #   Currently we are only getting the information from the L3 EDGE in Batfish
     #   We need to pull LLDP data as well using Nornir to complement that
     # -------------------------------------------------------------
-    p2p_links = bfq.layer3Edges().answer()
 
+    p2p_links = bfq.layer3Edges().answer()
     already_connected_links = {}
 
     for link in p2p_links.frame().itertuples():
@@ -560,8 +554,8 @@ def main():
                 exc_info=True,
             )
 
-    # pdb.set_trace()
-
+    if options.debug:
+        pdb.set_trace()
 
 if __name__ == "__main__":
     main()
