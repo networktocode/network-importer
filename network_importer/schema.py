@@ -13,6 +13,7 @@ config_schema = dict(
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
                 import_cabling=dict(type="boolean", default=True),
+                import_vlans=dict(type="boolean", default=True),
                 generate_hostvars=dict(type="boolean", default=False),
             ),
             default={}

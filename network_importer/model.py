@@ -13,6 +13,7 @@ limitations under the License.
 """
 import logging
 import pdb
+import network_importer.config as config
 
 logger = logging.getLogger("network-importer")
 
@@ -105,15 +106,16 @@ class NetworkImporterDevice(object):
         if self.vendor and self.vendor == "juniper" and "." not in intf.name:
             intf_properties["type"] = 1100
 
-        if intf.mode in ["TRUNK", "ACCESS"] and intf.access_vlan:
-            intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
-                intf.access_vlan
-            )
+        if config.main["import_vlans"]:
+            if intf.mode in ["TRUNK", "ACCESS"] and intf.access_vlan:
+                intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
+                    intf.access_vlan
+                )
 
-        if intf.mode == "TRUNK" and intf.allowed_vlans:
-            intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
-                intf.allowed_vlans
-            )
+            if intf.mode == "TRUNK" and intf.allowed_vlans:
+                intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
+                    intf.allowed_vlans
+                )
 
         if intf.is_lag_member:
             # pdb.set_trace()
@@ -468,11 +470,13 @@ class NetworkImporterSite(object):
 
     def update_remote(self):
         """
-        Update Site and all associated resources in the Remote system
+        Update Site and all associated resources in the Remote System
         Currently only Netbox is supported
         """
-        logger.debug(f"Site {self.name}, Updating remote (Netbox) ... ")
-        self.create_vlans_remote()
+        
+        if config.main["import_vlans"]:
+            logger.debug(f"Site {self.name}, Updating remote (Netbox) ... ")
+            self.create_vlans_remote()
 
     def add_vlan(self, vlan):
         """
@@ -536,6 +540,10 @@ class NetworkImporterSite(object):
         """
         Create all Vlan in Netbox if they do not exist already
         """
+
+        if not config.main["import_vlans"]:
+            return False
+            
         for vlan in self.vlans.values():
             if not vlan.exist_remote:
                 # TODO add check to ensure the vlan is properly created
@@ -549,17 +557,20 @@ class NetworkImporterSite(object):
         Query Netbox for all Vlans associated with this site and keep them in cache
         """
 
+        if not config.main["import_vlans"]: 
+            return False
+
         vlans = self.nb.ipam.vlans.filter(site=self.name)
 
         logger.debug(
             f"{self.name} - _get_remote_vlans_list(), found {len(vlans)} vlans"
         )
 
-        if len(vlans) == 0:
-            return True
-
         if self._cache_vlans == None:
             self._cache_vlans = dict()
+
+        if len(vlans) == 0:
+            return True
 
         for vlan in vlans:
             if vlan.vid in self._cache_vlans.keys():
