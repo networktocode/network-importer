@@ -4,4 +4,4 @@ nornir
 pandas
 termcolor
 toml
-fastjsonschema
+jsonschema
