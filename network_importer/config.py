@@ -33,19 +33,19 @@ def load_config(config_file_name):
 
     env_netbox_address = os.environ.get("NETBOX_ADDRESS", None)
     env_netbox_token = os.environ.get("NETBOX_TOKEN", None)
-    env_batfish_address = os.environ.get("BATFISH_ADDRESS", None)
+    env_batfish_address = os.environ.get("BATFISH_ADDRESS")
 
     # TODO need to refactor this section to avoid code duplication
 
     if env_netbox_address:
         config['netbox']['address'] = env_netbox_address
-    elif "address" not in config['netbox'].keys()
+    elif "address" not in config['netbox'].keys():
         print("Netbox address is mandatory, please provide it either via the NETBOX_ADDRESS environement variable or in the configuration file")
         exit(1)
     
     if env_netbox_token:
         config['netbox']['token'] = env_netbox_token
-    elif "token" not in config['netbox'].keys()
+    elif "token" not in config['netbox'].keys():
         print("Netbox Token is mandatory, please provide it either via the NETBOX_TOKEN environement variable or in the configuration file")
         exit(1)
 
