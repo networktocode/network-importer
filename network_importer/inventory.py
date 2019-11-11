@@ -20,9 +20,9 @@ class NornirInventoryFromBatfish(Inventory):
 
             host: HostsDict = {"data": {}}
             host["hostname"] = dev.Hostname
-            host["data"]["vendor"] = str(dev.Vendor_Family).lower()
+            # host["data"]["vendor"] = str(dev.Vendor_Family).lower()
             host["data"]["type"] = str(dev.Device_Type).lower()
-
+            
             hosts[dev.Hostname] = host
 
         super().__init__(hosts=hosts, groups={}, defaults={}, **kwargs)
