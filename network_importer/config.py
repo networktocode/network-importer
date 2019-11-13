@@ -23,7 +23,7 @@ def extend_with_default(validator_class):
 
 
 def load_config(config_file_name):
-    global main, logs, netbox, batfish
+    global main, logs, netbox, batfish, network
 
     if not os.path.exists(config_file_name):
         raise Exception(f"Unable to find the configuration file {config_file_name}")
@@ -49,9 +49,23 @@ def load_config(config_file_name):
         print("Netbox Token is mandatory, please provide it either via the NETBOX_TOKEN environement variable or in the configuration file")
         exit(1)
 
+    env_network_login = os.environ.get("NETWORK_DEVICE_LOGIN", None)
+    env_network_password = os.environ.get("NETWORK_DEVICE_PWD", None)
+
+    # TODO need to refactor this section to avoid code duplication
+
+    if 'network' not in config:
+        config["network"] = {}
+        
+    if env_network_login:
+        config['network']['login'] = env_network_login
+    
+    if env_network_password:
+        config['network']['password'] = env_network_password
+
     if env_batfish_address:
         config['batfish']['address'] = env_batfish_address
- 
+    
     ## Extend the jsonschema validator to insert the default values not provided
     DefaultValidatingDraft7Validator = extend_with_default(Draft7Validator)
 
@@ -65,6 +79,8 @@ def load_config(config_file_name):
     main = config['main']
     logs = config['logs']
     netbox = config['netbox']
+    network = config['network']
     batfish = config['batfish']
+
     
 
