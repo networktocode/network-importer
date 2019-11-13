@@ -35,6 +35,14 @@ config_schema = dict(
             ),
             default={}
         ),
+        network=dict(
+            type="object", 
+            properties=dict(
+                login=dict(type="string"),
+                password=dict(type="string")
+            ),
+            default={}
+        ),
         logs=dict(
             type="object", 
             properties=dict(
