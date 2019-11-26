@@ -1,3 +1,17 @@
+"""
+(c) 2019 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 from nornir.core.deserializer.inventory import Inventory, HostsDict
 
 import os
@@ -7,7 +21,7 @@ import network_importer.config as config
 
 class NornirInventoryFromBatfish(Inventory):
     """ 
-    Construct a inventory object for Nornir based on the a list  NodesProperties from Batfish
+    Construct a inventory object for Nornir based on the a list NodesProperties from Batfish
     """
     def __init__(
         self,
@@ -117,7 +131,7 @@ class NBInventory(Inventory):
                 host["data"]["model"] = d["device_type"]["slug"]
 
                 # Attempt to add 'platform' based of value in 'slug'
-                host["platform"] = d["platform"]["slug"] if d["platform"] else None
+                host["platform"] = "cisco_" + d["platform"]["slug"] if d["platform"] else None
 
             else:
                 host["data"]["site"] = d["site"]["name"]
@@ -137,7 +151,6 @@ class NBInventory(Inventory):
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
             # If a device is unnamed we will set the name to the id of the device in netbox
             hosts[d.get("name") or d.get("id")] = host
-
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)

@@ -83,15 +83,15 @@ class NetworkImporterDevice(object):
         intfs_regs = [ intf for intf in self.interfaces.values() if not intf.is_lag_member and not intf.is_lag]
 
         for intf in intfs_regs:
-            logger.info(f"{self.name} - REG - Updating Interface {intf.name}")
+            logger.debug(f"{self.name} - Updating Interface {intf.name}")
             self.update_interface_remote(intf)
 
         for intf in intfs_lags:
-            logger.info(f"{self.name} - LAG - Updating Interface {intf.name}")
+            logger.debug(f"{self.name} - Updating Interface {intf.name}")
             self.update_interface_remote(intf)
 
         for intf in intfs_lag_members:
-            logger.info(f"{self.name} - MEM - Updating Interface {intf.name} ")
+            logger.debug(f"{self.name} - Updating Interface {intf.name} ")
             self.update_interface_remote(intf)
 
 
@@ -101,6 +101,9 @@ class NetworkImporterDevice(object):
         """
 
         intf_properties = intf.get_netbox_properties()
+
+        if not self.exist_remote:
+            return False
 
         # Hack for VMX to set the interface type properly
         if self.vendor and self.vendor == "juniper" and "." not in intf.name:

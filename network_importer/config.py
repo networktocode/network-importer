@@ -1,3 +1,16 @@
+"""
+(c) 2019 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import toml
 import os.path
 from pathlib import Path
@@ -21,21 +34,25 @@ def extend_with_default(validator_class):
         validator_class, {"properties" : set_defaults},
     )
 
-
-def load_config(config_file_name):
+DEFAULT_CONFIG_FILE_NAME = "network_importer.toml"
+def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     global main, logs, netbox, batfish, network
 
-    if not os.path.exists(config_file_name):
+    if config_file_name==DEFAULT_CONFIG_FILE_NAME and not os.path.exists(config_file_name):
+        config = {}
+    elif not os.path.exists(config_file_name):
         raise Exception(f"Unable to find the configuration file {config_file_name}")
-    
-    config_string = Path(config_file_name).read_text()
-    config = toml.loads(config_string)
+    else:
+        config_string = Path(config_file_name).read_text()
+        config = toml.loads(config_string)
 
     env_netbox_address = os.environ.get("NETBOX_ADDRESS", None)
     env_netbox_token = os.environ.get("NETBOX_TOKEN", None)
     env_batfish_address = os.environ.get("BATFISH_ADDRESS")
 
     # TODO need to refactor this section to avoid code duplication
+    if 'netbox' not in config:
+        config['netbox'] = {} 
 
     if env_netbox_address:
         config['netbox']['address'] = env_netbox_address
