@@ -14,6 +14,9 @@ limitations under the License.
 
 import logging
 import pynetbox
+import os
+import hashlib
+from pathlib import Path
 
 import network_importer
 import network_importer.config as config
@@ -24,6 +27,10 @@ from network_importer.model import (
     NetworkImporterSite,
     NetworkImporterVlan,
 )
+
+from nornir.plugins.tasks.networking import netmiko_send_command
+
+from napalm.base.helpers import canonical_interface_name
 
 logger = logging.getLogger("network-importer")
 
@@ -42,7 +49,7 @@ def initialize_devices(task):
         name=task.host.name, nb=nb, pull_cache=True
     )
 
-    logger.info(f"Initializing Device {dev.name} .. ")
+    logger.info(f" {task.host.name} | Initializing Device  .. ")
 
     if nb_dev:
         dev.remote = nb_dev
@@ -100,9 +107,46 @@ def collect_vlans_info(task):
     results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
 
     # TODO check if task went well
-    vlans = results[0].results
+    return results[0].result
 
-    return vlans
+
+def update_configuration(task, configs_directory, config_extension="txt"):
+    """
+    Collect running configurations on all devices
+
+    Supported Devices:
+        Default: Napalm (TODO)
+        Cisco: Netmiko
+    """ 
+
+    config_filename = f"{configs_directory}/{task.host.name}.{config_extension}"
+
+    current_md5 = None
+    if os.path.exists(config_filename):
+        current_config = Path(config_filename).read_text()
+        previous_md5 = hashlib.md5(current_config.encode('utf-8')).hexdigest()
+
+    results = task.run(task=netmiko_send_command, command_string="show run")
+
+    if results.failed:
+        return False
+    
+    new_config = results[0].result
+
+    # Currently the configuration is going to be different everytime because there is a timestamp on it
+    # Will need to do some clean up
+    with open(config_filename, 'w') as config:
+        config.write(new_config)
+    
+    new_md5 = hashlib.md5(new_config.encode('utf-8')).hexdigest()
+
+    if current_md5 and current_md5 == new_md5:
+        logger.debug(f" {task.host.name} | Latest config file already present ... ")
+
+    else:
+        logger.debug(f" {task.host.name} | Configuration file updated ")
+
+    return True
 
 
 def collect_lldp_neighbors(task):
@@ -119,9 +163,36 @@ def collect_lldp_neighbors(task):
     results = task.run(task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True)
 
     # TODO check if task went well
-    vlans = results[0].results
+    return results[0].result
 
-    return vlans
+
+def collect_transceivers_info(task):
+    """
+    Collect transceiver informaton on all devices
+    """
+
+    transceivers_inventory = []
+
+    if task.host.platform != "cisco_ios":
+        logger.warning(f" {task.host.name} | Collect transceiver not available for {task.host.platform} yet ")
+        return False
+
+    results = task.run(task=netmiko_send_command, command_string="show inventory", use_textfsm=True)
+    inventory = results[0].result
+
+    results = task.run(task=netmiko_send_command, command_string="show interface transceiver", use_textfsm=True)
+    transceivers = results[0].result
+
+    transceiver_names = [ t["iface"] for t in transceivers ]
+    
+    # Check if the optic is in the inventory by matching on the interface name
+    # Normalize the name of the interface before returning it 
+    for item in inventory:
+        if item.get("name", "") in transceiver_names:
+            item["name"] = canonical_interface_name(item["name"])
+            transceivers_inventory.append(item)
+
+    return transceivers_inventory
 
 
 
