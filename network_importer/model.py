@@ -84,16 +84,9 @@ class NetworkImporterDevice(object):
         intfs_lag_members = [ intf for intf in self.interfaces.values() if intf.is_lag_member]
         intfs_regs = [ intf for intf in self.interfaces.values() if not intf.is_lag_member and not intf.is_lag]
 
-        for intf in intfs_regs:
-            logger.debug(f" {self.name} | Updating Interface {intf.name}")
-            self.update_interface_remote(intf)
+        sorted_intfs = intfs_regs + intfs_lags + intfs_lag_members
 
-        for intf in intfs_lags:
-            logger.debug(f" {self.name} | Updating Interface {intf.name}")
-            self.update_interface_remote(intf)
-
-        for intf in intfs_lag_members:
-            logger.debug(f" {self.name} | Updating Interface {intf.name} ")
+        for intf in sorted_intfs:
             self.update_interface_remote(intf)
 
     def update_interface_remote(self, intf):
@@ -141,7 +134,7 @@ class NetworkImporterDevice(object):
             intf.remote_id = intf.remote.id
             logger.debug(f" {self.name} | Interface {intf.name} created in Netbox")
 
-        else:
+        elif not NetworkImporterInterface.is_remote_up_to_date(intf_properties, intf.remote):
             intf_updated = intf.remote.update(data=intf_properties)
             logger.debug(f" {self.name} | Interface {intf.name} updated in Netbox")
 
@@ -496,6 +489,71 @@ class NetworkImporterInterface(object):
 
         return intf_properties
 
+    @staticmethod
+    def is_remote_up_to_date(local, remote):
+        """
+        Static method to check if the remote (netbox) needs to be updated.
+        This method is static because it's using some information that are defined at the device level right now
+        Need to work on refactoring that to clean it up
+
+        local = dict of properties ready
+        remote = Pynetbox object 
+
+        return boolean
+        """
+        
+        diffs = NetworkImporterInterface.get_diff_remote(local, remote)
+
+        if not diffs["before"] and not diffs["after"]:
+            return True
+        
+        logger.debug(diffs)
+
+        return False
+
+    @staticmethod
+    def get_diff_remote(local, remote):
+        """
+        Static method to get the diff of the difference between remote and local
+
+        This method is static because it's using some information that are defined at the device level right now
+        Need to work on refactoring that to clean it up
+
+        local = dict of properties ready
+        remote = Pynetbox object 
+        
+        return dict
+        """
+        diffs = {
+            "before": {},
+            "after": {}
+        }
+
+        properties = [
+            # "mode", 
+            # "type",
+            "mtu",
+            "description"
+            "enabled",
+            "untagged_vlan",
+            "tagged_vlan"
+        ]
+
+        
+        for prop in properties:
+            if prop in local and local[prop] != getattr(remote, prop):
+                diffs["before"][prop] = getattr(remote, prop)
+                diffs["after"][prop] = local[prop]
+
+        if "mode" in local and local["mode"] != remote.mode.value:
+            diffs["before"]["mode"] = remote.mode.value
+            diffs["after"]["mode"] = local["mode"]
+
+        if "type" in local and local["type"] != remote.type.value:
+            diffs["before"]["type"] = remote.type.value
+            diffs["after"]["type"] = local["type"]
+
+        return diffs
 
 # TODO need to find a way to build a table to convert back and forth
 # # Interface types
