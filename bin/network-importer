@@ -27,38 +27,16 @@ import time
 
 from collections import defaultdict
 
-# from pybatfish.client.commands import *
-
-# noinspection PyUnresolvedReferences
-# from pybatfish.datamodel import Edge, Interface
-# from pybatfish.client.session import Session
-# from pybatfish.datamodel.flow import HeaderConstraints, PathConstraints  # noqa: F401
-# from pybatfish.question import bfq, list_questions, load_questions  # noqa: F401
-
-# from termcolor import colored
-
 import pynetbox
 import requests
 
-# from nornir import InitNornir
-# from nornir.core.filter import F
-# from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping
-
-# import network_importer
 import network_importer.config as config
 from network_importer.utils import TimeTracker
 from network_importer.main import NetworkImporter
-# from network_importer.tasks import initialize_devices
 
-# from network_importer.model import (
-#     NetworkImporterDevice,
-#     NetworkImporterInterface,
-#     NetworkImporterSite,
-#     NetworkImporterVlan,
-# )
-
-from jinja2 import Template, Environment, FileSystemLoader
-
+# TO CLEAN
+from network_importer.tasks import collect_vlans_info
+from nornir.plugins.tasks.networking import netmiko_send_command
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
