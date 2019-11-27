@@ -13,7 +13,7 @@ limitations under the License.
 """
 
 import time
-
+import re
 
 find_digit = re.compile("\D?(\d+)\D?")
 def sort_by_digits(if_name):
