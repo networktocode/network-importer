@@ -16,6 +16,8 @@ import time
 import re
 
 find_digit = re.compile("\D?(\d+)\D?")
+
+
 def sort_by_digits(if_name):
     return tuple(map(int, find_digit.findall(if_name)))
 
@@ -29,7 +31,6 @@ def jinja_filter_toyaml_dict(value):
 
 
 class TimeTracker(object):
-
     def __init__(self):
 
         self.start_time = time.time()
@@ -45,19 +46,21 @@ class TimeTracker(object):
         self.nbr_devices = nbr
 
     def print_all(self):
-        
+
         for i in range(0, len(self.times)):
 
             checkpnt = self.times[i]
-            
+
             if i == 0:
-               continue
-            
+                continue
+
             checkpnt = self.times[i]
-            previous = self.times[i-1]
+            previous = self.times[i - 1]
 
             device_info = ""
             if self.nbr_devices:
                 device_info = f" || From previous/dev {(checkpnt['time']-previous['time'])/self.nbr_devices}s"
 
-            print(f"{checkpnt['name']}: From Previous {checkpnt['time']-previous['time']}s || From start {checkpnt['time']-self.start_time}s{device_info}")
+            print(
+                f"{checkpnt['name']}: From Previous {checkpnt['time']-previous['time']}s || From start {checkpnt['time']-self.start_time}s{device_info}"
+            )

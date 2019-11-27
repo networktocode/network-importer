@@ -34,6 +34,7 @@ from napalm.base.helpers import canonical_interface_name
 
 logger = logging.getLogger("network-importer")
 
+
 def initialize_devices(task):
     """
 
@@ -45,9 +46,7 @@ def initialize_devices(task):
     # Also only pull the cache if the object exist already
     nb_dev = nb.dcim.devices.get(name=task.host.name)
 
-    dev = NetworkImporterDevice(
-        name=task.host.name, nb=nb, pull_cache=True
-    )
+    dev = NetworkImporterDevice(name=task.host.name, nb=nb, pull_cache=True)
 
     logger.info(f" {task.host.name} | Initializing Device  .. ")
 
@@ -56,7 +55,6 @@ def initialize_devices(task):
         dev.exist_remote = True
 
     return dev
-
 
 
 def device_generate_hostvars(task):
@@ -104,7 +102,9 @@ def collect_vlans_info(task):
         Cisco NX-OS >> Genie
 
     """
-    results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
+    results = task.run(
+        task=netmiko_send_command, command_string="show vlan", use_genie=True
+    )
 
     # TODO check if task went well
     return results[0].result
@@ -117,28 +117,28 @@ def update_configuration(task, configs_directory, config_extension="txt"):
     Supported Devices:
         Default: Napalm (TODO)
         Cisco: Netmiko
-    """ 
+    """
 
     config_filename = f"{configs_directory}/{task.host.name}.{config_extension}"
 
     current_md5 = None
     if os.path.exists(config_filename):
         current_config = Path(config_filename).read_text()
-        previous_md5 = hashlib.md5(current_config.encode('utf-8')).hexdigest()
+        previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
     results = task.run(task=netmiko_send_command, command_string="show run")
 
     if results.failed:
         return False
-    
+
     new_config = results[0].result
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
-    with open(config_filename, 'w') as config:
+    with open(config_filename, "w") as config:
         config.write(new_config)
-    
-    new_md5 = hashlib.md5(new_config.encode('utf-8')).hexdigest()
+
+    new_md5 = hashlib.md5(new_config.encode("utf-8")).hexdigest()
 
     if current_md5 and current_md5 == new_md5:
         logger.debug(f" {task.host.name} | Latest config file already present ... ")
@@ -160,7 +160,9 @@ def collect_lldp_neighbors(task):
     ## TODO check if all information are available to connect
     ## TODO Check if reacheable
     ## TODO Manage exception
-    results = task.run(task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True)
+    results = task.run(
+        task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True
+    )
 
     # TODO check if task went well
     return results[0].result
@@ -174,26 +176,30 @@ def collect_transceivers_info(task):
     transceivers_inventory = []
 
     if task.host.platform != "cisco_ios":
-        logger.warning(f" {task.host.name} | Collect transceiver not available for {task.host.platform} yet ")
+        logger.warning(
+            f" {task.host.name} | Collect transceiver not available for {task.host.platform} yet "
+        )
         return False
 
-    results = task.run(task=netmiko_send_command, command_string="show inventory", use_textfsm=True)
+    results = task.run(
+        task=netmiko_send_command, command_string="show inventory", use_textfsm=True
+    )
     inventory = results[0].result
 
-    results = task.run(task=netmiko_send_command, command_string="show interface transceiver", use_textfsm=True)
+    results = task.run(
+        task=netmiko_send_command,
+        command_string="show interface transceiver",
+        use_textfsm=True,
+    )
     transceivers = results[0].result
 
-    transceiver_names = [ t["iface"] for t in transceivers ]
-    
+    transceiver_names = [t["iface"] for t in transceivers]
+
     # Check if the optic is in the inventory by matching on the interface name
-    # Normalize the name of the interface before returning it 
+    # Normalize the name of the interface before returning it
     for item in inventory:
         if item.get("name", "") in transceiver_names:
             item["name"] = canonical_interface_name(item["name"])
             transceivers_inventory.append(item)
 
     return transceivers_inventory
-
-
-
-

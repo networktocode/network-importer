@@ -21,7 +21,8 @@ import pdb
 import re
 
 import warnings
-warnings.filterwarnings("ignore",category=DeprecationWarning)
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import requests
 import pynetbox
@@ -35,33 +36,36 @@ from jinja2 import Template, Environment, FileSystemLoader
 import network_importer
 import network_importer.config as config
 from network_importer.utils import TimeTracker, sort_by_digits
-from network_importer.tasks import initialize_devices, update_configuration, collect_transceivers_info
+from network_importer.tasks import (
+    initialize_devices,
+    update_configuration,
+    collect_transceivers_info,
+)
 
 from network_importer.model import (
     NetworkImporterDevice,
     NetworkImporterInterface,
     NetworkImporterSite,
     NetworkImporterVlan,
-    NetworkImporterOptic
+    NetworkImporterOptic,
 )
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
-class NetworkImporter(object):
 
+class NetworkImporter(object):
     def __init__(self, check_mode=True):
 
         self.sites = dict()
         self.devs = dict()
-        self.nr = None  
+        self.nr = None
         self.bf = None
         self.nb = None
 
         self.check_mode = check_mode
 
-       
     def build_inventory(self, limit=None):
         """
         Build the inventory for the Network Importer in Nornir format
@@ -83,38 +87,41 @@ class NetworkImporter(object):
             for csp in csparams:
                 if "=" not in csp:
                     continue
-                
+
                 key, value = csp.split("=", 1)
                 params[key] = value
 
         if config.main["inventory_source"] == "netbox":
             self.nr = InitNornir(
-                    core={"num_workers": config.main["nbr_workers"]},
-                    logging={"enabled": False},
-                    inventory={
-                        "plugin": "network_importer.inventory.NBInventory",
-                        "options": {
-                            "nb_url": config.netbox["address"],
-                            "nb_token": config.netbox["token"],
-                            "filter_parameters": params
-                        },
-                    }
-                )
+                core={"num_workers": config.main["nbr_workers"]},
+                logging={"enabled": False},
+                inventory={
+                    "plugin": "network_importer.inventory.NBInventory",
+                    "options": {
+                        "nb_url": config.netbox["address"],
+                        "nb_token": config.netbox["token"],
+                        "filter_parameters": params,
+                    },
+                },
+            )
 
         ## Second option in there but not really supported right now
-        elif config.main["inventory_source"] == "configs" and "configs_directory" in config.main.keys():
+        elif (
+            config.main["inventory_source"] == "configs"
+            and "configs_directory" in config.main.keys()
+        ):
 
-            ## TODO check if bf session has already been created, otherwise need to create it 
+            ## TODO check if bf session has already been created, otherwise need to create it
 
-            self.nr = InitNornir( 
-                    core={"num_workers": config.main["nbr_workers"]},
-                    logging={"enabled": False},
-                    inventory={
-                        "plugin": "network_importer.inventory.NornirInventoryFromBatfish",
-                        "options": {"devices": self.bf.q.nodeProperties().answer().frame()}
-                    },
-                )
-        
+            self.nr = InitNornir(
+                core={"num_workers": config.main["nbr_workers"]},
+                logging={"enabled": False},
+                inventory={
+                    "plugin": "network_importer.inventory.NornirInventoryFromBatfish",
+                    "options": {"devices": self.bf.q.nodeProperties().answer().frame()},
+                },
+            )
+
         else:
             logger.critical(
                 f"Unable to find an inventory please check the config file and the documentation"
@@ -122,7 +129,6 @@ class NetworkImporter(object):
             sys.exit(1)
 
         return True
-
 
     def init(self, limit=None):
         """
@@ -137,23 +143,35 @@ class NetworkImporter(object):
 
         for dev_name, items in results.items():
             if items[0].failed:
-                logger.warning(f"Something went wrong while trying to pull the device information for {dev_name}")
+                logger.warning(
+                    f"Something went wrong while trying to pull the device information for {dev_name}"
+                )
                 continue
 
             dev = items[0].result
-            
-            try: 
+
+            try:
                 # TODO convert this action to a function to be able to properly extract
-                dev.bf = self.bf.q.nodeProperties(nodes=dev.name).answer().frame().loc[0 , : ]
+                dev.bf = (
+                    self.bf.q.nodeProperties(nodes=dev.name).answer().frame().loc[0, :]
+                )
                 self.devs[dev_name] = dev
             except:
-                logger.warning(f"Unable to find {dev_name} in Batfish data  ... SKIPPING")
+                logger.warning(
+                    f"Unable to find {dev_name} in Batfish data  ... SKIPPING"
+                )
 
-        if not self.check_mode and not os.path.exists(config.main["hostvars_directory"]) and config.main["generate_hostvars"]:
+        if (
+            not self.check_mode
+            and not os.path.exists(config.main["hostvars_directory"])
+            and config.main["generate_hostvars"]
+        ):
             os.makedirs(config.main["hostvars_directory"])
-            logger.debug(f"Directory {config.main['hostvars_directory']} was missing, created it")
+            logger.debug(
+                f"Directory {config.main['hostvars_directory']} was missing, created it"
+            )
 
-        # Initialize the site information 
+        # Initialize the site information
         for dev in self.devs.values():
 
             if not dev.exist_remote:
@@ -171,7 +189,6 @@ class NetworkImporter(object):
 
         return True
 
-
     def import_devices_from_configs(self):
         """
 
@@ -179,7 +196,7 @@ class NetworkImporter(object):
 
         # TODO check if bf sessions has been initialized alrealdy
         for dev in self.devs.values():
-            
+
             logger.info(f"Processing {dev.name} data, local and remote .. ")
 
             bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
@@ -189,10 +206,7 @@ class NetworkImporter(object):
 
                 intf_name = bf_intf.Interface.interface
 
-                intf = NetworkImporterInterface(
-                    name=intf_name,
-                    device_name=dev.name
-                )
+                intf = NetworkImporterInterface(name=intf_name, device_name=dev.name)
 
                 intf.add_bf_intf(bf_intf)
                 dev.add_interface(intf)
@@ -210,7 +224,7 @@ class NetworkImporter(object):
                                 name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID
                             )
                         )
-        
+
         return True
 
     def import_devices_from_cmds(self):
@@ -222,31 +236,34 @@ class NetworkImporter(object):
         # Import transceivers information
         # ------------------------------------------------
         results = self.nr.run(task=collect_transceivers_info)
-        
+
         for dev_name, items in results.items():
             if items[0].failed:
-                logger.warning(f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) ")
+                logger.warning(
+                    f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) "
+                )
                 continue
 
             optics = items[0].result
 
             if not isinstance(optics, list):
-                logger.warning(f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)")
+                logger.warning(
+                    f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)"
+                )
                 continue
-            
+
             for optic in optics:
 
                 nio = NetworkImporterOptic(
                     name=optic["sn"],
                     optic_type=optic["descr"],
                     intf=optic["name"],
-                    serial=optic["sn"]
+                    serial=optic["sn"],
                 )
-               
-                self.devs[dev_name].add_optic(intf_name=optic["name"], optic=nio)
-        
-        return True
 
+                self.devs[dev_name].add_optic(intf_name=optic["name"], optic=nio)
+
+        return True
 
     def get_nb_handler(self):
         """
@@ -289,20 +306,20 @@ class NetworkImporter(object):
 
     def update_configurations(self):
 
-        results = self.nr.run(task=update_configuration, configs_directory=config.main["configs_directory"]+"/configs")
+        results = self.nr.run(
+            task=update_configuration,
+            configs_directory=config.main["configs_directory"] + "/configs",
+        )
 
-        # TODO print some logs    
+        # TODO print some logs
 
         return True
         # for result in results:
-
-
 
     def create_nb_handler(self):
 
         self.nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
         return True
-
 
     def init_bf_session(self):
         """
@@ -319,18 +336,17 @@ class NetworkImporter(object):
         self.bf = Session()
         self.bf.host = config.batfish["address"]
         self.bf.set_network(NETWORK_NAME)
-        
+
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
         return True
 
-    
     def print_screen(self):
         """
         Print on Screen all devices, interfaces and IPs and how their current status compare to remote
           Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
           This print function might be better off in the device object ...
-        """ 
+        """
         PRESENT = colored("PRESENT", "green")
         ABSENT = colored("ABSENT", "yellow")
 
@@ -361,13 +377,14 @@ class NetworkImporter(object):
 
                     for ip in intf.ips.values():
                         if ip.exist_remote:
-                            print("{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT))
+                            print(
+                                "{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT)
+                            )
                         else:
                             print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
                 print("  ")
 
         return True
-
 
     def update_remote(self):
         """
@@ -376,7 +393,7 @@ class NetworkImporter(object):
 
         for site in self.sites.values():
             site.update_remote()
-    
+
         for dev in self.devs.values():
             dev.update_remote()
 
@@ -389,7 +406,6 @@ class NetworkImporter(object):
           We need to pull LLDP data as well using Nornir to complement that
         """
 
-
         p2p_links = self.bf.q.layer3Edges().answer()
         already_connected_links = {}
 
@@ -401,7 +417,9 @@ class NetworkImporter(object):
                 remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
 
                 unique_id = "_".join(
-                    sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
+                    sorted(
+                        [f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"]
+                    )
                 )
                 if unique_id in already_connected_links:
                     logger.debug(f"Link {unique_id} already connected .. SKIPPING")
@@ -425,7 +443,7 @@ class NetworkImporter(object):
                     )
                     continue
 
-                if self.devs[local_host].interfaces[local_intf].is_virtual :
+                if self.devs[local_host].interfaces[local_intf].is_virtual:
                     logger.debug(
                         f"LINK: {local_host}:{local_intf} is a virtual interface, can't be used for cabling SKIPPING"
                     )
@@ -448,7 +466,11 @@ class NetworkImporter(object):
                     continue
 
                 ## Check if both interfaces are already connected or not
-                if self.devs[local_host].interfaces[local_intf].remote.connection_status:
+                if (
+                    self.devs[local_host]
+                    .interfaces[local_intf]
+                    .remote.connection_status
+                ):
                     remote_host_reported = (
                         self.devs[local_host]
                         .interfaces[local_intf]
@@ -474,7 +496,11 @@ class NetworkImporter(object):
 
                     continue
 
-                elif self.devs[remote_host].interfaces[remote_intf].remote.connection_status:
+                elif (
+                    self.devs[remote_host]
+                    .interfaces[remote_intf]
+                    .remote.connection_status
+                ):
                     local_host_reported = (
                         self.devs[remote_host]
                         .interfaces[remote_intf]
@@ -506,7 +532,9 @@ class NetworkImporter(object):
                     )
                     link = self.nb.dcim.cables.create(
                         termination_a_type="dcim.interface",
-                        termination_a_id=self.devs[local_host].interfaces[local_intf].remote.id,
+                        termination_a_id=self.devs[local_host]
+                        .interfaces[local_intf]
+                        .remote.id,
                         termination_b_type="dcim.interface",
                         termination_b_id=self.devs[remote_host]
                         .interfaces[remote_intf]

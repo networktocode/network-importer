@@ -48,6 +48,7 @@ class CustomFormatter(
 ):
     pass
 
+
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
     parser = argparse.ArgumentParser(
@@ -107,7 +108,6 @@ def parse_args(args=sys.argv[1:]):
 
 def main():
 
-  
     options = parse_args()
 
     config.load_config(options.config)
@@ -118,18 +118,18 @@ def main():
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
 
-    if config.logs['level'] == "debug":
+    if config.logs["level"] == "debug":
         logger.setLevel(logging.DEBUG)
-    elif config.logs['level'] == "warning":
+    elif config.logs["level"] == "warning":
         logger.setLevel(logging.WARNING)
     else:
         logger.setLevel(logging.INFO)
 
-    #TODO add code to set config.main["hostvars_directory"] based on options.output
-    #TODO add code to set config.main["configs_directory"] based on options.configs
-    
+    # TODO add code to set config.main["hostvars_directory"] based on options.output
+    # TODO add code to set config.main["configs_directory"] based on options.configs
+
     ni = NetworkImporter()
-    
+
     ni.init(limit=options.limit)
 
     ni.import_devices_from_configs()
@@ -143,6 +143,7 @@ def main():
 
     if options.debug:
         pdb.set_trace()
+
 
 if __name__ == "__main__":
     main()

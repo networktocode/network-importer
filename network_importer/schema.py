@@ -23,53 +23,53 @@ config_schema = dict(
     type="object",
     properties=dict(
         main=dict(
-            type="object", 
+            type="object",
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
                 import_cabling=dict(type="boolean", default=True),
-                import_vlans=dict(type="string", enum=["cli", "config", "no"], default="config"),
+                import_vlans=dict(
+                    type="string", enum=["cli", "config", "no"], default="config"
+                ),
                 generate_hostvars=dict(type="boolean", default=False),
                 hostvars_directory=dict(type="string", default="host_vars"),
                 nbr_workers=dict(type="integer", default=10),
-                inventory_source=dict(type="string", enum=["netbox", "configs"], default="netbox"),
+                inventory_source=dict(
+                    type="string", enum=["netbox", "configs"], default="netbox"
+                ),
                 inventory_filter=dict(type="string"),
                 configs_directory=dict(type="string", default="configs"),
             ),
-            default={}
+            default={},
         ),
         batfish=dict(
-            type="object", 
+            type="object",
             properties=dict(
                 address=dict(type="string", default="localhost"),
                 network_name=dict(type="string"),
                 snapshot_name=dict(type="string"),
             ),
-            default={}
+            default={},
         ),
         netbox=dict(
-            type="object", 
-            properties=dict(
-                address=dict(type="string"),
-                token=dict(type="string"),
-            ),
-            default={}
+            type="object",
+            properties=dict(address=dict(type="string"), token=dict(type="string")),
+            default={},
         ),
         network=dict(
-            type="object", 
-            properties=dict(
-                login=dict(type="string"),
-                password=dict(type="string")
-            ),
-            default={}
+            type="object",
+            properties=dict(login=dict(type="string"), password=dict(type="string")),
+            default={},
         ),
         logs=dict(
-            type="object", 
+            type="object",
             properties=dict(
-                level=dict(type="string", enum=["debug", "info", "warning"], default="info"),
+                level=dict(
+                    type="string", enum=["debug", "info", "warning"], default="info"
+                ),
                 directory=dict(type="string", default=".network_importer/logs"),
-                performance_log=dict(type="boolean", default=True)
+                performance_log=dict(type="boolean", default=True),
             ),
-            default={}
-        )
-    )
+            default={},
+        ),
+    ),
 )

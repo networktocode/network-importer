@@ -19,15 +19,13 @@ import requests
 from typing import Any, Dict, List, Optional, Union
 import network_importer.config as config
 
+
 class NornirInventoryFromBatfish(Inventory):
     """ 
     Construct a inventory object for Nornir based on the a list NodesProperties from Batfish
     """
-    def __init__(
-        self,
-        devices,
-        **kwargs: Any,
-    ) -> None:
+
+    def __init__(self, devices, **kwargs: Any) -> None:
 
         hosts = {}
         for dev in devices.itertuples():
@@ -36,10 +34,11 @@ class NornirInventoryFromBatfish(Inventory):
             host["hostname"] = dev.Hostname
             # host["data"]["vendor"] = str(dev.Vendor_Family).lower()
             host["data"]["type"] = str(dev.Device_Type).lower()
-            
+
             hosts[dev.Hostname] = host
 
         super().__init__(hosts=hosts, groups={}, defaults={}, **kwargs)
+
 
 class NBInventory(Inventory):
     def __init__(
@@ -94,17 +93,14 @@ class NBInventory(Inventory):
             url = resp.get("next")
 
         hosts = {}
-        groups= {
-            "global": {}
-        }
-        
-        # Pull the login and password from the NI config object if available         
+        groups = {"global": {}}
+
+        # Pull the login and password from the NI config object if available
         if "login" in config.network and config.network["login"]:
             groups["global"]["username"] = config.network["login"]
-            
+
         if "password" in config.network and config.network["password"]:
             groups["global"]["password"] = config.network["password"]
-            
 
         for d in nb_devices:
             host: HostsDict = {"data": {}}
@@ -131,7 +127,9 @@ class NBInventory(Inventory):
                 host["data"]["model"] = d["device_type"]["slug"]
 
                 # Attempt to add 'platform' based of value in 'slug'
-                host["platform"] = "cisco_" + d["platform"]["slug"] if d["platform"] else None
+                host["platform"] = (
+                    "cisco_" + d["platform"]["slug"] if d["platform"] else None
+                )
 
             else:
                 host["data"]["site"] = d["site"]["name"]
@@ -143,10 +141,10 @@ class NBInventory(Inventory):
 
             if d["site"]["slug"] not in groups.keys():
                 groups[d["site"]["slug"]] = {}
-            
+
             if d["device_role"]["slug"] not in groups.keys():
                 groups[d["device_role"]["slug"]] = {}
-                
+
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
             # If a device is unnamed we will set the name to the id of the device in netbox
