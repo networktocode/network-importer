@@ -60,10 +60,12 @@ class NetworkImporterDevice(object):
 
         self._cache_intfs = None
         self._cache_ips = None
+        self._cache_invs = None
 
         if self.nb and pull_cache:
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
+            self._get_remote_inventory_list()
 
     # def __repr__(self):
     #     return "Test()"
@@ -83,21 +85,20 @@ class NetworkImporterDevice(object):
         intfs_regs = [ intf for intf in self.interfaces.values() if not intf.is_lag_member and not intf.is_lag]
 
         for intf in intfs_regs:
-            logger.debug(f"{self.name} - Updating Interface {intf.name}")
+            logger.debug(f" {self.name} | Updating Interface {intf.name}")
             self.update_interface_remote(intf)
 
         for intf in intfs_lags:
-            logger.debug(f"{self.name} - Updating Interface {intf.name}")
+            logger.debug(f" {self.name} | Updating Interface {intf.name}")
             self.update_interface_remote(intf)
 
         for intf in intfs_lag_members:
-            logger.debug(f"{self.name} - Updating Interface {intf.name} ")
+            logger.debug(f" {self.name} | Updating Interface {intf.name} ")
             self.update_interface_remote(intf)
-
 
     def update_interface_remote(self, intf):
         """
-        Update Interface on the mote system
+        Update Interface on the remote system
         """
 
         intf_properties = intf.get_netbox_properties()
@@ -121,15 +122,14 @@ class NetworkImporterDevice(object):
                 )
 
         if intf.is_lag_member:
-            # pdb.set_trace()
             if intf.parent in self.interfaces.keys():
                 if not self.interfaces[intf.parent].exist_remote:
-                    logger.warning(f"{self.name} - Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} do not exist remotely")
+                    logger.warning(f" {self.name} | Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} do not exist remotely")
                 else:
                     intf_properties["lag"] = self.interfaces[intf.parent].remote.id
                 
             else:
-                logger.warning(f"{self.name} - Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} is not in the list")
+                logger.warning(f" {self.name} | Interface {intf.name} has is a member of lag {intf.parent}, but {intf.parent} is not in the list")
             
         if not intf.exist_remote:
             intf_properties["device"] = self.remote.id
@@ -139,19 +139,49 @@ class NetworkImporterDevice(object):
             intf.remote = self.nb.dcim.interfaces.create(**intf_properties)
             intf.exist_remote = True
             intf.remote_id = intf.remote.id
-            logger.debug(f"{self.name} - Interface {intf.name} created in Netbox")
+            logger.debug(f" {self.name} | Interface {intf.name} created in Netbox")
 
         else:
             intf_updated = intf.remote.update(data=intf_properties)
-            logger.debug(f"{self.name} - Interface {intf.name} updated in Netbox")
+            logger.debug(f" {self.name} | Interface {intf.name} updated in Netbox")
 
+        # ----------------------------------------------------------
+        # Update IPs
+        # ----------------------------------------------------------
         for ip in intf.ips.values():
             if not ip.exist_remote:
                 ip.remote = self.nb.ipam.ip_addresses.create(
                     address=ip.address, interface=intf.remote.id
                 )
                 ip.exist_remote = True
-                logger.debug(f"{self.name} - IP {ip.address} created in Netbox")
+                logger.debug(f" {self.name} | IP {ip.address} created in Netbox")
+
+        # ----------------------------------------------------------
+        # Update Optic is defined
+        # ----------------------------------------------------------
+        if intf.optic:
+            if not intf.optic.exist_remote:
+                intf.optic.remote = self.nb.dcim.inventory_items.create(
+                    name=intf.optic.serial,
+                    part_id=intf.optic.type,
+                    device=self.remote.id,
+                    description=intf.name,
+                    serial=intf.optic.serial,
+                    tags=['optic']
+                )
+                intf.optic.exist_remote = True 
+                logger.debug(f" {self.name} | Optic for {intf.name} created in Netbox")
+
+            elif not intf.optic.is_remote_up_to_date():
+                intf.optic.remote.update(data=dict(
+                    name=intf.optic.serial,
+                    part_id=intf.optic.type,
+                    device=self.remote.id,
+                    description=intf.name,
+                    serial=intf.optic.serial,
+                    tags=['optic'])                                    
+                )
+                logger.debug(f" {self.name} | Optic for {intf.name} updated in Netbox")
 
 
     def add_interface(self, intf):
@@ -178,6 +208,27 @@ class NetworkImporterDevice(object):
         self.interfaces[intf.name] = intf
 
         return True
+
+    def add_optic(self, intf_name, optic):
+
+        # Attached optic to interface
+        # check if optic can be matched to an existing inventory items
+        #  For Optic in netbox, NI is assigning the interface name to the description and a tags name "optic"
+        if intf_name not in self.interfaces.keys():
+            logger.warning(f" {self.name} | Unable to attach an optic to {intf_name}, this interface do not exist")
+            return False
+        
+        for item in self._cache_invs.values():
+            if "optic" not in item.tags:
+                continue
+
+            if item.description == intf_name:
+                optic.remote = item
+                optic.exist_remote = True
+
+        self.interfaces[intf_name].optic = optic
+
+
 
     def add_ip(self, intf_name, address):
         """
@@ -248,6 +299,31 @@ class NetworkImporterDevice(object):
 
         return True
 
+    def _get_remote_inventory_list(self):
+        """
+        Query Netbox for the remote inventory item and keep them in cache
+        """
+
+        items = self.nb.dcim.inventory_items.filter(device=self.name)
+
+        logger.debug(
+            f"{self.name} - _get_remote_inventory_list(), found {len(items)} inventory items"
+        )
+
+        if self._cache_invs == None:
+            self._cache_invs = dict()
+
+        if len(items) == 0:
+            return True
+
+        for item in items:
+            if item.id in self._cache_invs.keys():
+                logger.warn(
+                    f"{self.name} - Iventory items {item.id} already present in cache"
+                )
+            self._cache_invs[item.id] = item
+
+        return True
 
 class NetworkImporterInterface(object):
     def __init__(self, name, device_name):
@@ -279,6 +355,7 @@ class NetworkImporterInterface(object):
         self.bf = None
         self.remote = None
 
+        self.optic = None
 
     def add_bf_intf(self, bf):
         """
@@ -602,3 +679,29 @@ class NetworkImporterIP(object):
         self.family = None
         self.remote = None
         self.exist_remote = False
+
+class NetworkImporterOptic(object):
+    def __init__(self, optic_type, intf, serial, name):
+        self.type = optic_type
+        self.intf = intf
+        self.serial = serial
+        self.name = name
+
+        self.remote = None
+        self.exist_remote = False
+
+    def is_remote_up_to_date(self):
+
+        if not self.exist_remote:
+            return False
+
+        if self.name != self.remote.name:
+            return False
+        elif self.intf != self.remote.description:
+            return False
+        elif self.serial != self.remote.serial:
+            return False
+        elif "optic" not in self.remote.tags:
+            return False
+
+        return True

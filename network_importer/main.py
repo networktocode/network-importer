@@ -20,6 +20,9 @@ import logging
 import pdb
 import re
 
+import warnings
+warnings.filterwarnings("ignore",category=DeprecationWarning)
+
 import requests
 import pynetbox
 from collections import defaultdict
@@ -32,15 +35,15 @@ from jinja2 import Template, Environment, FileSystemLoader
 import network_importer
 import network_importer.config as config
 from network_importer.utils import TimeTracker, sort_by_digits
-from network_importer.tasks import initialize_devices
+from network_importer.tasks import initialize_devices, update_configuration, collect_transceivers_info
 
 from network_importer.model import (
     NetworkImporterDevice,
     NetworkImporterInterface,
     NetworkImporterSite,
     NetworkImporterVlan,
+    NetworkImporterOptic
 )
-
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -72,6 +75,18 @@ class NetworkImporter(object):
 
         """
 
+        params = {}
+
+        # Extract additional query filters if defined and convert string to dict
+        if "inventory_filter" in config.main.keys():
+            csparams = config.main["inventory_filter"].split(",")
+            for csp in csparams:
+                if "=" not in csp:
+                    continue
+                
+                key, value = csp.split("=", 1)
+                params[key] = value
+
         if config.main["inventory_source"] == "netbox":
             self.nr = InitNornir(
                     core={"num_workers": config.main["nbr_workers"]},
@@ -81,6 +96,7 @@ class NetworkImporter(object):
                         "options": {
                             "nb_url": config.netbox["address"],
                             "nb_token": config.netbox["token"],
+                            "filter_parameters": params
                         },
                     }
                 )
@@ -117,7 +133,6 @@ class NetworkImporter(object):
         self.init_bf_session()
         self.build_inventory(limit=limit)
 
-
         results = self.nr.run(task=initialize_devices)
 
         for dev_name, items in results.items():
@@ -127,9 +142,12 @@ class NetworkImporter(object):
 
             dev = items[0].result
             
-            # TODO convert this action to a function to be able to properly extract
-            dev.bf = self.bf.q.nodeProperties(nodes=dev.name).answer().frame().loc[0 , : ]
-            self.devs[dev_name] = dev
+            try: 
+                # TODO convert this action to a function to be able to properly extract
+                dev.bf = self.bf.q.nodeProperties(nodes=dev.name).answer().frame().loc[0 , : ]
+                self.devs[dev_name] = dev
+            except:
+                logger.warning(f"Unable to find {dev_name} in Batfish data  ... SKIPPING")
 
         if not self.check_mode and not os.path.exists(config.main["hostvars_directory"]) and config.main["generate_hostvars"]:
             os.makedirs(config.main["hostvars_directory"])
@@ -195,6 +213,41 @@ class NetworkImporter(object):
         
         return True
 
+    def import_devices_from_cmds(self):
+        """
+
+        """
+
+        # ------------------------------------------------
+        # Import transceivers information
+        # ------------------------------------------------
+        results = self.nr.run(task=collect_transceivers_info)
+        
+        for dev_name, items in results.items():
+            if items[0].failed:
+                logger.warning(f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) ")
+                continue
+
+            optics = items[0].result
+
+            if not isinstance(optics, list):
+                logger.warning(f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)")
+                continue
+            
+            for optic in optics:
+
+                nio = NetworkImporterOptic(
+                    name=optic["sn"],
+                    optic_type=optic["descr"],
+                    intf=optic["name"],
+                    serial=optic["sn"]
+                )
+               
+                self.devs[dev_name].add_optic(intf_name=optic["name"], optic=nio)
+        
+        return True
+
+
     def get_nb_handler(self):
         """
 
@@ -233,6 +286,17 @@ class NetworkImporter(object):
             sys.exit(1)
 
         return True
+
+    def update_configurations(self):
+
+        results = self.nr.run(task=update_configuration, configs_directory=config.main["configs_directory"]+"/configs")
+
+        # TODO print some logs    
+
+        return True
+        # for result in results:
+
+
 
     def create_nb_handler(self):
 
