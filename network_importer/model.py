@@ -564,7 +564,7 @@ class NetworkImporterInterface(object):
                 diffs["before"][prop] = getattr(remote, prop)
                 diffs["after"][prop] = local[prop]
 
-        if "mode" in local and local["mode"] != remote.mode.value:
+        if "mode" in local and "mode" in remote and local["mode"] != remote.mode.value:
             diffs["before"]["mode"] = remote.mode.value
             diffs["after"]["mode"] = local["mode"]
 
@@ -572,7 +572,7 @@ class NetworkImporterInterface(object):
             diffs["before"]["type"] = remote.type.value
             diffs["after"]["type"] = local["type"]
 
-        if "untagged_vlan" in local and local["untagged_vlan"] != remote.untagged_vlan.id:
+        if "untagged_vlan" in local and "untagged_vlan" in remote and local["untagged_vlan"] != remote.untagged_vlan.id:
             diffs["before"]["untagged_vlan"] = remote.untagged_vlan.id
             diffs["after"]["untagged_vlan"] = local["untagged_vlan"]
 
