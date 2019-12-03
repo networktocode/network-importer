@@ -256,9 +256,8 @@ class NetworkImporterDevice(object):
 
         return self.interfaces[intf_name].add_ip(ip)
 
-
     def update_cache(self):
-        
+
         if self.nb:
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
@@ -552,12 +551,7 @@ class NetworkImporterInterface(object):
         """
         diffs = {"before": {}, "after": {}}
 
-        properties = [
-            "mtu",
-            "description", 
-            "enabled",
-            "tagged_vlan",
-        ]
+        properties = ["mtu", "description", "enabled", "tagged_vlan"]
 
         for prop in properties:
             if prop in local and local[prop] != getattr(remote, prop):
@@ -572,7 +566,11 @@ class NetworkImporterInterface(object):
             diffs["before"]["type"] = remote.type.value
             diffs["after"]["type"] = local["type"]
 
-        if "untagged_vlan" in local and "untagged_vlan" in remote and local["untagged_vlan"] != remote.untagged_vlan.id:
+        if (
+            "untagged_vlan" in local
+            and "untagged_vlan" in remote
+            and local["untagged_vlan"] != remote.untagged_vlan.id
+        ):
             diffs["before"]["untagged_vlan"] = remote.untagged_vlan.id
             diffs["after"]["untagged_vlan"] = local["untagged_vlan"]
 

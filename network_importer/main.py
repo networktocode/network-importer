@@ -41,7 +41,7 @@ from network_importer.tasks import (
     update_configuration,
     collect_transceivers_info,
     collect_vlans_info,
-    device_update_remote
+    device_update_remote,
 )
 
 from network_importer.model import (
@@ -176,32 +176,31 @@ class NetworkImporter(object):
                     f"{dev_name} | Something went wrong while trying to initialize the device .. "
                 )
                 continue
-        
+
         # --------------------------------------------------------
         # Initialize sites information
         #   Site information are pulled with devices
         #   TODO consider refactoring sites into a Nornir Inventory
-        #   
+        #
         # --------------------------------------------------------
         for dev in self.devs.inventory.hosts.values():
 
-            if not dev.data['obj'].exist_remote:
+            if not dev.data["obj"].exist_remote:
                 continue
-        
-            site_slug =  dev.data['obj'].remote.site.slug
+
+            site_slug = dev.data["obj"].remote.site.slug
 
             ## Check if site and vlans information are already in cache
             if site_slug not in self.sites.keys():
                 site = NetworkImporterSite(name=site_slug, nb=self.nb)
                 self.sites[site.name] = site
-                dev.data['obj'].site = site
+                dev.data["obj"].site = site
                 logger.debug(f"Created site {site.name}")
 
             else:
-                dev.data['obj'].site = self.sites[site_slug]
+                dev.data["obj"].site = self.sites[site_slug]
 
         return True
-
 
     def import_devices_from_configs(self):
         """
@@ -210,7 +209,7 @@ class NetworkImporter(object):
 
         # TODO check if bf sessions has been initialized alrealdy
         for host in self.devs.inventory.hosts.values():
-            
+
             dev = host.data["obj"]
 
             logger.info(f"Processing {dev.name} data, local and remote .. ")
@@ -251,29 +250,30 @@ class NetworkImporter(object):
         if config.main["import_vlans"] == "cli":
             results = self.devs.run(task=collect_vlans_info)
 
-            for dev_name, items in results.items(): 
+            for dev_name, items in results.items():
 
                 if items[0].failed:
                     logger.warning(
                         f" {dev_name} | Something went wrong while trying to pull the vlan information"
                     )
                     continue
-                
+
                 data = items[0].result
                 if not "vlans" in data:
-                    logger.warning(
-                        f" {dev_name} | No vlans informatio returned"
-                    )
+                    logger.warning(f" {dev_name} | No vlans informatio returned")
                     continue
-                
+
                 for vlan in data["vlans"].values():
-                    if vlan["vlan_id"] not in self.devs.inventory.hosts[dev_name]["obj"].site.vlans.keys():
+                    if (
+                        vlan["vlan_id"]
+                        not in self.devs.inventory.hosts[dev_name][
+                            "obj"
+                        ].site.vlans.keys()
+                    ):
                         self.devs.inventory.hosts[dev_name]["obj"].site.add_vlan(
-                            NetworkImporterVlan(
-                                name=vlan["name"], vid=vlan["vlan_id"]
-                            )
+                            NetworkImporterVlan(name=vlan["name"], vid=vlan["vlan_id"])
                         )
-                
+
         if config.main["import_transceivers"]:
             # --------------------------------------------- ---
             # Import transceivers information
@@ -304,7 +304,9 @@ class NetworkImporter(object):
                         serial=optic["sn"],
                     )
 
-                    self.devs.inventory.hosts[dev_name].data["obj"].add_optic(intf_name=optic["name"], optic=nio)
+                    self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
+                        intf_name=optic["name"], optic=nio
+                    )
 
         return True
 
@@ -437,7 +439,7 @@ class NetworkImporter(object):
 
         results = self.devs.run(task=device_update_remote)
 
-        for dev_name, items in results.items(): 
+        for dev_name, items in results.items():
             if items[0].failed:
                 logger.warning(
                     f" {dev_name} | Something went wrong while to update the device in the remote system"
@@ -515,21 +517,13 @@ class NetworkImporter(object):
                     continue
 
                 ## Check if both interfaces are already connected or not
-                if (
-                    local_obj
-                    .interfaces[local_intf]
-                    .remote.connection_status
-                ):
-                    remote_host_reported = (
-                        local_obj
-                        .interfaces[local_intf]
-                        .remote.connected_endpoint.device.name
-                    )
-                    remote_int_reported = (
-                        local_obj
-                        .interfaces[local_intf]
-                        .remote.connected_endpoint.name
-                    )
+                if local_obj.interfaces[local_intf].remote.connection_status:
+                    remote_host_reported = local_obj.interfaces[
+                        local_intf
+                    ].remote.connected_endpoint.device.name
+                    remote_int_reported = local_obj.interfaces[
+                        local_intf
+                    ].remote.connected_endpoint.name
 
                     if remote_host_reported != remote_host:
                         logger.warning(
@@ -545,21 +539,13 @@ class NetworkImporter(object):
 
                     continue
 
-                elif (
-                    remote_obj
-                    .interfaces[remote_intf]
-                    .remote.connection_status
-                ):
-                    local_host_reported = (
-                        remote_obj
-                        .interfaces[remote_intf]
-                        .remote.connected_endpoint.device.name
-                    )
-                    local_int_reported = (
-                        remote_obj
-                        .interfaces[remote_intf]
-                        .remote.connected_endpoint.name
-                    )
+                elif remote_obj.interfaces[remote_intf].remote.connection_status:
+                    local_host_reported = remote_obj.interfaces[
+                        remote_intf
+                    ].remote.connected_endpoint.device.name
+                    local_int_reported = remote_obj.interfaces[
+                        remote_intf
+                    ].remote.connected_endpoint.name
 
                     if local_host_reported != local_host:
                         logger.warning(
@@ -581,13 +567,9 @@ class NetworkImporter(object):
                     )
                     link = self.nb.dcim.cables.create(
                         termination_a_type="dcim.interface",
-                        termination_a_id=local_obj
-                        .interfaces[local_intf]
-                        .remote.id,
+                        termination_a_id=local_obj.interfaces[local_intf].remote.id,
                         termination_b_type="dcim.interface",
-                        termination_b_id=remote_obj
-                        .interfaces[remote_intf]
-                        .remote.id,
+                        termination_b_id=remote_obj.interfaces[remote_intf].remote.id,
                     )
 
                     already_connected_links[unique_id] = 1

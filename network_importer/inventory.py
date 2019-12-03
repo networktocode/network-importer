@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Union
 import network_importer.config as config
 from network_importer.model import NetworkImporterDevice
 
+
 class NornirInventoryFromBatfish(Inventory):
     """ 
     Construct a inventory object for Nornir based on the a list NodesProperties from Batfish
@@ -103,12 +104,7 @@ class NBInventory(Inventory):
             groups["global"]["password"] = config.network["password"]
 
         for d in nb_devices:
-            host: HostsDict = {
-                "data": {
-                    "is_reacheable": None,
-                    "obj": None,
-                }
-            }
+            host: HostsDict = {"data": {"is_reacheable": None, "obj": None}}
 
             # Add value for IP address
             if d.get("primary_ip", {}):
@@ -156,7 +152,7 @@ class NBInventory(Inventory):
                 d.get("name"),
                 platform=host["platform"],
                 role=host["data"]["role"],
-                vendor= host["data"]["vendor"]
+                vendor=host["data"]["vendor"],
             )
 
             # Assign temporary dict to outer dict

@@ -51,19 +51,19 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
     logger.info(f" {task.host.name} | Initializing Device  .. ")
 
-    task.host.data['obj'].nb = nb
-    task.host.data['obj'].update_cache()
+    task.host.data["obj"].nb = nb
+    task.host.data["obj"].update_cache()
 
     # dev = NetworkImporterDevice(name=task.host.name, nb=nb, pull_cache=True)
 
     if nb_dev:
-        task.host.data['obj'].remote = nb_dev
-        task.host.data['obj'].exist_remote = True
+        task.host.data["obj"].remote = nb_dev
+        task.host.data["obj"].exist_remote = True
 
     if bfs:
         try:
             # TODO convert this action to a function to be able to properly extract
-            task.host.data['obj'].bf = (
+            task.host.data["obj"].bf = (
                 bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
             )
 
@@ -74,11 +74,13 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
     return Result(host=task.host, result=True)
 
+
 def device_update_remote(task: Task) -> Result:
-    
-    res = task.host.data['obj'].update_remote()
+
+    res = task.host.data["obj"].update_remote()
 
     return Result(host=task.host, result=res)
+
 
 def device_generate_hostvars(task: Task) -> Result:
     """
@@ -118,6 +120,7 @@ def device_generate_hostvars(task: Task) -> Result:
 
     return Result(host=task.host)
 
+
 def collect_vlans_info(task: Task) -> Result:
     """
     Collect Vlans information on all devices
@@ -134,7 +137,9 @@ def collect_vlans_info(task: Task) -> Result:
     return Result(host=task.host, result=results[0].result)
 
 
-def update_configuration(task: Task, configs_directory, config_extension="txt") -> Result:
+def update_configuration(
+    task: Task, configs_directory, config_extension="txt"
+) -> Result:
     """
     Collect running configurations on all devices
 
