@@ -79,6 +79,14 @@ def parse_args(args=sys.argv[1:]):
     # )
 
     parser.add_argument(
+        "--update-configs",
+        action="store_true",
+        default=False,
+        help="Pull the latest configs from the devices"
+    )
+
+
+    parser.add_argument(
         "--limit", type=str, help="limit the execution on a specific device"
     )
 
@@ -130,9 +138,14 @@ def main():
 
     ni = NetworkImporter()
 
+    if options.update_configs:
+        ni.build_inventory()
+        ni.update_configurations()
+
     ni.init(limit=options.limit)
 
     ni.import_devices_from_configs()
+    ni.import_devices_from_cmds()
 
     # ------------------------------------------------------------------------------------
     # Update Remote if apply is enabled

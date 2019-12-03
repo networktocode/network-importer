@@ -18,7 +18,7 @@ import os
 import requests
 from typing import Any, Dict, List, Optional, Union
 import network_importer.config as config
-
+from network_importer.model import NetworkImporterDevice
 
 class NornirInventoryFromBatfish(Inventory):
     """ 
@@ -103,11 +103,18 @@ class NBInventory(Inventory):
             groups["global"]["password"] = config.network["password"]
 
         for d in nb_devices:
-            host: HostsDict = {"data": {}}
+            host: HostsDict = {
+                "data": {
+                    "is_reacheable": None,
+                    "obj": None,
+                }
+            }
 
             # Add value for IP address
             if d.get("primary_ip", {}):
                 host["hostname"] = d["primary_ip"]["address"].split("/")[0]
+            else:
+                host["data"]["is_reacheable"] = False
 
             # Add values that don't have an option for 'slug'
             host["data"]["serial"] = d["serial"]
@@ -144,6 +151,13 @@ class NBInventory(Inventory):
 
             if d["device_role"]["slug"] not in groups.keys():
                 groups[d["device_role"]["slug"]] = {}
+
+            host["data"]["obj"] = NetworkImporterDevice(
+                d.get("name"),
+                platform=host["platform"],
+                role=host["data"]["role"],
+                vendor= host["data"]["vendor"]
+            )
 
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this

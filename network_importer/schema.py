@@ -27,6 +27,7 @@ config_schema = dict(
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
                 import_cabling=dict(type="boolean", default=True),
+                import_transceivers=dict(type="boolean", default=False),
                 import_vlans=dict(
                     type="string", enum=["cli", "config", "no"], default="config"
                 ),

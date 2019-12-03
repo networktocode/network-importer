@@ -63,10 +63,8 @@ class NetworkImporterDevice(object):
         self._cache_ips = None
         self._cache_invs = None
 
-        if self.nb and pull_cache:
-            self._get_remote_interfaces_list()
-            self._get_remote_ips_list()
-            self._get_remote_inventory_list()
+        if pull_cache:
+            self.update_cache()
 
     # def __repr__(self):
     #     return "Test()"
@@ -110,7 +108,7 @@ class NetworkImporterDevice(object):
         if self.vendor and self.vendor == "juniper" and "." not in intf.name:
             intf_properties["type"] = 1100
 
-        if config.main["import_vlans"]:
+        if config.main["import_vlans"] != "no":
             if intf.mode in ["TRUNK", "ACCESS"] and intf.access_vlan:
                 intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
                     intf.access_vlan
@@ -257,6 +255,16 @@ class NetworkImporterDevice(object):
             ip.exist_remote = True
 
         return self.interfaces[intf_name].add_ip(ip)
+
+
+    def update_cache(self):
+        
+        if self.nb:
+            self._get_remote_interfaces_list()
+            self._get_remote_ips_list()
+            self._get_remote_inventory_list()
+
+        return True
 
     def _get_remote_interfaces_list(self):
         """
@@ -527,8 +535,6 @@ class NetworkImporterInterface(object):
         if not diffs["before"] and not diffs["after"]:
             return True
 
-        logger.debug(diffs)
-
         return False
 
     @staticmethod
@@ -547,11 +553,9 @@ class NetworkImporterInterface(object):
         diffs = {"before": {}, "after": {}}
 
         properties = [
-            # "mode",
-            # "type",
             "mtu",
-            "description" "enabled",
-            "untagged_vlan",
+            "description", 
+            "enabled",
             "tagged_vlan",
         ]
 
@@ -567,6 +571,10 @@ class NetworkImporterInterface(object):
         if "type" in local and local["type"] != remote.type.value:
             diffs["before"]["type"] = remote.type.value
             diffs["after"]["type"] = local["type"]
+
+        if "untagged_vlan" in local and local["untagged_vlan"] != remote.untagged_vlan.id:
+            diffs["before"]["untagged_vlan"] = remote.untagged_vlan.id
+            diffs["after"]["untagged_vlan"] = local["untagged_vlan"]
 
         return diffs
 
@@ -628,7 +636,7 @@ class NetworkImporterSite(object):
         Currently only Netbox is supported
         """
 
-        if config.main["import_vlans"]:
+        if config.main["import_vlans"] != "no":
             logger.debug(f"Site {self.name}, Updating remote (Netbox) ... ")
             self.create_vlans_remote()
 
@@ -695,14 +703,14 @@ class NetworkImporterSite(object):
         Create all Vlan in Netbox if they do not exist already
         """
 
-        if not config.main["import_vlans"]:
+        if config.main["import_vlans"] == "no":
             return False
 
         for vlan in self.vlans.values():
             if not vlan.exist_remote:
                 # TODO add check to ensure the vlan is properly created
                 vlan.remote = self.nb.ipam.vlans.create(
-                    vid=vlan.vid, name=f"vlan-{vlan.vid}", site=self.remote.id
+                    vid=vlan.vid, name=vlan.name, site=self.remote.id
                 )
                 vlan.exist_remote = True
 
@@ -711,7 +719,7 @@ class NetworkImporterSite(object):
         Query Netbox for all Vlans associated with this site and keep them in cache
         """
 
-        if not config.main["import_vlans"]:
+        if config.main["import_vlans"] == "no":
             return False
 
         vlans = self.nb.ipam.vlans.filter(site=self.name)
@@ -739,7 +747,7 @@ class NetworkImporterVlan(object):
     def __init__(self, name, vid):
 
         self.name = name
-        self.vid = vid
+        self.vid = int(vid)
         self.remote_id = None
         self.remote = None
         self.exist_remote = False

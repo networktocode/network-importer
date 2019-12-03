@@ -40,6 +40,8 @@ from network_importer.tasks import (
     initialize_devices,
     update_configuration,
     collect_transceivers_info,
+    collect_vlans_info,
+    device_update_remote
 )
 
 from network_importer.model import (
@@ -59,8 +61,7 @@ class NetworkImporter(object):
     def __init__(self, check_mode=True):
 
         self.sites = dict()
-        self.devs = dict()
-        self.nr = None
+        self.devs = None
         self.bf = None
         self.nb = None
 
@@ -92,7 +93,7 @@ class NetworkImporter(object):
                 params[key] = value
 
         if config.main["inventory_source"] == "netbox":
-            self.nr = InitNornir(
+            self.devs = InitNornir(
                 core={"num_workers": config.main["nbr_workers"]},
                 logging={"enabled": False},
                 inventory={
@@ -113,7 +114,7 @@ class NetworkImporter(object):
 
             ## TODO check if bf session has already been created, otherwise need to create it
 
-            self.nr = InitNornir(
+            self.devs = InitNornir(
                 core={"num_workers": config.main["nbr_workers"]},
                 logging={"enabled": False},
                 inventory={
@@ -132,35 +133,24 @@ class NetworkImporter(object):
 
     def init(self, limit=None):
         """
+        Initilize NetworkImporter Object
+            Check if NB is reacheable
+            Create inventory 
+            Create all NetworkImporterDevice object
+            Create all sites
 
+        inputs:
+            limit: filter the inventory to limit the execution to a subset of devices
+        
         """
 
         self.check_nb_params()
         self.init_bf_session()
         self.build_inventory(limit=limit)
 
-        results = self.nr.run(task=initialize_devices)
-
-        for dev_name, items in results.items():
-            if items[0].failed:
-                logger.warning(
-                    f"Something went wrong while trying to pull the device information for {dev_name}"
-                )
-                continue
-
-            dev = items[0].result
-
-            try:
-                # TODO convert this action to a function to be able to properly extract
-                dev.bf = (
-                    self.bf.q.nodeProperties(nodes=dev.name).answer().frame().loc[0, :]
-                )
-                self.devs[dev_name] = dev
-            except:
-                logger.warning(
-                    f"Unable to find {dev_name} in Batfish data  ... SKIPPING"
-                )
-
+        # --------------------------------------------------------
+        # Creating required directories on local filesystem
+        # --------------------------------------------------------
         if (
             not self.check_mode
             and not os.path.exists(config.main["hostvars_directory"])
@@ -171,23 +161,47 @@ class NetworkImporter(object):
                 f"Directory {config.main['hostvars_directory']} was missing, created it"
             )
 
-        # Initialize the site information
-        for dev in self.devs.values():
+        # TODO add check to create directory for oper data from devices
 
-            if not dev.exist_remote:
+        # --------------------------------------------------------
+        # Initialize Devices
+        #  - Create NID object
+        #  - Pull cache information from Netbox
+        # --------------------------------------------------------
+        results = self.devs.run(task=initialize_devices, bfs=self.bf)
+
+        for dev_name, items in results.items():
+            if items[0].failed:
+                logger.warning(
+                    f"{dev_name} | Something went wrong while trying to initialize the device .. "
+                )
                 continue
+        
+        # --------------------------------------------------------
+        # Initialize sites information
+        #   Site information are pulled with devices
+        #   TODO consider refactoring sites into a Nornir Inventory
+        #   
+        # --------------------------------------------------------
+        for dev in self.devs.inventory.hosts.values():
+
+            if not dev.data['obj'].exist_remote:
+                continue
+        
+            site_slug =  dev.data['obj'].remote.site.slug
 
             ## Check if site and vlans information are already in cache
-            if dev.remote.site.slug not in self.sites.keys():
-                site = NetworkImporterSite(name=dev.remote.site.slug, nb=self.nb)
+            if site_slug not in self.sites.keys():
+                site = NetworkImporterSite(name=site_slug, nb=self.nb)
                 self.sites[site.name] = site
-                dev.site = site
+                dev.data['obj'].site = site
                 logger.debug(f"Created site {site.name}")
 
             else:
-                dev.site = self.sites[dev.remote.site.slug]
+                dev.data['obj'].site = self.sites[site_slug]
 
         return True
+
 
     def import_devices_from_configs(self):
         """
@@ -195,7 +209,9 @@ class NetworkImporter(object):
         """
 
         # TODO check if bf sessions has been initialized alrealdy
-        for dev in self.devs.values():
+        for host in self.devs.inventory.hosts.values():
+            
+            dev = host.data["obj"]
 
             logger.info(f"Processing {dev.name} data, local and remote .. ")
 
@@ -232,36 +248,63 @@ class NetworkImporter(object):
 
         """
 
-        # ------------------------------------------------
-        # Import transceivers information
-        # ------------------------------------------------
-        results = self.nr.run(task=collect_transceivers_info)
+        if config.main["import_vlans"] == "cli":
+            results = self.devs.run(task=collect_vlans_info)
 
-        for dev_name, items in results.items():
-            if items[0].failed:
-                logger.warning(
-                    f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) "
-                )
-                continue
+            for dev_name, items in results.items(): 
 
-            optics = items[0].result
+                if items[0].failed:
+                    logger.warning(
+                        f" {dev_name} | Something went wrong while trying to pull the vlan information"
+                    )
+                    continue
+                
+                data = items[0].result
+                if not "vlans" in data:
+                    logger.warning(
+                        f" {dev_name} | No vlans informatio returned"
+                    )
+                    continue
+                
+                for vlan in data["vlans"].values():
+                    if vlan["vlan_id"] not in self.devs.inventory.hosts[dev_name]["obj"].site.vlans.keys():
+                        self.devs.inventory.hosts[dev_name]["obj"].site.add_vlan(
+                            NetworkImporterVlan(
+                                name=vlan["name"], vid=vlan["vlan_id"]
+                            )
+                        )
+                
+        if config.main["import_transceivers"]:
+            # --------------------------------------------- ---
+            # Import transceivers information
+            # ------------------------------------------------
+            results = self.devs.run(task=collect_transceivers_info)
 
-            if not isinstance(optics, list):
-                logger.warning(
-                    f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)"
-                )
-                continue
+            for dev_name, items in results.items():
+                if items[0].failed:
+                    logger.warning(
+                        f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) "
+                    )
+                    continue
 
-            for optic in optics:
+                optics = items[0].result
 
-                nio = NetworkImporterOptic(
-                    name=optic["sn"],
-                    optic_type=optic["descr"],
-                    intf=optic["name"],
-                    serial=optic["sn"],
-                )
+                if not isinstance(optics, list):
+                    logger.warning(
+                        f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)"
+                    )
+                    continue
 
-                self.devs[dev_name].add_optic(intf_name=optic["name"], optic=nio)
+                for optic in optics:
+
+                    nio = NetworkImporterOptic(
+                        name=optic["sn"],
+                        optic_type=optic["descr"],
+                        intf=optic["name"],
+                        serial=optic["sn"],
+                    )
+
+                    self.devs.inventory.hosts[dev_name].data["obj"].add_optic(intf_name=optic["name"], optic=nio)
 
         return True
 
@@ -306,12 +349,10 @@ class NetworkImporter(object):
 
     def update_configurations(self):
 
-        results = self.nr.run(
+        results = self.devs.run(
             task=update_configuration,
             configs_directory=config.main["configs_directory"] + "/configs",
         )
-
-        # TODO print some logs
 
         return True
         # for result in results:
@@ -394,8 +435,14 @@ class NetworkImporter(object):
         for site in self.sites.values():
             site.update_remote()
 
-        for dev in self.devs.values():
-            dev.update_remote()
+        results = self.devs.run(task=device_update_remote)
+
+        for dev_name, items in results.items(): 
+            if items[0].failed:
+                logger.warning(
+                    f" {dev_name} | Something went wrong while to update the device in the remote system"
+                )
+                continue
 
         return True
 
@@ -412,8 +459,10 @@ class NetworkImporter(object):
         for link in p2p_links.frame().itertuples():
             try:
                 local_host = link.Interface.hostname
+                local_obj = self.devs.inventory.hosts[local_host].data["obj"]
                 local_intf = re.sub("\.\d+$", "", link.Interface.interface)
                 remote_host = link.Remote_Interface.hostname
+                remote_obj = self.devs.inventory.hosts[remote_host].data["obj"]
                 remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
 
                 unique_id = "_".join(
@@ -425,41 +474,41 @@ class NetworkImporter(object):
                     logger.debug(f"Link {unique_id} already connected .. SKIPPING")
                     continue
 
-                if local_host not in self.devs.keys():
+                if local_host not in self.devs.inventory.hosts.keys():
                     logger.debug(f"LINK: {local_host} not present in devices list")
                     continue
-                elif remote_host not in self.devs.keys():
+                elif remote_host not in self.devs.inventory.hosts.keys():
                     logger.debug(f"LINK: {remote_host} not present in devices list")
                     continue
 
-                if local_intf not in self.devs[local_host].interfaces.keys():
+                if local_intf not in local_obj.interfaces.keys():
                     logger.warning(
                         f"LINK: {local_host}:{local_intf} not present in interfaces list"
                     )
                     continue
-                elif remote_intf not in self.devs[remote_host].interfaces.keys():
+                elif remote_intf not in remote_obj.interfaces.keys():
                     logger.warning(
                         f"LINK: {remote_host}:{remote_intf} not present in interfaces list"
                     )
                     continue
 
-                if self.devs[local_host].interfaces[local_intf].is_virtual:
+                if local_obj.interfaces[local_intf].is_virtual:
                     logger.debug(
                         f"LINK: {local_host}:{local_intf} is a virtual interface, can't be used for cabling SKIPPING"
                     )
                     continue
-                elif self.devs[remote_host].interfaces[remote_intf].is_virtual:
+                elif remote_obj.interfaces[remote_intf].is_virtual:
                     logger.debug(
                         f"LINK: {remote_host}:{remote_intf} is a virtual interface, can't be used for cabling SKIPPING"
                     )
                     continue
 
-                if not self.devs[local_host].interfaces[local_intf].remote:
+                if not local_obj.interfaces[local_intf].remote:
                     logger.warning(
                         f"LINK: {local_host}:{local_intf} remote object not present SKIPPING"
                     )
                     continue
-                elif not self.devs[remote_host].interfaces[remote_intf].remote:
+                elif not remote_obj.interfaces[remote_intf].remote:
                     logger.warning(
                         f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING"
                     )
@@ -467,17 +516,17 @@ class NetworkImporter(object):
 
                 ## Check if both interfaces are already connected or not
                 if (
-                    self.devs[local_host]
+                    local_obj
                     .interfaces[local_intf]
                     .remote.connection_status
                 ):
                     remote_host_reported = (
-                        self.devs[local_host]
+                        local_obj
                         .interfaces[local_intf]
                         .remote.connected_endpoint.device.name
                     )
                     remote_int_reported = (
-                        self.devs[local_host]
+                        local_obj
                         .interfaces[local_intf]
                         .remote.connected_endpoint.name
                     )
@@ -497,17 +546,17 @@ class NetworkImporter(object):
                     continue
 
                 elif (
-                    self.devs[remote_host]
+                    remote_obj
                     .interfaces[remote_intf]
                     .remote.connection_status
                 ):
                     local_host_reported = (
-                        self.devs[remote_host]
+                        remote_obj
                         .interfaces[remote_intf]
                         .remote.connected_endpoint.device.name
                     )
                     local_int_reported = (
-                        self.devs[remote_host]
+                        remote_obj
                         .interfaces[remote_intf]
                         .remote.connected_endpoint.name
                     )
@@ -532,11 +581,11 @@ class NetworkImporter(object):
                     )
                     link = self.nb.dcim.cables.create(
                         termination_a_type="dcim.interface",
-                        termination_a_id=self.devs[local_host]
+                        termination_a_id=local_obj
                         .interfaces[local_intf]
                         .remote.id,
                         termination_b_type="dcim.interface",
-                        termination_b_id=self.devs[remote_host]
+                        termination_b_id=remote_obj
                         .interfaces[remote_intf]
                         .remote.id,
                     )

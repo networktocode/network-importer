@@ -18,6 +18,8 @@ import os
 import hashlib
 from pathlib import Path
 
+from typing import Optional, List
+
 import network_importer
 import network_importer.config as config
 
@@ -28,6 +30,7 @@ from network_importer.model import (
     NetworkImporterVlan,
 )
 
+from nornir.core.task import Result, Task
 from nornir.plugins.tasks.networking import netmiko_send_command
 
 from napalm.base.helpers import canonical_interface_name
@@ -35,7 +38,7 @@ from napalm.base.helpers import canonical_interface_name
 logger = logging.getLogger("network-importer")
 
 
-def initialize_devices(task):
+def initialize_devices(task: Task, bfs=None) -> Result:
     """
 
     """
@@ -46,18 +49,38 @@ def initialize_devices(task):
     # Also only pull the cache if the object exist already
     nb_dev = nb.dcim.devices.get(name=task.host.name)
 
-    dev = NetworkImporterDevice(name=task.host.name, nb=nb, pull_cache=True)
-
     logger.info(f" {task.host.name} | Initializing Device  .. ")
 
+    task.host.data['obj'].nb = nb
+    task.host.data['obj'].update_cache()
+
+    # dev = NetworkImporterDevice(name=task.host.name, nb=nb, pull_cache=True)
+
     if nb_dev:
-        dev.remote = nb_dev
-        dev.exist_remote = True
+        task.host.data['obj'].remote = nb_dev
+        task.host.data['obj'].exist_remote = True
 
-    return dev
+    if bfs:
+        try:
+            # TODO convert this action to a function to be able to properly extract
+            task.host.data['obj'].bf = (
+                bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
+            )
 
+        except:
+            logger.warning(
+                f"Unable to find {dev_ntask.host.nameame} in Batfish data  ... SKIPPING"
+            )
 
-def device_generate_hostvars(task):
+    return Result(host=task.host, result=True)
+
+def device_update_remote(task: Task) -> Result:
+    
+    res = task.host.data['obj'].update_remote()
+    
+    return Result(host=task.host, result=res)
+
+def device_generate_hostvars(task: Task) -> Result:
     """
     Extract the facts for each device from Batfish to generate the host_vars
     Cleaning up the interfaces for now since these information are already in netbox
@@ -93,8 +116,9 @@ def device_generate_hostvars(task):
     #         f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
     #     )
 
+    return Result(host=task.host)
 
-def collect_vlans_info(task):
+def collect_vlans_info(task: Task) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -107,10 +131,10 @@ def collect_vlans_info(task):
     )
 
     # TODO check if task went well
-    return results[0].result
+    return Result(host=task.host, result=results[0].result)
 
 
-def update_configuration(task, configs_directory, config_extension="txt"):
+def update_configuration(task: Task, configs_directory, config_extension="txt") -> Result:
     """
     Collect running configurations on all devices
 
@@ -129,7 +153,7 @@ def update_configuration(task, configs_directory, config_extension="txt"):
     results = task.run(task=netmiko_send_command, command_string="show run")
 
     if results.failed:
-        return False
+        return Result(host=task.host, failed=True)
 
     new_config = results[0].result
 
@@ -139,17 +163,19 @@ def update_configuration(task, configs_directory, config_extension="txt"):
         config.write(new_config)
 
     new_md5 = hashlib.md5(new_config.encode("utf-8")).hexdigest()
+    changed = False
 
     if current_md5 and current_md5 == new_md5:
         logger.debug(f" {task.host.name} | Latest config file already present ... ")
 
     else:
         logger.debug(f" {task.host.name} | Configuration file updated ")
+        changed = True
 
-    return True
+    return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task):
+def collect_lldp_neighbors(task: Task) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -165,10 +191,10 @@ def collect_lldp_neighbors(task):
     )
 
     # TODO check if task went well
-    return results[0].result
+    return Result(host=task.host, result=results[0].result)
 
 
-def collect_transceivers_info(task):
+def collect_transceivers_info(task: Task) -> Result:
     """
     Collect transceiver informaton on all devices
     """
@@ -179,7 +205,7 @@ def collect_transceivers_info(task):
         logger.warning(
             f" {task.host.name} | Collect transceiver not available for {task.host.platform} yet "
         )
-        return False
+        return Result(host=task.host, failed=True)
 
     results = task.run(
         task=netmiko_send_command, command_string="show inventory", use_textfsm=True
@@ -202,4 +228,4 @@ def collect_transceivers_info(task):
             item["name"] = canonical_interface_name(item["name"])
             transceivers_inventory.append(item)
 
-    return transceivers_inventory
+    return Result(host=task.host, result=transceivers_inventory)
