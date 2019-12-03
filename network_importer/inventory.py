@@ -118,7 +118,7 @@ class NBInventory(Inventory):
 
             # Add values that don't have an option for 'slug'
             host["data"]["serial"] = d["serial"]
-            host["data"]["vendor"] = d["device_type"]["manufacturer"]["name"]
+            host["data"]["vendor"] = d["device_type"]["manufacturer"]["slug"]
             host["data"]["asset_tag"] = d["asset_tag"]
 
             if flatten_custom_fields:
