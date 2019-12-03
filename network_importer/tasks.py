@@ -69,7 +69,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
         except:
             logger.warning(
-                f"Unable to find {dev_ntask.host.nameame} in Batfish data  ... SKIPPING"
+                f"Unable to find {task.host.name} in Batfish data  ... SKIPPING"
             )
 
     return Result(host=task.host, result=True)
@@ -77,7 +77,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 def device_update_remote(task: Task) -> Result:
     
     res = task.host.data['obj'].update_remote()
-    
+
     return Result(host=task.host, result=res)
 
 def device_generate_hostvars(task: Task) -> Result:
