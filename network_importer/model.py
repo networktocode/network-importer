@@ -372,6 +372,9 @@ class NetworkImporterInterface(object):
 
         self.optic = None
 
+        if "port-channel" in self.name.lower():
+            self.is_lag = True
+
     def add_bf_intf(self, bf):
         """
         Add a Batfish Interface Object and extract all relevant information of not already defined
@@ -406,7 +409,7 @@ class NetworkImporterInterface(object):
         ):
             self.lag_members = list(bf.Channel_Group_Members)
             self.is_lag = True
-        else:
+        elif self.is_lag == None:
             self.is_lag = False
 
         if self.mode is None and self.switchport_mode:
