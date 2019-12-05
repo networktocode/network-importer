@@ -83,7 +83,11 @@ class NetworkImporter(object):
 
         params = {}
 
+        # ------------------------------------------------------------------------
         # Extract additional query filters if defined and convert string to dict
+        #  Filters can be defined at the configuration level or in CLI or both
+        # ------------------------------------------------------------------------
+
         if "inventory_filter" in config.main.keys():
             csparams = config.main["inventory_filter"].split(",")
             for csp in csparams:
@@ -92,6 +96,18 @@ class NetworkImporter(object):
 
                 key, value = csp.split("=", 1)
                 params[key] = value
+
+        if limit:
+            if "=" not in limit:
+                params["name"] = limit
+
+            else:
+                csparams = limit.split(",")
+                for csp in csparams:
+                    if "=" not in csp:
+                        continue
+                    key, value = csp.split("=", 1)
+                    params[key] = value
 
         if config.main["inventory_source"] == "netbox":
             self.devs = InitNornir(
@@ -380,7 +396,7 @@ class NetworkImporter(object):
             filter_func=lambda h: h.data["is_reacheable"] == False
         ).inventory.hosts:
             logger.warning(
-                f" {host} device is not reacheable, {h.data['not_reacheable_raison']}"
+                f" {host} device is not reacheable, {host.data['not_reacheable_raison']}"
             )
 
     def create_nb_handler(self):

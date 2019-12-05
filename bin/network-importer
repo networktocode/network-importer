@@ -86,7 +86,7 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
-        "--limit", type=str, help="limit the execution on a specific device"
+        "--limit", type=str, help="limit the execution on a specific device or group of devices"
     )
 
     parser.add_argument(
@@ -138,7 +138,7 @@ def main():
     ni = NetworkImporter()
 
     if options.update_configs:
-        ni.build_inventory()
+        ni.build_inventory(limit=options.limit)
         ni.update_configurations()
 
     ni.init(limit=options.limit)
