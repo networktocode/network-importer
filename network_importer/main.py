@@ -395,8 +395,9 @@ class NetworkImporter(object):
         for host in self.devs.filter(
             filter_func=lambda h: h.data["is_reacheable"] == False
         ).inventory.hosts:
+            raison = self.devs.inventory.hosts[host].data.get('not_reacheable_raison', "Raison not defined")
             logger.warning(
-                f" {host} device is not reacheable, {host.data['not_reacheable_raison']}"
+                f" {host} device is not reacheable, {raison}"
             )
 
     def create_nb_handler(self):
