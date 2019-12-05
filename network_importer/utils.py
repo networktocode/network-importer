@@ -15,6 +15,7 @@ limitations under the License.
 import time
 import re
 import logging
+import math
 
 find_digit = re.compile("\D?(\d+)\D?")
 
@@ -53,7 +54,7 @@ def timeit(method):
 
 def print_from_ms(ms):
 
-    seconds = (ms / 1000) % 60
+    seconds = math.floor((ms / 1000) % 60)
     millis = ms - seconds * 1000
     return "%ds %dms" % (seconds, millis)
 
