@@ -35,13 +35,14 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import network_importer
 import network_importer.config as config
-from network_importer.utils import TimeTracker, sort_by_digits
+from network_importer.utils import TimeTracker, sort_by_digits, timeit
 from network_importer.tasks import (
     initialize_devices,
     update_configuration,
     collect_transceivers_info,
     collect_vlans_info,
     device_update_remote,
+    check_if_reacheable,
 )
 
 from network_importer.model import (
@@ -202,6 +203,7 @@ class NetworkImporter(object):
 
         return True
 
+    @timeit
     def import_devices_from_configs(self):
         """
 
@@ -242,13 +244,22 @@ class NetworkImporter(object):
 
         return True
 
+    @timeit
     def import_devices_from_cmds(self):
         """
 
         """
 
+        self.devs.filter(filter_func=lambda h: h.data["is_reacheable"]).run(
+            task=check_if_reacheable, on_failed=True
+        )
+
+        self.warning_devices_not_reacheable()
+
         if config.main["import_vlans"] == "cli":
-            results = self.devs.run(task=collect_vlans_info)
+            results = self.devs.filter(
+                filter_func=lambda h: h.data["is_reacheable"]
+            ).run(task=collect_vlans_info, on_failed=True)
 
             for dev_name, items in results.items():
 
@@ -278,7 +289,9 @@ class NetworkImporter(object):
             # --------------------------------------------- ---
             # Import transceivers information
             # ------------------------------------------------
-            results = self.devs.run(task=collect_transceivers_info)
+            results = self.devs.filter(
+                filter_func=lambda h: h.data["is_reacheable"]
+            ).run(task=collect_transceivers_info, on_failed=True)
 
             for dev_name, items in results.items():
                 if items[0].failed:
@@ -287,25 +300,26 @@ class NetworkImporter(object):
                     )
                     continue
 
-                optics = items[0].result
+                transceivers = items[0].result
 
-                if not isinstance(optics, list):
+                if not isinstance(transceivers, list):
                     logger.warning(
                         f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)"
                     )
                     continue
 
-                for optic in optics:
+                logger.info(f" {dev_name} | Found {len(transceivers)} transceivers")
+                for transceiver in transceivers:
 
                     nio = NetworkImporterOptic(
-                        name=optic["sn"],
-                        optic_type=optic["descr"],
-                        intf=optic["name"],
-                        serial=optic["sn"],
+                        name=transceiver["serial"],
+                        optic_type=transceiver["type"],
+                        intf=transceiver["interface"],
+                        serial=transceiver["serial"],
                     )
 
                     self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
-                        intf_name=optic["name"], optic=nio
+                        intf_name=transceiver["interface"], optic=nio
                     )
 
         return True
@@ -349,6 +363,7 @@ class NetworkImporter(object):
 
         return True
 
+    @timeit
     def update_configurations(self):
 
         results = self.devs.run(
@@ -358,6 +373,15 @@ class NetworkImporter(object):
 
         return True
         # for result in results:
+
+    def warning_devices_not_reacheable(self, msg=""):
+
+        for host in self.devs.filter(
+            filter_func=lambda h: h.data["is_reacheable"] == False
+        ).inventory.hosts:
+            logger.warning(
+                f" {host} device is not reacheable, {h.data['not_reacheable_raison']}"
+            )
 
     def create_nb_handler(self):
 
@@ -455,23 +479,25 @@ class NetworkImporter(object):
           We need to pull LLDP data as well using Nornir to complement that
         """
 
+        if not config.main["import_cabling"]:
+            return False
+
         p2p_links = self.bf.q.layer3Edges().answer()
         already_connected_links = {}
 
         for link in p2p_links.frame().itertuples():
-            try:
-                local_host = link.Interface.hostname
-                local_obj = self.devs.inventory.hosts[local_host].data["obj"]
-                local_intf = re.sub("\.\d+$", "", link.Interface.interface)
-                remote_host = link.Remote_Interface.hostname
-                remote_obj = self.devs.inventory.hosts[remote_host].data["obj"]
-                remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
 
-                unique_id = "_".join(
-                    sorted(
-                        [f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"]
-                    )
-                )
+            local_host = link.Interface.hostname
+            local_intf = re.sub("\.\d+$", "", link.Interface.interface)
+            remote_host = link.Remote_Interface.hostname
+            remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
+
+            unique_id = "_".join(
+                sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
+            )
+
+            try:
+
                 if unique_id in already_connected_links:
                     logger.debug(f"Link {unique_id} already connected .. SKIPPING")
                     continue
@@ -482,6 +508,9 @@ class NetworkImporter(object):
                 elif remote_host not in self.devs.inventory.hosts.keys():
                     logger.debug(f"LINK: {remote_host} not present in devices list")
                     continue
+
+                local_obj = self.devs.inventory.hosts[local_host].data["obj"]
+                remote_obj = self.devs.inventory.hosts[remote_host].data["obj"]
 
                 if local_intf not in local_obj.interfaces.keys():
                     logger.warning(

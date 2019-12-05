@@ -14,8 +14,11 @@ limitations under the License.
 
 import time
 import re
+import logging
 
 find_digit = re.compile("\D?(\d+)\D?")
+
+logger = logging.getLogger("network-importer")
 
 
 def sort_by_digits(if_name):
@@ -28,6 +31,31 @@ def jinja_filter_toyaml_list(value):
 
 def jinja_filter_toyaml_dict(value):
     return yaml.dump(value, default_flow_style=False)
+
+
+times = {}
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        name = method.__name__.upper()
+        times[name] = int((te - ts) * 1000)
+        logger.info(f"PERF | Function {name} finished in {print_from_ms(times[name])}")
+
+        return result
+
+    return timed
+
+
+def print_from_ms(ms):
+
+    seconds = (ms / 1000) % 60
+    millis = ms - seconds * 1000
+    return "%ds %dms" % (seconds, millis)
 
 
 class TimeTracker(object):

@@ -16,6 +16,7 @@ import logging
 import pynetbox
 import os
 import hashlib
+import copy
 from pathlib import Path
 
 from typing import Optional, List
@@ -31,7 +32,7 @@ from network_importer.model import (
 )
 
 from nornir.core.task import Result, Task
-from nornir.plugins.tasks.networking import netmiko_send_command
+from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping
 
 from napalm.base.helpers import canonical_interface_name
 
@@ -206,31 +207,88 @@ def collect_transceivers_info(task: Task) -> Result:
 
     transceivers_inventory = []
 
-    if task.host.platform != "cisco_ios":
-        logger.warning(
-            f" {task.host.name} | Collect transceiver not available for {task.host.platform} yet "
+    xcvr_model = {
+        "interface": None,
+        "manufacturer": None,
+        "serial": None,
+        "part_number": None,
+        "type": None,
+    }
+
+    if task.host.platform == "cisco_ios":
+
+        results = task.run(
+            task=netmiko_send_command, command_string="show inventory", use_textfsm=True
         )
-        return Result(host=task.host, failed=True)
+        inventory = results[0].result
 
-    results = task.run(
-        task=netmiko_send_command, command_string="show inventory", use_textfsm=True
-    )
-    inventory = results[0].result
+        results = task.run(
+            task=netmiko_send_command,
+            command_string="show interface transceiver",
+            use_textfsm=True,
+        )
+        transceivers = results[0].result
 
-    results = task.run(
-        task=netmiko_send_command,
-        command_string="show interface transceiver",
-        use_textfsm=True,
-    )
-    transceivers = results[0].result
+        transceiver_names = [t["iface"] for t in transceivers]
+        full_transceiver_names = [
+            canonical_interface_name(t) for t in transceiver_names
+        ]
 
-    transceiver_names = [t["iface"] for t in transceivers]
+        # Check if the optic is in the inventory by matching on the interface name
+        # Normalize the name of the interface before returning it
+        for item in inventory:
+            xcvr = copy.deepcopy(xcvr_model)
 
-    # Check if the optic is in the inventory by matching on the interface name
-    # Normalize the name of the interface before returning it
-    for item in inventory:
-        if item.get("name", "") in transceiver_names:
-            item["name"] = canonical_interface_name(item["name"])
-            transceivers_inventory.append(item)
+            if item.get("name", "") in transceiver_names:
+                xcvr["interface"] = canonical_interface_name(item["name"])
+            elif item.get("name", "") in full_transceiver_names:
+                xcvr["interface"] = item["name"]
+            else:
+                continue
+
+            xcvr["serial"] = item["sn"]
+            xcvr["type"] = item["descr"]
+
+            transceivers_inventory.append(xcvr)
+
+    elif task.host.platform == "cisco_nxos":
+        cmd = "show interface transceiver"
+        results = task.run(
+            task=netmiko_send_command, command_string=cmd, use_textfsm=True
+        )
+        transceivers = results[0].result
+
+        if not isinstance(transceivers, list):
+            logger.warning(
+                f"command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"
+            )
+            return Result(host=task.host, result=transceivers_inventory)
+
+        for tranceiver in transceivers:
+            transceivers_inventory.append(tranceiver)
+
+    else:
+        logger.warning(
+            f"collect_transceiver_info not supported yet for {task.host.platform}"
+        )
 
     return Result(host=task.host, result=transceivers_inventory)
+
+
+def check_if_reacheable(task: Task) -> Result:
+
+    PORT_TO_CHECK = 22
+    results = task.run(task=tcp_ping, ports=[PORT_TO_CHECK])
+
+    is_reacheable = results[0].result[PORT_TO_CHECK]
+
+    if not is_reacheable:
+        logger.debug(
+            f" {task.host.name} | device is not reacheable on port {PORT_TO_CHECK}"
+        )
+        task.host.data["is_reacheable"] = False
+        task.host.data[
+            "not_reacheable_raison"
+        ] = f"device not reacheable on port {PORT_TO_CHECK}"
+
+    return Result(host=task.host, result=is_reacheable)

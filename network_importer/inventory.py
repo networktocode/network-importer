@@ -111,6 +111,9 @@ class NBInventory(Inventory):
                 host["hostname"] = d["primary_ip"]["address"].split("/")[0]
             else:
                 host["data"]["is_reacheable"] = False
+                host["data"][
+                    "not_reacheable_raison"
+                ] = f"primary ip not defined in Netbox"
 
             # Add values that don't have an option for 'slug'
             host["data"]["serial"] = d["serial"]
@@ -154,6 +157,14 @@ class NBInventory(Inventory):
                 role=host["data"]["role"],
                 vendor=host["data"]["vendor"],
             )
+
+            if (
+                "hostname" in host
+                and host["hostname"]
+                and "platform" in host
+                and host["platform"]
+            ):
+                host["data"]["is_reacheable"] = True
 
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
