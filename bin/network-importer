@@ -152,7 +152,9 @@ def main():
     if options.apply:
         ni.update_remote()
         ni.import_cabling_from_configs()
-
+    elif options.check:
+        ni.diff_local_remote()
+        
     if options.debug:
         pdb.set_trace()
 

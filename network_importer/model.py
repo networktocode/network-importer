@@ -15,6 +15,8 @@ import logging
 import pdb
 import network_importer.config as config
 
+from network_importer.diff import NetworkImporterDiff
+
 logger = logging.getLogger("network-importer")
 
 
@@ -93,6 +95,18 @@ class NetworkImporterDevice(object):
 
         for intf in sorted_intfs:
             self.update_interface_remote(intf)
+
+    def diff(self):
+        """
+        Calculate the diff between the local object and the remote system
+        """
+        diff = NetworkImporterDiff("device", self.name)
+
+        for intf in self.interfaces.values():
+            diff.add_child(intf.diff())
+
+        return diff
+
 
     def update_interface_remote(self, intf):
         """
@@ -388,7 +402,7 @@ class NetworkImporterInterface(object):
         if self.speed is None and bf.Speed is None:
             self.is_virtual = True
         elif self.speed is None:
-            self.speed = bf.Speed
+            self.speed = int(bf.Speed)
 
         if self.mtu is None:
             self.mtu = bf.MTU
@@ -519,6 +533,68 @@ class NetworkImporterInterface(object):
 
         return intf_properties
 
+    def translate_remote(self):
+
+        r = {
+            "is_virtual": None,
+            "is_lag_member": None,
+            "parent": None,
+            "is_lag": None,
+            "description": None,
+            "speed": None,
+            "mtu": self.remote.mtu,
+            "switchport_mode": None,
+            "access_vlan": None,
+            "allowed_vlans": None,
+            "active": self.remote.enabled
+        }
+
+        if self.remote.description:
+            r["description"] = self.remote.description
+
+        if self.remote.type.value == 200:
+            r["is_lag"] = True
+            r["is_virtual"] = False
+        elif self.remote.type.value == 0:
+            r["is_virtual"] = True
+            r["is_lag"] = False
+        else:
+            r["is_lag"] = False
+
+        if self.remote.lag:
+            r["is_lag_member"] = True
+            r["is_lag"] = False
+            r["is_virtual"] = False
+            r["parent"] = self.remote.lag.name
+
+        if self.remote.mode and self.remote.mode.value == 100:
+            r["switchport_mode"] = "ACCESS"
+        elif self.remote.mode and self.remote.mode.value == 200:
+            r["switchport_mode"] = "TRUNK"
+        else:
+            r["switchport_mode"] = "NONE"
+    
+        if self.remote.type.value == 800:
+            r["speed"] = 1000000000
+        elif self.remote.type.value == 1100:
+            r["speed"] = 1000000000
+        elif self.remote.type.value == 1200:
+            r["speed"] = 10000000000
+        elif self.remote.type.value == 1350:
+            r["speed"] = 25000000000
+        elif self.remote.type.value == 1400:
+            r["speed"] = 40000000000 
+        elif self.remote.type.value == 1600:
+            r["speed"] = 100000000000
+
+        if self.remote.tagged_vlans:
+            r["allowed_vlans"] = [ v.vid for v in self.remote.tagged_vlans ]
+    
+        if self.remote.untagged_vlan:
+            r["access_vlan"] = self.remote.untagged_vlan.vid
+
+        return r
+
     @staticmethod
     def is_remote_up_to_date(local, remote):
         """
@@ -532,9 +608,9 @@ class NetworkImporterInterface(object):
         return boolean
         """
 
-        diffs = NetworkImporterInterface.get_diff_remote(local, remote)
+        diff = self.diff()
 
-        if not diffs["before"] and not diffs["after"]:
+        if diff.nbr_diffs() == 0:
             return True
 
         return False
@@ -578,6 +654,45 @@ class NetworkImporterInterface(object):
             diffs["after"]["untagged_vlan"] = local["untagged_vlan"]
 
         return diffs
+
+    def diff(self):
+        """
+        Compare the local object with the remote interface object 
+        and check if the sub object needs to be updated too.
+        """
+
+        diff = NetworkImporterDiff("interface", self.name)
+
+        tr = self.translate_remote()
+
+        properties = [
+            "is_virtual", 
+            "is_lag_member",
+            "parent",
+            "is_lag",
+            "description",
+            # "speed",
+            "mtu",
+            "switchport_mode",
+            "access_vlan",
+            "allowed_vlans",
+            "active"
+        ] 
+
+        for prop in properties:
+
+            local = getattr(self, prop)
+            remote = tr.get(prop, None)
+
+            if isinstance(local, list):
+                local = sorted(local)
+            if isinstance(remote, list):
+                remote = sorted(remote) 
+
+            if local != remote:
+                diff.add_item(prop, local, remote)
+
+        return diff
 
 
 # TODO need to find a way to build a table to convert back and forth
@@ -630,6 +745,9 @@ class NetworkImporterSite(object):
             if self.remote:
                 self.exist_remote = True
                 self._get_remote_vlans_list()
+
+    # def diff(self):
+
 
     def update_remote(self):
         """
@@ -753,6 +871,11 @@ class NetworkImporterVlan(object):
         self.remote = None
         self.exist_remote = False
 
+    # def diff(self):
+    #     diff = NetworkImporterDiff()
+    #     return diff
+
+
 
 class NetworkImporterIP(object):
     def __init__(self, address, family=None, remote=None):
@@ -762,7 +885,6 @@ class NetworkImporterIP(object):
         self.family = None
         self.remote = None
         self.exist_remote = False
-
 
 class NetworkImporterOptic(object):
     def __init__(self, optic_type, intf, serial, name):
@@ -774,18 +896,42 @@ class NetworkImporterOptic(object):
         self.remote = None
         self.exist_remote = False
 
-    def is_remote_up_to_date(self):
+    def diff(self):
+        """
+        Calculate the difference between the local object and the remote system
+
+        Arguments:
+            None
+
+        Returns:
+            NetworkImporterDiff object
+        """
+        diff = NetworkImporterDiff("optic", self.name)
 
         if not self.exist_remote:
-            return False
+            diff.add_item("name", self.name, None)
+            diff.add_item("interface", self.intf, None)
+            diff.add_item("serial", self.serial, None)
 
-        if self.name != self.remote.name:
-            return False
-        elif self.intf != self.remote.description:
-            return False
-        elif self.serial != self.remote.serial:
-            return False
-        elif "optic" not in self.remote.tags:
-            return False
+        else: 
+            if self.name != self.remote.name:
+                diff.add_item("name", self.name, self.remote.name)
 
-        return True
+            if self.intf != self.remote.description:
+                diff.add_item("interface", self.intf, self.remote.description)
+
+            if self.serial != self.remote.serial:
+                diff.add_item("serial", self.serial, self.remote.serial)
+
+            if "optic" not in self.remote.tags:
+                diff.add_item("tag", True, False)
+
+        return diff
+
+    def is_remote_up_to_date(self):
+
+        if self.diff().nbr_diffs() == 0:
+            return True
+
+        else:
+            return False

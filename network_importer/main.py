@@ -470,6 +470,17 @@ class NetworkImporter(object):
 
         return True
 
+    def diff_local_remote(self):
+
+        for dev_name in self.devs.inventory.hosts.keys():
+            
+            diff = self.devs.inventory.hosts[dev_name].data["obj"].diff()
+
+            if diff.has_diffs():
+                logger.info(f" {dev_name} is NOT up to date on the remote system")
+            else:
+                 logger.info(f" {dev_name} is up to date")
+
     def update_remote(self):
         """
         First create all vlans per site to ensure they exist
