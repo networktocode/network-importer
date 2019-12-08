@@ -35,7 +35,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import network_importer
 import network_importer.config as config
-from network_importer.utils import TimeTracker, sort_by_digits, timeit
+from network_importer.utils import TimeTracker, sort_by_digits
 from network_importer.tasks import (
     initialize_devices,
     update_configuration,
@@ -56,10 +56,11 @@ from network_importer.model import (
     Optic,
 )
 
+from network_importer.performance import timeit
+
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
-
 
 class NetworkImporter(object):
     def __init__(self, check_mode=True):

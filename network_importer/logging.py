@@ -15,6 +15,7 @@ limitations under the License.
 """
 
 import json
+import math
 from time import strftime, time
 import network_importer.config as config
 
@@ -92,4 +93,3 @@ class ChangelogUpdate(Changelog):
     
 class ChangelogDelete(Changelog):
     log_type = "delete"
-    
