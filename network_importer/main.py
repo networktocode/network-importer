@@ -51,6 +51,9 @@ from network_importer.model import (
     NetworkImporterSite,
     NetworkImporterVlan,
     NetworkImporterOptic,
+    Vlan,
+    IPAddress,
+    Optic
 )
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
@@ -68,6 +71,7 @@ class NetworkImporter(object):
 
         self.check_mode = check_mode
 
+    @timeit
     def build_inventory(self, limit=None):
         """
         Build the inventory for the Network Importer in Nornir format
@@ -148,6 +152,7 @@ class NetworkImporter(object):
 
         return True
 
+    @timeit
     def init(self, limit=None):
         """
         Initilize NetworkImporter Object
@@ -238,24 +243,18 @@ class NetworkImporter(object):
                 found_intf = False
 
                 intf_name = bf_intf.Interface.interface
-
-                intf = NetworkImporterInterface(name=intf_name, device_name=dev.name)
-
-                intf.add_bf_intf(bf_intf)
-                dev.add_interface(intf)
+                dev.add_batfish_interface(intf_name, bf_intf)
 
                 if config.main["import_ips"]:
                     for prfx in bf_intf.All_Prefixes:
-                        dev.add_ip(intf_name=intf.name, address=prfx)
+                        dev.add_ip(intf_name, IPAddress(address=prfx))
 
             if config.main["import_vlans"] == "config":
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     if vlan.VLAN_ID not in dev.site.vlans.keys():
                         dev.site.add_vlan(
-                            NetworkImporterVlan(
-                                name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID
-                            )
+                            Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
                         )
 
         return True
@@ -301,6 +300,10 @@ class NetworkImporter(object):
                             NetworkImporterVlan(name=vlan["name"], vid=vlan["vlan_id"])
                         )
 
+                        self.devs.inventory.hosts[dev_name]["obj"].site.add_vlan2(
+                            Vlan(name=vlan["name"], vid=vlan["vlan_id"])
+                        )
+
         if config.main["import_transceivers"]:
             # --------------------------------------------- ---
             # Import transceivers information
@@ -327,7 +330,7 @@ class NetworkImporter(object):
                 logger.info(f" {dev_name} | Found {len(transceivers)} transceivers")
                 for transceiver in transceivers:
 
-                    nio = NetworkImporterOptic(
+                    nio = Optic(
                         name=transceiver["serial"],
                         optic_type=transceiver["type"],
                         intf=transceiver["interface"],
@@ -405,6 +408,7 @@ class NetworkImporter(object):
         self.nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
         return True
 
+    @timeit
     def init_bf_session(self):
         """
         Initialize Batfish 
@@ -481,6 +485,7 @@ class NetworkImporter(object):
             else:
                  logger.info(f" {dev_name} is up to date")
 
+    @timeit
     def update_remote(self):
         """
         First create all vlans per site to ensure they exist
@@ -500,6 +505,7 @@ class NetworkImporter(object):
 
         return True
 
+    @timeit
     def import_cabling_from_configs(self):
         """
         Build cabling

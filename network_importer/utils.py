@@ -59,6 +59,37 @@ def print_from_ms(ms):
     return "%ds %dms" % (seconds, millis)
 
 
+def expand_vlans_list(vlans):
+    """
+    Input:
+        String (TODO add support for list)
+
+    Return List
+    """
+    raw_vlans_list = []
+    clean_vlans_list = []
+
+    vlans_csv = str(vlans).split(",")
+
+    for vlan in vlans_csv:
+        min_max = str(vlan).split("-")
+        if len(min_max) == 1:
+            raw_vlans_list.append(vlan)
+        elif len(min_max) == 2:
+            raw_vlans_list.extend(range(int(min_max[0]), int(min_max[1]) + 1))
+
+        # Pass if min_max biggest than 2
+
+    for v in raw_vlans_list:
+        try:
+            clean_vlans_list.append(int(v))
+        except ValueError as e:
+            logger.debug(
+                f"expand_vlans_list() Unable to convert {v} as integer .. skipping"
+            )
+
+    return sorted(clean_vlans_list)
+
 class TimeTracker(object):
     def __init__(self):
 
