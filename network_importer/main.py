@@ -252,10 +252,12 @@ class NetworkImporter(object):
             if config.main["import_vlans"] == "config":
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
-                    if vlan.VLAN_ID not in dev.site.vlans.keys():
-                        dev.site.add_vlan(
-                            Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
-                        )
+                    # if vlan.VLAN_ID not in dev.site.vlans.keys():
+                    #     dev.site.vlans[vlan.VLAN_ID] = NetworkImporterVlan(site=dev.site.name, vid=vlan.VLAN_ID)
+
+                    dev.site.add_vlan(
+                        Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
+                    )
 
         return True
 
