@@ -99,6 +99,13 @@ class NetworkImporterDiff(object):
             if child.has_diffs():
                 child.print_detailed(indent=indent + 4)
 
+    def items_to_dict(self):
+
+        items = {} 
+        for item in self.items.values():
+            items[item.name] = item.local
+
+        return items 
 
 class NetworkImporterDiffProp(object):
     def __init__(self, name, local, remote):

@@ -67,8 +67,12 @@ config_schema = dict(
                 level=dict(
                     type="string", enum=["debug", "info", "warning"], default="info"
                 ),
-                directory=dict(type="string", default=".network_importer/logs"),
+                directory=dict(type="string", default="logs"),
                 performance_log=dict(type="boolean", default=True),
+                performance_log_directory=dict(type="string", default="performance_logs"),
+                change_log=dict(type="boolean", default=True),
+                change_log_format=dict(type="string", enum=["jsonlines", "text"], default="text"),
+                change_log_filename=dict(type="string", default="changelog")
             ),
             default={},
         ),
