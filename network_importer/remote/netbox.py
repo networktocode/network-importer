@@ -1,9 +1,4 @@
-from network_importer.base_model import (
-    Interface,
-    IPAddress,
-    Optic,
-    Vlan
-)
+from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 
 
 def get_netbox_interface_properties(intf):
@@ -56,15 +51,14 @@ def get_netbox_interface_properties(intf):
 
 
 class InterfaceRemote(Interface):
-
     def __init__(self):
         super()
         self.remote = None
 
     def add_remote_info(self, rem):
-        
+
         self.remote = rem
-        
+
         self.name = rem.name
 
         self.active = rem.enabled
@@ -106,22 +100,22 @@ class InterfaceRemote(Interface):
         elif rem.type.value == 1350:
             self.speed = 25000000000
         elif rem.type.value == 1400:
-            self.speed = 40000000000 
+            self.speed = 40000000000
         elif rem.type.value == 1600:
             self.speed = 100000000000
 
         if rem.tagged_vlans:
-            self.allowed_vlans = [ v.vid for v in rem.tagged_vlans ]
-    
+            self.allowed_vlans = [v.vid for v in rem.tagged_vlans]
+
         if rem.untagged_vlan:
             self.access_vlan = rem.untagged_vlan.vid
 
         return True
 
     def update_remote_info(self, rem):
-        
+
         # Clear all existing info first
-        self.mode = None   # TRUNK, ACCESS, L3, NONE
+        self.mode = None  # TRUNK, ACCESS, L3, NONE
         self.is_virtual = None
         self.active = None
         self.is_lag_member = None
@@ -132,23 +126,22 @@ class InterfaceRemote(Interface):
         self.description = None
         self.speed = None
         self.mtu = None
-        self.switchport_mode = None # = None
+        self.switchport_mode = None  # = None
         self.access_vlan = None
         self.allowed_vlans = None
 
         self.add_remote_info(rem)
 
     def delete(self):
-        self.remote.delete()    
+        self.remote.delete()
         return True
 
-    
     # def translate_remote(self):
 
     #     if not self.remote:
     #         return {}
 
-    #     r = {   
+    #     r = {
     #         "is_virtual": None,
     #         "is_lag_member": None,
     #         "parent": None,
@@ -186,7 +179,7 @@ class InterfaceRemote(Interface):
     #         r["switchport_mode"] = "TRUNK"
     #     else:
     #         r["switchport_mode"] = "NONE"
-    
+
     #     if self.remote.type.value == 800:
     #         r["speed"] = 1000000000
     #     elif self.remote.type.value == 1100:
@@ -196,17 +189,18 @@ class InterfaceRemote(Interface):
     #     elif self.remote.type.value == 1350:
     #         r["speed"] = 25000000000
     #     elif self.remote.type.value == 1400:
-    #         r["speed"] = 40000000000 
+    #         r["speed"] = 40000000000
     #     elif self.remote.type.value == 1600:
     #         r["speed"] = 100000000000
 
     #     if self.remote.tagged_vlans:
     #         r["allowed_vlans"] = [ v.vid for v in self.remote.tagged_vlans ]
-    
+
     #     if self.remote.untagged_vlan:
     #         r["access_vlan"] = self.remote.untagged_vlan.vid
 
     #     return r
+
 
 # TODO need to find a way to build a table to convert back and forth
 # # Interface types
@@ -240,7 +234,6 @@ class InterfaceRemote(Interface):
 
 
 class IPAddressRemote(IPAddress):
-
     def __init__(self):
         super()
         self.remote = None
@@ -249,17 +242,16 @@ class IPAddressRemote(IPAddress):
         self.address = rem.address
         self.family = rem.family
         self.remote = rem
-        
+
     def update_remote_info(self, rem):
         self.add_remote_info(rem)
 
     def delete(self):
-        self.remote.delete()    
+        self.remote.delete()
         return True
-        
+
 
 class OpticRemote(Optic):
-
     def __init__(self):
         super()
         self.remote = None
@@ -275,11 +267,11 @@ class OpticRemote(Optic):
         self.add_remote_info(rem)
 
     def delete(self):
-        self.remote.delete()    
+        self.remote.delete()
         return True
 
-class VlanRemote(Vlan):
 
+class VlanRemote(Vlan):
     def __init__(self):
         super()
         self.remote = None
@@ -292,8 +284,7 @@ class VlanRemote(Vlan):
 
     def update_remote_info(self, rem):
         self.add_remote_info(rem)
- 
+
     def delete(self):
-        self.remote.delete()    
+        self.remote.delete()
         return True
-        

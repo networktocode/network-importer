@@ -53,7 +53,7 @@ from network_importer.model import (
     NetworkImporterOptic,
     Vlan,
     IPAddress,
-    Optic
+    Optic,
 )
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
@@ -398,10 +398,10 @@ class NetworkImporter(object):
         for host in self.devs.filter(
             filter_func=lambda h: h.data["is_reacheable"] == False
         ).inventory.hosts:
-            raison = self.devs.inventory.hosts[host].data.get('not_reacheable_raison', "Raison not defined")
-            logger.warning(
-                f" {host} device is not reacheable, {raison}"
+            raison = self.devs.inventory.hosts[host].data.get(
+                "not_reacheable_raison", "Raison not defined"
             )
+            logger.warning(f" {host} device is not reacheable, {raison}")
 
     def create_nb_handler(self):
 
@@ -477,13 +477,13 @@ class NetworkImporter(object):
     def diff_local_remote(self):
 
         for dev_name in self.devs.inventory.hosts.keys():
-            
+
             diff = self.devs.inventory.hosts[dev_name].data["obj"].diff()
 
             if diff.has_diffs():
                 logger.info(f" {dev_name} is NOT up to date on the remote system")
             else:
-                 logger.info(f" {dev_name} is up to date")
+                logger.info(f" {dev_name} is up to date")
 
     @timeit
     def update_remote(self):

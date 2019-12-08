@@ -26,12 +26,12 @@ class Vlan(object):
         self.vid = int(vid)
         self.site = site
 
-class Interface(object):
 
+class Interface(object):
 
     name = None
     device_name = None
-    mode = None   # TRUNK, ACCESS, L3, NONE
+    mode = None  # TRUNK, ACCESS, L3, NONE
     is_virtual = None
     active = None
     is_lag_member = None
@@ -42,12 +42,13 @@ class Interface(object):
     description = None
     speed = None
     mtu = None
-    switchport_mode = None # = None
+    switchport_mode = None  # = None
     access_vlan = None
     allowed_vlans = None
 
     def __init__(self, name=None):
         self.name = name
+
 
 class IPAddress(object):
     family = None

@@ -1,4 +1,3 @@
-
 class NetworkImporterDiff(object):
     """
     Arguments:
@@ -7,6 +6,7 @@ class NetworkImporterDiff(object):
     Attributes:
 
     """
+
     def __init__(self, obj_type, name):
         """
 
@@ -17,9 +17,9 @@ class NetworkImporterDiff(object):
         self.childs = {}
         self.missing_remote = None
         self.missing_local = None
-    
+
     def __str__(self):
-        
+
         if self.missing_remote and self.missing_local:
             return f"{self.type}:{self.name} MISSING BOTH"
         elif self.missing_remote:
@@ -31,13 +31,12 @@ class NetworkImporterDiff(object):
         else:
             return f"{self.type}:{self.name} {self.nbr_diffs()} DIFFs"
 
-
     def add_item(self, name, local, remote):
 
         # TODO check if local and remote are of same type
 
         self.items[name] = NetworkImporterDiffProp(name, local, remote)
-    
+
     def add_child(self, child):
         self.childs[child.name] = child
 
@@ -65,7 +64,7 @@ class NetworkImporterDiff(object):
 
     def print_detailed(self, indent=0):
 
-        margin = " "*indent
+        margin = " " * indent
 
         if self.missing_remote and self.missing_local:
             print(f"{margin}{self.type}: {self.name} MISSING BOTH")
@@ -80,20 +79,16 @@ class NetworkImporterDiff(object):
 
         if len(self.childs) == 0:
             return True
-            
+
         print(f"{margin}  Childs")
         for child in self.childs.values():
             if child.has_diffs():
-                child.print_detailed(indent=indent+4)
+                child.print_detailed(indent=indent + 4)
 
-            
+
 class NetworkImporterDiffProp(object):
-
     def __init__(self, name, local, remote):
 
         self.name = name
         self.local = local
         self.remote = remote
-
-
-    

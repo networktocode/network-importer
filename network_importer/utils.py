@@ -90,6 +90,7 @@ def expand_vlans_list(vlans):
 
     return sorted(clean_vlans_list)
 
+
 class TimeTracker(object):
     def __init__(self):
 
