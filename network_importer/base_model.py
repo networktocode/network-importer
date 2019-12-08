@@ -15,7 +15,20 @@ limitations under the License.
 # ---------------------------------------------------
 # Base Classes, might need to find a better naming 
 # ---------------------------------------------------
-class Vlan(object):
+
+class BaseModel(object): 
+
+    exclude_from_diff = []
+
+    def get_attrs_diff(self):
+        attrs = list(vars(self).keys())
+        for attr in self.exclude_from_diff:
+            if attr in attrs:
+                attrs.remove(attr)
+
+        return attrs
+
+class Vlan(BaseModel):
 
     name = None
     vid = None
@@ -27,7 +40,7 @@ class Vlan(object):
         self.site = site
 
 
-class Interface(object):
+class Interface(BaseModel):
 
     name = None
     device_name = None
@@ -46,11 +59,13 @@ class Interface(object):
     access_vlan = None
     allowed_vlans = None
 
+    exclude_from_diff = ["lag_members"]
+
     def __init__(self, name=None):
         self.name = name
 
 
-class IPAddress(object):
+class IPAddress(BaseModel):
     family = None
     address = None
 
@@ -58,8 +73,14 @@ class IPAddress(object):
         self.address = address
 
 
-class Optic(object):
-    type = None
+class Optic(BaseModel):
+    optic_type = None
     intf = None
     serial = None
     name = None
+
+    def __init__(self, name=None, optic_type=None, intf=None, serial=None):
+        self.optic_type = optic_type
+        self.intf = intf
+        self.serial = serial
+        self.name = name

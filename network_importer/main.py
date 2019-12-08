@@ -35,7 +35,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import network_importer
 import network_importer.config as config
-from network_importer.utils import TimeTracker, sort_by_digits
+from network_importer.utils import sort_by_digits
 from network_importer.tasks import (
     initialize_devices,
     update_configuration,
@@ -253,9 +253,6 @@ class NetworkImporter(object):
             if config.main["import_vlans"] == "config":
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
-                    # if vlan.VLAN_ID not in dev.site.vlans.keys():
-                    #     dev.site.vlans[vlan.VLAN_ID] = NetworkImporterVlan(site=dev.site.name, vid=vlan.VLAN_ID)
-
                     dev.site.add_vlan(
                         Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
                     )
@@ -295,15 +292,12 @@ class NetworkImporter(object):
                 for vlan in data["vlans"].values():
                     if (
                         vlan["vlan_id"]
-                        not in self.devs.inventory.hosts[dev_name][
+                        not in self.devs.inventory.hosts[dev_name].data[
                             "obj"
                         ].site.vlans.keys()
                     ):
-                        self.devs.inventory.hosts[dev_name]["obj"].site.add_vlan(
-                            NetworkImporterVlan(name=vlan["name"], vid=vlan["vlan_id"])
-                        )
-
-                        self.devs.inventory.hosts[dev_name]["obj"].site.add_vlan2(
+  
+                        self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
                             Vlan(name=vlan["name"], vid=vlan["vlan_id"])
                         )
 
@@ -345,6 +339,13 @@ class NetworkImporter(object):
                     )
 
         return True
+
+    def check_data_consistency(self):
+
+        for host in self.devs.inventory.hosts.keys():
+            dev = self.devs.inventory.hosts[host].data["obj"]
+            dev.check_data_consistency()
+    
 
     def get_nb_handler(self):
         """

@@ -31,12 +31,9 @@ import pynetbox
 import requests
 
 import network_importer.config as config
-from network_importer.utils import TimeTracker
 from network_importer.main import NetworkImporter
 
-# TO CLEAN
-from network_importer.tasks import collect_vlans_info
-from nornir.plugins.tasks.networking import netmiko_send_command
+import network_importer.performance as perf
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -86,7 +83,9 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
-        "--limit", type=str, help="limit the execution on a specific device or group of devices"
+        "--limit",
+        type=str,
+        help="limit the execution on a specific device or group of devices",
     )
 
     parser.add_argument(
@@ -118,6 +117,7 @@ def main():
     options = parse_args()
 
     config.load_config(options.config)
+    perf.init()
 
     # ------------------------------------------------------------
     # Setup Logging
@@ -146,15 +146,22 @@ def main():
     ni.import_devices_from_configs()
     ni.import_devices_from_cmds()
 
+    ni.check_data_consistency()
+    
     # ------------------------------------------------------------------------------------
     # Update Remote if apply is enabled
     # ------------------------------------------------------------------------------------
     if options.apply:
         ni.update_remote()
         ni.import_cabling_from_configs()
+
     elif options.check:
         ni.diff_local_remote()
-        
+
+    if config.logs["performance_log"]:
+        perf.time_tracker.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
+        perf.time_tracker.print_all()
+
     if options.debug:
         pdb.set_trace()
 

@@ -66,7 +66,7 @@ class NetworkImporterObjBase(object):
             diff.missing_local = True
             return diff
 
-        attrs = vars(self.local).keys()
+        attrs = self.local.get_attrs_diff()
 
         for attr in attrs:
 
@@ -212,7 +212,7 @@ class NetworkImporterDevice(object):
 
             if intf.local.is_lag_member:
                 if intf.local.parent in self.interfaces.keys():
-                    if not self.interfaces[intf.parent].exist_remote():
+                    if not self.interfaces[intf.local.parent].exist_remote():
                         logger.warning(
                             f" {self.name} | Interface {intf.name} has is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
                         )
@@ -319,6 +319,13 @@ class NetworkImporterDevice(object):
                     f" {self.name} | Optic {intf.optic.remote.serial} deleted in Netbox"
                 )
 
+    def check_data_consistency(self):
+
+        # Ensure the vlans configured for each interface exist in the system
+        #  On some devices, it's possible tp define a list larger than what is really available
+        for intf in self.interfaces.values():
+            if intf.exist_local() and intf.local.allowed_vlans:
+                intf.local.allowed_vlans = [ vlan for vlan in intf.local.allowed_vlans if vlan in self.site.vlans.keys()]
 
     def add_batfish_interface(self, intf_name, bf):
         """
@@ -548,6 +555,9 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if self.local.switchport_mode is None:
             self.local.switchport_mode = bf.Switchport_Mode
+        
+        if self.local.switchport_mode == "FEX_FABRIC":
+            self.local.switchport_mode = "NONE"
 
         if self.local.active is None:
             self.local.active = bf.Active
@@ -654,8 +664,9 @@ class NetworkImporterSite(object):
             elif vlan.exist_local() and vlan.exist_remote():
                 vlan.update_remote_status()
 
-            elif not vlan.exist_local() and vlan.exist_remote():
-                vlan.delete_remote()
+            # TODO Disabling that for now, need to be sure there is no side effect when running with --limit
+            # elif not vlan.exist_local() and vlan.exist_remote():
+            #     vlan.delete_remote()
 
     def add_vlan(self, vlan):
         """

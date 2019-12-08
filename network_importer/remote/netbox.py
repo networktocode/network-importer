@@ -149,71 +149,6 @@ class InterfaceRemote(Interface):
         self.remote.delete()
         return True
 
-    # def translate_remote(self):
-
-    #     if not self.remote:
-    #         return {}
-
-    #     r = {
-    #         "is_virtual": None,
-    #         "is_lag_member": None,
-    #         "parent": None,
-    #         "is_lag": None,
-    #         "description": None,
-    #         "speed": None,
-    #         "mtu": self.remote.mtu,
-    #         "switchport_mode": None,
-    #         "access_vlan": None,
-    #         "allowed_vlans": None,
-    #         "active": self.remote.enabled
-    #     }
-
-    #     if self.remote.description:
-    #         r["description"] = self.remote.description
-
-    #     if self.remote.type.value == 200:
-    #         r["is_lag"] = True
-    #         r["is_virtual"] = False
-    #     elif self.remote.type.value == 0:
-    #         r["is_virtual"] = True
-    #         r["is_lag"] = False
-    #     else:
-    #         r["is_lag"] = False
-
-    #     if self.remote.lag:
-    #         r["is_lag_member"] = True
-    #         r["is_lag"] = False
-    #         r["is_virtual"] = False
-    #         r["parent"] = self.remote.lag.name
-
-    #     if self.remote.mode and self.remote.mode.value == 100:
-    #         r["switchport_mode"] = "ACCESS"
-    #     elif self.remote.mode and self.remote.mode.value == 200:
-    #         r["switchport_mode"] = "TRUNK"
-    #     else:
-    #         r["switchport_mode"] = "NONE"
-
-    #     if self.remote.type.value == 800:
-    #         r["speed"] = 1000000000
-    #     elif self.remote.type.value == 1100:
-    #         r["speed"] = 1000000000
-    #     elif self.remote.type.value == 1200:
-    #         r["speed"] = 10000000000
-    #     elif self.remote.type.value == 1350:
-    #         r["speed"] = 25000000000
-    #     elif self.remote.type.value == 1400:
-    #         r["speed"] = 40000000000
-    #     elif self.remote.type.value == 1600:
-    #         r["speed"] = 100000000000
-
-    #     if self.remote.tagged_vlans:
-    #         r["allowed_vlans"] = [ v.vid for v in self.remote.tagged_vlans ]
-
-    #     if self.remote.untagged_vlan:
-    #         r["access_vlan"] = self.remote.untagged_vlan.vid
-
-    #     return r
-
 
 # TODO need to find a way to build a table to convert back and forth
 # # Interface types
@@ -270,7 +205,7 @@ class OpticRemote(Optic):
         self.remote = None
 
     def add_remote_info(self, rem):
-        self.type = rem.part_id
+        self.optic_type = rem.part_id
         self.intf = rem.description
         self.serial = rem.serial
         self.name = rem.serial
