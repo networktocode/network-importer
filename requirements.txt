@@ -3,3 +3,5 @@ pynetbox
 nornir
 pandas
 termcolor
+toml
+jsonschema
