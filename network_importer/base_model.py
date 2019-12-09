@@ -13,10 +13,11 @@ limitations under the License.
 """
 
 # ---------------------------------------------------
-# Base Classes, might need to find a better naming 
+# Base Classes, might need to find a better naming
 # ---------------------------------------------------
 
-class BaseModel(object): 
+
+class BaseModel(object):
 
     exclude_from_diff = []
 
@@ -27,6 +28,7 @@ class BaseModel(object):
                 attrs.remove(attr)
 
         return attrs
+
 
 class Vlan(BaseModel):
 

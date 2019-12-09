@@ -26,9 +26,14 @@ from network_importer.remote.netbox import (
 )
 from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 
-from network_importer.logging import changelog_create, changelog_delete, changelog_update
+from network_importer.logging import (
+    changelog_create,
+    changelog_delete,
+    changelog_update,
+)
 
 logger = logging.getLogger("network-importer")
+
 
 class NetworkImporterObjBase(object):
 
@@ -234,7 +239,12 @@ class NetworkImporterDevice(object):
                 remote = self.nb.dcim.interfaces.create(**intf_properties)
                 intf.add_remote(remote)
                 logger.debug(f" {self.name} | Interface {intf.name} created in Netbox")
-                changelog_create("interface", f"{self.name}::{intf.name}", remote.id, params=intf_properties)
+                changelog_create(
+                    "interface",
+                    f"{self.name}::{intf.name}",
+                    remote.id,
+                    params=intf_properties,
+                )
 
             elif (
                 intf.exist_local()
@@ -246,7 +256,12 @@ class NetworkImporterDevice(object):
                 logger.debug(
                     f" {self.name} | Interface {intf.name} updated in Netbox: {intf_properties}"
                 )
-                changelog_update("interface", f"{self.name}::{intf.name}", intf.remote.remote.id, params=diff.items_to_dict())
+                changelog_update(
+                    "interface",
+                    f"{self.name}::{intf.name}",
+                    intf.remote.remote.id,
+                    params=diff.items_to_dict(),
+                )
 
         # ----------------------------------------------------------
         # Update IPs
@@ -258,14 +273,19 @@ class NetworkImporterDevice(object):
                 )
                 ip.add_remote(ip_address)
                 logger.debug(f" {self.name} | IP {ip.address} created in Netbox")
-                changelog_create("ipaddress", ip.address, ip_address.id, params={"interface": intf.name, "device": self.name })
-                
+                changelog_create(
+                    "ipaddress",
+                    ip.address,
+                    ip_address.id,
+                    params={"interface": intf.name, "device": self.name},
+                )
+
             # TODO need to implement IP update
 
             elif not ip.exist_local() and ip.exist_remote():
                 ip.delete_remote()
                 logger.debug(f" {self.name} | IP {ip.address} deleted in Netbox")
-                
+
         # ----------------------------------------------------------
         # Update Optic is defined
         # ----------------------------------------------------------
@@ -282,12 +302,19 @@ class NetworkImporterDevice(object):
                 )
                 intf.optic.add_remote(optic)
                 logger.debug(f" {self.name} | Optic for {intf.name} created in Netbox")
-                changelog_create("optic", intf.optic.local.serial, optic.id, params=dict(name=intf.optic.local.serial,
-                    part_id=intf.optic.local.optic_type,
-                    device=self.remote.id,
-                    description=intf.name,
-                    serial=intf.optic.local.serial,
-                    tags=["optic"] ))
+                changelog_create(
+                    "optic",
+                    intf.optic.local.serial,
+                    optic.id,
+                    params=dict(
+                        name=intf.optic.local.serial,
+                        part_id=intf.optic.local.optic_type,
+                        device=self.remote.id,
+                        description=intf.name,
+                        serial=intf.optic.local.serial,
+                        tags=["optic"],
+                    ),
+                )
 
             elif (
                 intf.optic.exist_local()
@@ -307,11 +334,19 @@ class NetworkImporterDevice(object):
                 )
                 # TODO need to redo this part to clean it up and ensure the object gets properly updated
                 logger.debug(f" {self.name} | Optic for {intf.name} updated in Netbox")
-                changelog_update("optic", intf.optic.local.serial, intf.optic.remote.remote.id, params=dict(name=intf.optic.local.serial,part_id=intf.optic.local.optic_type,
-                    device=self.remote.id,
-                    description=intf.name,
-                    serial=intf.optic.local.serial,
-                    tags=["optic"] ))
+                changelog_update(
+                    "optic",
+                    intf.optic.local.serial,
+                    intf.optic.remote.remote.id,
+                    params=dict(
+                        name=intf.optic.local.serial,
+                        part_id=intf.optic.local.optic_type,
+                        device=self.remote.id,
+                        description=intf.name,
+                        serial=intf.optic.local.serial,
+                        tags=["optic"],
+                    ),
+                )
 
             elif not intf.optic.exist_local() and intf.optic.exist_remote():
                 intf.optic.delete_remote()
@@ -325,7 +360,11 @@ class NetworkImporterDevice(object):
         #  On some devices, it's possible tp define a list larger than what is really available
         for intf in self.interfaces.values():
             if intf.exist_local() and intf.local.allowed_vlans:
-                intf.local.allowed_vlans = [ vlan for vlan in intf.local.allowed_vlans if vlan in self.site.vlans.keys()]
+                intf.local.allowed_vlans = [
+                    vlan
+                    for vlan in intf.local.allowed_vlans
+                    if vlan in self.site.vlans.keys()
+                ]
 
     def add_batfish_interface(self, intf_name, bf):
         """
@@ -555,7 +594,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if self.local.switchport_mode is None:
             self.local.switchport_mode = bf.Switchport_Mode
-        
+
         if self.local.switchport_mode == "FEX_FABRIC":
             self.local.switchport_mode = "NONE"
 
@@ -657,9 +696,16 @@ class NetworkImporterSite(object):
                 remote = self.nb.ipam.vlans.create(
                     vid=vlan.local.vid, name=vlan.local.name, site=self.remote.id
                 )
-                logger.debug(f"Site {self.name}, created vlan {vlan.local.vid} ({remote.id}) in netbox" )
+                logger.debug(
+                    f"Site {self.name}, created vlan {vlan.local.vid} ({remote.id}) in netbox"
+                )
                 vlan.add_remote(remote)
-                changelog_create("vlan", vlan.local.vid, remote.id, params=dict(name=vlan.local.name, site=self.remote.id))
+                changelog_create(
+                    "vlan",
+                    vlan.local.vid,
+                    remote.id,
+                    params=dict(name=vlan.local.name, site=self.remote.id),
+                )
 
             elif vlan.exist_local() and vlan.exist_remote():
                 vlan.update_remote_status()
@@ -750,11 +796,12 @@ class NetworkImporterSite(object):
     def diff(self):
 
         diff = NetworkImporterDiff("site", self.name)
-         
+
         for vlan in self.vlans.values():
             diff.add_child(vlan.diff())
 
         return diff
+
 
 class NetworkImporterVlan(NetworkImporterObjBase):
 

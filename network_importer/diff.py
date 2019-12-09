@@ -12,6 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
 class NetworkImporterDiff(object):
     """
     Arguments:
@@ -101,11 +102,12 @@ class NetworkImporterDiff(object):
 
     def items_to_dict(self):
 
-        items = {} 
+        items = {}
         for item in self.items.values():
             items[item.name] = item.local
 
-        return items 
+        return items
+
 
 class NetworkImporterDiffProp(object):
     def __init__(self, name, local, remote):

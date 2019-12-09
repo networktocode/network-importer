@@ -62,6 +62,7 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
+
 class NetworkImporter(object):
     def __init__(self, check_mode=True):
 
@@ -293,11 +294,11 @@ class NetworkImporter(object):
                 for vlan in data["vlans"].values():
                     if (
                         vlan["vlan_id"]
-                        not in self.devs.inventory.hosts[dev_name].data[
-                            "obj"
-                        ].site.vlans.keys()
+                        not in self.devs.inventory.hosts[dev_name]
+                        .data["obj"]
+                        .site.vlans.keys()
                     ):
-  
+
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
                             Vlan(name=vlan["name"], vid=vlan["vlan_id"])
                         )
@@ -347,7 +348,6 @@ class NetworkImporter(object):
         for host in self.devs.inventory.hosts.keys():
             dev = self.devs.inventory.hosts[host].data["obj"]
             dev.check_data_consistency()
-    
 
     def get_nb_handler(self):
         """
@@ -392,12 +392,10 @@ class NetworkImporter(object):
     def update_configurations(self):
 
         logger.info("Updating configuration from devices .. ")
-        results = self.devs.filter(
-                filter_func=lambda h: h.data["is_reacheable"]
-            ).run(
-                task=update_configuration,
-                configs_directory=config.main["configs_directory"] + "/configs",
-            )
+        results = self.devs.filter(filter_func=lambda h: h.data["is_reacheable"]).run(
+            task=update_configuration,
+            configs_directory=config.main["configs_directory"] + "/configs",
+        )
 
         return True
         # for result in results:

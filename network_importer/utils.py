@@ -20,6 +20,7 @@ find_digit = re.compile(r"\D?(\d+)\D?")
 
 logger = logging.getLogger("network-importer")
 
+
 def sort_by_digits(if_name):
     return tuple(map(int, find_digit.findall(if_name)))
 

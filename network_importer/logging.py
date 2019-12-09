@@ -1,5 +1,3 @@
-
-
 """
 (c) 2019 Network To Code
 
@@ -19,17 +17,25 @@ import math
 from time import strftime, time
 import network_importer.config as config
 
-def changelog_create(obj_type, obj_name, obj_id, params ):
-    cl = ChangelogCreate(obj_type=obj_type, obj_id=obj_id,obj_name=obj_name, params=params)
+
+def changelog_create(obj_type, obj_name, obj_id, params):
+    cl = ChangelogCreate(
+        obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
+    )
     cl.print()
 
-def changelog_update(obj_type, obj_name, obj_id, params ):
-    cl = ChangelogUpdate(obj_type=obj_type, obj_id=obj_id,obj_name=obj_name, params=params)
+
+def changelog_update(obj_type, obj_name, obj_id, params):
+    cl = ChangelogUpdate(
+        obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
+    )
     cl.print()
 
-def changelog_delete(obj_type, obj_name, obj_id ):
-    cl = ChangelogDelete(obj_type=obj_type, obj_id=obj_id,obj_name=obj_name)
+
+def changelog_delete(obj_type, obj_name, obj_id):
+    cl = ChangelogDelete(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name)
     cl.print()
+
 
 class Changelog(object):
     obj_type = None
@@ -37,9 +43,9 @@ class Changelog(object):
     obj_id = None
     params = None
 
-    def __init__(self, obj_type, obj_id, obj_name, params=None ):
+    def __init__(self, obj_type, obj_id, obj_name, params=None):
         self.obj_id = obj_id
-        self.obj_name = obj_name 
+        self.obj_name = obj_name
         self.obj_type = obj_type
         self.params = params
 
@@ -53,10 +59,9 @@ class Changelog(object):
         elif config.logs["change_log_format"] == "text":
             self.print_text()
 
-    
     def print_jsonlines(self):
         jcl = {
-            "timestamp": int(time()*1000),
+            "timestamp": int(time() * 1000),
             "time": strftime("%Y-%m-%d %H:%M:%S"),
             "action": self.log_type,
             "object": {
@@ -64,11 +69,11 @@ class Changelog(object):
                 "name": self.obj_name,
                 "type": self.obj_type,
             },
-            "params": self.params
+            "params": self.params,
         }
 
-        with open(config.logs["change_log_filename"]+".jsonl", 'a') as f:
-            f.write(json.dumps(jcl)+"\n")
+        with open(config.logs["change_log_filename"] + ".jsonl", "a") as f:
+            f.write(json.dumps(jcl) + "\n")
 
     def print_text(self):
 
@@ -78,18 +83,20 @@ class Changelog(object):
             obj_id=self.obj_id,
             obj_name=self.obj_name,
             obj_type=self.obj_type,
-            params=self.params
+            params=self.params,
         )
 
-        with open(config.logs["change_log_filename"]+".log", 'a') as f:
-            f.write(log+"\n")
+        with open(config.logs["change_log_filename"] + ".log", "a") as f:
+            f.write(log + "\n")
 
 
 class ChangelogCreate(Changelog):
     log_type = "create"
 
+
 class ChangelogUpdate(Changelog):
     log_type = "update"
-    
+
+
 class ChangelogDelete(Changelog):
     log_type = "delete"

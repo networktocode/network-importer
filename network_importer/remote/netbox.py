@@ -14,6 +14,7 @@ limitations under the License.
 
 from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 
+
 def get_netbox_interface_properties(intf):
     """
     Get a dict with all interface properties in Netbox format 

@@ -224,9 +224,7 @@ def collect_transceivers_info(task: Task) -> Result:
 
         cmd = "show interface transceiver"
         results = task.run(
-            task=netmiko_send_command,
-            command_string=cmd,
-            use_textfsm=True,
+            task=netmiko_send_command, command_string=cmd, use_textfsm=True,
         )
         transceivers = results[0].result
 

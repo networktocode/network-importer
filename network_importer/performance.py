@@ -1,5 +1,3 @@
-
-
 """
 (c) 2019 Network To Code
 
@@ -24,20 +22,22 @@ import logging
 time_tracker = None
 logger = logging.getLogger("network-importer")
 
+
 def init():
     global time_tracker
 
-    if not time_tracker: 
+    if not time_tracker:
         time_tracker = TimeTracker()
-   
+
+
 def print_from_ms(ms):
 
     ms_per_sec = 1000
-    ms_per_min = ms_per_sec*60
+    ms_per_min = ms_per_sec * 60
 
     minutes = math.floor((ms / ms_per_min))
-    seconds = math.floor(((ms-(ms_per_min*minutes)) / ms_per_sec))
-    millis =  ms-(ms_per_min*minutes) - (ms_per_sec*seconds)
+    seconds = math.floor(((ms - (ms_per_min * minutes)) / ms_per_sec))
+    millis = ms - (ms_per_min * minutes) - (ms_per_sec * seconds)
 
     if minutes == 0 and seconds == 0:
         return "%dms" % (millis)
@@ -46,9 +46,10 @@ def print_from_ms(ms):
     else:
         return "%dm %ds %dms" % (minutes, seconds, millis)
 
+
 def timeit(method):
     global time_tracker
-    
+
     def timed(*args, **kw):
         ts = time()
         result = method(*args, **kw)
@@ -83,20 +84,21 @@ class TimeTracker(object):
             )
 
         perflog_filename = strftime("%Y-%m-%d_%H-%M-%S.log")
-        perflog_file_path = config.logs['performance_log_directory'] + "/" + perflog_filename
+        perflog_file_path = (
+            config.logs["performance_log_directory"] + "/" + perflog_filename
+        )
 
-        with open(perflog_file_path, 'w') as f:
-            
+        with open(perflog_file_path, "w") as f:
+
             if self.nbr_devices:
                 f.write(f"Report for {self.nbr_devices} devices\n")
 
             for funct, exec_time in self.times.items():
-                if self.nbr_devices:        
-                    exec_time_per_dev = exec_time/self.nbr_devices
+                if self.nbr_devices:
+                    exec_time_per_dev = exec_time / self.nbr_devices
                     log = f"{funct} finished in {print_from_ms(exec_time)} | {print_from_ms(exec_time_per_dev)} per device"
 
                 else:
                     log = f"{funct} finished in {print_from_ms(exec_time)}"
 
-                f.write(log+"\n")
-              
+                f.write(log + "\n")

@@ -69,10 +69,14 @@ config_schema = dict(
                 ),
                 directory=dict(type="string", default="logs"),
                 performance_log=dict(type="boolean", default=True),
-                performance_log_directory=dict(type="string", default="performance_logs"),
+                performance_log_directory=dict(
+                    type="string", default="performance_logs"
+                ),
                 change_log=dict(type="boolean", default=True),
-                change_log_format=dict(type="string", enum=["jsonlines", "text"], default="text"),
-                change_log_filename=dict(type="string", default="changelog")
+                change_log_format=dict(
+                    type="string", enum=["jsonlines", "text"], default="text"
+                ),
+                change_log_filename=dict(type="string", default="changelog"),
             ),
             default={},
         ),
