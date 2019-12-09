@@ -274,16 +274,16 @@ class NetworkImporterDevice(object):
 
                 optic = self.nb.dcim.inventory_items.create(
                     name=intf.optic.local.serial,
-                    part_id=intf.optic.local.type,
+                    part_id=intf.optic.local.optic_type,
                     device=self.remote.id,
                     description=intf.name,
                     serial=intf.optic.local.serial,
                     tags=["optic"],
                 )
-                intf.optic.add_remote()
+                intf.optic.add_remote(optic)
                 logger.debug(f" {self.name} | Optic for {intf.name} created in Netbox")
                 changelog_create("optic", intf.optic.local.serial, optic.id, params=dict(name=intf.optic.local.serial,
-                    part_id=intf.optic.local.type,
+                    part_id=intf.optic.local.optic_type,
                     device=self.remote.id,
                     description=intf.name,
                     serial=intf.optic.local.serial,
@@ -298,16 +298,16 @@ class NetworkImporterDevice(object):
                 intf.optic.remote.remote.update(
                     data=dict(
                         name=intf.optic.local.serial,
-                        part_id=intf.optic.local.type,
+                        part_id=intf.optic.local.optic_type,
                         device=self.remote.id,
                         description=intf.name,
-                        serial=intf.optic.serial,
+                        serial=intf.optic.local.serial,
                         tags=["optic"],
                     )
                 )
                 # TODO need to redo this part to clean it up and ensure the object gets properly updated
                 logger.debug(f" {self.name} | Optic for {intf.name} updated in Netbox")
-                changelog_update("optic", intf.optic.local.serial, intf.optic.remote.remote.id, params=dict(name=intf.optic.local.serial,part_id=intf.optic.local.type,
+                changelog_update("optic", intf.optic.local.serial, intf.optic.remote.remote.id, params=dict(name=intf.optic.local.serial,part_id=intf.optic.local.optic_type,
                     device=self.remote.id,
                     description=intf.name,
                     serial=intf.optic.local.serial,

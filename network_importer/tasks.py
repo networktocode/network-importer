@@ -222,12 +222,19 @@ def collect_transceivers_info(task: Task) -> Result:
         )
         inventory = results[0].result
 
+        cmd = "show interface transceiver"
         results = task.run(
             task=netmiko_send_command,
-            command_string="show interface transceiver",
+            command_string=cmd,
             use_textfsm=True,
         )
         transceivers = results[0].result
+
+        if not isinstance(transceivers, list):
+            logger.debug(
+                f" {task.host.name}: command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"
+            )
+            return Result(host=task.host, result=transceivers_inventory)
 
         transceiver_names = [t["iface"] for t in transceivers]
         full_transceiver_names = [
