@@ -48,7 +48,7 @@ def get_netbox_interface_properties(intf):
     if intf.mtu:
         intf_properties["mtu"] = intf.mtu
 
-    if intf.description:
+    if intf.description is not None:
         intf_properties["description"] = intf.description
 
     # TODO Add a check here to see what is the current status
@@ -77,8 +77,7 @@ class InterfaceRemote(Interface):
 
         self.active = rem.enabled
 
-        if rem.description:
-            self.description = rem.description
+        self.description = rem.description
 
         if rem.type.value == 200:
             self.is_lag = True
