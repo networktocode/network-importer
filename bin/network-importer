@@ -95,6 +95,13 @@ def parse_args(args=sys.argv[1:]):
         help="Keep the script in interactive mode once finished for troubleshooting",
     )
 
+    parser.add_argument(
+        "--diff",
+        action="store_true",
+        default=False,
+        help="Show the diff for all objects",
+    )
+
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
 
     g = parser.add_mutually_exclusive_group(required=True)
@@ -162,6 +169,9 @@ def main():
         perf.time_tracker.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
         perf.time_tracker.print_all()
 
+    if options.diff:
+        ni.print_diffs()
+        
     if options.debug:
         pdb.set_trace()
 

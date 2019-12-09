@@ -558,6 +558,19 @@ class NetworkImporter(object):
             else:
                 logger.info(f" {dev_name} is up to date")
 
+    def print_diffs(self):
+
+        for site in self.sites.values():
+            diff = site.diff()
+            if diff.has_diffs():
+                diff.print_detailed()
+
+        for host in self.devs.inventory.hosts.keys():
+            dev = self.get_dev(host)
+            diff = dev.diff()
+            if diff.has_diffs():
+                diff.print_detailed()
+
     @timeit
     def update_remote(self):
         """
