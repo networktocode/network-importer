@@ -272,6 +272,7 @@ class NetworkImporter(object):
         self.warning_devices_not_reacheable()
 
         if config.main["import_vlans"] == "cli":
+            logger.info("Collecting Vlan information from devices .. ")
             results = self.devs.filter(
                 filter_func=lambda h: h.data["is_reacheable"]
             ).run(task=collect_vlans_info, on_failed=True)
@@ -305,6 +306,7 @@ class NetworkImporter(object):
             # --------------------------------------------- ---
             # Import transceivers information
             # ------------------------------------------------
+            logger.info("Collecting Transceiver information from devices .. ")
             results = self.devs.filter(
                 filter_func=lambda h: h.data["is_reacheable"]
             ).run(task=collect_transceivers_info, on_failed=True)
@@ -389,10 +391,13 @@ class NetworkImporter(object):
     @timeit
     def update_configurations(self):
 
-        results = self.devs.run(
-            task=update_configuration,
-            configs_directory=config.main["configs_directory"] + "/configs",
-        )
+        logger.info("Updating configuration from devices .. ")
+        results = self.devs.filter(
+                filter_func=lambda h: h.data["is_reacheable"]
+            ).run(
+                task=update_configuration,
+                configs_directory=config.main["configs_directory"] + "/configs",
+            )
 
         return True
         # for result in results:
