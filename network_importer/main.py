@@ -298,7 +298,8 @@ class NetworkImporter(object):
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     dev.site.add_vlan(
-                        Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
+                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
+                        device=dev.name
                     )
 
         return True
@@ -350,7 +351,8 @@ class NetworkImporter(object):
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            Vlan(name=vlan["name"], vid=vlan["vlan_id"])
+                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]), 
+                            device=dev_name
                         )
 
         if config.main["import_transceivers"]:

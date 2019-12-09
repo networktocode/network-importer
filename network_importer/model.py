@@ -584,11 +584,13 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if "port-channel" in self.name:
             self.local.is_lag = True
+            self.local.is_virtual = False
 
-        if self.local.speed is None and bf.Speed is None:
-            self.is_virtual = True
-        elif self.local.speed is None:
-            self.speed = int(bf.Speed)
+        if self.local.speed is None and bf.Speed is None and not self.local.is_lag:
+            self.local.is_virtual = True
+        elif self.local.speed is None and not self.local.is_lag:
+            self.local.speed = int(bf.Speed)
+            self.local.is_virtual = False
 
         if self.local.mtu is None:
             self.mtu = bf.MTU
@@ -614,9 +616,10 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         ):
             self.local.lag_members = list(bf.Channel_Group_Members)
             self.local.is_lag = True
+            self.local.is_virtual = False
         elif self.local.is_lag == None:
             self.local.is_lag = False
-
+        
         if self.local.mode is None and self.local.switchport_mode:
             self.local.mode = self.local.switchport_mode
 
@@ -635,6 +638,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         ):
             self.local.parent = bf.Channel_Group
             self.local.is_lag_member = True
+            self.local.is_virtual = False
 
     def add_ip(self, ip):
         """
@@ -717,7 +721,7 @@ class NetworkImporterSite(object):
             # elif not vlan.exist_local() and vlan.exist_remote():
             #     vlan.delete_remote()
 
-    def add_vlan(self, vlan):
+    def add_vlan(self, vlan, device=None):
         """
         Vlan object
         """
@@ -730,9 +734,10 @@ class NetworkImporterSite(object):
         if not self.vlans[vid].exist_local():
             self.vlans[vid].add_local(vlan)
             logger.debug(f" Site {self.name} | Vlan {vid} added (local)")
-        else:
-            logger.debug(f" Site {self.name} | Vlan {vid} already exist, skipping ")
-
+        
+        if device: 
+            self.vlans[vid].add_related_device(device)
+           
         return True
 
     def convert_vids_to_nids(self, vids):
@@ -818,10 +823,28 @@ class NetworkImporterVlan(NetworkImporterObjBase):
 
         diff = self.diff()
 
+        # Check if we need to add a
+        
+        missing_devices_on_remote = []
+
+        # For each related device locally ensure it's present in the remote system
+        if self.exist_local() and self.exist_remote():
+
+            for dev_name in self.local.related_devices:
+                if dev_name not in self.remote.related_devices:
+                    missing_devices_on_remote.append(dev_name)
+             
+            if missing_devices_on_remote:
+                diff.add_item("related_devices", missing_devices_on_remote, [])
+
         if diff.has_diffs():
-            # apply some logic to update the remote object
+            
+            tags = self.remote.remote.tags
+            if missing_devices_on_remote:
+                tags = tags + [ f"device={dev}" for dev in missing_devices_on_remote]
+            
             self.remote.remote.update(
-                data=dict(name=self.local.name, vid=self.local.vid)
+                data=dict(name=self.local.name, vid=self.local.vid, tags=tags)
             )
             return True
 
@@ -831,6 +854,16 @@ class NetworkImporterVlan(NetworkImporterObjBase):
     def add_remote(self, remote):
         self.remote = VlanRemote()
         self.remote.add_remote_info(remote)
+
+    def add_related_device(self, dev_name):
+        if not self.local:
+            return False
+
+        if dev_name not in self.local.related_devices:
+            self.local.related_devices.append(dev_name)
+            return True
+
+        return False
 
 
 class NetworkImporterIP(NetworkImporterObjBase):
