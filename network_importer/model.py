@@ -260,7 +260,8 @@ class NetworkImporterDevice(object):
                     "interface",
                     f"{self.name}::{intf.name}",
                     intf.remote.remote.id,
-                    params=diff.items_to_dict(),
+                    # params=diff.items_to_dict(),
+                    params=intf_properties
                 )
 
         # ----------------------------------------------------------
@@ -601,8 +602,10 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         if self.local.active is None:
             self.local.active = bf.Active
 
-        if self.local.description is None:
+        if self.local.description is None and bf.Description:
             self.local.description = bf.Description
+        elif self.local.description is None:
+            self.local.description = ""
 
         if (
             self.local.is_lag is None

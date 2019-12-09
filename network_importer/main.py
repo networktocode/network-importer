@@ -40,7 +40,9 @@ from network_importer.tasks import (
     initialize_devices,
     update_configuration,
     collect_transceivers_info,
+    collect_transceivers_info_from_cache,
     collect_vlans_info,
+    collect_vlans_info_from_cache,
     device_update_remote,
     check_if_reacheable,
 )
@@ -92,8 +94,6 @@ def valid_and_reacheable_devs(h):
     else:
         return False
 
-
-
 class NetworkImporter(object):
     def __init__(self, check_mode=True):
 
@@ -103,6 +103,13 @@ class NetworkImporter(object):
         self.nb = None
 
         self.check_mode = check_mode
+
+    def get_dev(self, dev_name):
+
+        if dev_name not in self.devs.inventory.hosts.keys():
+            return False
+        
+        return self.devs.inventory.hosts[dev_name].data["obj"]
 
     @timeit
     def build_inventory(self, limit=None):
@@ -218,7 +225,8 @@ class NetworkImporter(object):
                 f"Directory {config.main['hostvars_directory']} was missing, created it"
             )
 
-        # TODO add check to create directory for oper data from devices
+        if not os.path.isdir(config.main["data_directory"]):
+            os.mkdir(config.main["data_directory"])
 
         # --------------------------------------------------------
         # Initialize Devices
@@ -301,17 +309,24 @@ class NetworkImporter(object):
 
         """
 
-        self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-            task=check_if_reacheable, on_failed=True
-        )
+        if not config.main["data_use_cache"]:
+            self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                task=check_if_reacheable, on_failed=True
+            )
 
-        self.warning_devices_not_reacheable()
+            self.warning_devices_not_reacheable()
 
         if config.main["import_vlans"] == "cli":
             logger.info("Collecting Vlan information from devices .. ")
-            results = self.devs.filter(
-                filter_func=valid_and_reacheable_devs
-            ).run(task=collect_vlans_info, on_failed=True)
+
+            if not config.main["data_use_cache"]:
+                results = self.devs.filter(
+                    filter_func=valid_and_reacheable_devs
+                ).run(task=collect_vlans_info, on_failed=True)
+            else:
+                results = self.devs.filter(
+                    filter_func=valid_devs
+                ).run(task=collect_vlans_info_from_cache, on_failed=True)
 
             for dev_name, items in results.items():
 
@@ -323,7 +338,7 @@ class NetworkImporter(object):
 
                 data = items[0].result
                 if not "vlans" in data:
-                    logger.warning(f" {dev_name} | No vlans informatio returned")
+                    logger.warning(f" {dev_name} | No vlans information returned")
                     continue
 
                 for vlan in data["vlans"].values():
@@ -343,9 +358,15 @@ class NetworkImporter(object):
             # Import transceivers information
             # ------------------------------------------------
             logger.info("Collecting Transceiver information from devices .. ")
-            results = self.devs.filter(
-                filter_func=valid_and_reacheable_devs
-            ).run(task=collect_transceivers_info, on_failed=True)
+
+            if not config.main["data_use_cache"]:
+                results = self.devs.filter(
+                    filter_func=valid_and_reacheable_devs
+                ).run(task=collect_transceivers_info, on_failed=True)
+            else:
+                results = self.devs.filter(
+                    filter_func=valid_devs
+                ).run(task=collect_transceivers_info_from_cache, on_failed=True)
 
             for dev_name, items in results.items():
                 if items[0].failed:
