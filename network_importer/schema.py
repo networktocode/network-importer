@@ -33,7 +33,7 @@ config_schema = dict(
                 ),
                 generate_hostvars=dict(type="boolean", default=False),
                 hostvars_directory=dict(type="string", default="host_vars"),
-                nbr_workers=dict(type="integer", default=10),
+                nbr_workers=dict(type="integer", default=25),
                 inventory_source=dict(
                     type="string", enum=["netbox", "configs"], default="netbox"
                 ),
