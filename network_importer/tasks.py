@@ -67,11 +67,13 @@ def initialize_devices(task: Task, bfs=None) -> Result:
             task.host.data["obj"].bf = (
                 bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
             )
+            task.host.data["has_config"] = True
 
         except:
             logger.warning(
-                f"Unable to find {task.host.name} in Batfish data  ... SKIPPING"
+                f" {task.host.name} | Unable to find Batfish data  ... SKIPPING"
             )
+            task.host.data["has_config"] = False
 
     return Result(host=task.host, result=True)
 
@@ -175,7 +177,7 @@ def update_configuration(
         logger.debug(f" {task.host.name} | Latest config file already present ... ")
 
     else:
-        logger.debug(f" {task.host.name} | Configuration file updated ")
+        logger.info(f" {task.host.name} | Configuration file updated ")
         changed = True
 
     return Result(host=task.host, result=True, changed=changed)
