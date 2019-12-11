@@ -17,11 +17,6 @@ The network-importer requires to have access to a working batfish environment, y
 docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish
 ```
 
-## Setup your local environment
-
-NETBOX_ADDRESS  
-NETBOX_TOKEN  
-BATFISH_ADDRESS (default: localhost)
 
 ## Configuration file
 
@@ -30,21 +25,25 @@ BATFISH_ADDRESS (default: localhost)
 # import_ips = true 
 # import_cabling = true
 # import_transceivers = false 
-# import_vlans="config" # Valid options are ["cli", "config", "no"]
-# generate_hostvars = false 
-# hostvars_directory= "host_vars"
+# import_vlans="config"         # Valid options are ["cli", "config", "no"]
 
 # nbr_workers= 25
 
+# Not fully fonctional right, need to revisit that part
+# generate_hostvars = false 
+# hostvars_directory= "host_vars"
+
+# 
 # inventory_source="netbox" # Valid option ["netbox", "configs"]
 # inventory_filter= ""
 
-
+# Directory where the configuration can be find, organized in Batfish format
 # configs_directory= "configs"
 
+#  
 # data_directory="data"
-data_update_cache=true
-data_use_cache=false
+# data_update_cache=true
+# data_use_cache=false
 
 [batfish]
 address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
@@ -87,13 +86,3 @@ The network importer is using different tools to collect information from the ne
 
 Currently the library only supports netbox but the idea for 1.0 is to support multiple backend SOT
 Currently the assumption is that vlans are global to a site. need to find a way to provide more flexibility here without making it too complex
-
-# TODO list
-
-Add support for LAG
-Add support for HSRP/VRRP
-Add support for VRF
-Add support for OSPF ( bfq.ospfAreaConfiguration() / )
-Add support for BGP
-Add support for SNMP
-Add support for VXLAN/VNI
