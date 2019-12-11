@@ -40,6 +40,7 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
+
 class CustomFormatter(
     argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
 ):
@@ -48,9 +49,7 @@ class CustomFormatter(
 
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
-    parser = argparse.ArgumentParser(
-        description="", formatter_class=CustomFormatter
-    )
+    parser = argparse.ArgumentParser(description="", formatter_class=CustomFormatter)
 
     parser.add_argument(
         "--config",
