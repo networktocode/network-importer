@@ -39,6 +39,7 @@ from napalm.base.helpers import canonical_interface_name
 
 logger = logging.getLogger("network-importer")
 
+
 def save_data_to_file(host, filename, content):
 
     directory = config.main["data_directory"]
@@ -49,6 +50,7 @@ def save_data_to_file(host, filename, content):
 
     return True
 
+
 def get_data_from_file(host, filename):
 
     directory = config.main["data_directory"]
@@ -57,8 +59,8 @@ def get_data_from_file(host, filename):
     if not os.path.exists(filepath):
         logger.debug(f" {host} | cache not available for {filename} ")
         return False
-    
-    try: 
+
+    try:
         with open(filepath) as f:
             data = json.load(f)
     except:
@@ -66,6 +68,7 @@ def get_data_from_file(host, filename):
         return False
 
     return data
+
 
 def check_data_dir(host):
 
@@ -76,6 +79,7 @@ def check_data_dir(host):
         os.mkdir(host_dir)
 
     return True
+
 
 def initialize_devices(task: Task, bfs=None) -> Result:
     """
@@ -169,6 +173,8 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
 
     check_data_dir(task.host.name)
 
+    results = None
+
     if "cisco" in task.host.platform:
         results = task.run(
             task=netmiko_send_command, command_string="show vlan", use_genie=True
@@ -176,10 +182,11 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
     else:
         return Result(host=task.host, result=False)
 
-    if update_cache and results is defined:
+    if update_cache and results:
         save_data_to_file(task.host.name, "vlans", results[0].result)
 
     return Result(host=task.host, result=results[0].result)
+
 
 def collect_vlans_info_from_cache(task: Task) -> Result:
     """
@@ -233,7 +240,7 @@ def update_configuration(
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task, ) -> Result:
+def collect_lldp_neighbors(task: Task,) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -272,12 +279,12 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
     check_data_dir(task.host.name)
 
     if task.host.platform == "cisco_ios":
-        
+
         results = task.run(
             task=netmiko_send_command, command_string="show inventory", use_textfsm=True
         )
         inventory = results[0].result
-        
+
         cmd = "show interface transceiver"
         results = task.run(
             task=netmiko_send_command, command_string=cmd, use_textfsm=True,
@@ -338,6 +345,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     return Result(host=task.host, result=transceivers_inventory)
 
+
 def collect_transceivers_info_from_cache(task: Task) -> Result:
     """
     Collect Transceiver information from cache data
@@ -345,6 +353,7 @@ def collect_transceivers_info_from_cache(task: Task) -> Result:
     data = get_data_from_file(task.host.name, "transceivers")
 
     return Result(host=task.host, result=data)
+
 
 def check_if_reacheable(task: Task) -> Result:
 

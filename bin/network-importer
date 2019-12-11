@@ -40,7 +40,6 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
-
 class CustomFormatter(
     argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
 ):
@@ -50,7 +49,7 @@ class CustomFormatter(
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
     parser = argparse.ArgumentParser(
-        description=sys.modules[__name__].__doc__, formatter_class=CustomFormatter
+        description="", formatter_class=CustomFormatter
     )
 
     parser.add_argument(
@@ -86,7 +85,7 @@ def parse_args(args=sys.argv[1:]):
     parser.add_argument(
         "--limit",
         type=str,
-        help="limit the execution on a specific device or group of devices",
+        help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
     )
 
     parser.add_argument(
@@ -131,6 +130,7 @@ def main():
     # Setup Logging
     # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
+    logging.getLogger("netaddr").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
 
     if config.logs["level"] == "debug":
