@@ -48,7 +48,7 @@ def get_netbox_interface_properties(intf):
     if intf.mtu:
         intf_properties["mtu"] = intf.mtu
 
-    if intf.description:
+    if intf.description is not None:
         intf_properties["description"] = intf.description
 
     # TODO Add a check here to see what is the current status
@@ -65,8 +65,8 @@ def get_netbox_interface_properties(intf):
 
 
 class InterfaceRemote(Interface):
-    def __init__(self):
-        super()
+    def __init__(self, **kargs):
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -77,8 +77,7 @@ class InterfaceRemote(Interface):
 
         self.active = rem.enabled
 
-        if rem.description:
-            self.description = rem.description
+        self.description = rem.description
 
         if rem.type.value == 200:
             self.is_lag = True
@@ -88,6 +87,7 @@ class InterfaceRemote(Interface):
             self.is_lag = False
         else:
             self.is_lag = False
+            self.is_virtual = False
 
         if rem.lag:
             self.is_lag_member = True
@@ -183,8 +183,8 @@ class InterfaceRemote(Interface):
 
 
 class IPAddressRemote(IPAddress):
-    def __init__(self):
-        super()
+    def __init__(self, **kargs):
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -201,8 +201,8 @@ class IPAddressRemote(IPAddress):
 
 
 class OpticRemote(Optic):
-    def __init__(self):
-        super()
+    def __init__(self, **kargs):
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -221,14 +221,21 @@ class OpticRemote(Optic):
 
 
 class VlanRemote(Vlan):
-    def __init__(self):
-        super()
+    def __init__(self, **kargs):
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
 
         self.vid = rem.vid
         self.name = rem.name
+
+        for tag in rem.tags:
+            if "device=" not in tag:
+                continue
+            tag_type, dev_name = tag.split("=", 1)
+            self.related_devices.append(dev_name)
+
         self.remote = rem
 
     def update_remote_info(self, rem):

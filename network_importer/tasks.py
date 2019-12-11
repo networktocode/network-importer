@@ -17,6 +17,7 @@ import pynetbox
 import os
 import hashlib
 import copy
+import json
 from pathlib import Path
 
 from typing import Optional, List
@@ -39,6 +40,47 @@ from napalm.base.helpers import canonical_interface_name
 logger = logging.getLogger("network-importer")
 
 
+def save_data_to_file(host, filename, content):
+
+    directory = config.main["data_directory"]
+    filepath = f"{directory}/{host}/{filename}.json"
+
+    with open(filepath, "w") as f:
+        json.dump(content, f, indent=4, sort_keys=True)
+
+    return True
+
+
+def get_data_from_file(host, filename):
+
+    directory = config.main["data_directory"]
+    filepath = f"{directory}/{host}/{filename}.json"
+
+    if not os.path.exists(filepath):
+        logger.debug(f" {host} | cache not available for {filename} ")
+        return False
+
+    try:
+        with open(filepath) as f:
+            data = json.load(f)
+    except:
+        logger.warning(f" {host} | Unable to load the cache for {filename} ")
+        return False
+
+    return data
+
+
+def check_data_dir(host):
+
+    directory = config.main["data_directory"]
+    host_dir = f"{directory}/{host}"
+
+    if not os.path.isdir(host_dir):
+        os.mkdir(host_dir)
+
+    return True
+
+
 def initialize_devices(task: Task, bfs=None) -> Result:
     """
 
@@ -55,22 +97,20 @@ def initialize_devices(task: Task, bfs=None) -> Result:
     task.host.data["obj"].nb = nb
     task.host.data["obj"].update_cache()
 
-    # dev = NetworkImporterDevice(name=task.host.name, nb=nb, pull_cache=True)
-
     if nb_dev:
         task.host.data["obj"].remote = nb_dev
         task.host.data["obj"].exist_remote = True
 
     if bfs:
         try:
-            # TODO convert this action to a function to be able to properly extract
             task.host.data["obj"].bf = (
                 bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
             )
+            task.host.data["has_config"] = True
 
         except:
             logger.warning(
-                f"Unable to find {task.host.name} in Batfish data  ... SKIPPING"
+                f" {task.host.name} | Unable to find Batfish data  ... SKIPPING"
             )
 
     return Result(host=task.host, result=True)
@@ -122,7 +162,7 @@ def device_generate_hostvars(task: Task) -> Result:
     return Result(host=task.host)
 
 
-def collect_vlans_info(task: Task) -> Result:
+def collect_vlans_info(task: Task, update_cache=True) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -130,12 +170,31 @@ def collect_vlans_info(task: Task) -> Result:
         Cisco NX-OS >> Genie
 
     """
-    results = task.run(
-        task=netmiko_send_command, command_string="show vlan", use_genie=True
-    )
 
-    # TODO check if task went well
+    check_data_dir(task.host.name)
+
+    results = None
+
+    if "cisco" in task.host.platform:
+        results = task.run(
+            task=netmiko_send_command, command_string="show vlan", use_genie=True
+        )
+    else:
+        return Result(host=task.host, result=False)
+
+    if update_cache and results:
+        save_data_to_file(task.host.name, "vlans", results[0].result)
+
     return Result(host=task.host, result=results[0].result)
+
+
+def collect_vlans_info_from_cache(task: Task) -> Result:
+    """
+    Collect Vlans information from cache data
+    """
+    data = get_data_from_file(task.host.name, "vlans")
+
+    return Result(host=task.host, result=data)
 
 
 def update_configuration(
@@ -175,18 +234,20 @@ def update_configuration(
         logger.debug(f" {task.host.name} | Latest config file already present ... ")
 
     else:
-        logger.debug(f" {task.host.name} | Configuration file updated ")
+        logger.info(f" {task.host.name} | Configuration file updated ")
         changed = True
 
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task) -> Result:
+def collect_lldp_neighbors(task: Task,) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
         TODO
     """
+
+    check_data_dir(task.host.name)
 
     ## TODO Check if device is if the right type
     ## TODO check if all information are available to connect
@@ -200,7 +261,7 @@ def collect_lldp_neighbors(task: Task) -> Result:
     return Result(host=task.host, result=results[0].result)
 
 
-def collect_transceivers_info(task: Task) -> Result:
+def collect_transceivers_info(task: Task, update_cache=True) -> Result:
     """
     Collect transceiver informaton on all devices
     """
@@ -214,6 +275,8 @@ def collect_transceivers_info(task: Task) -> Result:
         "part_number": None,
         "type": None,
     }
+
+    check_data_dir(task.host.name)
 
     if task.host.platform == "cisco_ios":
 
@@ -273,11 +336,23 @@ def collect_transceivers_info(task: Task) -> Result:
             transceivers_inventory.append(tranceiver)
 
     else:
-        logger.warning(
-            f"collect_transceiver_info not supported yet for {task.host.platform}"
+        logger.debug(
+            f" {task.host.platform} | collect_transceiver_info not supported yet for "
         )
 
+    if update_cache and transceivers_inventory:
+        save_data_to_file(task.host.name, "transceivers", transceivers_inventory)
+
     return Result(host=task.host, result=transceivers_inventory)
+
+
+def collect_transceivers_info_from_cache(task: Task) -> Result:
+    """
+    Collect Transceiver information from cache data
+    """
+    data = get_data_from_file(task.host.name, "transceivers")
+
+    return Result(host=task.host, result=data)
 
 
 def check_if_reacheable(task: Task) -> Result:

@@ -32,55 +32,53 @@ class BaseModel(object):
 
 class Vlan(BaseModel):
 
-    name = None
-    vid = None
-    site = None
+    exclude_from_diff = ["related_devices"]
 
     def __init__(self, name=None, vid=None, site=None):
         self.name = name
-        self.vid = int(vid)
+
+        if vid:
+            self.vid = int(vid)
+        else:
+            self.vid = None
+
         self.site = site
+        self.related_devices = []
 
 
 class Interface(BaseModel):
 
-    name = None
-    device_name = None
-    mode = None  # TRUNK, ACCESS, L3, NONE
-    is_virtual = None
-    active = None
-    is_lag_member = None
-    parent = None
-    is_lag = None
-    lag_members = None
-
-    description = None
-    speed = None
-    mtu = None
-    switchport_mode = None  # = None
-    access_vlan = None
-    allowed_vlans = None
-
-    exclude_from_diff = ["lag_members"]
+    exclude_from_diff = ["lag_members", "speed"]
 
     def __init__(self, name=None):
         self.name = name
+        self.device_name = None
+        self.mode = None  # TRUNK, ACCESS, L3, NONE
+        self.is_virtual = None
+        self.active = None
+        self.is_lag_member = None
+        self.parent = None
+        self.is_lag = None
+        self.lag_members = None
+
+        self.description = None
+        self.speed = None
+        self.mtu = None
+        self.switchport_mode = None  # = None
+        self.access_vlan = None
+        self.allowed_vlans = None
 
 
 class IPAddress(BaseModel):
-    family = None
-    address = None
+
+    exclude_from_diff = ["family"]
 
     def __init__(self, address=None):
         self.address = address
+        self.family = None
 
 
 class Optic(BaseModel):
-    optic_type = None
-    intf = None
-    serial = None
-    name = None
-
     def __init__(self, name=None, optic_type=None, intf=None, serial=None):
         self.optic_type = optic_type
         self.intf = intf

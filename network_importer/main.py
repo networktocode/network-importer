@@ -35,12 +35,14 @@ from jinja2 import Template, Environment, FileSystemLoader
 
 import network_importer
 import network_importer.config as config
-from network_importer.utils import sort_by_digits
+from network_importer.utils import sort_by_digits, patch_http_connection_pool
 from network_importer.tasks import (
     initialize_devices,
     update_configuration,
     collect_transceivers_info,
+    collect_transceivers_info_from_cache,
     collect_vlans_info,
+    collect_vlans_info_from_cache,
     device_update_remote,
     check_if_reacheable,
 )
@@ -63,6 +65,41 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 logger = logging.getLogger("network-importer")
 
 
+def valid_devs(h):
+    if h.data["has_config"]:
+        return True
+    else:
+        return False
+
+
+def non_valid_devs(h):
+    if h.data["has_config"]:
+        return False
+    else:
+        return True
+
+
+def reacheable_devs(h):
+    if h.data["is_reacheable"]:
+        return True
+    else:
+        return False
+
+
+def non_reacheable_devs(h):
+    if h.data["is_reacheable"]:
+        return False
+    else:
+        return True
+
+
+def valid_and_reacheable_devs(h):
+    if h.data["is_reacheable"] and h.data["has_config"]:
+        return True
+    else:
+        return False
+
+
 class NetworkImporter(object):
     def __init__(self, check_mode=True):
 
@@ -72,6 +109,13 @@ class NetworkImporter(object):
         self.nb = None
 
         self.check_mode = check_mode
+
+    def get_dev(self, dev_name):
+
+        if dev_name not in self.devs.inventory.hosts.keys():
+            return False
+
+        return self.devs.inventory.hosts[dev_name].data["obj"]
 
     @timeit
     def build_inventory(self, limit=None):
@@ -168,6 +212,8 @@ class NetworkImporter(object):
         
         """
 
+        patch_http_connection_pool(maxsize=100)
+
         self.check_nb_params()
         self.init_bf_session()
         self.build_inventory(limit=limit)
@@ -185,7 +231,8 @@ class NetworkImporter(object):
                 f"Directory {config.main['hostvars_directory']} was missing, created it"
             )
 
-        # TODO add check to create directory for oper data from devices
+        if not os.path.isdir(config.main["data_directory"]):
+            os.mkdir(config.main["data_directory"])
 
         # --------------------------------------------------------
         # Initialize Devices
@@ -197,7 +244,7 @@ class NetworkImporter(object):
         for dev_name, items in results.items():
             if items[0].failed:
                 logger.warning(
-                    f"{dev_name} | Something went wrong while trying to initialize the device .. "
+                    f" {dev_name} | Something went wrong while trying to initialize the device .. "
                 )
                 continue
 
@@ -232,12 +279,14 @@ class NetworkImporter(object):
 
         """
 
-        # TODO check if bf sessions has been initialized alrealdy
         for host in self.devs.inventory.hosts.values():
+
+            if not host.data["has_config"]:
+                continue
 
             dev = host.data["obj"]
 
-            logger.info(f"Processing {dev.name} data, local and remote .. ")
+            logger.info(f" {dev.name} | Importing data from configurations .. ")
 
             bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
 
@@ -255,7 +304,8 @@ class NetworkImporter(object):
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     dev.site.add_vlan(
-                        Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID)
+                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
+                        device=dev.name,
                     )
 
         return True
@@ -266,17 +316,24 @@ class NetworkImporter(object):
 
         """
 
-        self.devs.filter(filter_func=lambda h: h.data["is_reacheable"]).run(
-            task=check_if_reacheable, on_failed=True
-        )
+        if not config.main["data_use_cache"]:
+            self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                task=check_if_reacheable, on_failed=True
+            )
 
-        self.warning_devices_not_reacheable()
+            self.warning_devices_not_reacheable()
 
         if config.main["import_vlans"] == "cli":
             logger.info("Collecting Vlan information from devices .. ")
-            results = self.devs.filter(
-                filter_func=lambda h: h.data["is_reacheable"]
-            ).run(task=collect_vlans_info, on_failed=True)
+
+            if not config.main["data_use_cache"]:
+                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                    task=collect_vlans_info, on_failed=True
+                )
+            else:
+                results = self.devs.filter(filter_func=valid_devs).run(
+                    task=collect_vlans_info_from_cache, on_failed=True
+                )
 
             for dev_name, items in results.items():
 
@@ -288,7 +345,7 @@ class NetworkImporter(object):
 
                 data = items[0].result
                 if not "vlans" in data:
-                    logger.warning(f" {dev_name} | No vlans informatio returned")
+                    logger.warning(f" {dev_name} | No vlans information returned")
                     continue
 
                 for vlan in data["vlans"].values():
@@ -300,7 +357,8 @@ class NetworkImporter(object):
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            Vlan(name=vlan["name"], vid=vlan["vlan_id"])
+                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]),
+                            device=dev_name,
                         )
 
         if config.main["import_transceivers"]:
@@ -308,9 +366,15 @@ class NetworkImporter(object):
             # Import transceivers information
             # ------------------------------------------------
             logger.info("Collecting Transceiver information from devices .. ")
-            results = self.devs.filter(
-                filter_func=lambda h: h.data["is_reacheable"]
-            ).run(task=collect_transceivers_info, on_failed=True)
+
+            if not config.main["data_use_cache"]:
+                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                    task=collect_transceivers_info, on_failed=True
+                )
+            else:
+                results = self.devs.filter(filter_func=valid_devs).run(
+                    task=collect_transceivers_info_from_cache, on_failed=True
+                )
 
             for dev_name, items in results.items():
                 if items[0].failed:
@@ -346,6 +410,10 @@ class NetworkImporter(object):
     def check_data_consistency(self):
 
         for host in self.devs.inventory.hosts.keys():
+
+            if not self.devs.inventory.hosts[host].data["has_config"]:
+                continue
+
             dev = self.devs.inventory.hosts[host].data["obj"]
             dev.check_data_consistency()
 
@@ -392,9 +460,15 @@ class NetworkImporter(object):
     def update_configurations(self):
 
         logger.info("Updating configuration from devices .. ")
-        results = self.devs.filter(filter_func=lambda h: h.data["is_reacheable"]).run(
+
+        self.devs.filter(filter_func=reacheable_devs).run(
+            task=check_if_reacheable, on_failed=True
+        )
+
+        results = self.devs.filter(filter_func=reacheable_devs).run(
             task=update_configuration,
             configs_directory=config.main["configs_directory"] + "/configs",
+            on_failed=True,
         )
 
         return True
@@ -492,21 +566,36 @@ class NetworkImporter(object):
             else:
                 logger.info(f" {dev_name} is up to date")
 
+    def print_diffs(self):
+
+        for site in self.sites.values():
+            diff = site.diff()
+            if diff.has_diffs():
+                diff.print_detailed()
+
+        for host in self.devs.inventory.hosts.keys():
+            dev = self.get_dev(host)
+            diff = dev.diff()
+            if diff.has_diffs():
+                diff.print_detailed()
+
     @timeit
     def update_remote(self):
         """
-        First create all vlans per site to ensure they exist
+        
         """
 
         for site in self.sites.values():
             site.update_remote()
 
-        results = self.devs.run(task=device_update_remote)
+        results = self.devs.filter(filter_func=valid_devs).run(
+            task=device_update_remote
+        )
 
         for dev_name, items in results.items():
             if items[0].failed:
                 logger.warning(
-                    f" {dev_name} | Something went wrong while to update the device in the remote system"
+                    f" {dev_name} | Something went wrong while trying to update the device in the remote system"
                 )
                 continue
 

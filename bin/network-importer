@@ -35,6 +35,7 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
+
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
@@ -48,9 +49,7 @@ class CustomFormatter(
 
 def parse_args(args=sys.argv[1:]):
     """Parse arguments."""
-    parser = argparse.ArgumentParser(
-        description=sys.modules[__name__].__doc__, formatter_class=CustomFormatter
-    )
+    parser = argparse.ArgumentParser(description="", formatter_class=CustomFormatter)
 
     parser.add_argument(
         "--config",
@@ -85,7 +84,7 @@ def parse_args(args=sys.argv[1:]):
     parser.add_argument(
         "--limit",
         type=str,
-        help="limit the execution on a specific device or group of devices",
+        help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
     )
 
     parser.add_argument(
@@ -93,6 +92,13 @@ def parse_args(args=sys.argv[1:]):
         action="store_true",
         default=False,
         help="Keep the script in interactive mode once finished for troubleshooting",
+    )
+
+    parser.add_argument(
+        "--diff",
+        action="store_true",
+        default=False,
+        help="Show the diff for all objects",
     )
 
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
@@ -123,6 +129,7 @@ def main():
     # Setup Logging
     # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
+    logging.getLogger("netaddr").setLevel(logging.ERROR)
     logging.basicConfig(stream=sys.stdout)
 
     if config.logs["level"] == "debug":
@@ -161,6 +168,9 @@ def main():
     if config.logs["performance_log"]:
         perf.time_tracker.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
         perf.time_tracker.print_all()
+
+    if options.diff:
+        ni.print_diffs()
 
     if options.debug:
         pdb.set_trace()
