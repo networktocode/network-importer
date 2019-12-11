@@ -35,6 +35,7 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
+
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
@@ -171,7 +172,7 @@ def main():
 
     if options.diff:
         ni.print_diffs()
-        
+
     if options.debug:
         pdb.set_trace()
 

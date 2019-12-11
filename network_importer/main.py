@@ -64,11 +64,13 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
+
 def valid_devs(h):
     if h.data["has_config"]:
         return True
     else:
         return False
+
 
 def non_valid_devs(h):
     if h.data["has_config"]:
@@ -76,11 +78,13 @@ def non_valid_devs(h):
     else:
         return True
 
+
 def reacheable_devs(h):
     if h.data["is_reacheable"]:
         return True
     else:
         return False
+
 
 def non_reacheable_devs(h):
     if h.data["is_reacheable"]:
@@ -88,11 +92,13 @@ def non_reacheable_devs(h):
     else:
         return True
 
+
 def valid_and_reacheable_devs(h):
     if h.data["is_reacheable"] and h.data["has_config"]:
         return True
     else:
         return False
+
 
 class NetworkImporter(object):
     def __init__(self, check_mode=True):
@@ -108,7 +114,7 @@ class NetworkImporter(object):
 
         if dev_name not in self.devs.inventory.hosts.keys():
             return False
-        
+
         return self.devs.inventory.hosts[dev_name].data["obj"]
 
     @timeit
@@ -299,7 +305,7 @@ class NetworkImporter(object):
                 for vlan in bf_vlans.frame().itertuples():
                     dev.site.add_vlan(
                         vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
-                        device=dev.name
+                        device=dev.name,
                     )
 
         return True
@@ -321,13 +327,13 @@ class NetworkImporter(object):
             logger.info("Collecting Vlan information from devices .. ")
 
             if not config.main["data_use_cache"]:
-                results = self.devs.filter(
-                    filter_func=valid_and_reacheable_devs
-                ).run(task=collect_vlans_info, on_failed=True)
+                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                    task=collect_vlans_info, on_failed=True
+                )
             else:
-                results = self.devs.filter(
-                    filter_func=valid_devs
-                ).run(task=collect_vlans_info_from_cache, on_failed=True)
+                results = self.devs.filter(filter_func=valid_devs).run(
+                    task=collect_vlans_info_from_cache, on_failed=True
+                )
 
             for dev_name, items in results.items():
 
@@ -351,8 +357,8 @@ class NetworkImporter(object):
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]), 
-                            device=dev_name
+                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]),
+                            device=dev_name,
                         )
 
         if config.main["import_transceivers"]:
@@ -362,13 +368,13 @@ class NetworkImporter(object):
             logger.info("Collecting Transceiver information from devices .. ")
 
             if not config.main["data_use_cache"]:
-                results = self.devs.filter(
-                    filter_func=valid_and_reacheable_devs
-                ).run(task=collect_transceivers_info, on_failed=True)
+                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                    task=collect_transceivers_info, on_failed=True
+                )
             else:
-                results = self.devs.filter(
-                    filter_func=valid_devs
-                ).run(task=collect_transceivers_info_from_cache, on_failed=True)
+                results = self.devs.filter(filter_func=valid_devs).run(
+                    task=collect_transceivers_info_from_cache, on_failed=True
+                )
 
             for dev_name, items in results.items():
                 if items[0].failed:
@@ -462,7 +468,7 @@ class NetworkImporter(object):
         results = self.devs.filter(filter_func=reacheable_devs).run(
             task=update_configuration,
             configs_directory=config.main["configs_directory"] + "/configs",
-            on_failed=True
+            on_failed=True,
         )
 
         return True
@@ -582,7 +588,9 @@ class NetworkImporter(object):
         for site in self.sites.values():
             site.update_remote()
 
-        results = self.devs.filter(filter_func=valid_devs).run(task=device_update_remote)
+        results = self.devs.filter(filter_func=valid_devs).run(
+            task=device_update_remote
+        )
 
         for dev_name, items in results.items():
             if items[0].failed:

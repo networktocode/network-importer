@@ -261,7 +261,7 @@ class NetworkImporterDevice(object):
                     f"{self.name}::{intf.name}",
                     intf.remote.remote.id,
                     # params=diff.items_to_dict(),
-                    params=intf_properties
+                    params=intf_properties,
                 )
 
         # ----------------------------------------------------------
@@ -619,7 +619,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.is_virtual = False
         elif self.local.is_lag == None:
             self.local.is_lag = False
-        
+
         if self.local.mode is None and self.local.switchport_mode:
             self.local.mode = self.local.switchport_mode
 
@@ -734,10 +734,10 @@ class NetworkImporterSite(object):
         if not self.vlans[vid].exist_local():
             self.vlans[vid].add_local(vlan)
             logger.debug(f" Site {self.name} | Vlan {vid} added (local)")
-        
-        if device: 
+
+        if device:
             self.vlans[vid].add_related_device(device)
-           
+
         return True
 
     def convert_vids_to_nids(self, vids):
@@ -824,7 +824,7 @@ class NetworkImporterVlan(NetworkImporterObjBase):
         diff = self.diff()
 
         # Check if we need to add a
-        
+
         missing_devices_on_remote = []
 
         # For each related device locally ensure it's present in the remote system
@@ -833,16 +833,16 @@ class NetworkImporterVlan(NetworkImporterObjBase):
             for dev_name in self.local.related_devices:
                 if dev_name not in self.remote.related_devices:
                     missing_devices_on_remote.append(dev_name)
-             
+
             if missing_devices_on_remote:
                 diff.add_item("related_devices", missing_devices_on_remote, [])
 
         if diff.has_diffs():
-            
+
             tags = self.remote.remote.tags
             if missing_devices_on_remote:
-                tags = tags + [ f"device={dev}" for dev in missing_devices_on_remote]
-            
+                tags = tags + [f"device={dev}" for dev in missing_devices_on_remote]
+
             self.remote.remote.update(
                 data=dict(name=self.local.name, vid=self.local.vid, tags=tags)
             )

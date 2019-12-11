@@ -33,10 +33,12 @@ def patch_http_connection_pool(**constructor_kwargs):
     from urllib3 import connectionpool, poolmanager
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
-        def __init__(self, *args,**kwargs):
+        def __init__(self, *args, **kwargs):
             kwargs.update(constructor_kwargs)
-            super(MyHTTPConnectionPool, self).__init__(*args,**kwargs)
-    poolmanager.pool_classes_by_scheme['http'] = MyHTTPConnectionPool
+            super(MyHTTPConnectionPool, self).__init__(*args, **kwargs)
+
+    poolmanager.pool_classes_by_scheme["http"] = MyHTTPConnectionPool
+
 
 def sort_by_digits(if_name):
     return tuple(map(int, find_digit.findall(if_name)))

@@ -43,7 +43,7 @@ class Vlan(BaseModel):
             self.vid = None
 
         self.site = site
-        self.related_devices = [] 
+        self.related_devices = []
 
 
 class Interface(BaseModel):
@@ -68,6 +68,7 @@ class Interface(BaseModel):
         self.access_vlan = None
         self.allowed_vlans = None
 
+
 class IPAddress(BaseModel):
 
     exclude_from_diff = ["family"]
@@ -76,8 +77,8 @@ class IPAddress(BaseModel):
         self.address = address
         self.family = None
 
-class Optic(BaseModel):
 
+class Optic(BaseModel):
     def __init__(self, name=None, optic_type=None, intf=None, serial=None):
         self.optic_type = optic_type
         self.intf = intf

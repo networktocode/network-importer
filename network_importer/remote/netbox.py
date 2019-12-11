@@ -66,7 +66,7 @@ def get_netbox_interface_properties(intf):
 
 class InterfaceRemote(Interface):
     def __init__(self, **kargs):
-        super().__init__( **kargs )
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -184,7 +184,7 @@ class InterfaceRemote(Interface):
 
 class IPAddressRemote(IPAddress):
     def __init__(self, **kargs):
-        super().__init__( **kargs )
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -202,7 +202,7 @@ class IPAddressRemote(IPAddress):
 
 class OpticRemote(Optic):
     def __init__(self, **kargs):
-        super().__init__( **kargs )
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -222,7 +222,7 @@ class OpticRemote(Optic):
 
 class VlanRemote(Vlan):
     def __init__(self, **kargs):
-        super().__init__( **kargs )
+        super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
@@ -231,11 +231,11 @@ class VlanRemote(Vlan):
         self.name = rem.name
 
         for tag in rem.tags:
-            if  "device=" not in tag:
+            if "device=" not in tag:
                 continue
             tag_type, dev_name = tag.split("=", 1)
             self.related_devices.append(dev_name)
-            
+
         self.remote = rem
 
     def update_remote_info(self, rem):
