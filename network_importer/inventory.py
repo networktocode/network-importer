@@ -22,11 +22,19 @@ from network_importer.model import NetworkImporterDevice
 
 
 class NornirInventoryFromBatfish(Inventory):
-    """ 
-    Construct a inventory object for Nornir based on the a list NodesProperties from Batfish
-    """
+    """Construct a inventory object for Nornir based on the a list NodesProperties from Batfish"""
 
     def __init__(self, devices, **kwargs: Any) -> None:
+        """
+        
+
+        Args:
+          devices: 
+          **kwargs: Any: 
+
+        Returns:
+
+        """
 
         hosts = {}
         for dev in devices.itertuples():
@@ -42,6 +50,7 @@ class NornirInventoryFromBatfish(Inventory):
 
 
 class NBInventory(Inventory):
+    """ """
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -53,18 +62,30 @@ class NBInventory(Inventory):
         **kwargs: Any,
     ) -> None:
         """
-        Netbox plugin 
-          hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py, 
+        Netbox plugin
+          hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py,
           need to see how to contribute back some of these modifications
 
-        Arguments:
-            nb_url: Netbox url, defaults to http://localhost:8080.
-                You can also use env variable NB_URL
-            nb_token: Netbokx token. You can also use env variable NB_TOKEN
-            use_slugs: Whether to use slugs or not
-            ssl_verify: Enable/disable certificate validation or provide path to CA bundle file
-            flatten_custom_fields: Whether to assign custom fields directly to the host or not
-            filter_parameters: Key-value pairs to filter down hosts
+        Args:
+          nb_url: Netbox url
+          You: can also use env variable NB_URL
+          nb_token: Netbokx token
+          use_slugs: Whether to use slugs or not
+          ssl_verify: Enable
+          flatten_custom_fields: Whether to assign custom fields directly to the host or not
+          filter_parameters: Key
+          nb_url: Optional[str]:  (Default value = None)
+          nb_token: Optional[str]:  (Default value = None)
+          use_slugs: bool:  (Default value = True)
+          ssl_verify: Union[bool: 
+          str]:  (Default value = True)
+          flatten_custom_fields: bool:  (Default value = True)
+          filter_parameters: Optional[Dict[str: 
+          Any]]:  (Default value = None)
+          **kwargs: Any: 
+
+        Returns:
+
         """
         filter_parameters = filter_parameters or {}
         nb_url = nb_url or os.environ.get("NB_URL", "http://localhost:8080")

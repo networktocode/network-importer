@@ -12,16 +12,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-# ---------------------------------------------------
-# Base Classes, might need to find a better naming
-# ---------------------------------------------------
-
-
 class BaseModel(object):
+    """ """
 
     exclude_from_diff = []
 
     def get_attrs_diff(self):
+        """
+        Return a list of Attributes of all the attributes of the class,
+        Unless they should be explicitely excluded based on exclude_from_diff
+
+        Return:
+          List of attributes
+
+        """
         attrs = list(vars(self).keys())
         for attr in self.exclude_from_diff:
             if attr in attrs:
@@ -31,10 +35,25 @@ class BaseModel(object):
 
 
 class Vlan(BaseModel):
+    """
+    Base class for Vlan
+    In addition to the Name and Vlan ID
+    This class also track a list of related devices which intent to represent on which device the vlan was found
+    """
 
     exclude_from_diff = ["related_devices"]
 
     def __init__(self, name=None, vid=None, site=None):
+        """
+        
+        Args:
+          name: name of the vlan (Default value = None)
+          vid: vlan id for the vlan, automatically converted to integer if provided (Default value = None)
+          site: name of the site this vlan is associated with (Default value = None)
+
+        Returns:
+          None
+        """
         self.name = name
 
         if vid:
@@ -47,13 +66,27 @@ class Vlan(BaseModel):
 
 
 class Interface(BaseModel):
+    """ 
+    Base Class for Interface
+
+    For now, speed has been excluded from the diff
+    the goal is to add it back in the future
+    """
 
     exclude_from_diff = ["lag_members", "speed"]
 
     def __init__(self, name=None):
+        """
+        
+        Args:
+          name:  (Default value = None)
+
+        Returns:
+
+        """
         self.name = name
         self.device_name = None
-        self.mode = None  # TRUNK, ACCESS, L3, NONE
+        self.mode = None      # TRUNK, ACCESS, L3, NONE
         self.is_virtual = None
         self.active = None
         self.is_lag_member = None
@@ -70,16 +103,43 @@ class Interface(BaseModel):
 
 
 class IPAddress(BaseModel):
+    """ 
+    Base Class for IPaddress
+    Current support only address
+    """
 
     exclude_from_diff = ["family"]
 
     def __init__(self, address=None):
+        """
+        
+
+        Args:
+          address:  (Default value = None)
+
+        Returns:
+
+        """
         self.address = address
         self.family = None
 
 
 class Optic(BaseModel):
+    """ 
+    Base Class for an optic
+    """
     def __init__(self, name=None, optic_type=None, intf=None, serial=None):
+        """
+        
+        Args:
+          name:  (Default value = None)
+          optic_type:  (Default value = None)
+          intf:  (Default value = None)
+          serial:  (Default value = None)
+
+        Returns:
+
+        """
         self.optic_type = optic_type
         self.intf = intf
         self.serial = serial

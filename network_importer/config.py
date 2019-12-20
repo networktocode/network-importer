@@ -19,9 +19,30 @@ from . import schema
 
 
 def extend_with_default(validator_class):
+    """
+    
+
+    Args:
+      validator_class: 
+
+    Returns:
+
+    """
     validate_properties = validator_class.VALIDATORS["properties"]
 
     def set_defaults(validator, properties, instance, schema):
+        """
+        
+
+        Args:
+          validator: 
+          properties: 
+          instance: 
+          schema: 
+
+        Returns:
+
+        """
         for property, subschema in properties.items():
             if "default" in subschema:
                 instance.setdefault(property, subschema["default"])
@@ -36,6 +57,15 @@ DEFAULT_CONFIG_FILE_NAME = "network_importer.toml"
 
 
 def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
+    """
+    
+
+    Args:
+      config_file_name: (Default value = DEFAULT_CONFIG_FILE_NAME)
+
+    Returns:
+
+    """
     global main, logs, netbox, batfish, network
 
     if config_file_name == DEFAULT_CONFIG_FILE_NAME and not os.path.exists(

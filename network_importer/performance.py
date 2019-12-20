@@ -24,6 +24,7 @@ logger = logging.getLogger("network-importer")
 
 
 def init():
+    """ """
     global time_tracker
 
     if not time_tracker:
@@ -31,6 +32,15 @@ def init():
 
 
 def print_from_ms(ms):
+    """
+    
+
+    Args:
+      ms: 
+
+    Returns:
+
+    """
 
     ms_per_sec = 1000
     ms_per_min = ms_per_sec * 60
@@ -48,9 +58,28 @@ def print_from_ms(ms):
 
 
 def timeit(method):
+    """
+    
+
+    Args:
+      method: 
+
+    Returns:
+
+    """
     global time_tracker
 
     def timed(*args, **kw):
+        """
+        
+
+        Args:
+          *args: 
+          **kw: 
+
+        Returns:
+
+        """
         ts = time()
         result = method(*args, **kw)
         te = time()
@@ -67,15 +96,27 @@ def timeit(method):
 
 
 class TimeTracker(object):
+    """ """
     def __init__(self):
+        """ """
         self.start_time = time()
         self.times = {}
         self.nbr_devices = None
 
     def set_nbr_devices(self, nbr):
+        """
+        
+
+        Args:
+          nbr: 
+
+        Returns:
+
+        """
         self.nbr_devices = nbr
 
     def print_all(self):
+        """ """
 
         if not os.path.exists(config.logs["performance_log_directory"]):
             os.makedirs(config.logs["performance_log_directory"])
