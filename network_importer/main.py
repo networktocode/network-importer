@@ -147,6 +147,7 @@ def valid_and_reacheable_devs(h):
 
 class NetworkImporter(object):
     """ """
+
     def __init__(self, check_mode=True):
         """
         
@@ -539,7 +540,9 @@ class NetworkImporter(object):
 
         if not os.path.isdir(config.main["configs_directory"]):
             os.mkdir(config.main["configs_directory"])
-            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
+            logger.debug(
+                f"Configs directory created at {config.main['configs_directory']}"
+            )
 
         configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
 
@@ -548,8 +551,12 @@ class NetworkImporter(object):
             logger.debug(f"Configs directory created at {configs_dir_lvl2}")
 
         # Save the hostnames associated with all existing configurations before we start the update process
-        hostname_existing_configs = [ f.split(".txt")[0] for f in os.listdir(configs_dir_lvl2) if f.endswith(".txt") ]
-        
+        hostname_existing_configs = [
+            f.split(".txt")[0]
+            for f in os.listdir(configs_dir_lvl2)
+            if f.endswith(".txt")
+        ]
+
         self.devs.filter(filter_func=reacheable_devs).run(
             task=check_if_reacheable, on_failed=True
         )
@@ -561,19 +568,21 @@ class NetworkImporter(object):
         )
 
         # ----------------------------------------------------
-        # Process the results and identify which configs has not been updated 
+        # Process the results and identify which configs has not been updated
         # based on the list we captured previously
         # ----------------------------------------------------
         for dev_name, item in results.items():
             if not item[0].failed and dev_name in hostname_existing_configs:
                 hostname_existing_configs.remove(dev_name)
-        
+
         if len(hostname_existing_configs):
-            logger.info(f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated")
-            
+            logger.info(
+                f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated"
+            )
+
             for f in hostname_existing_configs:
                 os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
-                
+
         return True
 
     def warning_devices_not_reacheable(self, msg=""):
@@ -697,7 +706,7 @@ class NetworkImporter(object):
 
         for host in self.devs.inventory.hosts.keys():
             dev = self.get_dev(host)
-            
+
             if not self.devs.inventory.hosts[host].data["has_config"]:
                 pass
 

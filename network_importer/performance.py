@@ -97,6 +97,7 @@ def timeit(method):
 
 class TimeTracker(object):
     """ """
+
     def __init__(self):
         """ """
         self.start_time = time()

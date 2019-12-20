@@ -95,8 +95,8 @@ class NetworkImporterObjBase(object):
             return diff
 
         if not self.local:
-            return diff 
-            
+            return diff
+
         attrs = self.local.get_attrs_diff()
 
         for attr in attrs:
@@ -125,6 +125,7 @@ class NetworkImporterObjBase(object):
 
 class NetworkImporterDevice(object):
     """ """
+
     def __init__(
         self,
         name,
@@ -781,6 +782,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
 class NetworkImporterSite(object):
     """ """
+
     def __init__(self, name, nb=None):
         """
         

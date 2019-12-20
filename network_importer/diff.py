@@ -167,6 +167,7 @@ class NetworkImporterDiffProp(object):
     """ 
     Simple class to same together the local and the remote value of an object
     """
+
     def __init__(self, name, local, remote):
         """
         

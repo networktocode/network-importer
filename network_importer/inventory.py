@@ -51,6 +51,7 @@ class NornirInventoryFromBatfish(Inventory):
 
 class NBInventory(Inventory):
     """ """
+
     def __init__(
         self,
         nb_url: Optional[str] = None,

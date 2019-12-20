@@ -12,6 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
 class BaseModel(object):
     """ """
 
@@ -86,7 +87,7 @@ class Interface(BaseModel):
         """
         self.name = name
         self.device_name = None
-        self.mode = None      # TRUNK, ACCESS, L3, NONE
+        self.mode = None  # TRUNK, ACCESS, L3, NONE
         self.is_virtual = None
         self.active = None
         self.is_lag_member = None
@@ -128,6 +129,7 @@ class Optic(BaseModel):
     """ 
     Base Class for an optic
     """
+
     def __init__(self, name=None, optic_type=None, intf=None, serial=None):
         """
         

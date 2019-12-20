@@ -72,6 +72,7 @@ def get_netbox_interface_properties(intf):
 
 class InterfaceRemote(Interface):
     """ """
+
     def __init__(self, **kargs):
         """
         
@@ -219,6 +220,7 @@ class InterfaceRemote(Interface):
 
 class IPAddressRemote(IPAddress):
     """ """
+
     def __init__(self, **kargs):
         """
         
@@ -266,6 +268,7 @@ class IPAddressRemote(IPAddress):
 
 class OpticRemote(Optic):
     """ """
+
     def __init__(self, **kargs):
         """
         
@@ -315,6 +318,7 @@ class OpticRemote(Optic):
 
 class VlanRemote(Vlan):
     """ """
+
     def __init__(self, **kargs):
         """
         

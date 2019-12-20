@@ -108,7 +108,7 @@ class Changelog(object):
             self.print_jsonlines()
         elif config.logs["change_log_format"] == "text":
             self.print_text()
-          
+
         return True
 
     def print_jsonlines(self):
@@ -150,14 +150,17 @@ class Changelog(object):
 
 class ChangelogCreate(Changelog):
     """ """
+
     log_type = "create"
 
 
 class ChangelogUpdate(Changelog):
     """ """
+
     log_type = "update"
 
 
 class ChangelogDelete(Changelog):
     """ """
+
     log_type = "delete"

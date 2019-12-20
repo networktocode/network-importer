@@ -40,6 +40,7 @@ def patch_http_connection_pool(**constructor_kwargs):
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
         """ """
+
         def __init__(self, *args, **kwargs):
             """
             
