@@ -33,7 +33,7 @@ from network_importer.model import (
 )
 
 from nornir.core.task import Result, Task
-from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping
+from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napalm_get
 
 from napalm.base.helpers import canonical_interface_name
 
@@ -235,7 +235,7 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
 
     results = None
 
-    if "cisco" in task.host.platform:
+    if task.host.platform in ["ios", "nxos"]:
         results = task.run(
             task=netmiko_send_command, command_string="show vlan", use_genie=True
         )
@@ -286,17 +286,28 @@ def update_configuration(
 
     config_filename = f"{configs_directory}/{task.host.name}.{config_extension}"
 
+    new_config = None
     current_md5 = None
+
     if os.path.exists(config_filename):
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    results = task.run(task=netmiko_send_command, command_string="show run")
+    if task.host.platform in ["nxos", "ios"]:
+        results = task.run(task=netmiko_send_command, command_string="show run")
 
-    if results.failed:
-        return Result(host=task.host, failed=True)
+        if results.failed:
+            return Result(host=task.host, failed=True)
 
-    new_config = results[0].result
+        new_config = results[0].result
+
+    else:
+        results = task.run(task=napalm_get, getters=["config"])
+
+        if results.failed:
+            return Result(host=task.host, failed=True)
+
+        new_config = results[0].result["config"]["running"]
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
@@ -373,7 +384,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     check_data_dir(task.host.name)
 
-    if task.host.platform == "cisco_ios":
+    if task.host.platform == "ios":
 
         results = task.run(
             task=netmiko_send_command, command_string="show inventory", use_textfsm=True
@@ -414,7 +425,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
             transceivers_inventory.append(xcvr)
 
-    elif task.host.platform == "cisco_nxos":
+    elif task.host.platform == "nxos":
         cmd = "show interface transceiver"
         results = task.run(
             task=netmiko_send_command, command_string=cmd, use_textfsm=True

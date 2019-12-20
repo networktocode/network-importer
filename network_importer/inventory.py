@@ -78,11 +78,9 @@ class NBInventory(Inventory):
           nb_url: Optional[str]:  (Default value = None)
           nb_token: Optional[str]:  (Default value = None)
           use_slugs: bool:  (Default value = True)
-          ssl_verify: Union[bool: 
-          str]:  (Default value = True)
+          ssl_verify: (Default value = True)
           flatten_custom_fields: bool:  (Default value = True)
-          filter_parameters: Optional[Dict[str: 
-          Any]]:  (Default value = None)
+          filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
           **kwargs: Any: 
 
         Returns:
@@ -151,21 +149,15 @@ class NBInventory(Inventory):
                 host["data"]["custom_fields"] = d["custom_fields"]
 
             # Add values that do have an option for 'slug'
-            if use_slugs:
-                host["data"]["site"] = d["site"]["slug"]
-                host["data"]["role"] = d["device_role"]["slug"]
-                host["data"]["model"] = d["device_type"]["slug"]
+            host["data"]["site"] = d["site"]["slug"]
+            host["data"]["role"] = d["device_role"]["slug"]
+            host["data"]["model"] = d["device_type"]["slug"]
 
-                # Attempt to add 'platform' based of value in 'slug'
-                host["platform"] = (
-                    "cisco_" + d["platform"]["slug"] if d["platform"] else None
-                )
+            # Attempt to add 'platform' based of value in 'slug'
+            host["platform"] = d["platform"]["slug"] if d["platform"] else None
 
-            else:
-                host["data"]["site"] = d["site"]["name"]
-                host["data"]["role"] = d["device_role"]
-                host["data"]["model"] = d["device_type"]
-                host["platform"] = d["platform"]
+            #     "cisco_" + d["platform"]["slug"] if d["platform"] else None
+            # )
 
             host["groups"] = ["global", d["site"]["slug"], d["device_role"]["slug"]]
 
