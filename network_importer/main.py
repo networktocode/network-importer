@@ -395,14 +395,14 @@ class NetworkImporter(object):
                 for transceiver in transceivers:
 
                     nio = Optic(
-                        name=transceiver["serial"],
-                        optic_type=transceiver["type"],
-                        intf=transceiver["interface"],
-                        serial=transceiver["serial"],
+                        name=transceiver["serial"].strip(),
+                        optic_type=transceiver["type"].strip(),
+                        intf=transceiver["interface"].strip(),
+                        serial=transceiver["serial"].strip(),
                     )
 
                     self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
-                        intf_name=transceiver["interface"], optic=nio
+                        intf_name=transceiver["interface"].strip(), optic=nio
                     )
 
         return True
@@ -461,6 +461,19 @@ class NetworkImporter(object):
 
         logger.info("Updating configuration from devices .. ")
 
+        if not os.path.isdir(config.main["configs_directory"]):
+            os.mkdir(config.main["configs_directory"])
+            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
+
+        configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
+
+        if not os.path.isdir(configs_dir_lvl2):
+            os.mkdir(configs_dir_lvl2)
+            logger.debug(f"Configs directory created at {configs_dir_lvl2}")
+
+        # Save the hostnames associated with all existing configurations before we start the update process
+        hostname_existing_configs = [ f.split(".txt")[0] for f in os.listdir(configs_dir_lvl2) if f.endswith(".txt") ]
+        
         self.devs.filter(filter_func=reacheable_devs).run(
             task=check_if_reacheable, on_failed=True
         )
@@ -471,8 +484,21 @@ class NetworkImporter(object):
             on_failed=True,
         )
 
+        # ----------------------------------------------------
+        # Process the results and identify which configs has not been updated 
+        # based on the list we captured previously
+        # ----------------------------------------------------
+        for dev_name, item in results.items():
+            if not item[0].failed and dev_name in hostname_existing_configs:
+                hostname_existing_configs.remove(dev_name)
+        
+        if len(hostname_existing_configs):
+            logger.info(f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated")
+            
+            for f in hostname_existing_configs:
+                os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
+                
         return True
-        # for result in results:
 
     def warning_devices_not_reacheable(self, msg=""):
 
@@ -502,10 +528,8 @@ class NetworkImporter(object):
         SNAPSHOT_NAME = "network-importer"
         SNAPSHOT_PATH = config.main["configs_directory"]
 
-        self.bf = Session()
-        self.bf.host = config.batfish["address"]
+        self.bf = Session(host=config.batfish["address"])
         self.bf.set_network(NETWORK_NAME)
-
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
         return True
@@ -575,6 +599,10 @@ class NetworkImporter(object):
 
         for host in self.devs.inventory.hosts.keys():
             dev = self.get_dev(host)
+            
+            if not self.devs.inventory.hosts[host].data["has_config"]:
+                pass
+
             diff = dev.diff()
             if diff.has_diffs():
                 diff.print_detailed()

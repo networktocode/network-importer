@@ -71,6 +71,9 @@ class NetworkImporterObjBase(object):
             diff.missing_local = True
             return diff
 
+        if not self.local:
+            return diff 
+            
         attrs = self.local.get_attrs_diff()
 
         for attr in attrs:
