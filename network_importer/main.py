@@ -415,7 +415,7 @@ class NetworkImporter(object):
                     continue
 
                 data = items[0].result
-                if not "vlans" in data:
+                if not isinstance(data, dict) or not "vlans" in data:
                     logger.warning(f" {dev_name} | No vlans information returned")
                     continue
 
@@ -560,6 +560,7 @@ class NetworkImporter(object):
         self.devs.filter(filter_func=reacheable_devs).run(
             task=check_if_reacheable, on_failed=True
         )
+        self.warning_devices_not_reacheable()
 
         results = self.devs.filter(filter_func=reacheable_devs).run(
             task=update_configuration,
@@ -614,8 +615,7 @@ class NetworkImporter(object):
     def init_bf_session(self):
         """
         Initialize Batfish
-        TODO Add option to reuse existing snapshot
-
+        
         Args:
 
         Returns:
@@ -708,7 +708,7 @@ class NetworkImporter(object):
             dev = self.get_dev(host)
 
             if not self.devs.inventory.hosts[host].data["has_config"]:
-                pass
+                continue
 
             diff = dev.diff()
             if diff.has_diffs():
