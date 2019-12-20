@@ -277,6 +277,8 @@ class NetworkImporterDevice(object):
                     logger.warning(
                         f" {self.name} | Interface {intf.local.name} has is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
                     )
+            elif not intf.local.is_lag_member and intf.remote.is_lag_member:
+                intf_properties["lag"] = None
 
             if intf.exist_local() and not intf.exist_remote():
 
@@ -329,10 +331,17 @@ class NetworkImporterDevice(object):
                 )
 
             # TODO need to implement IP update
-
             elif not ip.exist_local() and ip.exist_remote():
-                ip.delete_remote()
-                logger.debug(f" {self.name} | IP {ip.address} deleted in Netbox")
+                if (
+                    self.remote.primary_ip
+                    and ip.remote.address == self.remote.primary_ip.address
+                ):
+                    logger.warning(
+                        f" {self.name} | Unable to delete IP {ip.address}, currently primary IP"
+                    )
+                else:
+                    ip.delete_remote()
+                    logger.debug(f" {self.name} | IP {ip.address} deleted in Netbox")
 
         # ----------------------------------------------------------
         # Update Optic is defined
