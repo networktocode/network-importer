@@ -135,7 +135,8 @@ class TimeTracker(object):
             if self.nbr_devices:
                 f.write(f"Report for {self.nbr_devices} devices\n")
 
-            f.write(f"Total execution time: {print_from_ms(time()-self.start_time)}\n")
+            total_time = exec_time = int((time() - self.start_time) * 1000)
+            f.write(f"Total execution time: {print_from_ms(total_time)}\n")
 
             for funct, exec_time in self.times.items():
                 if self.nbr_devices:
