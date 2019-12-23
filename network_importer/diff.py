@@ -14,18 +14,24 @@ limitations under the License.
 
 
 class NetworkImporterDiff(object):
-    """
-    Arguments:
+    """ """
 
-
-    Attributes:
-
-    """
-
-    def __init__(self, obj_type, name):
+    def __init__(self, obj_type: str, name: str):
         """
+        
+        Args:
+          obj_type: 
+          name: 
+
+        Returns:
 
         """
+        if not isinstance(obj_type, str):
+            raise ValueError(f"obj_type must be a string (not {type(obj_type)})")
+
+        if not isinstance(name, str):
+            raise ValueError(f"name must be a string (not {type(name)})")
+
         self.type = obj_type
         self.name = name
         self.items = {}
@@ -34,6 +40,7 @@ class NetworkImporterDiff(object):
         self.missing_local = None
 
     def __str__(self):
+        """ """
 
         if self.missing_remote and self.missing_local:
             return f"{self.type}:{self.name} MISSING BOTH"
@@ -46,19 +53,56 @@ class NetworkImporterDiff(object):
         else:
             return f"{self.type}:{self.name} {self.nbr_diffs()} DIFFs"
 
-    def add_item(self, name, local, remote):
+    def add_item(self, name: str, local, remote):
+        """
+        Add an item tin
 
-        # TODO check if local and remote are of same type
+        Args:
+          name: name or unique identifier if the item
+          local: value on the local system 
+          remote: value on the remote system
+
+        Returns:
+
+        """
 
         self.items[name] = NetworkImporterDiffProp(name, local, remote)
 
     def add_child(self, child):
+        """
+        Attach a child object ( )
+        The childs are organized by name, 
+        if a child with the same name already exist
+        it will be overwritten
+
+        Args:
+          child: NetworkImporterDiff
+
+        Returns:
+
+        """
         self.childs[child.name] = child
 
-    def nbr_diffs(self):
+    def nbr_diffs(self) -> int:
+        """
+        Return the number of items AKA diffs attached to the object
+
+        Returns
+            Int: number of items currently attached to the object
+        """
         return len(self.items.keys())
 
-    def has_diffs(self, include_childs=True):
+    def has_diffs(self, include_childs: bool = True) -> bool:
+        """
+        return true if the object has some diffs, 
+        by default it recursively checks all childs as well
+
+        Args:
+          include_childs: Default value = True
+
+        Returns:
+            Bool 
+        """
 
         status = False
 
@@ -77,7 +121,15 @@ class NetworkImporterDiff(object):
 
         return status
 
-    def print_detailed(self, indent=0):
+    def print_detailed(self, indent: int = 0):
+        """
+        
+        Args:
+          indent: Default value = 0
+
+        Returns:
+
+        """
 
         margin = " " * indent
 
@@ -100,7 +152,13 @@ class NetworkImporterDiff(object):
             if child.has_diffs():
                 child.print_detailed(indent=indent + 4)
 
-    def items_to_dict(self):
+    def items_to_dict(self) -> dict:
+        """ 
+        Return a dictionnary of the local values for all the items attached to the object
+
+        Returns:
+            Dict: dictionnary of the local values for all the items attached to the object
+        """
 
         items = {}
         for item in self.items.values():
@@ -110,8 +168,27 @@ class NetworkImporterDiff(object):
 
 
 class NetworkImporterDiffProp(object):
+    """ 
+    Simple class to same together the local and the remote value of an object
+    """
+
     def __init__(self, name, local, remote):
+        """
+        
+
+        Args:
+          name: 
+          local: 
+          remote: 
+
+        Returns:
+
+        """
 
         self.name = name
+
+        if type(local) != type(remote):
+            raise ValueError("local and remote value must be of same type")
+
         self.local = local
         self.remote = remote

@@ -1,7 +1,8 @@
-pynetbox
-# git+https://github.com/batfish/pybatfish.git
-nornir
-pandas
+junos-eznc==2.2.1
+pynetbox==4.2.1
+pybatfish @ git+git://github.com/batfish/pybatfish@1d1df7e#egg=pybatfish
+nornir==2.3.0
 termcolor
-toml
-jsonschema
+toml==0.10.0
+jsonschema==3.1.1
+genie

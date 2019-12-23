@@ -19,47 +19,102 @@ import network_importer.config as config
 
 
 def changelog_create(obj_type, obj_name, obj_id, params):
+    """
+    Args:
+      obj_type:
+      obj_name:
+      obj_id:
+
+    Returns:
+      
+    """
     cl = ChangelogCreate(
         obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
     )
-    cl.print()
+    cl.save()
 
 
 def changelog_update(obj_type, obj_name, obj_id, params):
+    """
+
+    Args:
+      obj_type: 
+      obj_name: 
+      obj_id: 
+      params: 
+
+    Returns:
+      
+
+    """
     cl = ChangelogUpdate(
         obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
     )
-    cl.print()
+    cl.save()
 
 
 def changelog_delete(obj_type, obj_name, obj_id):
+    """
+    
+    Args:
+      obj_type: 
+      obj_name: 
+      obj_id: 
+
+    Returns:
+
+    """
     cl = ChangelogDelete(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name)
-    cl.print()
+    cl.save()
 
 
 class Changelog(object):
-    obj_type = None
-    obj_name = None
-    obj_id = None
-    params = None
+    """ 
+    Base Changelog object to track a specific changes done on the remote system. 
+    A changelog is defined by an Id a type and a name. It can also includes additional parameters
+    """
 
     def __init__(self, obj_type, obj_id, obj_name, params=None):
+        """
+        
+
+        Args:
+          obj_type: 
+          obj_id: 
+          obj_name: 
+          params:  (Default value = None)
+
+        Returns:
+
+        """
         self.obj_id = obj_id
         self.obj_name = obj_name
         self.obj_type = obj_type
         self.params = params
 
-    def print(self):
+    def save(self):
+        """ 
+        Save the changelog, the destination is defined by the configuration file
+        Currenlty only support  jsonlines and text
+
+        Returns:
+          Bool: True is the changelog was properly saved, False if not 
+        """
 
         if not config.logs["change_log"]:
-            return True
+            return False
 
         if config.logs["change_log_format"] == "jsonlines":
             self.print_jsonlines()
         elif config.logs["change_log_format"] == "text":
             self.print_text()
 
+        return True
+
     def print_jsonlines(self):
+        """ 
+        Write the changelog in jsonlines format in the file defined in the configuration file
+        """
         jcl = {
             "timestamp": int(time() * 1000),
             "time": strftime("%Y-%m-%d %H:%M:%S"),
@@ -76,6 +131,9 @@ class Changelog(object):
             f.write(json.dumps(jcl) + "\n")
 
     def print_text(self):
+        """ 
+        Write the changelog in text format in the file defined in the configuration file
+        """
 
         log = "{time} {action} {obj_type} {obj_name} ({obj_id}) {params}".format(
             time=strftime("%Y-%m-%d %H:%M:%S"),
@@ -91,12 +149,18 @@ class Changelog(object):
 
 
 class ChangelogCreate(Changelog):
+    """ """
+
     log_type = "create"
 
 
 class ChangelogUpdate(Changelog):
+    """ """
+
     log_type = "update"
 
 
 class ChangelogDelete(Changelog):
+    """ """
+
     log_type = "delete"

@@ -66,6 +66,15 @@ logger = logging.getLogger("network-importer")
 
 
 def valid_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
     if h.data["has_config"]:
         return True
     else:
@@ -73,6 +82,15 @@ def valid_devs(h):
 
 
 def non_valid_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
     if h.data["has_config"]:
         return False
     else:
@@ -80,6 +98,15 @@ def non_valid_devs(h):
 
 
 def reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
     if h.data["is_reacheable"]:
         return True
     else:
@@ -87,6 +114,15 @@ def reacheable_devs(h):
 
 
 def non_reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
     if h.data["is_reacheable"]:
         return False
     else:
@@ -94,6 +130,15 @@ def non_reacheable_devs(h):
 
 
 def valid_and_reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
     if h.data["is_reacheable"] and h.data["has_config"]:
         return True
     else:
@@ -101,7 +146,18 @@ def valid_and_reacheable_devs(h):
 
 
 class NetworkImporter(object):
+    """ """
+
     def __init__(self, check_mode=True):
+        """
+        
+
+        Args:
+          check_mode:  (Default value = True)
+
+        Returns:
+
+        """
 
         self.sites = dict()
         self.devs = None
@@ -111,6 +167,15 @@ class NetworkImporter(object):
         self.check_mode = check_mode
 
     def get_dev(self, dev_name):
+        """
+        
+
+        Args:
+          dev_name: 
+
+        Returns:
+
+        """
 
         if dev_name not in self.devs.inventory.hosts.keys():
             return False
@@ -124,10 +189,15 @@ class NetworkImporter(object):
         # 1/ Devices already exist in Netbox
         #   Case A : configuration are provided
         #   Case B : configuration are not provided but primary IP is defined
-        # 
+        #
         # 2/ Devices are not in Netbox (Not Supported Yet)
         #   Everything is coming from inventory file
         #                 Mandatory: hostname, platform, username, password
+
+        Args:
+          limit: (Default value = None)
+
+        Returns:
 
         """
 
@@ -203,13 +273,18 @@ class NetworkImporter(object):
         """
         Initilize NetworkImporter Object
             Check if NB is reacheable
-            Create inventory 
+            Create inventory
             Create all NetworkImporterDevice object
             Create all sites
-
+        
         inputs:
             limit: filter the inventory to limit the execution to a subset of devices
-        
+
+        Args:
+          limit: (Default value = None)
+
+        Returns:
+
         """
 
         patch_http_connection_pool(maxsize=100)
@@ -275,9 +350,7 @@ class NetworkImporter(object):
 
     @timeit
     def import_devices_from_configs(self):
-        """
-
-        """
+        """ """
 
         for host in self.devs.inventory.hosts.values():
 
@@ -312,9 +385,7 @@ class NetworkImporter(object):
 
     @timeit
     def import_devices_from_cmds(self):
-        """
-
-        """
+        """ """
 
         if not config.main["data_use_cache"]:
             self.devs.filter(filter_func=valid_and_reacheable_devs).run(
@@ -344,7 +415,7 @@ class NetworkImporter(object):
                     continue
 
                 data = items[0].result
-                if not "vlans" in data:
+                if not isinstance(data, dict) or not "vlans" in data:
                     logger.warning(f" {dev_name} | No vlans information returned")
                     continue
 
@@ -395,19 +466,20 @@ class NetworkImporter(object):
                 for transceiver in transceivers:
 
                     nio = Optic(
-                        name=transceiver["serial"],
-                        optic_type=transceiver["type"],
-                        intf=transceiver["interface"],
-                        serial=transceiver["serial"],
+                        name=transceiver["serial"].strip(),
+                        optic_type=transceiver["type"].strip(),
+                        intf=transceiver["interface"].strip(),
+                        serial=transceiver["serial"].strip(),
                     )
 
                     self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
-                        intf_name=transceiver["interface"], optic=nio
+                        intf_name=transceiver["interface"].strip(), optic=nio
                     )
 
         return True
 
     def check_data_consistency(self):
+        """ """
 
         for host in self.devs.inventory.hosts.keys():
 
@@ -418,9 +490,7 @@ class NetworkImporter(object):
             dev.check_data_consistency()
 
     def get_nb_handler(self):
-        """
-
-        """
+        """ """
         if not self.nb:
             self.create_nb_handler()
 
@@ -429,6 +499,12 @@ class NetworkImporter(object):
     def check_nb_params(self, exit_on_failure=True):
         """
         TODO add support for non exist on failure
+
+        Args:
+          exit_on_failure: (Default value = True)
+
+        Returns:
+
         """
 
         if not self.nb:
@@ -458,12 +534,33 @@ class NetworkImporter(object):
 
     @timeit
     def update_configurations(self):
+        """ """
 
         logger.info("Updating configuration from devices .. ")
+
+        if not os.path.isdir(config.main["configs_directory"]):
+            os.mkdir(config.main["configs_directory"])
+            logger.debug(
+                f"Configs directory created at {config.main['configs_directory']}"
+            )
+
+        configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
+
+        if not os.path.isdir(configs_dir_lvl2):
+            os.mkdir(configs_dir_lvl2)
+            logger.debug(f"Configs directory created at {configs_dir_lvl2}")
+
+        # Save the hostnames associated with all existing configurations before we start the update process
+        hostname_existing_configs = [
+            f.split(".txt")[0]
+            for f in os.listdir(configs_dir_lvl2)
+            if f.endswith(".txt")
+        ]
 
         self.devs.filter(filter_func=reacheable_devs).run(
             task=check_if_reacheable, on_failed=True
         )
+        self.warning_devices_not_reacheable()
 
         results = self.devs.filter(filter_func=reacheable_devs).run(
             task=update_configuration,
@@ -471,10 +568,34 @@ class NetworkImporter(object):
             on_failed=True,
         )
 
+        # ----------------------------------------------------
+        # Process the results and identify which configs has not been updated
+        # based on the list we captured previously
+        # ----------------------------------------------------
+        for dev_name, item in results.items():
+            if not item[0].failed and dev_name in hostname_existing_configs:
+                hostname_existing_configs.remove(dev_name)
+
+        if len(hostname_existing_configs):
+            logger.info(
+                f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated"
+            )
+
+            for f in hostname_existing_configs:
+                os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
+
         return True
-        # for result in results:
 
     def warning_devices_not_reacheable(self, msg=""):
+        """
+        
+
+        Args:
+          msg: (Default value = "")
+
+        Returns:
+
+        """
 
         for host in self.devs.filter(
             filter_func=lambda h: h.data["is_reacheable"] == False
@@ -485,6 +606,7 @@ class NetworkImporter(object):
             logger.warning(f" {host} device is not reacheable, {raison}")
 
     def create_nb_handler(self):
+        """ """
 
         self.nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
         return True
@@ -492,8 +614,12 @@ class NetworkImporter(object):
     @timeit
     def init_bf_session(self):
         """
-        Initialize Batfish 
-        TODO Add option to reuse existing snapshot
+        Initialize Batfish
+        
+        Args:
+
+        Returns:
+
         """
 
         # if "configs_directory" not in config.main.keys():
@@ -502,10 +628,8 @@ class NetworkImporter(object):
         SNAPSHOT_NAME = "network-importer"
         SNAPSHOT_PATH = config.main["configs_directory"]
 
-        self.bf = Session()
-        self.bf.host = config.batfish["address"]
+        self.bf = Session(host=config.batfish["address"])
         self.bf.set_network(NETWORK_NAME)
-
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
         return True
@@ -515,6 +639,11 @@ class NetworkImporter(object):
         Print on Screen all devices, interfaces and IPs and how their current status compare to remote
           Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
           This print function might be better off in the device object ...
+
+        Args:
+
+        Returns:
+
         """
         PRESENT = colored("PRESENT", "green")
         ABSENT = colored("ABSENT", "yellow")
@@ -556,6 +685,7 @@ class NetworkImporter(object):
         return True
 
     def diff_local_remote(self):
+        """ """
 
         for dev_name in self.devs.inventory.hosts.keys():
 
@@ -567,6 +697,7 @@ class NetworkImporter(object):
                 logger.info(f" {dev_name} is up to date")
 
     def print_diffs(self):
+        """ """
 
         for site in self.sites.values():
             diff = site.diff()
@@ -575,15 +706,17 @@ class NetworkImporter(object):
 
         for host in self.devs.inventory.hosts.keys():
             dev = self.get_dev(host)
+
+            if not self.devs.inventory.hosts[host].data["has_config"]:
+                continue
+
             diff = dev.diff()
             if diff.has_diffs():
                 diff.print_detailed()
 
     @timeit
     def update_remote(self):
-        """
-        
-        """
+        """ """
 
         for site in self.sites.values():
             site.update_remote()
@@ -607,6 +740,11 @@ class NetworkImporter(object):
         Build cabling
           Currently we are only getting the information from the L3 EDGE in Batfish
           We need to pull LLDP data as well using Nornir to complement that
+
+        Args:
+
+        Returns:
+
         """
 
         if not config.main["import_cabling"]:

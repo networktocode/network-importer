@@ -11,11 +11,10 @@ def requirements(filename="requirements.txt"):
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 setup(
     name=package_name,
     version=package_version,
-    description="Network Importer tool to import an existing network into a Database /Source Of Truth",
+    description="Network Importer tool to import an existing network into a Database / Source Of Truth",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Damien Garros",

@@ -33,7 +33,7 @@ from network_importer.model import (
 )
 
 from nornir.core.task import Result, Task
-from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping
+from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napalm_get
 
 from napalm.base.helpers import canonical_interface_name
 
@@ -41,6 +41,17 @@ logger = logging.getLogger("network-importer")
 
 
 def save_data_to_file(host, filename, content):
+    """
+    
+
+    Args:
+      host: 
+      filename: 
+      content: 
+
+    Returns:
+
+    """
 
     directory = config.main["data_directory"]
     filepath = f"{directory}/{host}/{filename}.json"
@@ -52,6 +63,16 @@ def save_data_to_file(host, filename, content):
 
 
 def get_data_from_file(host, filename):
+    """
+    
+
+    Args:
+      host: 
+      filename: 
+
+    Returns:
+
+    """
 
     directory = config.main["data_directory"]
     filepath = f"{directory}/{host}/{filename}.json"
@@ -71,6 +92,15 @@ def get_data_from_file(host, filename):
 
 
 def check_data_dir(host):
+    """
+    
+
+    Args:
+      host: 
+
+    Returns:
+
+    """
 
     directory = config.main["data_directory"]
     host_dir = f"{directory}/{host}"
@@ -83,6 +113,15 @@ def check_data_dir(host):
 
 def initialize_devices(task: Task, bfs=None) -> Result:
     """
+    
+
+    Args:
+      task: Task:
+      bfs: (Default value = None)
+      task: Task:
+      task: Task: 
+
+    Returns:
 
     """
 
@@ -117,6 +156,15 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
 
 def device_update_remote(task: Task) -> Result:
+    """
+    
+
+    Args:
+      task: Task
+
+    Returns:
+
+    """
 
     res = task.host.data["obj"].update_remote()
 
@@ -127,6 +175,12 @@ def device_generate_hostvars(task: Task) -> Result:
     """
     Extract the facts for each device from Batfish to generate the host_vars
     Cleaning up the interfaces for now since these information are already in netbox
+
+    Args:
+      task: Task:
+
+    Returns:
+
     """
     module_path = os.path.dirname(network_importer.__file__)
     TPL_DIR = f"{module_path}/templates/"
@@ -169,13 +223,19 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
         Cisco IOS/IOS_XE >> Genie
         Cisco NX-OS >> Genie
 
+    Args:
+      task: Task:
+      update_cache: (Default value = True) 
+
+    Returns:
+
     """
 
     check_data_dir(task.host.name)
 
     results = None
 
-    if "cisco" in task.host.platform:
+    if task.host.platform in ["ios", "nxos"]:
         results = task.run(
             task=netmiko_send_command, command_string="show vlan", use_genie=True
         )
@@ -191,6 +251,14 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
 def collect_vlans_info_from_cache(task: Task) -> Result:
     """
     Collect Vlans information from cache data
+
+    Args:
+      task: Task:
+      task: Task:
+      task: Task: 
+
+    Returns:
+
     """
     data = get_data_from_file(task.host.name, "vlans")
 
@@ -202,25 +270,44 @@ def update_configuration(
 ) -> Result:
     """
     Collect running configurations on all devices
-
+    
     Supported Devices:
         Default: Napalm (TODO)
         Cisco: Netmiko
+
+    Args:
+      task: Task:
+      configs_directory: 
+      config_extension: (Default value = "txt")
+
+    Returns:
+
     """
 
     config_filename = f"{configs_directory}/{task.host.name}.{config_extension}"
 
+    new_config = None
     current_md5 = None
+
     if os.path.exists(config_filename):
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    results = task.run(task=netmiko_send_command, command_string="show run")
+    if task.host.platform in ["nxos", "ios"]:
+        results = task.run(task=netmiko_send_command, command_string="show run")
 
-    if results.failed:
-        return Result(host=task.host, failed=True)
+        if results.failed:
+            return Result(host=task.host, failed=True)
 
-    new_config = results[0].result
+        new_config = results[0].result
+
+    else:
+        results = task.run(task=napalm_get, getters=["config"])
+
+        if results.failed:
+            return Result(host=task.host, failed=True)
+
+        new_config = results[0].result["config"]["running"]
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
@@ -240,11 +327,18 @@ def update_configuration(
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task,) -> Result:
+def collect_lldp_neighbors(task: Task) -> Result:
     """
-    Collect Vlans information on all devices
+    Collect LLDP neighbor information on all devices
+
     Supported Devices:
-        TODO
+        Cisco only
+
+    Args:
+      task: Task:
+
+    Returns:
+
     """
 
     check_data_dir(task.host.name)
@@ -264,6 +358,18 @@ def collect_lldp_neighbors(task: Task,) -> Result:
 def collect_transceivers_info(task: Task, update_cache=True) -> Result:
     """
     Collect transceiver informaton on all devices
+
+    Supported Devices:
+        Cisco IOS
+        cisco_nxos
+
+    Args:
+      task: Task:
+      update_cache: (Default value = True)
+
+
+    Returns:
+
     """
 
     transceivers_inventory = []
@@ -278,7 +384,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     check_data_dir(task.host.name)
 
-    if task.host.platform == "cisco_ios":
+    if task.host.platform == "ios":
 
         results = task.run(
             task=netmiko_send_command, command_string="show inventory", use_textfsm=True
@@ -319,7 +425,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
             transceivers_inventory.append(xcvr)
 
-    elif task.host.platform == "cisco_nxos":
+    elif task.host.platform == "nxos":
         cmd = "show interface transceiver"
         results = task.run(
             task=netmiko_send_command, command_string=cmd, use_textfsm=True
@@ -349,6 +455,12 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 def collect_transceivers_info_from_cache(task: Task) -> Result:
     """
     Collect Transceiver information from cache data
+
+    Args:
+      task: Task:
+
+    Returns:
+
     """
     data = get_data_from_file(task.host.name, "transceivers")
 
@@ -356,6 +468,18 @@ def collect_transceivers_info_from_cache(task: Task) -> Result:
 
 
 def check_if_reacheable(task: Task) -> Result:
+    """
+    Check if a device is reacheable by doing a TCP ping it on port 22
+
+    Will change the status of the variable `is_reacheable` in host.data based on the results
+   
+   Args:
+      task: Nornir Task
+
+    Returns:
+      Result: 
+
+    """
 
     PORT_TO_CHECK = 22
     results = task.run(task=tcp_ping, ports=[PORT_TO_CHECK])

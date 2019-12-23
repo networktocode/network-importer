@@ -17,11 +17,17 @@ from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 
 def get_netbox_interface_properties(intf):
     """
-    Get a dict with all interface properties in Netbox format 
-
+    Get a dict with all interface properties in Netbox format
+    
     Input: Vlan
     Output: Dictionnary of properties ready to pass to netbox
     minus the vlans IDs that needs to be converted
+
+    Args:
+      intf: 
+
+    Returns:
+
     """
 
     intf_properties = dict()
@@ -65,11 +71,31 @@ def get_netbox_interface_properties(intf):
 
 
 class InterfaceRemote(Interface):
+    """ """
+
     def __init__(self, **kargs):
+        """
+        
+
+        Args:
+          **kargs: 
+
+        Returns:
+
+        """
         super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
 
         self.remote = rem
 
@@ -127,6 +153,15 @@ class InterfaceRemote(Interface):
         return True
 
     def update_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
 
         # Clear all existing info first
         self.mode = None  # TRUNK, ACCESS, L3, NONE
@@ -147,6 +182,7 @@ class InterfaceRemote(Interface):
         self.add_remote_info(rem)
 
     def delete(self):
+        """ """
         self.remote.delete()
         return True
 
@@ -183,29 +219,79 @@ class InterfaceRemote(Interface):
 
 
 class IPAddressRemote(IPAddress):
+    """ """
+
     def __init__(self, **kargs):
+        """
+        
+
+        Args:
+          **kargs: 
+
+        Returns:
+
+        """
         super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
         self.address = rem.address
         self.family = rem.family
         self.remote = rem
 
     def update_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
         self.add_remote_info(rem)
 
     def delete(self):
+        """ """
         self.remote.delete()
         return True
 
 
 class OpticRemote(Optic):
+    """ """
+
     def __init__(self, **kargs):
+        """
+        
+
+        Args:
+          **kargs: 
+
+        Returns:
+
+        """
         super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
         self.optic_type = rem.part_id
         self.intf = rem.description
         self.serial = rem.serial
@@ -213,19 +299,49 @@ class OpticRemote(Optic):
         self.remote = rem
 
     def update_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
         self.add_remote_info(rem)
 
     def delete(self):
+        """ """
         self.remote.delete()
         return True
 
 
 class VlanRemote(Vlan):
+    """ """
+
     def __init__(self, **kargs):
+        """
+        
+
+        Args:
+          **kargs: 
+
+        Returns:
+
+        """
         super().__init__(**kargs)
         self.remote = None
 
     def add_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
 
         self.vid = rem.vid
         self.name = rem.name
@@ -239,8 +355,18 @@ class VlanRemote(Vlan):
         self.remote = rem
 
     def update_remote_info(self, rem):
+        """
+        
+
+        Args:
+          rem: 
+
+        Returns:
+
+        """
         self.add_remote_info(rem)
 
     def delete(self):
+        """ """
         self.remote.delete()
         return True

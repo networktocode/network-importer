@@ -2,9 +2,9 @@ language: python
 python:
   - 3.6
   - 3.7
-  - 3.8
 before_install:
   - python --version
 install:
-  - pip install black
+  - pip install -r requirements-develop.txt
+  - python setup.py develop
 script: make tests # run tests
