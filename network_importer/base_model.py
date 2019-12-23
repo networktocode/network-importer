@@ -12,13 +12,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+from typing import List
+
 
 class BaseModel(object):
     """ """
 
     exclude_from_diff = []
 
-    def get_attrs_diff(self):
+    def get_attrs_diff(self) -> List[str]:
         """
         Return a list of Attributes of all the attributes of the class,
         Unless they should be explicitely excluded based on exclude_from_diff
@@ -32,7 +34,7 @@ class BaseModel(object):
             if attr in attrs:
                 attrs.remove(attr)
 
-        return attrs
+        return sorted(attrs)
 
 
 class Vlan(BaseModel):
@@ -44,7 +46,7 @@ class Vlan(BaseModel):
 
     exclude_from_diff = ["related_devices"]
 
-    def __init__(self, name=None, vid=None, site=None):
+    def __init__(self, name: str = None, vid=None, site: str = None):
         """
         
         Args:
@@ -76,7 +78,7 @@ class Interface(BaseModel):
 
     exclude_from_diff = ["lag_members", "speed"]
 
-    def __init__(self, name=None):
+    def __init__(self, name: str = None):
         """
         
         Args:
@@ -111,7 +113,7 @@ class IPAddress(BaseModel):
 
     exclude_from_diff = ["family"]
 
-    def __init__(self, address=None):
+    def __init__(self, address: str = None):
         """
         
 
@@ -130,7 +132,13 @@ class Optic(BaseModel):
     Base Class for an optic
     """
 
-    def __init__(self, name=None, optic_type=None, intf=None, serial=None):
+    def __init__(
+        self,
+        name: str = None,
+        optic_type: str = None,
+        intf: str = None,
+        serial: str = None,
+    ):
         """
         
         Args:
