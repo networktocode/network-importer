@@ -16,7 +16,6 @@ import time
 import re
 import logging
 
-find_digit = re.compile(r"\D?(\d+)\D?")
 
 logger = logging.getLogger("network-importer")
 
@@ -58,16 +57,18 @@ def patch_http_connection_pool(**constructor_kwargs):
     poolmanager.pool_classes_by_scheme["http"] = MyHTTPConnectionPool
 
 
-def sort_by_digits(if_name) -> tuple:
+def sort_by_digits(if_name: str) -> tuple:
     """
-    
+    Extract all digits from a string and return them as tuple
 
     Args:
       if_name: 
 
     Returns:
+      tuple of all digits in the string
 
     """
+    find_digit = re.compile(r"\D?(\d+)\D?")
     return tuple(map(int, find_digit.findall(if_name)))
 
 

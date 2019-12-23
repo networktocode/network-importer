@@ -13,10 +13,18 @@ limitations under the License.
 """
 
 import pytest
-from network_importer.utils import expand_vlans_list
+from network_importer.utils import expand_vlans_list, sort_by_digits
 
 
 def test_expand_vlans_list():
 
     assert expand_vlans_list("10-11") == [10, 11]
     assert expand_vlans_list("20-24") == [20, 21, 22, 23, 24]
+
+
+def test_sort_by_digits():
+
+    assert sort_by_digits("Eth0/2/3") == (0, 2, 3,)
+    assert sort_by_digits("Eth0/2/543/14/6") == (0, 2, 543, 14, 6,)
+    assert sort_by_digits("Eth0") == (0,)
+    assert sort_by_digits("Eth") == ()
