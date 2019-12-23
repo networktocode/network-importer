@@ -2,3 +2,4 @@ requests_mock
 tox
 black
 pyment
+pytest
