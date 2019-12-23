@@ -16,7 +16,7 @@ limitations under the License.
 class NetworkImporterDiff(object):
     """ """
 
-    def __init__(self, obj_type, name):
+    def __init__(self, obj_type: str, name: str):
         """
         
         Args:
@@ -26,6 +26,12 @@ class NetworkImporterDiff(object):
         Returns:
 
         """
+        if not isinstance(obj_type, str):
+            raise ValueError(f"obj_type must be a string (not {type(obj_type)})")
+
+        if not isinstance(name, str):
+            raise ValueError(f"name must be a string (not {type(name)})")
+
         self.type = obj_type
         self.name = name
         self.items = {}
@@ -47,7 +53,7 @@ class NetworkImporterDiff(object):
         else:
             return f"{self.type}:{self.name} {self.nbr_diffs()} DIFFs"
 
-    def add_item(self, name, local, remote):
+    def add_item(self, name: str, local, remote):
         """
         Add an item tin
 
@@ -59,8 +65,6 @@ class NetworkImporterDiff(object):
         Returns:
 
         """
-
-        # TODO check if local and remote are of same type
 
         self.items[name] = NetworkImporterDiffProp(name, local, remote)
 
@@ -79,7 +83,7 @@ class NetworkImporterDiff(object):
         """
         self.childs[child.name] = child
 
-    def nbr_diffs(self):
+    def nbr_diffs(self) -> int:
         """
         Return the number of items AKA diffs attached to the object
 
@@ -88,7 +92,7 @@ class NetworkImporterDiff(object):
         """
         return len(self.items.keys())
 
-    def has_diffs(self, include_childs=True):
+    def has_diffs(self, include_childs: bool = True) -> bool:
         """
         return true if the object has some diffs, 
         by default it recursively checks all childs as well
@@ -117,7 +121,7 @@ class NetworkImporterDiff(object):
 
         return status
 
-    def print_detailed(self, indent=0):
+    def print_detailed(self, indent: int = 0):
         """
         
         Args:
@@ -148,7 +152,7 @@ class NetworkImporterDiff(object):
             if child.has_diffs():
                 child.print_detailed(indent=indent + 4)
 
-    def items_to_dict(self):
+    def items_to_dict(self) -> dict:
         """ 
         Return a dictionnary of the local values for all the items attached to the object
 
@@ -182,5 +186,9 @@ class NetworkImporterDiffProp(object):
         """
 
         self.name = name
+
+        if type(local) != type(remote):
+            raise ValueError("local and remote value must be of same type")
+
         self.local = local
         self.remote = remote
