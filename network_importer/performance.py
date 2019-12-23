@@ -31,7 +31,7 @@ def init():
         time_tracker = TimeTracker()
 
 
-def print_from_ms(ms):
+def print_from_ms(ms) -> str:
     """
     
 
@@ -104,7 +104,7 @@ class TimeTracker(object):
         self.times = {}
         self.nbr_devices = None
 
-    def set_nbr_devices(self, nbr):
+    def set_nbr_devices(self, nbr: int):
         """
         
 

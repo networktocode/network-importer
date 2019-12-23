@@ -327,7 +327,7 @@ def update_configuration(
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task,) -> Result:
+def collect_lldp_neighbors(task: Task) -> Result:
     """
     Collect LLDP neighbor information on all devices
 

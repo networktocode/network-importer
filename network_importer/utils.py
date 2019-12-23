@@ -58,7 +58,7 @@ def patch_http_connection_pool(**constructor_kwargs):
     poolmanager.pool_classes_by_scheme["http"] = MyHTTPConnectionPool
 
 
-def sort_by_digits(if_name):
+def sort_by_digits(if_name) -> tuple:
     """
     
 
@@ -71,7 +71,7 @@ def sort_by_digits(if_name):
     return tuple(map(int, find_digit.findall(if_name)))
 
 
-def jinja_filter_toyaml_list(value):
+def jinja_filter_toyaml_list(value) -> str:
     """
     JinjaFilter to return a dict as a Nice Yaml
 
@@ -84,7 +84,7 @@ def jinja_filter_toyaml_list(value):
     return yaml.dump(value, default_flow_style=None)
 
 
-def jinja_filter_toyaml_dict(value):
+def jinja_filter_toyaml_dict(value) -> str:
     """
 
     Args:
@@ -96,7 +96,7 @@ def jinja_filter_toyaml_dict(value):
     return yaml.dump(value, default_flow_style=False)
 
 
-def expand_vlans_list(vlans):
+def expand_vlans_list(vlans: str) -> list:
     """
     Convert string of comma separated integer (vlan) into a list
 
