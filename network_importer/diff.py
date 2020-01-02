@@ -169,10 +169,10 @@ class NetworkImporterDiff(object):
 
 class NetworkImporterDiffProp(object):
     """ 
-    Simple class to same together the local and the remote value of an object
+    Simple class to save together the local and the remote value of an object
     """
 
-    def __init__(self, name, local, remote):
+    def __init__(self, name: str, local, remote):
         """
         
 
@@ -187,8 +187,10 @@ class NetworkImporterDiffProp(object):
 
         self.name = name
 
-        if type(local) != type(remote):
-            raise ValueError("local and remote value must be of same type")
+        if local != None and remote != None and type(local) != type(remote):
+            raise ValueError(
+                f"local and remote value must be of same type (local:{type(local)}, remote:{type(remote)})"
+            )
 
         self.local = local
         self.remote = remote

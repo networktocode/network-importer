@@ -85,7 +85,11 @@ class NetworkImporterObjBase(object):
     def diff(self):
         """ """
 
-        diff = NetworkImporterDiff(self.obj_type, self.id)
+        if self.id:
+            diff = NetworkImporterDiff(self.obj_type, self.id)
+        else:
+            diff = NetworkImporterDiff(self.obj_type, "undefined")
+
         if self.local and not self.remote:
             diff.missing_remote = True
             return diff
@@ -469,7 +473,7 @@ class NetworkImporterDevice(object):
             )
 
         if not self.interfaces[intf_name].optic:
-            self.interfaces[intf_name].optic = NetworkImporterOptic()
+            self.interfaces[intf_name].optic = NetworkImporterOptic(optic.serial)
 
         self.interfaces[intf_name].optic.local = optic
 
@@ -1087,9 +1091,19 @@ class NetworkImporterOptic(NetworkImporterObjBase):
 
     obj_type = "optic"
 
-    def add_remote(self, remote):
+    def __init__(self, id=None):
         """
         
+        Args:
+          id: 
+
+        Returns:
+
+        """
+        self.id = id
+
+    def add_remote(self, remote):
+        """
 
         Args:
           remote: 
@@ -1099,5 +1113,8 @@ class NetworkImporterOptic(NetworkImporterObjBase):
         """
         self.remote = OpticRemote()
         self.remote.add_remote_info(remote)
+
+        if not self.id and self.remote.serial:
+            self.id = self.remote.serial
 
         return True
