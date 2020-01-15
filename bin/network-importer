@@ -127,7 +127,9 @@ def main():
     # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
-    logging.basicConfig(stream=sys.stdout, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logging.basicConfig(
+        stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     if config.logs["level"] == "debug":
         logger.setLevel(logging.DEBUG)

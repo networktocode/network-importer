@@ -22,6 +22,7 @@ import re
 from collections import defaultdict
 
 import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import requests
@@ -30,7 +31,7 @@ import pynetbox
 from pybatfish.client.session import Session
 
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
     from nornir.core.filter import F
 
