@@ -12,13 +12,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import sys
 import os
 import json
 import yaml
-import logging
-import pdb
+
 import re
+from collections import defaultdict
 
 import warnings
 
@@ -26,10 +27,14 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import requests
 import pynetbox
-from collections import defaultdict
+
 from pybatfish.client.session import Session
-from nornir import InitNornir
-from nornir.core.filter import F
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from nornir import InitNornir
+    from nornir.core.filter import F
+
 from termcolor import colored
 from jinja2 import Template, Environment, FileSystemLoader
 
@@ -414,21 +419,16 @@ class NetworkImporter(object):
                     )
                     continue
 
-                data = items[0].result
-                if not isinstance(data, dict) or not "vlans" in data:
-                    logger.warning(f" {dev_name} | No vlans information returned")
-                    continue
-
-                for vlan in data["vlans"].values():
+                for vlan in items[0].result:
                     if (
-                        vlan["vlan_id"]
+                        vlan["id"]
                         not in self.devs.inventory.hosts[dev_name]
                         .data["obj"]
                         .site.vlans.keys()
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]),
+                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]),
                             device=dev_name,
                         )
 

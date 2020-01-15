@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-package_version = "0.1.0"
+package_version = "0.2.1"
 package_name = "network-importer"
 
 

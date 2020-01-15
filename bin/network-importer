@@ -14,21 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+
+import logging
+
 import argparse
 import sys
 import os
 import json
 import yaml
-import logging
-import random  # noqa: F401
+
 import pdb
 import re
 import time
-
-from collections import defaultdict
-
-import pynetbox
-import requests
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
@@ -130,7 +127,9 @@ def main():
     # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
-    logging.basicConfig(stream=sys.stdout)
+    logging.basicConfig(
+        stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     if config.logs["level"] == "debug":
         logger.setLevel(logging.DEBUG)

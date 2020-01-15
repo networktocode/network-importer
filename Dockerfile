@@ -9,5 +9,5 @@ RUN python setup.py develop
 
 RUN mkdir /library
 WORKDIR /library
-RUN git clone --single-branch --branch dga-nxos-xcvr https://github.com/dgarros/ntc-templates.git 
+RUN git clone --single-branch --branch master https://github.com/networktocode/ntc-templates.git 
 ENV NET_TEXTFSM=/library/ntc-templates

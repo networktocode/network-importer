@@ -13,6 +13,7 @@ limitations under the License.
 """
 import logging
 import pdb
+import sys
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
@@ -186,15 +187,10 @@ class NetworkImporterDevice(object):
         if pull_cache:
             self.update_cache()
 
-    # def __repr__(self):
-    #     return "Test()"
-    # def __str__(self):
-    #      return "member of Test"
-
     def update_remote(self):
         """Update remote system, currently Netbox to match what is defined locally"""
 
-        logger.debug(f"Device {self.name}, Updating remote (Netbox) ... ")
+        logger.debug(f" {self.name} | Updating remote (Netbox) ... ")
 
         # --------------------------------------------
         # Update or Create all Interfaces
@@ -270,7 +266,7 @@ class NetworkImporterDevice(object):
                 if intf.local.parent in self.interfaces.keys():
                     if not self.interfaces[intf.local.parent].exist_remote():
                         logger.warning(
-                            f" {self.name} | Interface {intf.name} has is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
+                            f" {self.name} | Interface {intf.name} is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
                         )
                     else:
                         intf_properties["lag"] = self.interfaces[
@@ -279,9 +275,14 @@ class NetworkImporterDevice(object):
 
                 else:
                     logger.warning(
-                        f" {self.name} | Interface {intf.local.name} has is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
+                        f" {self.name} | Interface {intf.local.name} is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
                     )
-            elif not intf.local.is_lag_member and intf.remote.is_lag_member:
+
+            elif (
+                not intf.local.is_lag_member
+                and intf.remote
+                and intf.remote.is_lag_member
+            ):
                 intf_properties["lag"] = None
 
             if intf.exist_local() and not intf.exist_remote():
@@ -289,7 +290,15 @@ class NetworkImporterDevice(object):
                 intf_properties["device"] = self.remote.id
                 intf_properties["name"] = intf.name
 
-                remote = self.nb.dcim.interfaces.create(**intf_properties)
+                try:
+                    remote = self.nb.dcim.interfaces.create(**intf_properties)
+                except:
+                    logger.warning(
+                        f" {self.name} | Something went wrong while trying to create interface {intf.name} in netbox",
+                        exc_info=True,
+                    )
+                    return False
+
                 intf.add_remote(remote)
                 logger.debug(f" {self.name} | Interface {intf.name} created in Netbox")
                 changelog_create(
@@ -305,7 +314,15 @@ class NetworkImporterDevice(object):
                 and intf.diff().nbr_diffs() != 0
             ):
                 diff = intf.diff()
-                intf_updated = intf.remote.remote.update(data=intf_properties)
+                try:
+                    intf_updated = intf.remote.remote.update(data=intf_properties)
+                except:
+                    logger.warning(
+                        f" {self.name} | Something went wrong while trying to update the interface {intf.name} in netbox",
+                        exc_info=True,
+                    )
+                    return False
+
                 logger.debug(
                     f" {self.name} | Interface {intf.name} updated in Netbox: {intf_properties}"
                 )

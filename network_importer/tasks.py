@@ -233,19 +233,47 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
 
     check_data_dir(task.host.name)
 
+    vlans = []
+
+    vlan_model = {
+        "name": None,
+        "id": None,
+    }
+
     results = None
 
     if task.host.platform in ["ios", "nxos"]:
         results = task.run(
             task=netmiko_send_command, command_string="show vlan", use_genie=True
         )
+
+        if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
+            logger.warning(f" {task.host.name} | No vlans information returned")
+            return Result(host=task.host, result=False)
+
+        for vid, data in results[0].result["vlans"].items():
+            vlans.append(dict(name=data["name"], id=data["vlan_id"]))
+
+    elif task.host.platform == "eos":
+
+        nr_device = task.host.get_connection("napalm", task.nornir.config)
+        eos_device = nr_device.device
+        results = eos_device.run_commands(["show vlan"])
+
+        if not isinstance(results[0], dict) or not "vlans" in results[0]:
+            logger.warning(f" {task.host.name} | No vlans information returned")
+            return Result(host=task.host, result=False)
+
+        for vid, data in results[0]["vlans"].items():
+            vlans.append(dict(name=data["name"], id=vid))
+
     else:
         return Result(host=task.host, result=False)
 
     if update_cache and results:
-        save_data_to_file(task.host.name, "vlans", results[0].result)
+        save_data_to_file(task.host.name, "vlans", vlans)
 
-    return Result(host=task.host, result=results[0].result)
+    return Result(host=task.host, result=vlans)
 
 
 def collect_vlans_info_from_cache(task: Task) -> Result:
@@ -441,9 +469,33 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
         for tranceiver in transceivers:
             transceivers_inventory.append(tranceiver)
 
+    elif task.host.platform == "eos":
+
+        nr_device = task.host.get_connection("napalm", task.nornir.config)
+        eos_device = nr_device.device
+        results = eos_device.run_commands(["show transceiver status"])
+
+        transceivers = results[0]["ports"]
+
+        for name, data in transceivers.items():
+
+            try:
+                xcvr = copy.deepcopy(xcvr_model)
+                xcvr["serial"] = data["serialNumber"]["state"]
+                xcvr["interface"] = list(data["interfaces"].keys())[0]
+                xcvr["type"] = data["mediaType"]["state"]
+                xcvr["part_number"] = data["mediaType"]["state"]
+            except:
+                logger.warning(
+                    f"Unable to extract the transceiver information for {name} : {sys.exc_info()[0]}"
+                )
+                continue
+
+            transceivers_inventory.append(xcvr)
+
     else:
         logger.debug(
-            f" {task.host.platform} | collect_transceiver_info not supported yet for "
+            f" {task.host.name} | collect_transceiver_info not supported yet for {task.host.platform}"
         )
 
     if update_cache and transceivers_inventory:
