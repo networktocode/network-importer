@@ -189,3 +189,55 @@ class NBInventory(Inventory):
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
+
+
+class StaticInventory(Inventory):
+    def __init__(
+        self,
+        hosts: List[Dict],
+        **kwargs: Any,
+    ) -> None:
+        """
+        Static Inventory for NetworkImporter
+        Takes a list of hosts as input and return a NetworkImporter Inventory
+        
+        hosts = [
+            {
+                "name": "device1", 
+                "platform": "eos",
+                "ip_address": "10.10.10.1"
+            }
+        ]
+
+        """
+
+        hosts = {}
+        groups = {"global": {}}
+
+        for h in hosts:
+
+            host: HostsDict = {
+                    "data": {"is_reacheable": True, "has_config": False, "obj": None}
+                }
+
+            host["hostname"] = h["ip_address"]
+            host["platform"] = h["platform"]
+            host["groups"] = ["global"]
+
+            host["data"]["obj"] = NetworkImporterDevice(
+                            h["name"],
+                            platform=host["platform"],
+                        )
+            
+            hosts[h["name"]] = host
+
+        # Pull the login and password from the NI config object if available
+        if "login" in config.network and config.network["login"]:
+            groups["global"]["username"] = config.network["login"]
+
+        if "password" in config.network and config.network["password"]:
+            groups["global"]["password"] = config.network["password"]
+
+    
+        # Pass the data back to the parent class
+        super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
