@@ -414,21 +414,16 @@ class NetworkImporter(object):
                     )
                     continue
 
-                data = items[0].result
-                if not isinstance(data, dict) or not "vlans" in data:
-                    logger.warning(f" {dev_name} | No vlans information returned")
-                    continue
-
-                for vlan in data["vlans"].values():
+                for vlan in items[0].result:
                     if (
-                        vlan["vlan_id"]
+                        vlan["id"]
                         not in self.devs.inventory.hosts[dev_name]
                         .data["obj"]
                         .site.vlans.keys()
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            vlan=Vlan(name=vlan["name"], vid=vlan["vlan_id"]),
+                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]),
                             device=dev_name,
                         )
 
