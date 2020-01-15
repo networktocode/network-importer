@@ -12,24 +12,28 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import logging
 import sys
 import os
 import json
 import yaml
-import logging
-import pdb
+
 import re
+from collections import defaultdict
 
 import warnings
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import requests
 import pynetbox
-from collections import defaultdict
+
 from pybatfish.client.session import Session
-from nornir import InitNornir
-from nornir.core.filter import F
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    from nornir import InitNornir
+    from nornir.core.filter import F
+
 from termcolor import colored
 from jinja2 import Template, Environment, FileSystemLoader
 
