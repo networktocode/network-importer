@@ -256,7 +256,10 @@ class NetworkImporterDevice(object):
                     intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
                         intf.local.access_vlan
                     )
-                elif intf.local.mode in ["TRUNK", "ACCESS"] and not intf.local.access_vlan:
+                elif (
+                    intf.local.mode in ["TRUNK", "ACCESS"]
+                    and not intf.local.access_vlan
+                ):
                     intf_properties["untagged_vlan"] = None
 
                 if intf.local.mode == "TRUNK" and intf.local.allowed_vlans:
@@ -265,7 +268,7 @@ class NetworkImporterDevice(object):
                     )
                 elif intf.local.mode == "TRUNK" and not intf.local.allowed_vlans:
                     intf_properties["tagged_vlans"] = []
-                    
+
             if intf.local.is_lag_member:
                 if intf.local.parent in self.interfaces.keys():
                     if not self.interfaces[intf.local.parent].exist_remote():
