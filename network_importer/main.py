@@ -324,7 +324,7 @@ class NetworkImporter(object):
         for dev_name, items in results.items():
             if items[0].failed:
                 logger.warning(
-                    f" {dev_name} | Something went wrong while trying to initialize the device .. "
+                    f"{dev_name} | Something went wrong while trying to initialize the device .. "
                 )
                 continue
 
@@ -364,7 +364,7 @@ class NetworkImporter(object):
 
             dev = host.data["obj"]
 
-            logger.info(f" {dev.name} | Importing data from configurations .. ")
+            logger.info(f"{dev.name} | Importing data from configurations .. ")
 
             bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
 
@@ -415,7 +415,7 @@ class NetworkImporter(object):
 
                 if items[0].failed:
                     logger.warning(
-                        f" {dev_name} | Something went wrong while trying to pull the vlan information"
+                        f"{dev_name} | Something went wrong while trying to pull the vlan information"
                     )
                     continue
 
@@ -450,7 +450,7 @@ class NetworkImporter(object):
             for dev_name, items in results.items():
                 if items[0].failed:
                     logger.warning(
-                        f" {dev_name} | Something went wrong while trying to pull the transceiver information (1) "
+                        f"{dev_name} | Something went wrong while trying to pull the transceiver information (1) "
                     )
                     continue
 
@@ -458,11 +458,11 @@ class NetworkImporter(object):
 
                 if not isinstance(transceivers, list):
                     logger.warning(
-                        f" {dev_name} | Something went wrong while trying to pull the transceiver information (2)"
+                        f"{dev_name} | Something went wrong while trying to pull the transceiver information (2)"
                     )
                     continue
 
-                logger.info(f" {dev_name} | Found {len(transceivers)} transceivers")
+                logger.info(f"{dev_name} | Found {len(transceivers)} transceivers")
                 for transceiver in transceivers:
 
                     nio = Optic(
@@ -603,7 +603,7 @@ class NetworkImporter(object):
             raison = self.devs.inventory.hosts[host].data.get(
                 "not_reacheable_raison", "Raison not defined"
             )
-            logger.warning(f" {host} device is not reacheable, {raison}")
+            logger.warning(f"{host} device is not reacheable, {raison}")
 
     def create_nb_handler(self):
         """ """
@@ -649,7 +649,7 @@ class NetworkImporter(object):
         ABSENT = colored("ABSENT", "yellow")
 
         for site in self.sites.values():
-            print(f" -- Site {site.name} -- ")
+            print(f"-- Site {site.name} -- ")
             for vlan in site.vlans.values():
                 if vlan.exist_remote:
                     print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", PRESENT))
@@ -692,9 +692,9 @@ class NetworkImporter(object):
             diff = self.devs.inventory.hosts[dev_name].data["obj"].diff()
 
             if diff.has_diffs():
-                logger.info(f" {dev_name} is NOT up to date on the remote system")
+                logger.info(f"{dev_name} is NOT up to date on the remote system")
             else:
-                logger.info(f" {dev_name} is up to date")
+                logger.info(f"{dev_name} is up to date")
 
     def print_diffs(self):
         """ """
@@ -728,7 +728,7 @@ class NetworkImporter(object):
         for dev_name, items in results.items():
             if items[0].failed:
                 logger.warning(
-                    f" {dev_name} | Something went wrong while trying to update the device in the remote system"
+                    f"{dev_name} | Something went wrong while trying to update the device in the remote system"
                 )
                 continue
 

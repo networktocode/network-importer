@@ -190,7 +190,7 @@ class NetworkImporterDevice(object):
     def update_remote(self):
         """Update remote system, currently Netbox to match what is defined locally"""
 
-        logger.debug(f" {self.name} | Updating remote (Netbox) ... ")
+        logger.debug(f"{self.name} | Updating remote (Netbox) ... ")
 
         # --------------------------------------------
         # Update or Create all Interfaces
@@ -266,7 +266,7 @@ class NetworkImporterDevice(object):
                 if intf.local.parent in self.interfaces.keys():
                     if not self.interfaces[intf.local.parent].exist_remote():
                         logger.warning(
-                            f" {self.name} | Interface {intf.name} is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
+                            f"{self.name} | Interface {intf.name} is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
                         )
                     else:
                         intf_properties["lag"] = self.interfaces[
@@ -275,7 +275,7 @@ class NetworkImporterDevice(object):
 
                 else:
                     logger.warning(
-                        f" {self.name} | Interface {intf.local.name} is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
+                        f"{self.name} | Interface {intf.local.name} is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
                     )
 
             elif (
@@ -294,13 +294,16 @@ class NetworkImporterDevice(object):
                     remote = self.nb.dcim.interfaces.create(**intf_properties)
                 except:
                     logger.warning(
-                        f" {self.name} | Something went wrong while trying to create interface {intf.name} in netbox",
+                        f"{self.name} | Something went wrong while trying to create interface {intf.name} in netbox",
                         exc_info=True,
+                    )
+                    logger.debug(
+                        f"{self.name} | {intf.name}: properties {intf_properties}"
                     )
                     return False
 
                 intf.add_remote(remote)
-                logger.debug(f" {self.name} | Interface {intf.name} created in Netbox")
+                logger.debug(f"{self.name} | Interface {intf.name} created in Netbox")
                 changelog_create(
                     "interface",
                     f"{self.name}::{intf.name}",
@@ -318,13 +321,16 @@ class NetworkImporterDevice(object):
                     intf_updated = intf.remote.remote.update(data=intf_properties)
                 except:
                     logger.warning(
-                        f" {self.name} | Something went wrong while trying to update the interface {intf.name} in netbox",
+                        f"{self.name} | Something went wrong while trying to update the interface {intf.name} in netbox",
                         exc_info=True,
+                    )
+                    logger.debug(
+                        f"{self.name} | {intf.name}: properties {intf_properties}"
                     )
                     return False
 
                 logger.debug(
-                    f" {self.name} | Interface {intf.name} updated in Netbox: {intf_properties}"
+                    f"{self.name} | Interface {intf.name} updated in Netbox: {intf_properties}"
                 )
                 changelog_update(
                     "interface",
@@ -348,6 +354,7 @@ class NetworkImporterDevice(object):
                         f"{self.name} | Something went wrong while trying to create the IP {ip.address} (intf:{intf.remote.remote.id}) in netbox",
                         exc_info=True,
                     )
+
                     return False
 
                 ip.add_remote(ip_address)
@@ -366,11 +373,11 @@ class NetworkImporterDevice(object):
                     and ip.remote.address == self.remote.primary_ip.address
                 ):
                     logger.warning(
-                        f" {self.name} | Unable to delete IP {ip.address}, currently primary IP"
+                        f"{self.name} | Unable to delete IP {ip.address}, currently primary IP"
                     )
                 else:
                     ip.delete_remote()
-                    logger.debug(f" {self.name} | IP {ip.address} deleted in Netbox")
+                    logger.debug(f"{self.name} | IP {ip.address} deleted in Netbox")
 
         # ----------------------------------------------------------
         # Update Optic is defined
@@ -387,7 +394,7 @@ class NetworkImporterDevice(object):
                     tags=["optic"],
                 )
                 intf.optic.add_remote(optic)
-                logger.debug(f" {self.name} | Optic for {intf.name} created in Netbox")
+                logger.debug(f"{self.name} | Optic for {intf.name} created in Netbox")
                 changelog_create(
                     "optic",
                     intf.optic.local.serial,
@@ -419,7 +426,7 @@ class NetworkImporterDevice(object):
                     )
                 )
                 # TODO need to redo this part to clean it up and ensure the object gets properly updated
-                logger.debug(f" {self.name} | Optic for {intf.name} updated in Netbox")
+                logger.debug(f"{self.name} | Optic for {intf.name} updated in Netbox")
                 changelog_update(
                     "optic",
                     intf.optic.local.serial,
@@ -437,7 +444,7 @@ class NetworkImporterDevice(object):
             elif not intf.optic.exist_local() and intf.optic.exist_remote():
                 intf.optic.delete_remote()
                 logger.debug(
-                    f" {self.name} | Optic {intf.optic.remote.serial} deleted in Netbox"
+                    f"{self.name} | Optic {intf.optic.remote.serial} deleted in Netbox"
                 )
 
     def check_data_consistency(self):
@@ -785,7 +792,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         self.ips[ip.address] = ip
 
-        logger.debug(f"  Intf {self.name}, added ip {ip.address}")
+        logger.debug(f"Intf {self.name}, added ip {ip.address}")
         return True
 
     def add_remote(self, remote):
@@ -903,7 +910,7 @@ class NetworkImporterSite(object):
 
         if not self.vlans[vid].exist_local():
             self.vlans[vid].add_local(vlan)
-            logger.debug(f" Site {self.name} | Vlan {vid} added (local)")
+            logger.debug(f"Site {self.name} | Vlan {vid} added (local)")
 
         if device:
             self.vlans[vid].add_related_device(device)
