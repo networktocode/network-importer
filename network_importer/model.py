@@ -339,11 +339,19 @@ class NetworkImporterDevice(object):
         # ----------------------------------------------------------
         for ip in intf.ips.values():
             if ip.exist_local() and not ip.exist_remote():
-                ip_address = self.nb.ipam.ip_addresses.create(
-                    address=ip.address, interface=intf.remote.remote.id
-                )
+                try:
+                    ip_address = self.nb.ipam.ip_addresses.create(
+                        address=ip.address, interface=intf.remote.remote.id
+                    )
+                except:
+                    logger.warning(
+                        f"{self.name} | Something went wrong while trying to create the IP {ip.address} (intf:{intf.remote.remote.id}) in netbox",
+                        exc_info=True,
+                    )
+                    return False
+
                 ip.add_remote(ip_address)
-                logger.debug(f" {self.name} | IP {ip.address} created in Netbox")
+                logger.debug(f"{self.name} | IP {ip.address} created in Netbox")
                 changelog_create(
                     "ipaddress",
                     ip.address,
