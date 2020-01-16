@@ -78,14 +78,14 @@ def get_data_from_file(host, filename):
     filepath = f"{directory}/{host}/{filename}.json"
 
     if not os.path.exists(filepath):
-        logger.debug(f" {host} | cache not available for {filename} ")
+        logger.debug(f"{host} | cache not available for {filename} ")
         return False
 
     try:
         with open(filepath) as f:
             data = json.load(f)
     except:
-        logger.warning(f" {host} | Unable to load the cache for {filename} ")
+        logger.warning(f"{host} | Unable to load the cache for {filename} ")
         return False
 
     return data
@@ -131,7 +131,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
     # Also only pull the cache if the object exist already
     nb_dev = nb.dcim.devices.get(name=task.host.name)
 
-    logger.info(f" {task.host.name} | Initializing Device  .. ")
+    logger.info(f"{task.host.name} | Initializing Device  .. ")
 
     task.host.data["obj"].nb = nb
     task.host.data["obj"].update_cache()
@@ -149,7 +149,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
         except:
             logger.warning(
-                f" {task.host.name} | Unable to find Batfish data  ... SKIPPING"
+                f"{task.host.name} | Unable to find Batfish data  ... SKIPPING"
             )
 
     return Result(host=task.host, result=True)
@@ -248,7 +248,7 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
         )
 
         if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
-            logger.warning(f" {task.host.name} | No vlans information returned")
+            logger.warning(f"{task.host.name} | No vlans information returned")
             return Result(host=task.host, result=False)
 
         for vid, data in results[0].result["vlans"].items():
@@ -261,7 +261,7 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
         results = eos_device.run_commands(["show vlan"])
 
         if not isinstance(results[0], dict) or not "vlans" in results[0]:
-            logger.warning(f" {task.host.name} | No vlans information returned")
+            logger.warning(f"{task.host.name} | No vlans information returned")
             return Result(host=task.host, result=False)
 
         for vid, data in results[0]["vlans"].items():
@@ -346,10 +346,10 @@ def update_configuration(
     changed = False
 
     if current_md5 and current_md5 == new_md5:
-        logger.debug(f" {task.host.name} | Latest config file already present ... ")
+        logger.debug(f"{task.host.name} | Latest config file already present ... ")
 
     else:
-        logger.info(f" {task.host.name} | Configuration file updated ")
+        logger.info(f"{task.host.name} | Configuration file updated ")
         changed = True
 
     return Result(host=task.host, result=True, changed=changed)
@@ -427,7 +427,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
         if not isinstance(transceivers, list):
             logger.debug(
-                f" {task.host.name}: command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"
+                f"{task.host.name}: command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"
             )
             return Result(host=task.host, result=transceivers_inventory)
 
@@ -495,7 +495,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     else:
         logger.debug(
-            f" {task.host.name} | collect_transceiver_info not supported yet for {task.host.platform}"
+            f"{task.host.name} | collect_transceiver_info not supported yet for {task.host.platform}"
         )
 
     if update_cache and transceivers_inventory:
@@ -540,7 +540,7 @@ def check_if_reacheable(task: Task) -> Result:
 
     if not is_reacheable:
         logger.debug(
-            f" {task.host.name} | device is not reacheable on port {PORT_TO_CHECK}"
+            f"{task.host.name} | device is not reacheable on port {PORT_TO_CHECK}"
         )
         task.host.data["is_reacheable"] = False
         task.host.data[
