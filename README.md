@@ -14,7 +14,7 @@ The network importer can run either in `check` mode or in `apply` mode.
 
 The network-importer requires to have access to a working batfish environment, you can easily start one using docker
 ```
-docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish
+docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 ```
 
 
@@ -25,6 +25,7 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish
 # import_ips = true 
 # import_cabling = true
 # import_transceivers = false 
+# import_intf_status = true     # If set as False, interface status will be ignore all together
 # import_vlans="config"         # Valid options are ["cli", "config", "no"]
 
 # nbr_workers= 25
