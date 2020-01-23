@@ -54,6 +54,12 @@ address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
 address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
 
+# Update device configuration on Netbox add the end of the execution
+# status_update = false 
+# status_on_pass = 1
+# status_on_fail = 4
+# status_on_unreachable = 0 
+
 [network]
 # To be able to pull live information from the devices, the credential information needs to be provided
 # either in the configuration file or as environment variables ( & NETWORK_DEVICE_PWD)
