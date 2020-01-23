@@ -58,12 +58,12 @@ config_schema = dict(
         netbox=dict(
             type="object",
             properties=dict(
-                address=dict(type="string"), 
+                address=dict(type="string"),
                 token=dict(type="string"),
                 status_update=dict(type="boolean", default=False),
                 status_on_pass=dict(type="number", min=0, default=1),
                 status_on_fail=dict(type="number", min=0, default=4),
-                status_on_unreachable=dict(type="number", min=0, default=0)
+                status_on_unreachable=dict(type="number", min=0, default=0),
             ),
             default={},
         ),
