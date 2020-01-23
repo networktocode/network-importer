@@ -14,7 +14,7 @@ The network importer can run either in `check` mode or in `apply` mode.
 
 The network-importer requires to have access to a working batfish environment, you can easily start one using docker
 ```
-docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish
+docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 ```
 
 
@@ -25,6 +25,7 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish
 # import_ips = true 
 # import_cabling = true
 # import_transceivers = false 
+# import_intf_status = true     # If set as False, interface status will be ignore all together
 # import_vlans="config"         # Valid options are ["cli", "config", "no"]
 
 # nbr_workers= 25
@@ -52,6 +53,12 @@ address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
 # The information to connect to netbox needs to be provided, either in the config file or as environment variables
 address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
+
+# Update device configuration on Netbox add the end of the execution
+# status_update = false 
+# status_on_pass = 1
+# status_on_fail = 4
+# status_on_unreachable = 0 
 
 [network]
 # To be able to pull live information from the devices, the credential information needs to be provided

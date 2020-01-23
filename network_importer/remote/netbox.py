@@ -13,6 +13,7 @@ limitations under the License.
 """
 
 from network_importer.base_model import Interface, IPAddress, Optic, Vlan
+import network_importer.config as config
 
 
 def get_netbox_interface_properties(intf):
@@ -60,9 +61,10 @@ def get_netbox_interface_properties(intf):
     # TODO Add a check here to see what is the current status
     if intf.switchport_mode == "ACCESS":
         intf_properties["mode"] = 100
-
     elif intf.switchport_mode == "TRUNK":
         intf_properties["mode"] = 200
+    else:
+        intf_properties["mode"] = None
 
     if not intf.active is None:
         intf_properties["enabled"] = intf.active
@@ -101,7 +103,10 @@ class InterfaceRemote(Interface):
 
         self.name = rem.name
 
-        self.active = rem.enabled
+        if config.main["import_intf_status"]:
+            self.active = rem.enabled
+        else:
+            self.active = None
 
         self.description = rem.description
 

@@ -168,6 +168,9 @@ def main():
         perf.time_tracker.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
         perf.time_tracker.print_all()
 
+    if config.netbox["status_update"] and options.apply:
+        ni.update_devices_status()
+
     if options.diff:
         ni.print_diffs()
 

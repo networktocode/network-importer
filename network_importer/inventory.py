@@ -15,12 +15,30 @@ limitations under the License.
 from nornir.core.deserializer.inventory import Inventory, HostsDict
 
 import os
+import copy
 import requests
 from typing import Any, Dict, List, Optional, Union
 import network_importer.config as config
 from network_importer.model import NetworkImporterDevice
 
 
+### ------------------------------------------------------------
+### Network Importer Base Dict for device data
+###   status:
+###     ok: device is reacheable
+###     fail-ip: Primary IP address not reachable
+###     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or responding.
+###     fail-login: Unable to login authenticate with device
+###     fail-other:  Other general processing error (also catches traps/bug)
+###   is_reacheable: Global Flag to indicate if we are able to connect to a device
+###   has_config: Indicate if the configuration is present and has been properly imported in Batfish
+### ------------------------------------------------------------
+
+base_data = {"is_reacheable": None, "status": "ok", "has_config": False, "obj": None}
+
+### ------------------------------------------------------------
+### Inventory Classes
+### ------------------------------------------------------------
 class NornirInventoryFromBatfish(Inventory):
     """Construct a inventory object for Nornir based on the a list NodesProperties from Batfish"""
 
@@ -39,7 +57,7 @@ class NornirInventoryFromBatfish(Inventory):
         hosts = {}
         for dev in devices.itertuples():
 
-            host: HostsDict = {"data": {}}
+            host: HostsDict = {"data": copy.deepcopy(base_data)}
             host["hostname"] = dev.Hostname
             # host["data"]["vendor"] = str(dev.Vendor_Family).lower()
             host["data"]["type"] = str(dev.Device_Type).lower()
@@ -124,9 +142,7 @@ class NBInventory(Inventory):
             groups["global"]["password"] = config.network["password"]
 
         for d in nb_devices:
-            host: HostsDict = {
-                "data": {"is_reacheable": None, "has_config": False, "obj": None}
-            }
+            host: HostsDict = {"data": copy.deepcopy(base_data)}
 
             # Add value for IP address
             if d.get("primary_ip", {}):
@@ -212,9 +228,8 @@ class StaticInventory(Inventory):
 
         for h in hosts:
 
-            host: HostsDict = {
-                "data": {"is_reacheable": True, "has_config": False, "obj": None}
-            }
+            host: HostsDict = {"data": copy.deepcopy(base_data)}
+            host["data"]["is_reacheable"] = True
 
             host["hostname"] = h["ip_address"]
             host["platform"] = h["platform"]
@@ -235,3 +250,86 @@ class StaticInventory(Inventory):
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
+
+
+### -----------------------------------------------------------------
+### Inventory Filter functions
+### -----------------------------------------------------------------
+def valid_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
+    if h.data["has_config"]:
+        return True
+    else:
+        return False
+
+
+def non_valid_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
+    if h.data["has_config"]:
+        return False
+    else:
+        return True
+
+
+def reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
+    if h.data["is_reacheable"]:
+        return True
+    else:
+        return False
+
+
+def non_reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
+    if h.data["is_reacheable"]:
+        return False
+    else:
+        return True
+
+
+def valid_and_reacheable_devs(h):
+    """
+    
+
+    Args:
+      h: 
+
+    Returns:
+
+    """
+    if h.data["is_reacheable"] and h.data["has_config"]:
+        return True
+    else:
+        return False

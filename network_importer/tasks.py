@@ -321,8 +321,8 @@ def update_configuration(
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    if task.host.platform in ["nxos", "ios"]:
-        results = task.run(task=netmiko_send_command, command_string="show run")
+    if task.host.platform in ["nxos", "ios"]: 
+        results = task.run(task=netmiko_send_command, command_string="show run all")
 
         if results.failed:
             return Result(host=task.host, failed=True)
@@ -330,7 +330,9 @@ def update_configuration(
         new_config = results[0].result
 
     else:
-        results = task.run(task=napalm_get, getters=["config"])
+        results = task.run(
+            task=napalm_get, getters=["config"], retrieve="running", full=True
+        )
 
         if results.failed:
             return Result(host=task.host, failed=True)
@@ -546,5 +548,53 @@ def check_if_reacheable(task: Task) -> Result:
         task.host.data[
             "not_reacheable_raison"
         ] = f"device not reacheable on port {PORT_TO_CHECK}"
+        task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reacheable)
+
+
+def update_device_status(task: Task) -> Result:
+    """
+    
+    Update the status of the device on the remote system
+
+    Args:
+      task: Nornir Task
+
+    Returns:
+      Result: 
+
+    """
+
+    if not config.netbox["status_update"]:
+        logger.debug(f"{task.host.name} | status_update disabled skipping")
+        return Result(host=task.host, result=False)
+
+    if not task.host.data["obj"].remote:
+        logger.debug(f"{task.host.name} | remote not present skipping")
+        return Result(host=task.host, result=False)
+
+    new_status = None
+    prev_status = task.host.data["obj"].remote.status.value
+
+    if task.host.data["status"] == "fail-ip":
+        new_status = config.netbox["status_on_unreachable"]
+
+    elif "fail" in task.host.data["status"]:
+        new_status = config.netbox["status_on_fail"]
+
+    else:
+        new_status = config.netbox["status_on_pass"]
+
+    if new_status != None and new_status != prev_status:
+
+        task.host.data["obj"].remote.update(data={"status": new_status})
+        logger.info(
+            f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}"
+        )
+        return Result(host=task.host, result=True)
+
+    else:
+        logger.debug(f"{task.host.name} | no status update required")
+
+    return Result(host=task.host, result=False)

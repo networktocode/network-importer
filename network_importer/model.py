@@ -709,7 +709,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
     def add_batfish_interface(self, bf):
         """
-        Add a Batfish Interface Object and extract all relevant information of not already defined
+        Add a Batfish Interface Object and extract all relevant information if not already defined
         
         Input
             Batfish interfaceProperties object
@@ -745,8 +745,10 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         if self.local.switchport_mode == "FEX_FABRIC":
             self.local.switchport_mode = "NONE"
 
-        if self.local.active is None:
+        if self.local.active is None and config.main["import_intf_status"]:
             self.local.active = bf.Active
+        elif not config.main["import_intf_status"]:
+            self.local.active = None
 
         if self.local.description is None and bf.Description:
             self.local.description = bf.Description
