@@ -564,17 +564,24 @@ def update_device_status(task: Task) -> Result:
 
     """
 
+
     if not config.netbox["status_update"]:
+        logger.debug(
+            f"{task.host.name} | status_update disabled skipping"
+        )
         return Result(host=task.host, result=False)
 
     if not task.host.data["obj"].remote:
+        logger.debug(
+            f"{task.host.name} | remote not present skipping"
+        )
         return Result(host=task.host, result=False)
 
     new_status = None
     prev_status = task.host.data["obj"].remote.status.value
 
     if task.host.data["status"] == "fail-ip":
-        new_status = config.netbox["status_on_unreacheable"]
+        new_status = config.netbox["status_on_unreachable"]
 
     elif "fail" in task.host.data["status"]:
         new_status = config.netbox["status_on_fail"]
@@ -589,5 +596,10 @@ def update_device_status(task: Task) -> Result:
             f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}"
         )
         return Result(host=task.host, result=True)
+        
+    else:
+        logger.debug(
+            f"{task.host.name} | no status update required"
+        )
 
     return Result(host=task.host, result=False)

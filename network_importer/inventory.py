@@ -15,6 +15,7 @@ limitations under the License.
 from nornir.core.deserializer.inventory import Inventory, HostsDict
 
 import os
+import copy
 import requests
 from typing import Any, Dict, List, Optional, Union
 import network_importer.config as config

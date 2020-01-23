@@ -225,7 +225,9 @@ class NetworkImporter(object):
 
         self.check_nb_params()
         self.init_bf_session()
-        self.build_inventory(limit=limit)
+        
+        if not self.devs:
+            self.build_inventory(limit=limit)
 
         # --------------------------------------------------------
         # Creating required directories on local filesystem
@@ -517,7 +519,7 @@ class NetworkImporter(object):
             if not item[0].failed and dev_name in hostname_existing_configs:
                 hostname_existing_configs.remove(dev_name)
 
-            elif items[0].failed:
+            elif item[0].failed:
                 logger.warning(
                     f"{dev_name} | Something went wrong while trying to update the configuration "
                 )
