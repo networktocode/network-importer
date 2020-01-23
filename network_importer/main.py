@@ -50,6 +50,7 @@ from network_importer.tasks import (
     collect_vlans_info_from_cache,
     device_update_remote,
     check_if_reacheable,
+    update_device_status,
 )
 
 from network_importer.model import (
@@ -63,91 +64,19 @@ from network_importer.model import (
     Optic,
 )
 
+from network_importer.inventory import (
+    valid_devs,
+    non_valid_devs,
+    reacheable_devs,
+    non_reacheable_devs,
+    valid_and_reacheable_devs,
+)
+
 from network_importer.performance import timeit
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
-
-
-def valid_devs(h):
-    """
-    
-
-    Args:
-      h: 
-
-    Returns:
-
-    """
-    if h.data["has_config"]:
-        return True
-    else:
-        return False
-
-
-def non_valid_devs(h):
-    """
-    
-
-    Args:
-      h: 
-
-    Returns:
-
-    """
-    if h.data["has_config"]:
-        return False
-    else:
-        return True
-
-
-def reacheable_devs(h):
-    """
-    
-
-    Args:
-      h: 
-
-    Returns:
-
-    """
-    if h.data["is_reacheable"]:
-        return True
-    else:
-        return False
-
-
-def non_reacheable_devs(h):
-    """
-    
-
-    Args:
-      h: 
-
-    Returns:
-
-    """
-    if h.data["is_reacheable"]:
-        return False
-    else:
-        return True
-
-
-def valid_and_reacheable_devs(h):
-    """
-    
-
-    Args:
-      h: 
-
-    Returns:
-
-    """
-    if h.data["is_reacheable"] and h.data["has_config"]:
-        return True
-    else:
-        return False
 
 
 class NetworkImporter(object):
@@ -173,13 +102,13 @@ class NetworkImporter(object):
 
     def get_dev(self, dev_name):
         """
-        
+        Return the NI object for a given device_name
 
         Args:
           dev_name: 
 
         Returns:
-
+          NetworkImporterDevice
         """
 
         if dev_name not in self.devs.inventory.hosts.keys():
@@ -326,6 +255,7 @@ class NetworkImporter(object):
                 logger.warning(
                     f"{dev_name} | Something went wrong while trying to initialize the device .. "
                 )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
         # --------------------------------------------------------
@@ -417,6 +347,7 @@ class NetworkImporter(object):
                     logger.warning(
                         f"{dev_name} | Something went wrong while trying to pull the vlan information"
                     )
+                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                     continue
 
                 for vlan in items[0].result:
@@ -452,6 +383,7 @@ class NetworkImporter(object):
                     logger.warning(
                         f"{dev_name} | Something went wrong while trying to pull the transceiver information (1) "
                     )
+                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                     continue
 
                 transceivers = items[0].result
@@ -460,6 +392,7 @@ class NetworkImporter(object):
                     logger.warning(
                         f"{dev_name} | Something went wrong while trying to pull the transceiver information (2)"
                     )
+                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                     continue
 
                 logger.info(f"{dev_name} | Found {len(transceivers)} transceivers")
@@ -478,6 +411,14 @@ class NetworkImporter(object):
 
         return True
 
+    def update_devices_status(self):
+        """
+        Update the status of the device on the remote system 
+
+        """
+
+        self.devs.run(task=update_device_status, on_failed=True)
+
     def check_data_consistency(self):
         """ """
 
@@ -486,8 +427,7 @@ class NetworkImporter(object):
             if not self.devs.inventory.hosts[host].data["has_config"]:
                 continue
 
-            dev = self.devs.inventory.hosts[host].data["obj"]
-            dev.check_data_consistency()
+            self.get_dev(host).check_data_consistency()
 
     def get_nb_handler(self):
         """ """
@@ -573,8 +513,16 @@ class NetworkImporter(object):
         # based on the list we captured previously
         # ----------------------------------------------------
         for dev_name, item in results.items():
+
             if not item[0].failed and dev_name in hostname_existing_configs:
                 hostname_existing_configs.remove(dev_name)
+
+            elif items[0].failed:
+                logger.warning(
+                    f"{dev_name} | Something went wrong while trying to update the configuration "
+                )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
 
         if len(hostname_existing_configs):
             logger.info(
@@ -730,6 +678,8 @@ class NetworkImporter(object):
                 logger.warning(
                     f"{dev_name} | Something went wrong while trying to update the device in the remote system"
                 )
+
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
         return True

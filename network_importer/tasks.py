@@ -546,5 +546,48 @@ def check_if_reacheable(task: Task) -> Result:
         task.host.data[
             "not_reacheable_raison"
         ] = f"device not reacheable on port {PORT_TO_CHECK}"
+        task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reacheable)
+
+
+def update_device_status(task: Task) -> Result:
+    """
+    
+    Update the status of the device on the remote system
+
+    Args:
+      task: Nornir Task
+
+    Returns:
+      Result: 
+
+    """
+
+    if not config.netbox["status_update"]:
+        return Result(host=task.host, result=False)
+
+    if not task.host.data["obj"].remote:
+        return Result(host=task.host, result=False)
+
+    new_status = None
+    prev_status = task.host.data["obj"].remote.status.value
+
+    if task.host.data["status"] == "fail-ip":
+        new_status = config.netbox["status_on_unreacheable"]
+
+    elif "fail" in task.host.data["status"]:
+        new_status = config.netbox["status_on_fail"]
+
+    else:
+        new_status = config.netbox["status_on_pass"]
+
+    if new_status != None and new_status != prev_status:
+
+        task.host.data["obj"].remote.update(data={"status": new_status})
+        logger.info(
+            f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}"
+        )
+        return Result(host=task.host, result=True)
+
+    return Result(host=task.host, result=False)
