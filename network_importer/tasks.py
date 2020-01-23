@@ -330,7 +330,7 @@ def update_configuration(
         new_config = results[0].result
 
     else:
-        results = task.run(task=napalm_get, getters=["config"])
+        results = task.run(task=napalm_get, getters=["config"], retrieve="running", full=True)
 
         if results.failed:
             return Result(host=task.host, failed=True)
