@@ -330,7 +330,9 @@ def update_configuration(
         new_config = results[0].result
 
     else:
-        results = task.run(task=napalm_get, getters=["config"], retrieve="running", full=True)
+        results = task.run(
+            task=napalm_get, getters=["config"], retrieve="running", full=True
+        )
 
         if results.failed:
             return Result(host=task.host, failed=True)
@@ -564,17 +566,12 @@ def update_device_status(task: Task) -> Result:
 
     """
 
-
     if not config.netbox["status_update"]:
-        logger.debug(
-            f"{task.host.name} | status_update disabled skipping"
-        )
+        logger.debug(f"{task.host.name} | status_update disabled skipping")
         return Result(host=task.host, result=False)
 
     if not task.host.data["obj"].remote:
-        logger.debug(
-            f"{task.host.name} | remote not present skipping"
-        )
+        logger.debug(f"{task.host.name} | remote not present skipping")
         return Result(host=task.host, result=False)
 
     new_status = None
@@ -596,10 +593,8 @@ def update_device_status(task: Task) -> Result:
             f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}"
         )
         return Result(host=task.host, result=True)
-        
+
     else:
-        logger.debug(
-            f"{task.host.name} | no status update required"
-        )
+        logger.debug(f"{task.host.name} | no status update required")
 
     return Result(host=task.host, result=False)

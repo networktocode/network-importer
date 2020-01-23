@@ -225,7 +225,7 @@ class NetworkImporter(object):
 
         self.check_nb_params()
         self.init_bf_session()
-        
+
         if not self.devs:
             self.build_inventory(limit=limit)
 
