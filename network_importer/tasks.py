@@ -321,7 +321,7 @@ def update_configuration(
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    if task.host.platform in ["nxos", "ios"]: 
+    if task.host.platform in ["nxos", "ios"]:
         results = task.run(task=netmiko_send_command, command_string="show run all")
 
         if results.failed:
