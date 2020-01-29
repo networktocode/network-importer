@@ -49,6 +49,13 @@ def parse_args(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(description="", formatter_class=CustomFormatter)
 
     parser.add_argument(
+        "--version",
+        action="store_true",
+        default=False,
+        help="Show the version of code the library is running",
+    )
+
+    parser.add_argument(
         "--config",
         type=str,
         help="Network Importer Configuration file (TOML format)",
@@ -100,7 +107,7 @@ def parse_args(args=sys.argv[1:]):
 
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
 
-    g = parser.add_mutually_exclusive_group(required=True)
+    g = parser.add_mutually_exclusive_group(required=False)
     g.add_argument(
         "--check",
         action="store_true",
@@ -118,6 +125,11 @@ def parse_args(args=sys.argv[1:]):
 def main():
 
     options = parse_args()
+
+    if options.version:
+        import network_importer
+        print(f"Network Importer ver: {network_importer.__version__}")
+        exit(0)
 
     config.load_config(options.config)
     perf.init()
