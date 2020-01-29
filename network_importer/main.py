@@ -582,6 +582,7 @@ class NetworkImporter(object):
         SNAPSHOT_PATH = config.main["configs_directory"]
 
         self.bf = Session(host=config.batfish["address"])
+        self.bf.verify = False
         self.bf.set_network(NETWORK_NAME)
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
