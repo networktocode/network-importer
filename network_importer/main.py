@@ -173,6 +173,7 @@ class NetworkImporter(object):
                         "nb_url": config.netbox["address"],
                         "nb_token": config.netbox["token"],
                         "filter_parameters": params,
+                        "ssl_verify": config.netbox['sslcert']
                     },
                 },
             )
@@ -558,7 +559,9 @@ class NetworkImporter(object):
     def create_nb_handler(self):
         """ """
 
-        self.nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
+        self.nb = pynetbox.api(url=config.netbox["address"],
+                               token=config.netbox["token"],
+                               ssl_verify=config.netbox['sslcert'])
         return True
 
     @timeit

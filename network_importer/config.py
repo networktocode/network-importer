@@ -80,12 +80,14 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
 
     env_netbox_address = os.environ.get("NETBOX_ADDRESS", None)
     env_netbox_token = os.environ.get("NETBOX_TOKEN", None)
+    env_netbox_sslcert = os.environ.get("NETBOX_SSLCERT", False)        # yes False! by default
     env_batfish_address = os.environ.get("BATFISH_ADDRESS")
 
     # TODO need to refactor this section to avoid code duplication
     if "netbox" not in config:
         config["netbox"] = {}
 
+    config['netbox']['sslcert'] = env_netbox_sslcert
     if env_netbox_address:
         config["netbox"]["address"] = env_netbox_address
     elif "address" not in config["netbox"].keys():
