@@ -96,6 +96,7 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     # alternate environment variables.
 
     netbox = config.setdefault("netbox", {})
+    netbox_js = schema.config_schema['properties']['netbox']['properties']
 
     nb_address = netbox.setdefault('address', os.environ.get("NETBOX_ADDRESS"))
     nb_token = netbox.setdefault('token', os.environ.get("NETBOX_TOKEN"))
@@ -117,20 +118,22 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
         )
         exit(1)
 
-    # cacert and verify_ssl are optional is optional
+    netbox.setdefault('cacert', os.environ.get('NETBOX_CACERT'))
 
-    if 'cacert' not in netbox and 'NETBOX_CACERT' in os.environ:
-        netbox['cacert'] = os.environ['NETBOX_CACERT']
-
-    if 'verify_ssl' not in netbox and 'NETBOX_VERIFY_SSL' in os.environ:
-        netbox['verify_ssl'] = os.environ['NETBOX_VERIFY_SSL']
+    netbox.setdefault('verify_ssl',
+                      bool(os.environ.get('NETBOX_VERIFY_SSL',
+                                          netbox_js['verify_ssl']['default'])))
 
     # -------------------------------------------------------------------------
     #                                batfish
     # -------------------------------------------------------------------------
 
     batfish = config.setdefault('batfish', {})
-    batfish.setdefault('address', os.environ.get("BATFISH_ADDRESS"))
+    batfish_js = schema.config_schema['properties']['batfish']['properties']
+
+    batfish.setdefault('address',
+                       os.environ.get("BATFISH_ADDRESS",
+                                      batfish_js['address']['default']))
 
     # -------------------------------------------------------------------------
     #                                network
@@ -147,10 +150,10 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     # file or alternate environment variables.
     # -------------------------------------------------------------------------
 
-    default_validator = extend_with_default(Draft7Validator)
+    config_validator = extend_with_default(Draft7Validator)
 
     try:
-        default_validator(schema.config_schema).validate(config)
+        config_validator(schema.config_schema).validate(config)
     except Exception as e:
         print(f"Configuration file ({config_file_name}) is not valid")
         print(e)
