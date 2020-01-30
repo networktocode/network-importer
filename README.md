@@ -53,9 +53,8 @@ address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
 # The information to connect to netbox needs to be provided, either in the config file or as environment variables
 address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
-# If an SSL certificate file within container.  If not provided, and `address` is https, 
-# then SSL verify is disabled
-sslcert = "/tmp/netbox.crt"                         # Alternative Env Variable : NETBOX_SSLCERT
+verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
+cacert = "/tmp/netbox.crt"                          # Alternative Env Variable : NETBOX_CACERT
 
 # Update device configuration on Netbox add the end of the execution
 # status_update = false 
