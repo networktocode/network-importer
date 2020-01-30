@@ -58,7 +58,7 @@ def extend_with_default(validator_class):
         """
         for property_name, subschema in properties.items():
             if "default" in subschema:
-                instance.setdefault(property_name, subschema["default"])
+                instance.setdefault(property_name, set_valule)
 
         for error in validate_properties(validator, properties, instance, schema):
             yield error
@@ -96,11 +96,9 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     # alternate environment variables.
 
     netbox = config.setdefault("netbox", {})
+
     nb_address = netbox.setdefault('address', os.environ.get("NETBOX_ADDRESS"))
     nb_token = netbox.setdefault('token', os.environ.get("NETBOX_TOKEN"))
-    nb_cacert = netbox.setdefault('cacert', os.environ.get("NETBOX_CACERT"))
-    nb_verify_ssl = netbox.setdefault('verify_ssl',
-                                      os.environ.get("NETBOX_VERIFY_SSL"))
 
     # validate that the NetBox address and token are provided.  If not, print
     # an error and exit with error code 1
@@ -119,12 +117,13 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
         )
         exit(1)
 
-    # since the code will open a netbox connection in multiple places,
-    # store the actual value provided to the pynetbox.Api, which is
-    # also the underlying requests.Session.verify value, as documented
-    # https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification
+    # cacert and verify_ssl are optional is optional
 
-    netbox['request_ssl_verify'] = nb_cacert or nb_verify_ssl
+    if 'cacert' not in netbox and 'NETBOX_CACERT' in os.environ:
+        netbox['cacert'] = os.environ['NETBOX_CACERT']
+
+    if 'verify_ssl' not in netbox and 'NETBOX_VERIFY_SSL' in os.environ:
+        netbox['verify_ssl'] = os.environ['NETBOX_VERIFY_SSL']
 
     # -------------------------------------------------------------------------
     #                                batfish
@@ -156,6 +155,13 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
         print(f"Configuration file ({config_file_name}) is not valid")
         print(e)
         exit(1)
+
+    # since the code will open a netbox connection in multiple places,
+    # store the actual value provided to the pynetbox.Api, which is
+    # also the underlying requests.Session.verify value, as documented
+    # https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification
+
+    netbox['request_ssl_verify'] = netbox.get('cacert') or netbox['verify_ssl']
 
     main = config["main"]
     logs = config["logs"]
