@@ -173,7 +173,7 @@ class NetworkImporter(object):
                         "nb_url": config.netbox["address"],
                         "nb_token": config.netbox["token"],
                         "filter_parameters": params,
-                        "ssl_verify": config.netbox['cacert']
+                        "ssl_verify": config.netbox['request_ssl_verify']
                     },
                 },
             )
