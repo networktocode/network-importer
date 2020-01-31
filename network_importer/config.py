@@ -17,6 +17,19 @@ from pathlib import Path
 from jsonschema import Draft7Validator, validators
 from . import schema
 
+# -----------------------------------------------------------------------------
+#                                 GLOBALS
+# -----------------------------------------------------------------------------
+
+main = None
+logs = None
+netbox = None
+batfish = None
+network = None
+
+
+DEFAULT_CONFIG_FILE_NAME = "network_importer.toml"
+
 
 def extend_with_default(validator_class):
     """
@@ -43,17 +56,14 @@ def extend_with_default(validator_class):
         Returns:
 
         """
-        for property, subschema in properties.items():
+        for property_name, subschema in properties.items():
             if "default" in subschema:
-                instance.setdefault(property, subschema["default"])
+                instance.setdefault(property_name, subschema["default"])
 
         for error in validate_properties(validator, properties, instance, schema):
             yield error
 
     return validators.extend(validator_class, {"properties": set_defaults})
-
-
-DEFAULT_CONFIG_FILE_NAME = "network_importer.toml"
 
 
 def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
@@ -78,59 +88,84 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
         config_string = Path(config_file_name).read_text()
         config = toml.loads(config_string)
 
-    env_netbox_address = os.environ.get("NETBOX_ADDRESS", None)
-    env_netbox_token = os.environ.get("NETBOX_TOKEN", None)
-    env_batfish_address = os.environ.get("BATFISH_ADDRESS")
+    # -------------------------------------------------------------------------
+    #                                netbox
+    # -------------------------------------------------------------------------
 
-    # TODO need to refactor this section to avoid code duplication
-    if "netbox" not in config:
-        config["netbox"] = {}
+    # Read Netbox configuration from the provided file, or default to the
+    # alternate environment variables.
 
-    if env_netbox_address:
-        config["netbox"]["address"] = env_netbox_address
-    elif "address" not in config["netbox"].keys():
+    netbox = config.setdefault("netbox", {})
+    netbox_js = schema.config_schema["properties"]["netbox"]["properties"]
+
+    nb_address = netbox.setdefault("address", os.environ.get("NETBOX_ADDRESS"))
+    nb_token = netbox.setdefault("token", os.environ.get("NETBOX_TOKEN"))
+
+    # validate that the NetBox address and token are provided.  If not, print
+    # an error and exit with error code 1
+
+    if not nb_address:
         print(
-            "Netbox address is mandatory, please provide it either via the NETBOX_ADDRESS environement variable or in the configuration file"
+            "Netbox address is mandatory, please provide it either via the "
+            "NETBOX_ADDRESS environement variable or in the configuration file"
         )
         exit(1)
 
-    if env_netbox_token:
-        config["netbox"]["token"] = env_netbox_token
-    elif "token" not in config["netbox"].keys():
+    if not nb_token:
         print(
-            "Netbox Token is mandatory, please provide it either via the NETBOX_TOKEN environement variable or in the configuration file"
+            "Netbox Token is mandatory, please provide it either via the "
+            "NETBOX_TOKEN environement variable or in the configuration file"
         )
         exit(1)
 
-    env_network_login = os.environ.get("NETWORK_DEVICE_LOGIN", None)
-    env_network_password = os.environ.get("NETWORK_DEVICE_PWD", None)
+    netbox.setdefault("cacert", os.environ.get("NETBOX_CACERT"))
 
-    # TODO need to refactor this section to avoid code duplication
+    netbox.setdefault(
+        "verify_ssl",
+        bool(os.environ.get("NETBOX_VERIFY_SSL", netbox_js["verify_ssl"]["default"])),
+    )
 
-    if "network" not in config:
-        config["network"] = {}
+    # -------------------------------------------------------------------------
+    #                                batfish
+    # -------------------------------------------------------------------------
 
-    if env_network_login:
-        config["network"]["login"] = env_network_login
+    batfish = config.setdefault("batfish", {})
+    batfish_js = schema.config_schema["properties"]["batfish"]["properties"]
 
-    if env_network_password:
-        config["network"]["password"] = env_network_password
+    batfish.setdefault(
+        "address", os.environ.get("BATFISH_ADDRESS", batfish_js["address"]["default"])
+    )
 
-    if env_batfish_address:
-        config["batfish"]["address"] = env_batfish_address
+    # -------------------------------------------------------------------------
+    #                                network
+    # -------------------------------------------------------------------------
 
-    ## Extend the jsonschema validator to insert the default values not provided
-    DefaultValidatingDraft7Validator = extend_with_default(Draft7Validator)
+    network = config.setdefault("network", {})
+    network.setdefault("login", os.environ.get("NETWORK_DEVICE_LOGIN"))
+    network.setdefault("password", os.environ.get("NETWORK_DEVICE_PWD"))
+
+    # -------------------------------------------------------------------------
+    # validate the config structure using the JSON schema defined in the
+    # `schama` module.  This process will also set the default values to the
+    # configuration properties if they are not provided either in the config
+    # file or alternate environment variables.
+    # -------------------------------------------------------------------------
+
+    config_validator = extend_with_default(Draft7Validator)
 
     try:
-        DefaultValidatingDraft7Validator(schema.config_schema).validate(config)
+        config_validator(schema.config_schema).validate(config)
     except Exception as e:
         print(f"Configuration file ({config_file_name}) is not valid")
         print(e)
         exit(1)
 
+    # since the code will open a netbox connection in multiple places,
+    # store the actual value provided to the pynetbox.Api, which is
+    # also the underlying requests.Session.verify value, as documented
+    # https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification
+
+    netbox["request_ssl_verify"] = netbox.get("cacert") or netbox["verify_ssl"]
+
     main = config["main"]
     logs = config["logs"]
-    netbox = config["netbox"]
-    network = config["network"]
-    batfish = config["batfish"]

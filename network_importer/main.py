@@ -173,6 +173,7 @@ class NetworkImporter(object):
                         "nb_url": config.netbox["address"],
                         "nb_token": config.netbox["token"],
                         "filter_parameters": params,
+                        "ssl_verify": config.netbox["request_ssl_verify"],
                     },
                 },
             )
@@ -558,7 +559,11 @@ class NetworkImporter(object):
     def create_nb_handler(self):
         """ """
 
-        self.nb = pynetbox.api(config.netbox["address"], token=config.netbox["token"])
+        self.nb = pynetbox.api(
+            url=config.netbox["address"],
+            token=config.netbox["token"],
+            ssl_verify=config.netbox["request_ssl_verify"],
+        )
         return True
 
     @timeit
@@ -579,6 +584,7 @@ class NetworkImporter(object):
         SNAPSHOT_PATH = config.main["configs_directory"]
 
         self.bf = Session(host=config.batfish["address"])
+        self.bf.verify = False
         self.bf.set_network(NETWORK_NAME)
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
