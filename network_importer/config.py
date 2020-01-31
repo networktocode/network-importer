@@ -58,7 +58,7 @@ def extend_with_default(validator_class):
         """
         for property_name, subschema in properties.items():
             if "default" in subschema:
-                instance.setdefault(property_name, subschema['default'])
+                instance.setdefault(property_name, subschema["default"])
 
         for error in validate_properties(validator, properties, instance, schema):
             yield error
@@ -96,10 +96,10 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     # alternate environment variables.
 
     netbox = config.setdefault("netbox", {})
-    netbox_js = schema.config_schema['properties']['netbox']['properties']
+    netbox_js = schema.config_schema["properties"]["netbox"]["properties"]
 
-    nb_address = netbox.setdefault('address', os.environ.get("NETBOX_ADDRESS"))
-    nb_token = netbox.setdefault('token', os.environ.get("NETBOX_TOKEN"))
+    nb_address = netbox.setdefault("address", os.environ.get("NETBOX_ADDRESS"))
+    nb_token = netbox.setdefault("token", os.environ.get("NETBOX_TOKEN"))
 
     # validate that the NetBox address and token are provided.  If not, print
     # an error and exit with error code 1
@@ -118,30 +118,31 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
         )
         exit(1)
 
-    netbox.setdefault('cacert', os.environ.get('NETBOX_CACERT'))
+    netbox.setdefault("cacert", os.environ.get("NETBOX_CACERT"))
 
-    netbox.setdefault('verify_ssl',
-                      bool(os.environ.get('NETBOX_VERIFY_SSL',
-                                          netbox_js['verify_ssl']['default'])))
+    netbox.setdefault(
+        "verify_ssl",
+        bool(os.environ.get("NETBOX_VERIFY_SSL", netbox_js["verify_ssl"]["default"])),
+    )
 
     # -------------------------------------------------------------------------
     #                                batfish
     # -------------------------------------------------------------------------
 
-    batfish = config.setdefault('batfish', {})
-    batfish_js = schema.config_schema['properties']['batfish']['properties']
+    batfish = config.setdefault("batfish", {})
+    batfish_js = schema.config_schema["properties"]["batfish"]["properties"]
 
-    batfish.setdefault('address',
-                       os.environ.get("BATFISH_ADDRESS",
-                                      batfish_js['address']['default']))
+    batfish.setdefault(
+        "address", os.environ.get("BATFISH_ADDRESS", batfish_js["address"]["default"])
+    )
 
     # -------------------------------------------------------------------------
     #                                network
     # -------------------------------------------------------------------------
 
-    network = config.setdefault('network', {})
-    network.setdefault('login', os.environ.get("NETWORK_DEVICE_LOGIN"))
-    network.setdefault('password', os.environ.get("NETWORK_DEVICE_PWD"))
+    network = config.setdefault("network", {})
+    network.setdefault("login", os.environ.get("NETWORK_DEVICE_LOGIN"))
+    network.setdefault("password", os.environ.get("NETWORK_DEVICE_PWD"))
 
     # -------------------------------------------------------------------------
     # validate the config structure using the JSON schema defined in the
@@ -164,7 +165,7 @@ def load_config(config_file_name=DEFAULT_CONFIG_FILE_NAME):
     # also the underlying requests.Session.verify value, as documented
     # https://requests.readthedocs.io/en/master/user/advanced/#ssl-cert-verification
 
-    netbox['request_ssl_verify'] = netbox.get('cacert') or netbox['verify_ssl']
+    netbox["request_ssl_verify"] = netbox.get("cacert") or netbox["verify_ssl"]
 
     main = config["main"]
     logs = config["logs"]

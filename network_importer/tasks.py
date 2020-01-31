@@ -125,9 +125,11 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
     """
 
-    nb = pynetbox.api(config.netbox["address"],
-                      token=config.netbox["token"],
-                      ssl_verify=config.netbox['request_ssl_verify'])
+    nb = pynetbox.api(
+        config.netbox["address"],
+        token=config.netbox["token"],
+        ssl_verify=config.netbox["request_ssl_verify"],
+    )
 
     # TODO add check to ensure device is present
     # Also only pull the cache if the object exist already

@@ -65,7 +65,7 @@ config_schema = dict(
                 status_on_fail=dict(type="number", min=0, default=4),
                 status_on_unreachable=dict(type="number", min=0, default=0),
                 cacert=dict(type=["string", "null"]),
-                verify_ssl=dict(type="boolean", default=True)
+                verify_ssl=dict(type="boolean", default=True),
             ),
             default={},
         ),
