@@ -38,7 +38,9 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 logger = logging.getLogger("network-importer")
 
 
-class CustomFormatter(argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter):
+class CustomFormatter(
+    argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
+):
     pass
 
 
@@ -47,7 +49,10 @@ def parse_args(args=sys.argv[1:]):
     parser = argparse.ArgumentParser(description="", formatter_class=CustomFormatter)
 
     parser.add_argument(
-        "--config", type=str, help="Network Importer Configuration file (TOML format)", default="network_importer.toml",
+        "--config",
+        type=str,
+        help="Network Importer Configuration file (TOML format)",
+        default="network_importer.toml",
     )
 
     # parser.add_argument(
@@ -67,7 +72,10 @@ def parse_args(args=sys.argv[1:]):
     # )
 
     parser.add_argument(
-        "--update-configs", action="store_true", default=False, help="Pull the latest configs from the devices",
+        "--update-configs",
+        action="store_true",
+        default=False,
+        help="Pull the latest configs from the devices",
     )
 
     parser.add_argument(
@@ -84,17 +92,25 @@ def parse_args(args=sys.argv[1:]):
     )
 
     parser.add_argument(
-        "--diff", action="store_true", default=False, help="Show the diff for all objects",
+        "--diff",
+        action="store_true",
+        default=False,
+        help="Show the diff for all objects",
     )
 
     parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
 
     g = parser.add_mutually_exclusive_group(required=True)
     g.add_argument(
-        "--check", action="store_true", default=False, help="Display what are the differences but do not save them",
+        "--check",
+        action="store_true",
+        default=False,
+        help="Display what are the differences but do not save them",
     )
 
-    g.add_argument("--apply", action="store_true", default=False, help="Save changes in Backend")
+    g.add_argument(
+        "--apply", action="store_true", default=False, help="Save changes in Backend"
+    )
 
     return parser.parse_args(args)
 
@@ -111,7 +127,9 @@ def main():
     # ------------------------------------------------------------
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
-    logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
 
     if config.logs["level"] == "debug":
         logger.setLevel(logging.DEBUG)

@@ -24,6 +24,7 @@ def test_base_model_init():
         """
         Test Model definition
         """
+
         exclude_from_diff = ["firstname"]
 
         def __init__(self):

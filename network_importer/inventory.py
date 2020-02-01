@@ -112,7 +112,9 @@ class NBInventory(Inventory):
         """
         filter_parameters = filter_parameters or {}
         nb_url = nb_url or os.environ.get("NB_URL", "http://localhost:8080")
-        nb_token = nb_token or os.environ.get("NB_TOKEN", "0123456789abcdef0123456789abcdef01234567")
+        nb_token = nb_token or os.environ.get(
+            "NB_TOKEN", "0123456789abcdef0123456789abcdef01234567"
+        )
 
         session = requests.Session()
         session.headers.update({"Authorization": f"Token {nb_token}"})
@@ -153,7 +155,9 @@ class NBInventory(Inventory):
                 host["hostname"] = dev["primary_ip"]["address"].split("/")[0]
             else:
                 host["data"]["is_reacheable"] = False
-                host["data"]["not_reacheable_raison"] = f"primary ip not defined in Netbox"
+                host["data"][
+                    "not_reacheable_raison"
+                ] = f"primary ip not defined in Netbox"
 
             # Add values that don't have an option for 'slug'
             host["data"]["serial"] = dev["serial"]
@@ -186,10 +190,18 @@ class NBInventory(Inventory):
                 groups[dev["device_role"]["slug"]] = {}
 
             host["data"]["obj"] = NetworkImporterDevice(
-                dev.get("name"), platform=host["platform"], role=host["data"]["role"], vendor=host["data"]["vendor"],
+                dev.get("name"),
+                platform=host["platform"],
+                role=host["data"]["role"],
+                vendor=host["data"]["vendor"],
             )
 
-            if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
+            if (
+                "hostname" in host
+                and host["hostname"]
+                and "platform" in host
+                and host["platform"]
+            ):
                 host["data"]["is_reacheable"] = True
 
             # Assign temporary dict to outer dict
@@ -233,7 +245,9 @@ class StaticInventory(Inventory):
             host["platform"] = host_["platform"]
             host["groups"] = ["global"]
 
-            host["data"]["obj"] = NetworkImporterDevice(host_["name"], platform=host["platform"],)
+            host["data"]["obj"] = NetworkImporterDevice(
+                host_["name"], platform=host["platform"],
+            )
 
             hosts[host_["name"]] = host
 
