@@ -74,6 +74,7 @@ class NBInventory(Inventory):
     """
     Netbox Inventory Class
     """
+
     # pylint: disable=C0330
     def __init__(
         self,
