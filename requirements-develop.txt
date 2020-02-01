@@ -1,5 +1,7 @@
-requests_mock
-tox
+bandit
 black
+pylint
 pyment
 pytest
+requests_mock
+tox

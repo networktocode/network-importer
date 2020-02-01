@@ -12,11 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
 from network_importer.performance import print_from_ms
 
 
 def test_print_from_ms():
+    """
+    Verify output of print from ms
+    """
 
     assert print_from_ms(10) == "10ms"
     assert print_from_ms(1010) == "1s 10ms"
