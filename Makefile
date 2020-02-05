@@ -9,12 +9,8 @@ format:
 
 # pyment -w -o google --first-line false --ignore-private false network_importer
 
-check-format:
-	black --check --include "bin" .
-	black --check .
-
 unit-tests:
-	pytest -v .
+	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER)  pytest -v
 
 start-batfish:
 	docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish 
@@ -24,14 +20,12 @@ tests: check-format unit-tests
 build:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_VER) .
 
-.PHONY: lint
-lint:
+.PHONY: check-format
+check-format:
 	@echo "Starting  lint"
-# Verify all Python files pass pylint
+	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) black --check --include "bin" .
+	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) black --check .
 	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) make pylint
-# Verify all Python files meet Black code style
-	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) black --check ./
-# Verify all python files pass the Bandit security scanner
 	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) bandit -r ./ -c .bandit
 	@echo "Completed lint"
 
