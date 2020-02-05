@@ -43,6 +43,8 @@ config_schema = dict(
                 data_directory=dict(type="string", default="data"),
                 data_update_cache=dict(type="boolean", default=True),
                 data_use_cache=dict(type="boolean", default=False),
+                backend_type=dict(type="string", enum=["netbox"], default="netbox"),
+                backend_version=dict(type="string", default="default"),
             ),
             default={},
         ),

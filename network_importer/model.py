@@ -18,13 +18,9 @@ import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
 from network_importer.utils import expand_vlans_list
-from network_importer.remote.netbox import (
-    VlanRemote,
-    InterfaceRemote,
-    IPAddressRemote,
-    OpticRemote,
-    get_netbox_interface_properties,
-)
+from network_importer.remote.netbox import get_netbox_interface_properties
+from network_importer.drivers import get_driver
+
 from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 
 from network_importer.logging import (
@@ -66,7 +62,7 @@ class NetworkImporterObjBase(object):
         Returns:
 
         """
-        self.remote.update_remote_info(remote)
+        self.remote.update(remote)
 
     def delete_remote(self):
         """ """
@@ -814,9 +810,9 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         Returns:
 
         """
-
-        self.remote = InterfaceRemote()
-        self.remote.add_remote_info(remote)
+        intf_driver = get_driver("interface")
+        self.remote = intf_driver()
+        self.remote.add(remote)
 
         return True
 
@@ -1070,8 +1066,9 @@ class NetworkImporterVlan(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = VlanRemote()
-        self.remote.add_remote_info(remote)
+        vlan_driver = get_driver("vlan")
+        self.remote = vlan_driver()
+        self.remote.add(remote)
 
     def add_related_device(self, dev_name):
         """
@@ -1121,8 +1118,9 @@ class NetworkImporterIP(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = IPAddressRemote()
-        self.remote.add_remote_info(remote)
+        ip_driver = get_driver("ip_address")
+        self.remote = ip_driver()
+        self.remote.add(remote)
 
         return True
 
@@ -1152,8 +1150,9 @@ class NetworkImporterOptic(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = OpticRemote()
-        self.remote.add_remote_info(remote)
+        optic_driver = get_driver("optic")
+        self.remote = optic_driver()
+        self.remote.add(remote)
 
         if not self.id and self.remote.serial:
             self.id = self.remote.serial
