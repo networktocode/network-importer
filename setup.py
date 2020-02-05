@@ -1,9 +1,10 @@
 from setuptools import setup, find_packages
 
-exec(open('network_importer/version.py').read())
+exec(open("network_importer/version.py").read())
 
 package_version = __version__
 package_name = "network-importer"
+
 
 def requirements(filename="requirements.txt"):
     return open(filename.strip()).readlines()
