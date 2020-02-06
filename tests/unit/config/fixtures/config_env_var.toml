@@ -1,0 +1,13 @@
+
+
+
+[netbox]
+address = "http:/fromfile"
+token = "fromfile" 
+verify_ssl = true
+cacert = "fromfile"
+
+[network]
+login = "fromfile"
+password = "fromfile"
+

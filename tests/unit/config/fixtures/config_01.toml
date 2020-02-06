@@ -1,0 +1,6 @@
+
+
+
+[netbox]
+address = "http://netbox"
+token = "123456" 
