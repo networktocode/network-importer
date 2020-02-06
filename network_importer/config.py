@@ -27,6 +27,7 @@ netbox = None
 batfish = None
 network = None
 
+
 def extend_with_default(validator_class):
     """
     
@@ -61,6 +62,7 @@ def extend_with_default(validator_class):
 
     return validators.extend(validator_class, {"properties": set_defaults})
 
+
 def env_var_to_bool(var):
     """
     Try to convert an environment variable into a boolean
@@ -69,11 +71,12 @@ def env_var_to_bool(var):
     """
     if str(var).lower() in ["true", "yes"] or var == "1":
         return True
-    
+
     if str(var).lower() in ["false", "no"] or var == "0":
         return False
-    
+
     return var
+
 
 def load_config(config_file_name=None, config_data=None):
     """
@@ -104,18 +107,18 @@ def load_config(config_file_name=None, config_data=None):
     # alternate environment variables.
 
     netbox = config.setdefault("netbox", {})
-    
-    if "NETBOX_ADDRESS" in os.environ:
-        netbox['address'] = os.environ.get("NETBOX_ADDRESS")
-    
-    if "NETBOX_TOKEN" in os.environ:
-        netbox['token'] = os.environ.get("NETBOX_TOKEN")
-    
-    if "NETBOX_CACERT" in os.environ:
-        netbox['cacert'] = os.environ.get("NETBOX_CACERT")
 
-    if "NETBOX_VERIFY_SSL" in os.environ:        
-        netbox['verify_ssl'] = env_var_to_bool(os.environ.get("NETBOX_VERIFY_SSL"))
+    if "NETBOX_ADDRESS" in os.environ:
+        netbox["address"] = os.environ.get("NETBOX_ADDRESS")
+
+    if "NETBOX_TOKEN" in os.environ:
+        netbox["token"] = os.environ.get("NETBOX_TOKEN")
+
+    if "NETBOX_CACERT" in os.environ:
+        netbox["cacert"] = os.environ.get("NETBOX_CACERT")
+
+    if "NETBOX_VERIFY_SSL" in os.environ:
+        netbox["verify_ssl"] = env_var_to_bool(os.environ.get("NETBOX_VERIFY_SSL"))
 
     # -------------------------------------------------------------------------
     #                                batfish
@@ -124,7 +127,7 @@ def load_config(config_file_name=None, config_data=None):
     batfish = config.setdefault("batfish", {})
 
     if "BATFISH_ADDRESS" in os.environ:
-        batfish['address'] = bool(os.environ.get("BATFISH_ADDRESS"))
+        batfish["address"] = bool(os.environ.get("BATFISH_ADDRESS"))
 
     # -------------------------------------------------------------------------
     #                                network
@@ -133,10 +136,10 @@ def load_config(config_file_name=None, config_data=None):
     network = config.setdefault("network", {})
 
     if "NETWORK_DEVICE_LOGIN" in os.environ:
-        network['login'] = os.environ.get("NETWORK_DEVICE_LOGIN")
+        network["login"] = os.environ.get("NETWORK_DEVICE_LOGIN")
 
     if "NETWORK_DEVICE_PWD" in os.environ:
-        network['password'] = os.environ.get("NETWORK_DEVICE_PWD")
+        network["password"] = os.environ.get("NETWORK_DEVICE_PWD")
 
     # -------------------------------------------------------------------------
     # validate the config structure using the JSON schema defined in the
@@ -149,7 +152,7 @@ def load_config(config_file_name=None, config_data=None):
 
     config_validator(schema.config_schema).validate(config)
     # TODO Catch jsonschema.exceptions.ValidationError  and print proper error message
-    
+
     # since the code will open a netbox connection in multiple places,
     # store the actual value provided to the pynetbox.Api, which is
     # also the underlying requests.Session.verify value, as documented

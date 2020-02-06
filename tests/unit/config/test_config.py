@@ -4,6 +4,7 @@ from os import path
 
 import network_importer.config as config
 from network_importer.config import env_var_to_bool
+
 here = path.abspath(path.dirname(__file__))
 
 
@@ -18,7 +19,7 @@ def test_env_var_to_bool():
     assert env_var_to_bool("Yes") == True
     assert env_var_to_bool("yes") == True
     assert env_var_to_bool("YES") == True
-    
+
     assert env_var_to_bool(0) == False
     assert env_var_to_bool("0") == False
     assert env_var_to_bool("false") == False
@@ -28,6 +29,7 @@ def test_env_var_to_bool():
     assert env_var_to_bool("NO") == False
     assert env_var_to_bool("No") == False
     assert env_var_to_bool(False) == False
+
 
 def test_config_no_config():
 
@@ -49,7 +51,7 @@ def test_config_env_var_no_file():
     assert config.netbox["token"] == "mytoken"
     assert config.netbox["cacert"] == "mycert"
     assert config.netbox["verify_ssl"] == True
-    
+
     assert config.network["login"] == "mylogin"
     assert config.network["password"] == "pypwd"
 
@@ -68,9 +70,10 @@ def test_config_env_var_file():
     assert config.netbox["token"] == "fromenv"
     assert config.netbox["cacert"] == "fromenv"
     assert config.netbox["verify_ssl"] == False
-    
+
     assert config.network["login"] == "fromenv"
     assert config.network["password"] == "fromenv"
+
 
 def test_config_nev_verify_ssl():
 
@@ -86,7 +89,6 @@ def test_config_nev_verify_ssl():
     assert config.netbox["token"] == "fromenv"
     assert config.netbox["cacert"] == "fromenv"
     assert config.netbox["verify_ssl"] == False
-    
+
     assert config.network["login"] == "fromenv"
     assert config.network["password"] == "fromenv"
-
