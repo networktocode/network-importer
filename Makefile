@@ -23,3 +23,4 @@ tests: check-format unit-tests
 
 build:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_VER) .
+	docker tag $(DOCKER_IMAGE):$(DOCKER_VER) $(DOCKER_IMAGE):latest
