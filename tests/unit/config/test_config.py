@@ -7,6 +7,7 @@ from network_importer.config import env_var_to_bool
 
 HERE = path.abspath(path.dirname(__file__))
 
+
 def test_env_var_to_bool():
 
     assert env_var_to_bool(1) == True
