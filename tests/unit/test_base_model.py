@@ -12,12 +12,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import pytest
 from network_importer.base_model import BaseModel
 
 
 def test_base_model_init():
+    """
+    Functional test of base model initilization
+    """
+
     class MyModel(BaseModel):
+        """
+        Test Model definition
+        """
+
         exclude_from_diff = ["firstname"]
 
         def __init__(self):

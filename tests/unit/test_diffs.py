@@ -17,6 +17,9 @@ from network_importer.diff import NetworkImporterDiff, NetworkImporterDiffProp
 
 
 def test_diff_prop_init():
+    """
+    Test of Diff Prop
+    """
 
     assert NetworkImporterDiffProp("test", 2, 2)
     assert NetworkImporterDiffProp("test", "string", "string")
@@ -31,6 +34,9 @@ def test_diff_prop_init():
 
 
 def test_diff_init():
+    """
+    Test of diff_init()
+    """
 
     assert NetworkImporterDiff("interface", "test")
 

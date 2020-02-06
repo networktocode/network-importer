@@ -11,13 +11,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-from nornir.core.deserializer.inventory import Inventory, HostsDict
+# Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
+# pylint: disable=R0913,R0914
 
 import os
 import copy
-import requests
 from typing import Any, Dict, List, Optional, Union
+import requests
+
+from nornir.core.deserializer.inventory import Inventory, HostsDict
 import network_importer.config as config
 from network_importer.model import NetworkImporterDevice
 
@@ -27,14 +29,15 @@ from network_importer.model import NetworkImporterDevice
 ###   status:
 ###     ok: device is reacheable
 ###     fail-ip: Primary IP address not reachable
-###     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or responding.
+###     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or
+###                  responding.
 ###     fail-login: Unable to login authenticate with device
 ###     fail-other:  Other general processing error (also catches traps/bug)
 ###   is_reacheable: Global Flag to indicate if we are able to connect to a device
 ###   has_config: Indicate if the configuration is present and has been properly imported in Batfish
 ### ------------------------------------------------------------
 
-base_data = {"is_reacheable": None, "status": "ok", "has_config": False, "obj": None}
+BASE_DATA = {"is_reacheable": None, "status": "ok", "has_config": False, "obj": None}
 
 ### ------------------------------------------------------------
 ### Inventory Classes
@@ -44,11 +47,11 @@ class NornirInventoryFromBatfish(Inventory):
 
     def __init__(self, devices, **kwargs: Any) -> None:
         """
-        
+
 
         Args:
-          devices: 
-          **kwargs: Any: 
+          devices:
+          **kwargs: Any:
 
         Returns:
 
@@ -57,7 +60,7 @@ class NornirInventoryFromBatfish(Inventory):
         hosts = {}
         for dev in devices.itertuples():
 
-            host: HostsDict = {"data": copy.deepcopy(base_data)}
+            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
             host["hostname"] = dev.Hostname
             # host["data"]["vendor"] = str(dev.Vendor_Family).lower()
             host["data"]["type"] = str(dev.Device_Type).lower()
@@ -68,8 +71,11 @@ class NornirInventoryFromBatfish(Inventory):
 
 
 class NBInventory(Inventory):
-    """ """
+    """
+    Netbox Inventory Class
+    """
 
+    # pylint: disable=C0330
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -99,7 +105,7 @@ class NBInventory(Inventory):
           ssl_verify: (Default value = True)
           flatten_custom_fields: bool:  (Default value = True)
           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
-          **kwargs: Any: 
+          **kwargs: Any:
 
         Returns:
 
@@ -121,12 +127,12 @@ class NBInventory(Inventory):
         nb_devices: List[Dict[str, Any]] = []
 
         while url:
-            r = session.get(url, params=filter_parameters)
+            session_resp = session.get(url, params=filter_parameters)
 
-            if not r.status_code == 200:
+            if not session_resp.status_code == 200:
                 raise ValueError(f"Failed to get devices from Netbox instance {nb_url}")
 
-            resp = r.json()
+            resp = session_resp.json()
             nb_devices.extend(resp.get("results"))
 
             url = resp.get("next")
@@ -141,12 +147,12 @@ class NBInventory(Inventory):
         if "password" in config.network and config.network["password"]:
             groups["global"]["password"] = config.network["password"]
 
-        for d in nb_devices:
-            host: HostsDict = {"data": copy.deepcopy(base_data)}
+        for dev in nb_devices:
+            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Add value for IP address
-            if d.get("primary_ip", {}):
-                host["hostname"] = d["primary_ip"]["address"].split("/")[0]
+            if dev.get("primary_ip", {}):
+                host["hostname"] = dev["primary_ip"]["address"].split("/")[0]
             else:
                 host["data"]["is_reacheable"] = False
                 host["data"][
@@ -154,37 +160,37 @@ class NBInventory(Inventory):
                 ] = f"primary ip not defined in Netbox"
 
             # Add values that don't have an option for 'slug'
-            host["data"]["serial"] = d["serial"]
-            host["data"]["vendor"] = d["device_type"]["manufacturer"]["slug"]
-            host["data"]["asset_tag"] = d["asset_tag"]
+            host["data"]["serial"] = dev["serial"]
+            host["data"]["vendor"] = dev["device_type"]["manufacturer"]["slug"]
+            host["data"]["asset_tag"] = dev["asset_tag"]
 
             if flatten_custom_fields:
-                for cf, value in d["custom_fields"].items():
-                    host["data"][cf] = value
+                for cust_field, value in dev["custom_fields"].items():
+                    host["data"][cust_field] = value
             else:
-                host["data"]["custom_fields"] = d["custom_fields"]
+                host["data"]["custom_fields"] = dev["custom_fields"]
 
             # Add values that do have an option for 'slug'
-            host["data"]["site"] = d["site"]["slug"]
-            host["data"]["role"] = d["device_role"]["slug"]
-            host["data"]["model"] = d["device_type"]["slug"]
+            host["data"]["site"] = dev["site"]["slug"]
+            host["data"]["role"] = dev["device_role"]["slug"]
+            host["data"]["model"] = dev["device_type"]["slug"]
 
             # Attempt to add 'platform' based of value in 'slug'
-            host["platform"] = d["platform"]["slug"] if d["platform"] else None
+            host["platform"] = dev["platform"]["slug"] if dev["platform"] else None
 
             #     "cisco_" + d["platform"]["slug"] if d["platform"] else None
             # )
 
-            host["groups"] = ["global", d["site"]["slug"], d["device_role"]["slug"]]
+            host["groups"] = ["global", dev["site"]["slug"], dev["device_role"]["slug"]]
 
-            if d["site"]["slug"] not in groups.keys():
-                groups[d["site"]["slug"]] = {}
+            if dev["site"]["slug"] not in groups.keys():
+                groups[dev["site"]["slug"]] = {}
 
-            if d["device_role"]["slug"] not in groups.keys():
-                groups[d["device_role"]["slug"]] = {}
+            if dev["device_role"]["slug"] not in groups.keys():
+                groups[dev["device_role"]["slug"]] = {}
 
             host["data"]["obj"] = NetworkImporterDevice(
-                d.get("name"),
+                dev.get("name"),
                 platform=host["platform"],
                 role=host["data"]["role"],
                 vendor=host["data"]["vendor"],
@@ -201,21 +207,25 @@ class NBInventory(Inventory):
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
             # If a device is unnamed we will set the name to the id of the device in netbox
-            hosts[d.get("name") or d.get("id")] = host
+            hosts[dev.get("name") or dev.get("id")] = host
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
 
 
 class StaticInventory(Inventory):
+    """
+    Static Inventory Class
+    """
+
     def __init__(self, hosts: List[Dict], **kwargs: Any,) -> None:
         """
         Static Inventory for NetworkImporter
         Takes a list of hosts as input and return a NetworkImporter Inventory
-        
+
         hosts = [
             {
-                "name": "device1", 
+                "name": "device1",
                 "platform": "eos",
                 "ip_address": "10.10.10.1"
             }
@@ -226,20 +236,20 @@ class StaticInventory(Inventory):
         hosts = {}
         groups = {"global": {}}
 
-        for h in hosts:
+        for host_ in hosts:
 
-            host: HostsDict = {"data": copy.deepcopy(base_data)}
+            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
             host["data"]["is_reacheable"] = True
 
-            host["hostname"] = h["ip_address"]
-            host["platform"] = h["platform"]
+            host["hostname"] = host_["ip_address"]
+            host["platform"] = host_["platform"]
             host["groups"] = ["global"]
 
             host["data"]["obj"] = NetworkImporterDevice(
-                h["name"], platform=host["platform"],
+                host_["name"], platform=host["platform"],
             )
 
-            hosts[h["name"]] = host
+            hosts[host_["name"]] = host
 
         # Pull the login and password from the NI config object if available
         if "login" in config.network and config.network["login"]:
@@ -255,81 +265,81 @@ class StaticInventory(Inventory):
 ### -----------------------------------------------------------------
 ### Inventory Filter functions
 ### -----------------------------------------------------------------
-def valid_devs(h):
+def valid_devs(host):
     """
-    
+
 
     Args:
-      h: 
+      host:
 
     Returns:
 
     """
-    if h.data["has_config"]:
+    if host.data["has_config"]:
         return True
-    else:
-        return False
+
+    return False
 
 
-def non_valid_devs(h):
+def non_valid_devs(host):
     """
-    
+
 
     Args:
-      h: 
+      host:
 
     Returns:
 
     """
-    if h.data["has_config"]:
+    if host.data["has_config"]:
         return False
-    else:
-        return True
+
+    return True
 
 
-def reacheable_devs(h):
+def reacheable_devs(host):
     """
-    
+
 
     Args:
-      h: 
+      host:
 
     Returns:
 
     """
-    if h.data["is_reacheable"]:
+    if host.data["is_reacheable"]:
         return True
-    else:
-        return False
+
+    return False
 
 
-def non_reacheable_devs(h):
+def non_reacheable_devs(host):
     """
-    
+
 
     Args:
-      h: 
+      host:
 
     Returns:
 
     """
-    if h.data["is_reacheable"]:
+    if host.data["is_reacheable"]:
         return False
-    else:
-        return True
+
+    return True
 
 
-def valid_and_reacheable_devs(h):
+def valid_and_reacheable_devs(host):
     """
-    
+
 
     Args:
-      h: 
+      host:
 
     Returns:
 
     """
-    if h.data["is_reacheable"] and h.data["has_config"]:
+    if host.data["is_reacheable"] and host.data["has_config"]:
         return True
-    else:
-        return False
+
+    return False
