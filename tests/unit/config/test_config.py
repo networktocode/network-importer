@@ -1,12 +1,11 @@
-import pytest
+# pylint: disable=C0121,C0116
 import os
 from os import path
 
 import network_importer.config as config
 from network_importer.config import env_var_to_bool
 
-here = path.abspath(path.dirname(__file__))
-
+HERE = path.abspath(path.dirname(__file__))
 
 def test_env_var_to_bool():
 
@@ -40,9 +39,9 @@ def test_config_no_config():
 def test_config_env_var_no_file():
 
     os.environ["NETBOX_ADDRESS"] = "http://envvar"
-    os.environ["NETBOX_TOKEN"] = "mytoken"
+    os.environ["NETBOX_TOKEN"] = "mytoken"  # nosec
     os.environ["NETWORK_DEVICE_LOGIN"] = "mylogin"
-    os.environ["NETWORK_DEVICE_PWD"] = "pypwd"
+    os.environ["NETWORK_DEVICE_PWD"] = "pypwd"  # nosec
     os.environ["NETBOX_VERIFY_SSL"] = "1"
     os.environ["NETBOX_CACERT"] = "mycert"
 
@@ -59,36 +58,36 @@ def test_config_env_var_no_file():
 def test_config_env_var_file():
 
     os.environ["NETBOX_ADDRESS"] = "http://fromenv"
-    os.environ["NETBOX_TOKEN"] = "fromenv"
+    os.environ["NETBOX_TOKEN"] = "fromenv"  # nosec
     os.environ["NETWORK_DEVICE_LOGIN"] = "fromenv"
-    os.environ["NETWORK_DEVICE_PWD"] = "fromenv"
+    os.environ["NETWORK_DEVICE_PWD"] = "fromenv"  # nosec
     os.environ["NETBOX_VERIFY_SSL"] = "false"
     os.environ["NETBOX_CACERT"] = "fromenv"
 
-    config.load_config(f"{here}/fixtures/config_env_var.toml")
+    config.load_config(f"{HERE}/fixtures/config_env_var.toml")
     assert config.netbox["address"] == "http://fromenv"
     assert config.netbox["token"] == "fromenv"
     assert config.netbox["cacert"] == "fromenv"
     assert config.netbox["verify_ssl"] == False
 
     assert config.network["login"] == "fromenv"
-    assert config.network["password"] == "fromenv"
+    assert config.network["password"] == "fromenv"  # nosec
 
 
 def test_config_nev_verify_ssl():
 
     os.environ["NETBOX_ADDRESS"] = "http://fromenv"
-    os.environ["NETBOX_TOKEN"] = "fromenv"
+    os.environ["NETBOX_TOKEN"] = "fromenv"  # nosec
     os.environ["NETWORK_DEVICE_LOGIN"] = "fromenv"
-    os.environ["NETWORK_DEVICE_PWD"] = "fromenv"
+    os.environ["NETWORK_DEVICE_PWD"] = "fromenv"  # nosec
     os.environ["NETBOX_VERIFY_SSL"] = "false"
     os.environ["NETBOX_CACERT"] = "fromenv"
 
-    config.load_config(f"{here}/fixtures/config_env_var.toml")
+    config.load_config(f"{HERE}/fixtures/config_env_var.toml")
     assert config.netbox["address"] == "http://fromenv"
     assert config.netbox["token"] == "fromenv"
     assert config.netbox["cacert"] == "fromenv"
     assert config.netbox["verify_ssl"] == False
 
     assert config.network["login"] == "fromenv"
-    assert config.network["password"] == "fromenv"
+    assert config.network["password"] == "fromenv"  # nosec
