@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-exec(open("network_importer/version.py").read())
+exec(open("network_importer/version.py").read())  # nosec
 
 package_version = __version__
 package_name = "network-importer"

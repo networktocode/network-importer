@@ -20,10 +20,7 @@ ignore=CVS,
        main.py,
        model.py,
        performance.py,
-       schema.py,
-       tasks.py,
-       utils.py,
-       netbox.py
+       schema.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -159,8 +156,12 @@ disable=print-statement,
         fixme,
         too-many-branches,
         too-many-instance-attributes,
+        missing-module-docstring,
         unused-variable,
-        missing-module-docstring
+        empty-docstring,
+        logging-format-interpolation,
+        bare-except,
+        too-many-locals
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
