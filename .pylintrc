@@ -159,7 +159,7 @@ disable=print-statement,
         fixme,
         too-many-branches,
         too-many-instance-attributes,
-        unused-variable
+        unused-variable,
         missing-module-docstring
 
 # Enable the message, report, category or checker with the given id(s). You can
