@@ -31,7 +31,7 @@ check-format:
 	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) black --check --include "bin" .
 	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) black --check .
 	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) make pylint
-	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) bandit -r ./ -c .bandit
+	docker run -v $(shell pwd):/source $(DOCKER_IMAGE):$(DOCKER_VER) bandit --recursive --config .bandit.yml .
 	@echo "Completed lint"
 
 # Using to pass arguments to pylint that would fail in docker run command

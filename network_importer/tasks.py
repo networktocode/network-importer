@@ -12,42 +12,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+import sys
 import logging
-import pynetbox
 import os
 import hashlib
 import copy
 import json
 from pathlib import Path
 
-from typing import Optional, List
-
-import network_importer
-import network_importer.config as config
-
-from network_importer.model import (
-    NetworkImporterDevice,
-    NetworkImporterInterface,
-    NetworkImporterSite,
-    NetworkImporterVlan,
-)
+import pynetbox
 
 from nornir.core.task import Result, Task
 from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napalm_get
 
 from napalm.base.helpers import canonical_interface_name
 
-logger = logging.getLogger("network-importer")
+import network_importer
+import network_importer.config as config
+
+from network_importer.model import (  # pylint: disable=W0611
+    NetworkImporterDevice,
+    NetworkImporterInterface,
+    NetworkImporterSite,
+    NetworkImporterVlan,
+)
+
+
+logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def save_data_to_file(host, filename, content):
     """
-    
+
 
     Args:
-      host: 
-      filename: 
-      content: 
+      host:
+      filename:
+      content:
 
     Returns:
 
@@ -56,19 +57,19 @@ def save_data_to_file(host, filename, content):
     directory = config.main["data_directory"]
     filepath = f"{directory}/{host}/{filename}.json"
 
-    with open(filepath, "w") as f:
-        json.dump(content, f, indent=4, sort_keys=True)
+    with open(filepath, "w") as file_:
+        json.dump(content, file_, indent=4, sort_keys=True)
 
     return True
 
 
 def get_data_from_file(host, filename):
     """
-    
+
 
     Args:
-      host: 
-      filename: 
+      host:
+      filename:
 
     Returns:
 
@@ -82,8 +83,8 @@ def get_data_from_file(host, filename):
         return False
 
     try:
-        with open(filepath) as f:
-            data = json.load(f)
+        with open(filepath) as file_:
+            data = json.load(file_)
     except:
         logger.warning(f"{host} | Unable to load the cache for {filename} ")
         return False
@@ -93,10 +94,10 @@ def get_data_from_file(host, filename):
 
 def check_data_dir(host):
     """
-    
+
 
     Args:
-      host: 
+      host:
 
     Returns:
 
@@ -113,19 +114,19 @@ def check_data_dir(host):
 
 def initialize_devices(task: Task, bfs=None) -> Result:
     """
-    
+
 
     Args:
       task: Task:
       bfs: (Default value = None)
       task: Task:
-      task: Task: 
+      task: Task:
 
     Returns:
 
     """
 
-    nb = pynetbox.api(
+    pynb = pynetbox.api(
         config.netbox["address"],
         token=config.netbox["token"],
         ssl_verify=config.netbox["request_ssl_verify"],
@@ -133,11 +134,11 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
     # TODO add check to ensure device is present
     # Also only pull the cache if the object exist already
-    nb_dev = nb.dcim.devices.get(name=task.host.name)
+    nb_dev = pynb.dcim.devices.get(name=task.host.name)
 
     logger.info(f"{task.host.name} | Initializing Device  .. ")
 
-    task.host.data["obj"].nb = nb
+    task.host.data["obj"].nb = pynb
     task.host.data["obj"].update_cache()
 
     if nb_dev:
@@ -161,7 +162,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
 def device_update_remote(task: Task) -> Result:
     """
-    
+
 
     Args:
       task: Task
@@ -187,7 +188,7 @@ def device_generate_hostvars(task: Task) -> Result:
 
     """
     module_path = os.path.dirname(network_importer.__file__)
-    TPL_DIR = f"{module_path}/templates/"
+    template_dir = f"{module_path}/templates/"
 
     # # Save device variables in file
     # if not os.path.exists(f"{options.output}/{dev.name}"):
@@ -201,7 +202,7 @@ def device_generate_hostvars(task: Task) -> Result:
 
     # # Load Jinja2 template
     # # env = Environment(
-    # #     loader=FileSystemLoader(TPL_DIR), trim_blocks=True, lstrip_blocks=True
+    # #     loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
     # # )
     # # env.filters["to_yaml_list"] = jinja_filter_toyaml_list
     # # env.filters["to_yaml_dict"] = jinja_filter_toyaml_dict
@@ -229,7 +230,7 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
 
     Args:
       task: Task:
-      update_cache: (Default value = True) 
+      update_cache: (Default value = True)
 
     Returns:
 
@@ -287,7 +288,7 @@ def collect_vlans_info_from_cache(task: Task) -> Result:
     Args:
       task: Task:
       task: Task:
-      task: Task: 
+      task: Task:
 
     Returns:
 
@@ -297,19 +298,19 @@ def collect_vlans_info_from_cache(task: Task) -> Result:
     return Result(host=task.host, result=data)
 
 
-def update_configuration(
+def update_configuration(  # pylint: disable=C0330
     task: Task, configs_directory, config_extension="txt"
 ) -> Result:
     """
     Collect running configurations on all devices
-    
+
     Supported Devices:
         Default: Napalm (TODO)
         Cisco: Netmiko
 
     Args:
       task: Task:
-      configs_directory: 
+      configs_directory:
       config_extension: (Default value = "txt")
 
     Returns:
@@ -345,8 +346,8 @@ def update_configuration(
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
-    with open(config_filename, "w") as config:
-        config.write(new_config)
+    with open(config_filename, "w") as config_:
+        config_.write(new_config)
 
     new_md5 = hashlib.md5(new_config.encode("utf-8")).hexdigest()
     changed = False
@@ -433,7 +434,7 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
         if not isinstance(transceivers, list):
             logger.debug(
-                f"{task.host.name}: command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"
+                f"{task.host.name}: command: {cmd} was not returned as a list, please check if the ntc-template are installed properly"  # pylint: disable=C0301
             )
             return Result(host=task.host, result=transceivers_inventory)
 
@@ -530,28 +531,28 @@ def check_if_reacheable(task: Task) -> Result:
     Check if a device is reacheable by doing a TCP ping it on port 22
 
     Will change the status of the variable `is_reacheable` in host.data based on the results
-   
+
    Args:
       task: Nornir Task
 
     Returns:
-      Result: 
+      Result:
 
     """
 
-    PORT_TO_CHECK = 22
-    results = task.run(task=tcp_ping, ports=[PORT_TO_CHECK])
+    port_to_check = 22
+    results = task.run(task=tcp_ping, ports=[port_to_check])
 
-    is_reacheable = results[0].result[PORT_TO_CHECK]
+    is_reacheable = results[0].result[port_to_check]
 
     if not is_reacheable:
         logger.debug(
-            f"{task.host.name} | device is not reacheable on port {PORT_TO_CHECK}"
+            f"{task.host.name} | device is not reacheable on port {port_to_check}"
         )
         task.host.data["is_reacheable"] = False
         task.host.data[
             "not_reacheable_raison"
-        ] = f"device not reacheable on port {PORT_TO_CHECK}"
+        ] = f"device not reacheable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reacheable)
@@ -559,14 +560,14 @@ def check_if_reacheable(task: Task) -> Result:
 
 def update_device_status(task: Task) -> Result:
     """
-    
+
     Update the status of the device on the remote system
 
     Args:
       task: Nornir Task
 
     Returns:
-      Result: 
+      Result:
 
     """
 
@@ -590,7 +591,7 @@ def update_device_status(task: Task) -> Result:
     else:
         new_status = config.netbox["status_on_pass"]
 
-    if new_status != None and new_status != prev_status:
+    if new_status not in (None, prev_status):
 
         task.host.data["obj"].remote.update(data={"status": new_status})
         logger.info(
@@ -598,7 +599,6 @@ def update_device_status(task: Task) -> Result:
         )
         return Result(host=task.host, result=True)
 
-    else:
-        logger.debug(f"{task.host.name} | no status update required")
+    logger.debug(f"{task.host.name} | no status update required")
 
     return Result(host=task.host, result=False)

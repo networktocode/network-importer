@@ -12,12 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import time
 import re
 import logging
+import yaml
+from urllib3 import connectionpool, poolmanager
 
 
-logger = logging.getLogger("network-importer")
+logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def patch_http_connection_pool(**constructor_kwargs):
@@ -30,23 +31,22 @@ def patch_http_connection_pool(**constructor_kwargs):
     you want to give to the connection pool)
 
     Args:
-      **constructor_kwargs: 
+      **constructor_kwargs:
 
     Returns:
 
     """
-    from urllib3 import connectionpool, poolmanager
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
         """ """
 
         def __init__(self, *args, **kwargs):
             """
-            
+
 
             Args:
-              *args: 
-              **kwargs: 
+              *args:
+              **kwargs:
 
             Returns:
 
@@ -62,7 +62,7 @@ def sort_by_digits(if_name: str) -> tuple:
     Extract all digits from a string and return them as tuple
 
     Args:
-      if_name: 
+      if_name:
 
     Returns:
       tuple of all digits in the string
@@ -77,7 +77,7 @@ def jinja_filter_toyaml_list(value) -> str:
     JinjaFilter to return a dict as a Nice Yaml
 
     Args:
-      value:  
+      value:
 
     Returns:
       Str formatted as Yaml
@@ -89,7 +89,7 @@ def jinja_filter_toyaml_dict(value) -> str:
     """
 
     Args:
-      value: 
+      value:
 
     Returns:
 
@@ -120,12 +120,12 @@ def expand_vlans_list(vlans: str) -> list:
         elif len(min_max) == 2:
             raw_vlans_list.extend(range(int(min_max[0]), int(min_max[1]) + 1))
 
-    for v in raw_vlans_list:
+    for vlan_ in raw_vlans_list:
         try:
-            clean_vlans_list.append(int(v))
-        except ValueError as e:
+            clean_vlans_list.append(int(vlan_))
+        except ValueError as exc:
             logger.debug(
-                f"expand_vlans_list() Unable to convert {v} as integer .. skipping"
+                f"expand_vlans_list() Unable to convert {vlan_} as integer .. skipping"
             )
 
     return sorted(clean_vlans_list)
