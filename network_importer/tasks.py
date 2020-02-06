@@ -326,7 +326,7 @@ def update_configuration(
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
     if task.host.platform in ["nxos", "ios"]:
-        results = task.run(task=netmiko_send_command, command_string="show run all")
+        results = task.run(task=netmiko_send_command, command_string="show run")
 
         if results.failed:
             return Result(host=task.host, failed=True)
@@ -335,7 +335,7 @@ def update_configuration(
 
     else:
         results = task.run(
-            task=napalm_get, getters=["config"], retrieve="running", full=True
+            task=napalm_get, getters=["config"], retrieve="running", full=False
         )
 
         if results.failed:

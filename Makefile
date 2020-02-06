@@ -2,10 +2,10 @@
 DOCKER_IMAGE = networktocode/network-importer
 DOCKER_VER = 0.3.1
 
+.PHONY: format
 format:
 	black --include "bin" .
 	black .
-
 
 # pyment -w -o google --first-line false --ignore-private false network_importer
 
@@ -17,8 +17,10 @@ start-batfish:
 
 tests: check-format unit-tests
 
+.PHONY: build
 build:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_VER) .
+  docker tag $(DOCKER_IMAGE):$(DOCKER_VER) $(DOCKER_IMAGE):latest
 
 .PHONY: check-format
 check-format:

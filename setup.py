@@ -1,6 +1,8 @@
 from setuptools import setup, find_packages
 
-package_version = "0.3.0"
+exec(open("network_importer/version.py").read())
+
+package_version = __version__
 package_name = "network-importer"
 
 
