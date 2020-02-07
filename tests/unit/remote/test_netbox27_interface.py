@@ -11,7 +11,12 @@ from network_importer.remote.netbox import Netbox27Interface
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "fixtures/netbox_27"
 
-def test_netbox27_interface_access():
+# ---------------------------------------------------------------------
+# ADD
+# ---------------------------------------------------------------------
+
+
+def test_netbox27_add_interface_access():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_access.json"))
@@ -27,7 +32,7 @@ def test_netbox27_interface_access():
     assert intf.access_vlan == 300
 
 
-def test_netbox27_interface_lag_member():
+def test_netbox27_add_interface_lag_member():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_lag_member.json"))
@@ -44,7 +49,7 @@ def test_netbox27_interface_lag_member():
     assert intf.allowed_vlans == None
 
 
-def test_netbox27_interface_lag_trunk():
+def test_netbox27_add_interface_lag_trunk():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_lag_trunk.json"))
@@ -61,7 +66,7 @@ def test_netbox27_interface_lag_trunk():
     assert intf.allowed_vlans == [300, 301]
 
 
-def test_netbox27_interface_loopback():
+def test_netbox27_add_interface_loopback():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_loopback.json"))
@@ -76,3 +81,24 @@ def test_netbox27_interface_loopback():
     assert intf.switchport_mode == "NONE"
     assert intf.access_vlan == None
     assert intf.allowed_vlans == None
+
+
+# ---------------------------------------------------------------------
+# Get Properties
+# ---------------------------------------------------------------------
+
+
+def test_netbox26_properties_interface_loopback():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_loopback.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox27Interface()
+    intf.add(rem)
+
+    intf_prop = Netbox27Interface.get_properties(intf)
+
+    assert intf_prop["type"] == "virtual"
+    assert intf_prop["mode"] == None
+    assert intf_prop["enabled"] == True

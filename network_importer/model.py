@@ -18,7 +18,6 @@ import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
 from network_importer.utils import expand_vlans_list
-from network_importer.remote.netbox import get_netbox_interface_properties
 from network_importer.drivers import get_driver
 
 from network_importer.base_model import Interface, IPAddress, Optic, Vlan
@@ -241,7 +240,8 @@ class NetworkImporterDevice(object):
         """
 
         if intf.exist_local():
-            intf_properties = get_netbox_interface_properties(intf.local)
+            intf_driver = get_driver("interface")
+            intf_properties = intf_driver.get_properties(intf.local)
 
             # Hack for VMX to set the interface type properly
             if self.vendor and self.vendor == "juniper" and "." not in intf.name:

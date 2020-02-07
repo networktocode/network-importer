@@ -8,12 +8,12 @@ import yaml
 from network_importer.remote.netbox import NetboxIPAddress
 
 HERE = path.abspath(path.dirname(__file__))
-FIXTURE_27 = "fixtures/netbox_27"
+FIXTURES = "fixtures/netbox_27"
 
 
 def test_netbox27_vlan_no_tag():
 
-    data = yaml.safe_load(open(f"{HERE}/{FIXTURE_27}/ip_address.json"))
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/ip_address.json"))
     rem = pynetbox.models.ipam.IpAddresses(data, "http://mock", 1)
 
     ipaddr = NetboxIPAddress()

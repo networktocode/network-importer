@@ -11,8 +11,10 @@ from network_importer.remote.netbox import Netbox26Interface
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "fixtures/netbox_26"
 
-
-def test_netbox26_interface_access():
+# ---------------------------------------------------------------------
+# ADD
+# ---------------------------------------------------------------------
+def test_netbox26_add_interface_access():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_access.json"))
@@ -28,7 +30,7 @@ def test_netbox26_interface_access():
     assert intf.access_vlan == 1
 
 
-def test_netbox26_interface_trunk():
+def test_netbox26_add_interface_trunk():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_trunk.json"))
@@ -45,7 +47,7 @@ def test_netbox26_interface_trunk():
     assert sorted(intf.allowed_vlans) == [5, 14, 18]
 
 
-def test_netbox26_interface_lag_member():
+def test_netbox26_add_interface_lag_member():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_lag_member.json"))
@@ -62,7 +64,7 @@ def test_netbox26_interface_lag_member():
     assert intf.allowed_vlans == None
 
 
-def test_netbox26_interface_lag():
+def test_netbox26_add_interface_lag():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_lag.json"))
@@ -79,7 +81,7 @@ def test_netbox26_interface_lag():
     assert intf.allowed_vlans == None
 
 
-def test_netbox26_interface_loopback():
+def test_netbox26_add_interface_loopback():
 
     config.load_config()
     data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_loopback.json"))
@@ -94,3 +96,24 @@ def test_netbox26_interface_loopback():
     assert intf.switchport_mode == "NONE"
     assert intf.access_vlan == None
     assert intf.allowed_vlans == None
+
+
+# ---------------------------------------------------------------------
+# Get Properties
+# ---------------------------------------------------------------------
+
+
+def test_netbox26_properties_interface_loopback():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_loopback.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox26Interface()
+    intf.add(rem)
+
+    intf_prop = Netbox26Interface.get_properties(intf)
+
+    assert intf_prop["type"] == 0
+    assert intf_prop["mode"] == None
+    assert intf_prop["enabled"] == True
