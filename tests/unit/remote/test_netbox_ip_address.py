@@ -1,7 +1,9 @@
+# pylint: disable=C0116,C0121,R0801
+
 from os import path
 
-import yaml
 import pynetbox
+import yaml
 
 from network_importer.remote.netbox import NetboxIPAddress
 
@@ -14,8 +16,8 @@ def test_netbox27_vlan_no_tag():
     data = yaml.safe_load(open(f"{HERE}/{FIXTURE_27}/ip_address.json"))
     rem = pynetbox.models.ipam.IpAddresses(data, "http://mock", 1)
 
-    ip = NetboxIPAddress()
-    ip.add(rem)
+    ipaddr = NetboxIPAddress()
+    ipaddr.add(rem)
 
-    assert ip.address == "10.63.0.2/31"
-    assert str(ip.family) == "IPv4"
+    assert ipaddr.address == "10.63.0.2/31"
+    assert str(ipaddr.family) == "IPv4"

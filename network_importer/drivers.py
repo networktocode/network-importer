@@ -4,12 +4,12 @@ import network_importer.config as config
 DRIVERS = {
     "netbox": {
         "default": {
-            "interface": netbox.NetboxInterface_26,
+            "interface": netbox.Netbox26Interface,
             "vlan": netbox.NetboxVlan,
             "ip_address": netbox.NetboxIPAddress,
             "optic": netbox.NetboxOptic,
         },
-        "2.7": {"interface": netbox.NetboxInterface_27},
+        "2.7": {"interface": netbox.Netbox27Interface},
     }
 }
 
@@ -25,5 +25,5 @@ def get_driver(dtype):
         and dtype in DRIVERS[backend][version].keys()
     ):
         return DRIVERS[backend][version][dtype]
-    else:
-        return DRIVERS[backend]["default"][dtype]
+
+    return DRIVERS[backend]["default"][dtype]

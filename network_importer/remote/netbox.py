@@ -111,7 +111,7 @@ class NetboxInterface(Interface):
         return True
 
 
-class NetboxInterface_26(NetboxInterface):
+class Netbox26Interface(NetboxInterface):
     def add(self, rem):
         """ """
 
@@ -173,7 +173,7 @@ class NetboxInterface_26(NetboxInterface):
         return True
 
 
-class NetboxInterface_27(NetboxInterface):
+class Netbox27Interface(NetboxInterface):
     def add(self, rem):
         """ """
 
@@ -187,10 +187,10 @@ class NetboxInterface_27(NetboxInterface):
 
         self.description = rem.description
 
-        if rem.type.value == 200:
+        if rem.type.value == "lag":
             self.is_lag = True
             self.is_virtual = False
-        elif rem.type.value == 0:
+        elif rem.type.value == "virtual":
             self.is_virtual = True
             self.is_lag = False
         else:
@@ -203,10 +203,10 @@ class NetboxInterface_27(NetboxInterface):
             self.is_virtual = False
             self.parent = rem.lag.name
 
-        if rem.mode and rem.mode.value == 100:
+        if rem.mode and rem.mode.value == "access":
             self.switchport_mode = "ACCESS"
             self.mode = self.switchport_mode
-        elif rem.mode and rem.mode.value == 200:
+        elif rem.mode and rem.mode.value == "tagged":
             self.switchport_mode = "TRUNK"
             self.mode = self.switchport_mode
         else:
@@ -310,7 +310,7 @@ class NetboxOptic(Optic):
 
     def update(self, rem):
         """ """
-        self.add_remote_info(rem)
+        self.add(rem)
 
     def delete(self):
         """

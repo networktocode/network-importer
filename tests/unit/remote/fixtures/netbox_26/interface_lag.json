@@ -1,0 +1,33 @@
+{
+    "id": 355,
+    "device": {
+      "id": 3,
+      "url": "https://localhost/api/dcim/devices/3/",
+      "name": "deviceA",
+      "display_name": "deviceA"
+    },
+    "name": "port-channel100",
+    "type": {
+      "value": 200,
+      "label": "Link Aggregation Group (LAG)"
+    },
+    "form_factor": {
+      "value": 200,
+      "label": "Link Aggregation Group (LAG)"
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": 1500,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "lag description",
+    "connected_endpoint_type": null,
+    "connected_endpoint": null,
+    "connection_status": null,
+    "cable": null,
+    "mode": null,
+    "untagged_vlan": null,
+    "tagged_vlans": [],
+    "tags": [],
+    "count_ipaddresses": 0
+  }

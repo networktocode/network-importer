@@ -1,7 +1,9 @@
+# pylint: disable=C0116,C0121,R0801
+
 from os import path
 
-import yaml
 import pynetbox
+import yaml
 
 from network_importer.remote.netbox import NetboxVlan
 

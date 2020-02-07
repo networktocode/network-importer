@@ -1,0 +1,42 @@
+{
+    "id": 330,
+    "device": {
+      "id": 3,
+      "url": "https://localhost/api/dcim/devices/3/",
+      "name": "deviceA",
+      "display_name": "deviceA"
+    },
+    "name": "Ethernet2/5",
+    "type": {
+      "value": 1100,
+      "label": "SFP (1GE)"
+    },
+    "form_factor": {
+      "value": 1100,
+      "label": "SFP (1GE)"
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": 1500,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "",
+    "connected_endpoint_type": null,
+    "connected_endpoint": null,
+    "connection_status": null,
+    "cable": null,
+    "mode": {
+      "value": 100,
+      "label": "Access"
+    },
+    "untagged_vlan": {
+      "id": 7046,
+      "url": "https://localhost/api/ipam/vlans/1001/",
+      "vid": 1,
+      "name": "default",
+      "display_name": "1 (default)"
+    },
+    "tagged_vlans": [],
+    "tags": [],
+    "count_ipaddresses": 0
+  }
