@@ -1,4 +1,4 @@
-from python:3.7.5
+FROM python:3.7.5
 
 RUN pip install --upgrade pip
 
