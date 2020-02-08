@@ -18,7 +18,6 @@ ignore=CVS,
        diff.py,
        logging.py,
        main.py,
-       model.py,
        schema.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
@@ -162,7 +161,11 @@ disable=print-statement,
         bare-except,
         too-many-locals,
         line-too-long,
-        global-statement
+        global-statement,
+        bad-continuation,
+        too-many-lines,
+        too-many-statements,
+        too-many-arguments
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
