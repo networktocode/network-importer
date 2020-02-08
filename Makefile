@@ -1,7 +1,6 @@
 
 DOCKER_IMAGE = networktocode/network-importer
-DOCKER_VER = 0.3.1
-
+DOCKER_VER = 0.4.0
 
 format:
 	black --include "bin" .
