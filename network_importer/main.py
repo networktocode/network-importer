@@ -22,15 +22,14 @@ from collections import defaultdict
 import requests
 import pynetbox
 
+from jinja2 import Template, Environment, FileSystemLoader
 from pybatfish.client.session import Session
 from termcolor import colored
-from jinja2 import Template, Environment, FileSystemLoader
 
 import network_importer
 import network_importer.config as config
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 
 
 with warnings.catch_warnings():
