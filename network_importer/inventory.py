@@ -146,6 +146,15 @@ class NBInventory(Inventory):
 
         if "password" in config.network and config.network["password"]:
             groups["global"]["password"] = config.network["password"]
+            if "enable" in config.network and config.network["enable"]:
+                groups["global"]["connection_options"] = {
+                    "netmiko": {"extras": {"secret": config.network["password"]}},
+                    "napalm": {
+                        "extras": {
+                            "optional_args": {"secret": config.network["password"]}
+                        }
+                    },
+                }
 
         for dev in nb_devices:
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
