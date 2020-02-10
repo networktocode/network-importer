@@ -17,7 +17,6 @@ ignore=CVS,
        config.py,
        diff.py,
        logging.py,
-       main.py,
        schema.py
 
 # Add files or directories matching the regex patterns to the blacklist. The

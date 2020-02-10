@@ -11,35 +11,34 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=R1724,W0611,R1710,R1710,E1101,W0613,C0103,C0413
 
 import logging
 import sys
 import os
-import json
-import yaml
-
 import re
-from collections import defaultdict
-
 import warnings
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+from collections import defaultdict
 import requests
 import pynetbox
 
 from pybatfish.client.session import Session
+from termcolor import colored
+from jinja2 import Template, Environment, FileSystemLoader
+
+import network_importer
+import network_importer.config as config
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
     from nornir.core.filter import F
 
-from termcolor import colored
-from jinja2 import Template, Environment, FileSystemLoader
 
-import network_importer
-import network_importer.config as config
 from network_importer.utils import sort_by_digits, patch_http_connection_pool
 from network_importer.tasks import (
     initialize_devices,
@@ -79,12 +78,12 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 logger = logging.getLogger("network-importer")
 
 
-class NetworkImporter(object):
+class NetworkImporter:
     """ """
 
     def __init__(self, check_mode=True):
         """
-        
+
 
         Args:
           check_mode:  (Default value = True)
@@ -105,7 +104,7 @@ class NetworkImporter(object):
         Return the NI object for a given device_name
 
         Args:
-          dev_name: 
+          dev_name:
 
         Returns:
           NetworkImporterDevice
@@ -211,7 +210,7 @@ class NetworkImporter(object):
             Create inventory
             Create all NetworkImporterDevice object
             Create all sites
-        
+
         inputs:
             limit: filter the inventory to limit the execution to a subset of devices
 
@@ -416,7 +415,7 @@ class NetworkImporter(object):
 
     def update_devices_status(self):
         """
-        Update the status of the device on the remote system 
+        Update the status of the device on the remote system
 
         """
 
@@ -527,7 +526,7 @@ class NetworkImporter(object):
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
-        if len(hostname_existing_configs):
+        if len(hostname_existing_configs) > 0:
             logger.info(
                 f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated"
             )
@@ -539,7 +538,7 @@ class NetworkImporter(object):
 
     def warning_devices_not_reacheable(self, msg=""):
         """
-        
+
 
         Args:
           msg: (Default value = "")
@@ -549,7 +548,7 @@ class NetworkImporter(object):
         """
 
         for host in self.devs.filter(
-            filter_func=lambda h: h.data["is_reacheable"] == False
+            filter_func=lambda h: h.data["is_reacheable"] is False
         ).inventory.hosts:
             raison = self.devs.inventory.hosts[host].data.get(
                 "not_reacheable_raison", "Raison not defined"
@@ -570,7 +569,7 @@ class NetworkImporter(object):
     def init_bf_session(self):
         """
         Initialize Batfish
-        
+
         Args:
 
         Returns:
@@ -714,9 +713,9 @@ class NetworkImporter(object):
         for link in p2p_links.frame().itertuples():
 
             local_host = link.Interface.hostname
-            local_intf = re.sub("\.\d+$", "", link.Interface.interface)
+            local_intf = re.sub(r"\.\d+$", "", link.Interface.interface)
             remote_host = link.Remote_Interface.hostname
-            remote_intf = re.sub("\.\d+$", "", link.Remote_Interface.interface)
+            remote_intf = re.sub(r"\.\d+$", "", link.Remote_Interface.interface)
 
             unique_id = "_".join(
                 sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
