@@ -42,7 +42,6 @@ class NetworkImporterObjBase(object):
     def add_local(self, local):
         """
         
-
         Args:
           local: 
 
@@ -214,7 +213,17 @@ class NetworkImporterDevice(object):
         sorted_intfs_delete = intfs_regs + intfs_lag_members + intfs_lags
 
         for intf in sorted_intfs_delete:
-            if not intf.exist_local() and intf.exist_remote():
+            if not intf.deletion_candidate(self.remote):
+                logger.warning(
+                    f"{self.name} | Will not delete {intf.name} in netbox as it is the device's primary management interface.",
+                    exc_info=True,
+                )
+
+            if (
+                not intf.exist_local() 
+                and intf.exist_remote()
+                and intf.deletion_candidate(self.remote)
+            ):
                 intf.delete_remote()
 
     def diff(self):
@@ -238,7 +247,6 @@ class NetworkImporterDevice(object):
         Returns:
 
         """
-
         if intf.exist_local():
             intf_driver = get_driver("interface")
             intf_properties = intf_driver.get_properties(intf.local)
@@ -370,6 +378,7 @@ class NetworkImporterDevice(object):
                 )
 
             # TODO need to implement IP update
+            # If IP address isn't on the device, delete it from netbox, unless it's the primary IP
             elif not ip.exist_local() and ip.exist_remote():
                 if (
                     self.remote.primary_ip
@@ -829,6 +838,28 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         return diff
 
+    def deletion_candidate(self, remote_device):
+        """ 
+        Determines whether the interface can be deleted. Some interfaces have primary IPs
+        associated with them - e.g. interface IPs which are used to manage the device. This
+        function determines if the interface is used for device management, and therefore,
+        if it is a candidate for deletion or not.
+
+        Args:
+            remote_device: pynetbox.models.dcim.Devices object
+
+        Returns:
+            A bool indicating whether (True) or not (False) the interface can be deleted.
+        """
+        
+        if remote_device.primary_ip.address in self.ips.keys():
+            return False
+        
+        else:
+            return True
+        
+
+        
 
 class NetworkImporterSite(object):
     """ """
