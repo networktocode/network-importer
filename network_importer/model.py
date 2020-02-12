@@ -215,7 +215,7 @@ class NetworkImporterDevice(object):
         for intf in sorted_intfs_delete:
             if intf.ip_on_interface(self.remote.primary_ip.address):
                 logger.warning(
-                    f"{self.name} | Will not delete {intf.name} in netbox as it is the device's primary management interface.",
+                    f"{self.name} | Will not delete {intf.name}, currently primary mgmt interface",
                 )
 
             if (
