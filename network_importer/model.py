@@ -213,16 +213,15 @@ class NetworkImporterDevice(object):
         sorted_intfs_delete = intfs_regs + intfs_lag_members + intfs_lags
 
         for intf in sorted_intfs_delete:
-            if not intf.deletion_candidate(self.remote):
+            if intf.ip_on_interface(self.remote.primary_ip.address):
                 logger.warning(
                     f"{self.name} | Will not delete {intf.name} in netbox as it is the device's primary management interface.",
-                    exc_info=True,
                 )
 
             if (
                 not intf.exist_local()
                 and intf.exist_remote()
-                and intf.deletion_candidate(self.remote)
+                and not intf.ip_on_interface(self.remote.primary_ip.address)
             ):
                 intf.delete_remote()
 
@@ -838,25 +837,23 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         return diff
 
-    def deletion_candidate(self, remote_device):
+    def ip_on_interface(self, ip_addr):
         """ 
-        Determines whether the interface can be deleted. Some interfaces have primary IPs
-        associated with them - e.g. interface IPs which are used to manage the device. This
-        function determines if the interface is used for device management, and therefore,
-        if it is a candidate for deletion or not.
+        Examine IP to determine if it exists this interface
 
         Args:
-            remote_device: pynetbox.models.dcim.Devices object
+            ip_addr: IP Address to be examined
 
         Returns:
-            A bool indicating whether (True) or not (False) the interface can be deleted.
+            A bool indicating whether (True) or not (False) the IP address passed
+            into the function exists on this interface
         """
 
-        if remote_device.primary_ip.address in self.ips.keys():
-            return False
+        if ip_addr in self.ips.keys():
+            return True
 
         else:
-            return True
+            return False
 
 
 class NetworkImporterSite(object):
