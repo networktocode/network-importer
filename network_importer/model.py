@@ -527,7 +527,7 @@ class NetworkImporterDevice(object):
         
         Inputs:
             intf_name: string, name of the interface to associated the new IP with
-            address: string, ip address of the new IP
+            ip: string, ip address of the new IP
 
         Args:
           intf_name: 
@@ -838,14 +838,13 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         return diff
 
     def ip_on_interface(self, ip_addr):
-        """ 
-        Examine IP to determine if it exists this interface
-
+        """Examine IP to determine if it exists on this interface
+        
         Args:
-            ip_addr: IP Address to be examined
-
+            ip_addr (:obj:`NetworkImporterIP`): IP address object to be examined
+        
         Returns:
-            A bool indicating whether (True) or not (False) the IP address passed
+            bool: indicates whether (True) or not (False) the IP address passed
             into the function exists on this interface
         """
 

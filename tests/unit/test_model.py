@@ -20,6 +20,10 @@ from network_importer.model import (
 
 
 def test_ip_on_interface():
+    """
+    Verify `ip_on_interface()` function of `NetworkImporterInterface` class returns expected value
+    """
+
     test_device = NetworkImporterDevice(name="test_device")
     test_device.interfaces["GigabitEthernet0/0"] = NetworkImporterInterface(
         name="GigabitEthernet0/0", device_name=test_device.name,
