@@ -845,7 +845,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         
         Returns:
             bool: indicates whether (True) or not (False) the IP address passed
-            into the function exists on this interface
+                  into the function exists on this interface
         """
 
         if ip_addr in self.ips.keys():
