@@ -220,7 +220,7 @@ class NetworkImporterDevice(object):
                 )
 
             if (
-                not intf.exist_local() 
+                not intf.exist_local()
                 and intf.exist_remote()
                 and intf.deletion_candidate(self.remote)
             ):
@@ -851,15 +851,13 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         Returns:
             A bool indicating whether (True) or not (False) the interface can be deleted.
         """
-        
+
         if remote_device.primary_ip.address in self.ips.keys():
             return False
-        
+
         else:
             return True
-        
 
-        
 
 class NetworkImporterSite(object):
     """ """
