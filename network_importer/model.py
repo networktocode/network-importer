@@ -11,9 +11,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=invalid-name,redefined-builtin
 import logging
-import pdb
-import sys
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
@@ -25,7 +24,12 @@ from network_importer.remote.netbox import (
     OpticRemote,
     get_netbox_interface_properties,
 )
-from network_importer.base_model import Interface, IPAddress, Optic, Vlan
+from network_importer.base_model import (  # pylint: disable=unused-import
+    Interface,
+    IPAddress,
+    Optic,
+    Vlan,
+)
 
 from network_importer.logging import (
     changelog_create,
@@ -33,10 +37,10 @@ from network_importer.logging import (
     changelog_update,
 )
 
-logger = logging.getLogger("network-importer")
+logger = logging.getLogger("network-importer")  # pylint: disable=invalid-name
 
 
-class NetworkImporterObjBase(object):
+class NetworkImporterObjBase:
     """ """
 
     id = None
@@ -46,10 +50,10 @@ class NetworkImporterObjBase(object):
 
     def add_local(self, local):
         """
-        
+
 
         Args:
-          local: 
+          local:
 
         Returns:
 
@@ -58,10 +62,10 @@ class NetworkImporterObjBase(object):
 
     def update_remote(self, remote):
         """
-        
+
 
         Args:
-          remote: 
+          remote:
 
         Returns:
 
@@ -78,10 +82,14 @@ class NetworkImporterObjBase(object):
         if self.remote:
             return True
 
+        return False
+
     def exist_local(self):
         """ """
         if self.local:
             return True
+
+        return False
 
     def diff(self):
         """ """
@@ -95,7 +103,7 @@ class NetworkImporterObjBase(object):
             diff.missing_remote = True
             return diff
 
-        elif not self.local and self.remote:
+        if not self.local and self.remote:
             diff.missing_local = True
             return diff
 
@@ -124,11 +132,11 @@ class NetworkImporterObjBase(object):
 
         if self.diff().has_diffs():
             return False
-        else:
-            return True
+
+        return True
 
 
-class NetworkImporterDevice(object):
+class NetworkImporterDevice:
     """ """
 
     def __init__(
@@ -144,10 +152,10 @@ class NetworkImporterDevice(object):
         pull_cache=False,
     ):
         """
-        
+
 
         Args:
-          name: 
+          name:
           hostname:  (Default value = None)
           platform:  (Default value = None)
           model:  (Default value = None)
@@ -231,14 +239,16 @@ class NetworkImporterDevice(object):
 
         return diff
 
-    def update_interface_remote(self, intf):
+    def update_interface_remote(  # pylint: disable=inconsistent-return-statements
+        self, intf
+    ):
         """
         Update Interface on the remote system
           Create or Update interface as needed
           Create/Update or Delete Ips as needed
 
         Args:
-          intf: 
+          intf:
 
         Returns:
 
@@ -470,13 +480,13 @@ class NetworkImporterDevice(object):
     def add_batfish_interface(self, intf_name, bf):
         """
         Add an interface to the device and try to match it with an existing interface in netbox
-        
+
         Input: NetworkImporterInterface
         Output: Boolean
 
         Args:
-          intf_name: 
-          bf: 
+          intf_name:
+          bf:
 
         Returns:
 
@@ -493,11 +503,11 @@ class NetworkImporterDevice(object):
 
     def add_optic(self, intf_name, optic):
         """
-        
+
 
         Args:
-          intf_name: 
-          optic: 
+          intf_name:
+          optic:
 
         Returns:
 
@@ -520,14 +530,14 @@ class NetworkImporterDevice(object):
         """
         Add an IP to an existing interface and try to match the IP with an existing IP in netbox
         THe match is done based on a local cache
-        
+
         Inputs:
             intf_name: string, name of the interface to associated the new IP with
             address: string, ip address of the new IP
 
         Args:
-          intf_name: 
-          ip: 
+          intf_name:
+          ip:
 
         Returns:
 
@@ -643,7 +653,7 @@ class NetworkImporterDevice(object):
             if "optic" not in item.tags:
                 continue
 
-            if item.description == None or item.description == "":
+            if item.description is None or item.description == "":
                 continue
 
             intf_name = item.description
@@ -670,11 +680,11 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
     def __init__(self, name, device_name):
         """
-        
+
 
         Args:
-          name: 
-          device_name: 
+          name:
+          device_name:
 
         Returns:
 
@@ -685,6 +695,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         self.bf = None
         self.optic = None
         self.ips = dict()
+        self.mtu = None
         super()
 
     def is_lag(self):
@@ -692,7 +703,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if self.exist_local() and self.local.is_lag:
             return True
-        elif self.exist_remote() and self.remote.is_lag:
+        if self.exist_remote() and self.remote.is_lag:
             return True
 
         return False
@@ -702,7 +713,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if self.exist_local() and self.local.is_lag_member:
             return True
-        elif self.exist_remote() and self.remote.is_lag_member:
+        if self.exist_remote() and self.remote.is_lag_member:
             return True
 
         return False
@@ -710,12 +721,12 @@ class NetworkImporterInterface(NetworkImporterObjBase):
     def add_batfish_interface(self, bf):
         """
         Add a Batfish Interface Object and extract all relevant information if not already defined
-        
+
         Input
             Batfish interfaceProperties object
 
         Args:
-          bf: 
+          bf:
 
         Returns:
 
@@ -763,7 +774,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.lag_members = list(bf.Channel_Group_Members)
             self.local.is_lag = True
             self.local.is_virtual = False
-        elif self.local.is_lag == None:
+        elif self.local.is_lag is None:
             self.local.is_lag = False
 
         if self.local.mode is None and self.local.switchport_mode:
@@ -791,7 +802,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         Add new IP address to the interface
 
         Args:
-          ip: 
+          ip:
 
         Returns:
 
@@ -806,10 +817,10 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
     def add_remote(self, remote):
         """
-        
+
 
         Args:
-          remote: 
+          remote:
 
         Returns:
 
@@ -834,15 +845,15 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         return diff
 
 
-class NetworkImporterSite(object):
+class NetworkImporterSite:
     """ """
 
     def __init__(self, name, nb=None):
         """
-        
+
 
         Args:
-          name: 
+          name:
           nb:  (Default value = None)
 
         Returns:
@@ -861,7 +872,7 @@ class NetworkImporterSite(object):
             if self.remote:
                 self._get_remote_vlans_list()
 
-    def update_remote(self):
+    def update_remote(self):  # pylint: disable=inconsistent-return-statements
         """
         Update Site and all associated resources in the Remote System
         Currently only Netbox is supported
@@ -905,7 +916,7 @@ class NetworkImporterSite(object):
         Vlan object
 
         Args:
-          vlan: 
+          vlan:
           device: (Default value = None)
 
         Returns:
@@ -929,12 +940,12 @@ class NetworkImporterSite(object):
     def convert_vids_to_nids(self, vids):
         """
         Convert Vlan IDs into Vlan Netbox IDs
-        
+
         Input: Vlan ID
         Output: Netbox Vlan ID
 
         Args:
-          vids: 
+          vids:
 
         Returns:
 
@@ -954,12 +965,12 @@ class NetworkImporterSite(object):
     def convert_vid_to_nid(self, vid):
         """
         Convert Vlan IDs into Vlan Netbox IDs
-        
+
         Input: List of Vlan IDs
         Output: List of Netbox Vlan IDs
 
         Args:
-          vid: 
+          vid:
 
         Returns:
 
@@ -1015,11 +1026,11 @@ class NetworkImporterVlan(NetworkImporterObjBase):
 
     def __init__(self, site, vid):
         """
-        
+
 
         Args:
-          site: 
-          vid: 
+          site:
+          vid:
 
         Returns:
 
@@ -1057,15 +1068,14 @@ class NetworkImporterVlan(NetworkImporterObjBase):
             )
             return True
 
-        else:
-            return False
+        return False
 
     def add_remote(self, remote):
         """
-        
+
 
         Args:
-          remote: 
+          remote:
 
         Returns:
 
@@ -1075,10 +1085,10 @@ class NetworkImporterVlan(NetworkImporterObjBase):
 
     def add_related_device(self, dev_name):
         """
-        
+
 
         Args:
-          dev_name: 
+          dev_name:
 
         Returns:
 
@@ -1100,10 +1110,10 @@ class NetworkImporterIP(NetworkImporterObjBase):
 
     def __init__(self, address):
         """
-        
+
 
         Args:
-          address: 
+          address:
 
         Returns:
 
@@ -1113,10 +1123,10 @@ class NetworkImporterIP(NetworkImporterObjBase):
 
     def add_remote(self, remote):
         """
-        
+
 
         Args:
-          remote: 
+          remote:
 
         Returns:
 
@@ -1134,9 +1144,9 @@ class NetworkImporterOptic(NetworkImporterObjBase):
 
     def __init__(self, id=None):
         """
-        
+
         Args:
-          id: 
+          id:
 
         Returns:
 
@@ -1147,7 +1157,7 @@ class NetworkImporterOptic(NetworkImporterObjBase):
         """
 
         Args:
-          remote: 
+          remote:
 
         Returns:
 

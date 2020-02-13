@@ -17,9 +17,6 @@ ignore=CVS,
        config.py,
        diff.py,
        logging.py,
-       main.py,
-       model.py,
-       performance.py,
        schema.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
@@ -161,7 +158,14 @@ disable=print-statement,
         empty-docstring,
         logging-format-interpolation,
         bare-except,
-        too-many-locals
+        too-many-locals,
+        line-too-long,
+        global-statement,
+        bad-continuation,
+        too-many-lines,
+        too-many-statements,
+        too-many-arguments,
+        duplicate-code
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
