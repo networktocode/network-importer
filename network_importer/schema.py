@@ -74,6 +74,7 @@ config_schema = dict(
             properties=dict(
                 login=dict(type=["string", "null"]),
                 password=dict(type=["string", "null"]),
+                enable=dict(type="boolean", default=True),
             ),
             default={},
         ),

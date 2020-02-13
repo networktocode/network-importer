@@ -327,7 +327,9 @@ def update_configuration(  # pylint: disable=C0330
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
     if task.host.platform in ["nxos", "ios"]:
-        results = task.run(task=netmiko_send_command, command_string="show run")
+        results = task.run(
+            task=netmiko_send_command, command_string="show run", enable=True
+        )
 
         if results.failed:
             return Result(host=task.host, failed=True)
