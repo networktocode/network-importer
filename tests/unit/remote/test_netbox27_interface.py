@@ -100,5 +100,19 @@ def test_netbox26_properties_interface_loopback():
     intf_prop = Netbox27Interface.get_properties(intf)
 
     assert intf_prop["type"] == "virtual"
-    assert intf_prop["mode"] == None
+    assert "mode" not in intf_prop.keys()
     assert intf_prop["enabled"] == True
+
+
+def test_netbox26_properties_interface_lag_trunk():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_lag_trunk.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox27Interface()
+    intf.add(rem)
+
+    intf_prop = Netbox27Interface.get_properties(intf)
+
+    assert intf_prop["mode"] == "tagged"
