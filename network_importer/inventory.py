@@ -17,7 +17,6 @@ limitations under the License.
 import os
 import copy
 from typing import Any, Dict, List, Optional, Union
-import requests
 import pynetbox
 
 from nornir.core.deserializer.inventory import Inventory, HostsDict
@@ -76,7 +75,7 @@ class NBInventory(Inventory):
     Netbox Inventory Class
     """
 
-    # pylint: disable=C0330
+    # pylint: disable=C0330,W0613
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -117,14 +116,10 @@ class NBInventory(Inventory):
             "NB_TOKEN", "0123456789abcdef0123456789abcdef01234567"
         )
 
-        nb = pynetbox.api(
-            url=nb_url,
-            ssl_verify=ssl_verify,
-            token=nb_token
-        )
+        nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
 
         # Fetch all devices from netbox
-        nb_devices: List[pynetbox.models.dcim.Devices] = nb.dcim.devices.all()
+        nb_devices: List[pynetbox.models.dcim.Devices] = nb_session.dcim.devices.all()
 
         hosts = {}
         groups = {"global": {}}
