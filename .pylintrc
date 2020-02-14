@@ -13,9 +13,6 @@ ignore=CVS,
        test_base_model.py,
        test_performance.py,
        test_utils.py,
-       base_model.py,
-       config.py,
-       diff.py,
        logging.py,
        schema.py
 
@@ -165,7 +162,8 @@ disable=print-statement,
         too-many-lines,
         too-many-statements,
         too-many-arguments,
-        duplicate-code
+        duplicate-code,
+        inconsistent-return-statements
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

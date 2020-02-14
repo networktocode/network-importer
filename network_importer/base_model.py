@@ -15,7 +15,7 @@ limitations under the License.
 from typing import List
 
 
-class BaseModel(object):
+class BaseModel:
     """ """
 
     exclude_from_diff = []
@@ -48,7 +48,7 @@ class Vlan(BaseModel):
 
     def __init__(self, name: str = None, vid=None, site: str = None):
         """
-        
+
         Args:
           name: name of the vlan (Default value = None)
           vid: vlan id for the vlan, automatically converted to integer if provided (Default value = None)
@@ -69,7 +69,7 @@ class Vlan(BaseModel):
 
 
 class Interface(BaseModel):
-    """ 
+    """
     Base Class for Interface
 
     For now, speed has been excluded from the diff
@@ -80,7 +80,7 @@ class Interface(BaseModel):
 
     def __init__(self, name: str = None):
         """
-        
+
         Args:
           name:  (Default value = None)
 
@@ -106,7 +106,7 @@ class Interface(BaseModel):
 
 
 class IPAddress(BaseModel):
-    """ 
+    """
     Base Class for IPaddress
     Current support only address
     """
@@ -115,7 +115,7 @@ class IPAddress(BaseModel):
 
     def __init__(self, address: str = None):
         """
-        
+
 
         Args:
           address:  (Default value = None)
@@ -128,7 +128,7 @@ class IPAddress(BaseModel):
 
 
 class Optic(BaseModel):
-    """ 
+    """
     Base Class for an optic
     """
 
@@ -140,7 +140,7 @@ class Optic(BaseModel):
         serial: str = None,
     ):
         """
-        
+
         Args:
           name:  (Default value = None)
           optic_type:  (Default value = None)
