@@ -42,7 +42,6 @@ class NetworkImporterObjBase(object):
     def add_local(self, local):
         """
         
-
         Args:
           local: 
 
@@ -214,7 +213,18 @@ class NetworkImporterDevice(object):
         sorted_intfs_delete = intfs_regs + intfs_lag_members + intfs_lags
 
         for intf in sorted_intfs_delete:
-            if not intf.exist_local() and intf.exist_remote():
+            if self.remote.primary_ip and intf.ip_on_interface(
+                self.remote.primary_ip.address
+            ):
+                logger.warning(
+                    f"{self.name} | Will not delete {intf.name}, currently primary mgmt interface",
+                )
+
+            if (
+                not intf.exist_local()
+                and intf.exist_remote()
+                and not intf.ip_on_interface(self.remote.primary_ip.address)
+            ):
                 intf.delete_remote()
 
     def diff(self):
@@ -238,7 +248,6 @@ class NetworkImporterDevice(object):
         Returns:
 
         """
-
         if intf.exist_local():
             intf_driver = get_driver("interface")
             intf_properties = intf_driver.get_properties(intf.local)
@@ -370,6 +379,7 @@ class NetworkImporterDevice(object):
                 )
 
             # TODO need to implement IP update
+            # If IP address isn't on the device, delete it from netbox, unless it's the primary IP
             elif not ip.exist_local() and ip.exist_remote():
                 if (
                     self.remote.primary_ip
@@ -519,7 +529,7 @@ class NetworkImporterDevice(object):
         
         Inputs:
             intf_name: string, name of the interface to associated the new IP with
-            address: string, ip address of the new IP
+            ip: string, ip address of the new IP
 
         Args:
           intf_name: 
@@ -828,6 +838,23 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             diff.add_child(self.optic.diff())
 
         return diff
+
+    def ip_on_interface(self, ip_addr):
+        """Examine IP to determine if it exists on this interface
+        
+        Args:
+            ip_addr (:obj:`NetworkImporterIP`): IP address object to be examined
+        
+        Returns:
+            bool: indicates whether (True) or not (False) the IP address passed
+                  into the function exists on this interface
+        """
+
+        if ip_addr in self.ips.keys():
+            return True
+
+        else:
+            return False
 
 
 class NetworkImporterSite(object):
