@@ -11,14 +11,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import toml
+# pylint: disable=invalid-name,redefined-outer-name
 import os.path
 from pathlib import Path
 from jsonschema import Draft7Validator, validators
+import toml
 from . import schema
 
 # -----------------------------------------------------------------------------
 #                                 GLOBALS
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+#   TODO: update globals to upper case for Pylint
 # -----------------------------------------------------------------------------
 
 main = None
@@ -30,10 +35,10 @@ network = None
 
 def extend_with_default(validator_class):
     """
-    
+
 
     Args:
-      validator_class: 
+      validator_class:
 
     Returns:
 
@@ -42,13 +47,13 @@ def extend_with_default(validator_class):
 
     def set_defaults(validator, properties, instance, schema):
         """
-        
+
 
         Args:
-          validator: 
-          properties: 
-          instance: 
-          schema: 
+          validator:
+          properties:
+          instance:
+          schema:
 
         Returns:
 
@@ -80,7 +85,7 @@ def env_var_to_bool(var):
 
 def load_config(config_file_name=None, config_data=None):
     """
-    
+
     Args:
       config_file_name: (Default value = DEFAULT_CONFIG_FILE_NAME)
 
@@ -89,7 +94,7 @@ def load_config(config_file_name=None, config_data=None):
     """
     global main, logs, netbox, batfish, network
 
-    if config_file_name == None and config_data == None:
+    if config_file_name is None and config_data is None:
         config = {}
     elif config_data:
         config = config_data

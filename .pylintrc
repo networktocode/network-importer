@@ -8,19 +8,7 @@ extension-pkg-whitelist=
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
 ignore=CVS,
-       setup.py,
-       test_diffs.py,
-       test_base_model.py,
-       test_performance.py,
-       test_utils.py,
-       base_model.py,
-       config.py,
-       diff.py,
-       logging.py,
-       main.py,
-       model.py,
-       performance.py,
-       schema.py
+       setup.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
 # regex matches against base names, not paths.
@@ -161,7 +149,15 @@ disable=print-statement,
         empty-docstring,
         logging-format-interpolation,
         bare-except,
-        too-many-locals
+        too-many-locals,
+        line-too-long,
+        global-statement,
+        bad-continuation,
+        too-many-lines,
+        too-many-statements,
+        too-many-arguments,
+        duplicate-code,
+        inconsistent-return-statements
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

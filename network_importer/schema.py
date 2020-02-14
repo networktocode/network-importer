@@ -11,14 +11,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=invalid-name
+# Jsonschema definition for the configuation file (network_importer.toml by default)
 
-import toml
-import os.path
-from pathlib import Path
-
-"""
-Jsonschema definition for the configuation file (network_importer.toml by default)
-"""
 config_schema = dict(
     type="object",
     properties=dict(
