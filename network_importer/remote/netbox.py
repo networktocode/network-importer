@@ -269,9 +269,7 @@ class Netbox27Interface(NetboxInterface):
         if intf.switchport_mode == "ACCESS":
             intf_properties["mode"] = "access"
         elif intf.switchport_mode == "TRUNK":
-            intf_properties["mode"] = "trunk"
-        else:
-            intf_properties["mode"] = None
+            intf_properties["mode"] = "tagged"
 
         if not intf.active is None:
             intf_properties["enabled"] = intf.active
