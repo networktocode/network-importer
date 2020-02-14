@@ -6,6 +6,10 @@ python:
 before_install:
   - make build
 
+branches:
+  only:
+    - master
+
 install:
   - pip install -r requirements-develop.txt
   - python setup.py develop
