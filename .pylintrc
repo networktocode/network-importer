@@ -13,7 +13,6 @@ ignore=CVS,
        test_base_model.py,
        test_performance.py,
        test_utils.py,
-       logging.py,
        schema.py
 
 # Add files or directories matching the regex patterns to the blacklist. The
