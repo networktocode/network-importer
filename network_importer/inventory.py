@@ -12,12 +12,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
-# pylint: disable=R0913,R0914
+# pylint: disable=R0913,R0914,E1101,W0613
 
 import os
 import copy
 from typing import Any, Dict, List, Optional, Union
-import requests
+import pynetbox
 
 from nornir.core.deserializer.inventory import Inventory, HostsDict
 import network_importer.config as config
@@ -116,26 +116,10 @@ class NBInventory(Inventory):
             "NB_TOKEN", "0123456789abcdef0123456789abcdef01234567"
         )
 
-        session = requests.Session()
-        session.headers.update({"Authorization": f"Token {nb_token}"})
-        session.verify = ssl_verify
+        nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
 
-        # Fetch all devices from Netbox
-        # Since the api uses pagination we have to fetch until no next is provided
-
-        url = f"{nb_url}/api/dcim/devices/?limit=0"
-        nb_devices: List[Dict[str, Any]] = []
-
-        while url:
-            session_resp = session.get(url, params=filter_parameters)
-
-            if not session_resp.status_code == 200:
-                raise ValueError(f"Failed to get devices from Netbox instance {nb_url}")
-
-            resp = session_resp.json()
-            nb_devices.extend(resp.get("results"))
-
-            url = resp.get("next")
+        # fetch devices from netbox
+        nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
 
         hosts = {}
         groups = {"global": {}}
@@ -151,8 +135,8 @@ class NBInventory(Inventory):
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Add value for IP address
-            if dev.get("primary_ip", {}):
-                host["hostname"] = dev["primary_ip"]["address"].split("/")[0]
+            if dev.primary_ip:
+                host["hostname"] = dev.primary_ip.address.split("/")[0]
             else:
                 host["data"]["is_reacheable"] = False
                 host["data"][
@@ -160,37 +144,37 @@ class NBInventory(Inventory):
                 ] = f"primary ip not defined in Netbox"
 
             # Add values that don't have an option for 'slug'
-            host["data"]["serial"] = dev["serial"]
-            host["data"]["vendor"] = dev["device_type"]["manufacturer"]["slug"]
-            host["data"]["asset_tag"] = dev["asset_tag"]
+            host["data"]["serial"] = dev.serial
+            host["data"]["vendor"] = dev.device_type.manufacturer.slug
+            host["data"]["asset_tag"] = dev.asset_tag
 
             if flatten_custom_fields:
-                for cust_field, value in dev["custom_fields"].items():
+                for cust_field, value in dev.custom_fields.items():
                     host["data"][cust_field] = value
             else:
-                host["data"]["custom_fields"] = dev["custom_fields"]
+                host["data"]["custom_fields"] = dev.custom_fields
 
             # Add values that do have an option for 'slug'
-            host["data"]["site"] = dev["site"]["slug"]
-            host["data"]["role"] = dev["device_role"]["slug"]
-            host["data"]["model"] = dev["device_type"]["slug"]
+            host["data"]["site"] = dev.site.slug
+            host["data"]["role"] = dev.device_rule.slug
+            host["data"]["model"] = dev.device_type.slug
 
             # Attempt to add 'platform' based of value in 'slug'
-            host["platform"] = dev["platform"]["slug"] if dev["platform"] else None
+            host["platform"] = dev.platform.slug if dev.platform else None
 
             #     "cisco_" + d["platform"]["slug"] if d["platform"] else None
             # )
 
-            host["groups"] = ["global", dev["site"]["slug"], dev["device_role"]["slug"]]
+            host["groups"] = ["global", dev.site.slug, dev.device_role.slug]
 
-            if dev["site"]["slug"] not in groups.keys():
-                groups[dev["site"]["slug"]] = {}
+            if dev.site.slug not in groups.keys():
+                groups[dev.site.slug] = {}
 
-            if dev["device_role"]["slug"] not in groups.keys():
-                groups[dev["device_role"]["slug"]] = {}
+            if dev.device_role.slug not in groups.keys():
+                groups[dev.device_role.slug] = {}
 
             host["data"]["obj"] = NetworkImporterDevice(
-                dev.get("name"),
+                dev.name,
                 platform=host["platform"],
                 role=host["data"]["role"],
                 vendor=host["data"]["vendor"],
@@ -207,7 +191,7 @@ class NBInventory(Inventory):
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
             # If a device is unnamed we will set the name to the id of the device in netbox
-            hosts[dev.get("name") or dev.get("id")] = host
+            hosts[dev.name or dev.id] = host
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
