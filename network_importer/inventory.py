@@ -156,7 +156,7 @@ class NBInventory(Inventory):
 
             # Add values that do have an option for 'slug'
             host["data"]["site"] = dev.site.slug
-            host["data"]["role"] = dev.device_rule.slug
+            host["data"]["role"] = dev.device_role.slug
             host["data"]["model"] = dev.device_type.slug
 
             # Attempt to add 'platform' based of value in 'slug'
