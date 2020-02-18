@@ -116,10 +116,14 @@ class NBInventory(Inventory):
             "NB_TOKEN", "0123456789abcdef0123456789abcdef01234567"
         )
 
+        # Instantiate netbox session using pynetbox
         nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
 
         # fetch devices from netbox
-        nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
+        if filter_parameters:
+            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.filter(**filter_parameters)
+        else:
+            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
 
         hosts = {}
         groups = {"global": {}}
