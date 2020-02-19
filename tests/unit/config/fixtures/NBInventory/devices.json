@@ -1,0 +1,349 @@
+{
+  "count": 6,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 7,
+      "name": "amarillo",
+      "display_name": "amarillo",
+      "device_type": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/device-types/1/",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost:32769/api/dcim/manufacturers/1/",
+          "name": "juniper",
+          "slug": "juniper"
+        },
+        "model": "junos",
+        "slug": "junos",
+        "display_name": "juniper junos"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "name": "spine",
+        "slug": "spine"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-10",
+      "last_updated": "2020-02-11T22:35:16.062047Z"
+    },
+    {
+      "id": 13,
+      "name": "austin",
+      "display_name": "austin",
+      "device_type": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "manufacturer": {
+          "id": 2,
+          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "iosxr",
+        "slug": "iosxr",
+        "display_name": "cisco iosxr"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "name": "spine",
+        "slug": "spine"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-11",
+      "last_updated": "2020-02-11T00:03:10.763181Z"
+    },
+    {
+      "id": 16,
+      "name": "dallas",
+      "display_name": "dallas",
+      "device_type": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "manufacturer": {
+          "id": 2,
+          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "iosxr",
+        "slug": "iosxr",
+        "display_name": "cisco iosxr"
+      },
+      "device_role": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-roles/2/",
+        "name": "leaf",
+        "slug": "leaf"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-11",
+      "last_updated": "2020-02-11T00:03:11.077543Z"
+    },
+    {
+      "id": 14,
+      "name": "el-paso",
+      "display_name": "el-paso",
+      "device_type": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "manufacturer": {
+          "id": 2,
+          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "iosxr",
+        "slug": "iosxr",
+        "display_name": "cisco iosxr"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "name": "spine",
+        "slug": "spine"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-11",
+      "last_updated": "2020-02-11T00:03:10.768410Z"
+    },
+    {
+      "id": 17,
+      "name": "houston",
+      "display_name": "houston",
+      "device_type": {
+        "id": 3,
+        "url": "http://localhost:32769/api/dcim/device-types/3/",
+        "manufacturer": {
+          "id": 3,
+          "url": "http://localhost:32769/api/dcim/manufacturers/3/",
+          "name": "arista",
+          "slug": "arista"
+        },
+        "model": "eos",
+        "slug": "eos",
+        "display_name": "arista eos"
+      },
+      "device_role": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-roles/2/",
+        "name": "leaf",
+        "slug": "leaf"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-11",
+      "last_updated": "2020-02-11T00:03:12.036015Z"
+    },
+    {
+      "id": 15,
+      "name": "san-antonio",
+      "display_name": "san-antonio",
+      "device_type": {
+        "id": 2,
+        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "manufacturer": {
+          "id": 2,
+          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "iosxr",
+        "slug": "iosxr",
+        "display_name": "cisco iosxr"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "name": "spine",
+        "slug": "spine"
+      },
+      "tenant": null,
+      "platform": null,
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "name": "ni_example_01",
+        "slug": "ni_example_01"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": "active",
+        "label": "Active",
+        "id": 1
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": null,
+      "vc_position": null,
+      "vc_priority": null,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-11",
+      "last_updated": "2020-02-11T00:03:11.055575Z"
+    }
+  ]
+}
