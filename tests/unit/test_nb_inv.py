@@ -79,7 +79,7 @@ def test_nb_inventory_filtered(requests_mock):
     assert "amarillo" not in inv_filtered.hosts.keys()
 
 
-def test_nb_inventory_stack(requests_mock):
+def test_nb_inventory_virtual_chassis(requests_mock):
     """
     Test netbox virtual_chassis attribute set correctly
 
