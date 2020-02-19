@@ -67,3 +67,29 @@ def test_nb_inventory_filtered(requests_mock):
     assert len(inv_filtered.hosts.keys()) == 1
     assert "el-paso" in inv_filtered.hosts.keys()
     assert "amarillo" not in inv_filtered.hosts.keys()
+
+
+def test_nb_inventory_stack(requests_mock):
+    """
+    Test netbox virtual_chassis attribute set correctly
+
+    Args:
+        requests_mock ([type]): [description]
+    """
+
+    # Load config data, needed by NBInventory function
+    config.load_config()
+
+    # Load mock data fixtures
+    dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
+
+    # Set up mock requests
+    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+
+    inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+
+    assert len(inv.hosts.keys()) == 2
+    assert "test_dev1_2" not in inv.hosts.keys()
+    assert "test_dev1" in inv.hosts.keys()
+    assert inv.hosts["test_dev1"].data["virtual_chassis"] == True
+    assert inv.hosts["amarillo"].data["virtual_chassis"] == False

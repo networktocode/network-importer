@@ -141,15 +141,17 @@ class NBInventory(Inventory):
 
         for dev in nb_devices:
 
+            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
+
             # Only add virtual chassis master as inventory element
 
             if dev.virtual_chassis:
                 if dev.id != dev.virtual_chassis.master.id:
                     continue
-
                 host["data"]["virtual_chassis"] = True
 
-            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
+            else:
+                host["data"]["virtual_chassis"] = False
 
             # Add value for IP address
             if dev.primary_ip:
