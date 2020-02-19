@@ -11,9 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import logging
 
-from network_importer.base_model import Interface, IPAddress, Optic, Vlan
+from network_importer.base_model import Interface, IPAddress, Optic, Vlan, Cable
 import network_importer.config as config
+
+logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 class NetboxInterface(Interface):
@@ -403,3 +406,32 @@ class NetboxVlan(Vlan):
         """
         self.remote.delete()
         return True
+
+
+class NetboxCable(Cable):
+    def __init__(self, **kargs):
+        """ """
+        super().__init__(**kargs)
+        self.remote = None
+
+    def add(self, cable=None, interface=None):
+        """ """
+
+        if interface:
+            self.remote = interface.cable
+            self.add_device(
+                interface.connected_endpoint.device.name,
+                interface.connected_endpoint.name,
+            )
+            self.add_device(interface.device.name, interface.name)
+
+        elif cable:
+            self.remote = cable
+
+    def update(self, cable=None, interface=None):
+        """ """
+        self.add(cable=cable, interface=interface)
+
+    def delete(self):
+        """ """
+        self.remote.delete()

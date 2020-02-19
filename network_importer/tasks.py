@@ -364,7 +364,7 @@ def update_configuration(  # pylint: disable=C0330
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task) -> Result:
+def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect LLDP neighbor information on all devices
 
@@ -380,15 +380,23 @@ def collect_lldp_neighbors(task: Task) -> Result:
 
     check_data_dir(task.host.name)
 
+    if use_cache:
+        data = get_data_from_file(task.host.name, "lldp_neighbors")
+        return Result(host=task.host, result=data)
+
     ## TODO Check if device is if the right type
     ## TODO check if all information are available to connect
     ## TODO Check if reacheable
     ## TODO Manage exception
-    results = task.run(
-        task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True
-    )
+    # results = task.run(
+    #     task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True
+    # )
 
-    # TODO check if task went well
+    results = task.run(task=napalm_get, getters=["lldp_neighbors"])
+
+    if update_cache:
+        save_data_to_file(task.host.name, "lldp_neighbors", results[0].result)
+
     return Result(host=task.host, result=results[0].result)
 
 

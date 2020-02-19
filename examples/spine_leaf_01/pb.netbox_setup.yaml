@@ -29,6 +29,7 @@
       run_once: true
       tags: [ manufacturer, device_type ]
       delegate_to: localhost
+      ignore_errors: yes
 
     - name: Create Device Type in Netbox
       netbox_device_type:

@@ -37,7 +37,9 @@ with warnings.catch_warnings():
     from nornir import InitNornir
     from nornir.core.filter import F
 
-
+import network_importer
+from network_importer.drivers import get_driver
+import network_importer.config as config
 from network_importer.utils import sort_by_digits, patch_http_connection_pool
 from network_importer.tasks import (
     initialize_devices,
@@ -46,6 +48,7 @@ from network_importer.tasks import (
     collect_transceivers_info_from_cache,
     collect_vlans_info,
     collect_vlans_info_from_cache,
+    collect_lldp_neighbors,
     device_update_remote,
     check_if_reacheable,
     update_device_status,
@@ -57,10 +60,10 @@ from network_importer.model import (
     NetworkImporterSite,
     NetworkImporterVlan,
     NetworkImporterOptic,
-    Vlan,
-    IPAddress,
-    Optic,
+    NetworkImporterCable,
 )
+
+from network_importer.base_model import Optic, Vlan, Cable, IPAddress
 
 from network_importer.inventory import (
     valid_devs,
@@ -93,6 +96,7 @@ class NetworkImporter:
 
         self.sites = dict()
         self.devs = None
+        self.cables = dict()
         self.bf = None
         self.nb = None
 
@@ -103,7 +107,7 @@ class NetworkImporter:
         Return the NI object for a given device_name
 
         Args:
-          dev_name:
+          dev_name: Name of the device
 
         Returns:
           NetworkImporterDevice
@@ -263,7 +267,7 @@ class NetworkImporter:
         # Initialize sites information
         #   Site information are pulled with devices
         #   TODO consider refactoring sites into a Nornir Inventory
-        #
+        # Get all cables based on remote information
         # --------------------------------------------------------
         for dev in self.devs.inventory.hosts.values():
 
@@ -281,6 +285,23 @@ class NetworkImporter:
 
             else:
                 dev.data["obj"].site = self.sites[site_slug]
+
+            ## Get all remote cables and update cables inventory
+            remote_cables = dev.data["obj"].get_remote_cables()
+
+            for cable_id, cable in remote_cables.items():
+                if cable_id not in self.cables:
+                    self.cables[cable_id] = NetworkImporterCable(id=cable_id)
+                    self.cables[cable_id].remote = cable
+
+                elif cable_id in self.cables and not self.cables[cable_id].remote:
+                    self.cables[cable_id].remote = cable
+
+                # elif cable_id in self.cables and self.cables[cable_id].remote:
+                #     # might need to remove this log message because all cable should be reported at least twice
+                #     logger.debug(
+                #         f"Cable {cable_id} already present while importing from remote"
+                #     )
 
         return True
 
@@ -331,91 +352,22 @@ class NetworkImporter:
             self.warning_devices_not_reacheable()
 
         if config.main["import_vlans"] == "cli":
-            logger.info("Collecting Vlan information from devices .. ")
 
-            if not config.main["data_use_cache"]:
-                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-                    task=collect_vlans_info, on_failed=True
-                )
-            else:
-                results = self.devs.filter(filter_func=valid_devs).run(
-                    task=collect_vlans_info_from_cache, on_failed=True
-                )
-
-            for dev_name, items in results.items():
-
-                if items[0].failed:
-                    logger.warning(
-                        f"{dev_name} | Something went wrong while trying to pull the vlan information"
-                    )
-                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
-                    continue
-
-                for vlan in items[0].result:
-                    if (
-                        vlan["id"]
-                        not in self.devs.inventory.hosts[dev_name]
-                        .data["obj"]
-                        .site.vlans.keys()
-                    ):
-
-                        self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]),
-                            device=dev_name,
-                        )
+            self.import_vlans_from_cmds()
 
         if config.main["import_transceivers"]:
-            # --------------------------------------------- ---
-            # Import transceivers information
-            # ------------------------------------------------
-            logger.info("Collecting Transceiver information from devices .. ")
 
-            if not config.main["data_use_cache"]:
-                results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-                    task=collect_transceivers_info, on_failed=True
-                )
-            else:
-                results = self.devs.filter(filter_func=valid_devs).run(
-                    task=collect_transceivers_info_from_cache, on_failed=True
-                )
+            self.import_transceivers_from_cmds()
 
-            for dev_name, items in results.items():
-                if items[0].failed:
-                    logger.warning(
-                        f"{dev_name} | Something went wrong while trying to pull the transceiver information (1) "
-                    )
-                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
-                    continue
+        if config.main["import_cabling"]:
 
-                transceivers = items[0].result
-
-                if not isinstance(transceivers, list):
-                    logger.warning(
-                        f"{dev_name} | Something went wrong while trying to pull the transceiver information (2)"
-                    )
-                    self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
-                    continue
-
-                logger.info(f"{dev_name} | Found {len(transceivers)} transceivers")
-                for transceiver in transceivers:
-
-                    nio = Optic(
-                        name=transceiver["serial"].strip(),
-                        optic_type=transceiver["type"].strip(),
-                        intf=transceiver["interface"].strip(),
-                        serial=transceiver["serial"].strip(),
-                    )
-
-                    self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
-                        intf_name=transceiver["interface"].strip(), optic=nio
-                    )
+            self.import_cabling_from_cmds()
 
         return True
 
     def update_devices_status(self):
         """
-        Update the status of the device on the remote system
-
+        Update the status of the device on the remote system 
         """
 
         self.devs.run(task=update_device_status, on_failed=True)
@@ -430,12 +382,7 @@ class NetworkImporter:
 
             self.get_dev(host).check_data_consistency()
 
-    def get_nb_handler(self):
-        """ """
-        if not self.nb:
-            self.create_nb_handler()
-
-        return self.nb
+        self.validate_cabling()
 
     def check_nb_params(self, exit_on_failure=True):
         """
@@ -449,7 +396,7 @@ class NetworkImporter:
         """
 
         if not self.nb:
-            self.create_nb_handler()
+            self.__create_nb_handler()
 
         try:
             self.nb.dcim.devices.get(name="notpresent")
@@ -475,7 +422,10 @@ class NetworkImporter:
 
     @timeit
     def update_configurations(self):
-        """ """
+        """
+        Pull the latest configurations from all devices that are reachable
+        Automatically cleanup the directory after to remove all configurations that have not been updated
+        """
 
         logger.info("Updating configuration from devices .. ")
 
@@ -498,6 +448,9 @@ class NetworkImporter:
             if f.endswith(".txt")
         ]
 
+        # ----------------------------------------------------
+        # Do a pre-check to ensure that all devices are reachable
+        # ----------------------------------------------------
         self.devs.filter(filter_func=reacheable_devs).run(
             task=check_if_reacheable, on_failed=True
         )
@@ -505,7 +458,7 @@ class NetworkImporter:
 
         results = self.devs.filter(filter_func=reacheable_devs).run(
             task=update_configuration,
-            configs_directory=config.main["configs_directory"] + "/configs",
+            configs_directory=configs_dir_lvl2,
             on_failed=True,
         )
 
@@ -554,25 +507,11 @@ class NetworkImporter:
             )
             logger.warning(f"{host} device is not reacheable, {raison}")
 
-    def create_nb_handler(self):
-        """ """
-
-        self.nb = pynetbox.api(
-            url=config.netbox["address"],
-            token=config.netbox["token"],
-            ssl_verify=config.netbox["request_ssl_verify"],
-        )
-        return True
-
     @timeit
     def init_bf_session(self):
         """
         Initialize Batfish
-
-        Args:
-
-        Returns:
-
+        
         """
 
         # if "configs_directory" not in config.main.keys():
@@ -668,6 +607,14 @@ class NetworkImporter:
             if diff.has_diffs():
                 diff.print_detailed()
 
+        for cable in self.cables.values():
+            if not cable.valid:
+                continue
+
+            diff = cable.diff()
+            if diff.has_diffs():
+                diff.print_detailed()
+
     @timeit
     def update_remote(self):
         """ """
@@ -688,7 +635,13 @@ class NetworkImporter:
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
+        self.update_cabling_remote()
+
         return True
+
+    # --------------------------------------------------------------------------
+    # Cabling
+    # --------------------------------------------------------------------------
 
     @timeit
     def import_cabling_from_configs(self):
@@ -697,137 +650,388 @@ class NetworkImporter:
           Currently we are only getting the information from the L3 EDGE in Batfish
           We need to pull LLDP data as well using Nornir to complement that
 
-        Args:
-
-        Returns:
-
         """
 
         if not config.main["import_cabling"]:
             return False
 
         p2p_links = self.bf.q.layer3Edges().answer()
-        already_connected_links = {}
 
         for link in p2p_links.frame().itertuples():
 
-            local_host = link.Interface.hostname
-            local_intf = re.sub(r"\.\d+$", "", link.Interface.interface)
-            remote_host = link.Remote_Interface.hostname
-            remote_intf = re.sub(r"\.\d+$", "", link.Remote_Interface.interface)
+            self.__add_cable_local(
+                dev_a=link.Interface.hostname,
+                intf_a=re.sub("\.\d+$", "", link.Interface.interface),
+                dev_z=link.Remote_Interface.hostname,
+                intf_z=re.sub("\.\d+$", "", link.Remote_Interface.interface),
+            )
+            # cable = Cable()
+            # cable.add_device(
 
-            unique_id = "_".join(
-                sorted([f"{local_host}:{local_intf}", f"{remote_host}:{remote_intf}"])
+            # )
+            # cable.add_device(
+
+            # )
+
+            # if cable.unique_id and cable.unique_id not in self.cables:
+
+            #     nic = NetworkImporterCable(id=cable.unique_id)
+            #     nic.local = cable
+            #     self.cables[cable.unique_id] = nic
+
+            # elif cable.unique_id and cable.unique_id in self.cables:
+
+            #     if self.cables[cable.unique_id].local:
+            #         logger.debug(
+            #             f"Cable {cable.unique_id} already has a local object .. SKIPPING"
+            #         )
+            #     elif not self.cables[cable.unique_id].local:
+            #         self.cables[cable.unique_id].local = cable
+
+        return True
+
+    @timeit
+    def import_cabling_from_cmds(self):
+
+        logger.info("Collecting cabling information from devices .. ")
+
+        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+            task=collect_lldp_neighbors,
+            use_cache=config.main["data_use_cache"],
+            on_failed=True,
+        )
+
+        for dev_name, items in results.items():
+            if items[0].failed:
+                logger.warning(
+                    f"{dev_name} | Something went wrong while trying to pull the lldp information"
+                )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
+
+            if (
+                not isinstance(items[0].result, dict)
+                or "lldp_neighbors" not in items[0].result
+            ):
+                logger.warning(f"{dev_name} | No lldp information returned ")
+                continue
+
+            for interface, neighbors in items[0].result["lldp_neighbors"].items():
+
+                if len(neighbors) > 1:
+                    logger.warning(
+                        f"{dev_name} | More than 1 neighbor found on interface {interface}, SKIPPING"
+                    )
+                    continue
+                elif len(neighbors) == 1:
+
+                    clean_name = neighbors[0]["hostname"].split(".")[0]
+
+                    self.__add_cable_local(
+                        dev_a=dev_name,
+                        intf_a=interface,
+                        dev_z=clean_name,
+                        intf_z=neighbors[0]["port"],
+                    )
+
+        return True
+
+    @timeit
+    def validate_cabling(self):
+        """
+        Check if all cables are valid
+            Check if both devices are present in the device list
+                For now only process cables with both devices present
+            Check if both interfaces are present as well and are not virtual
+            Check that both interfaces are not already connected to a different device/interface
+
+        When a cable is not valid, update the flag valid on the object itself
+        """
+
+        for cable in self.cables.values():
+
+            cable.valid = True
+
+            for side in ["a", "z"]:
+
+                dev_name, intf_name = cable.get_device_intf(side)
+
+                if dev_name not in self.devs.inventory.hosts.keys():
+                    logger.debug(
+                        f"CABLE: {dev_name} not present in devices list ({side} side)"
+                    )
+                    cable.valid = False
+                    cable.error = "missing-device"
+                    continue
+
+                dev = self.get_dev(dev_name)
+
+                if intf_name not in dev.interfaces.keys():
+                    logger.warning(
+                        f"CABLE: {dev_name}:{intf_name} not present in interfaces list"
+                    )
+                    cable.valid = False
+                    cable.error = "missing-interface"
+                    continue
+
+                if dev.interfaces[intf_name].is_virtual:
+                    logger.debug(
+                        f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
+                    )
+                    cable.valid = False
+                    cable.error = "virtual-interface"
+                    continue
+
+                remote_side = "z"
+                if side == "z":
+                    remote_side = "a"
+
+                remote_device_expected, remote_intf_expected = cable.get_device_intf(
+                    remote_side
+                )
+
+                if (
+                    not dev.interfaces[intf_name].remote
+                    or not dev.interfaces[intf_name].remote.remote
+                ):
+                    continue
+
+                cable_type = dev.interfaces[
+                    intf_name
+                ].remote.remote.connected_endpoint_type
+
+                # Check if the interface is already connected
+                # Check if it's already connected to the right device
+                if not cable_type:
+                    # Interface is currently not connected in netbox
+                    continue
+
+                elif cable_type != "dcim.interface":
+
+                    logger.debug(
+                        f"CABLE: {dev_name}:{intf_name} is already connected but to a different type of interface  ({cable_type})"
+                    )
+                    cable.valid = False
+                    cable.error = "wrong-cable-type"
+                    continue
+
+                elif cable_type == "dcim.interface":
+                    remote_host_reported = dev.interfaces[
+                        intf_name
+                    ].remote.remote.connected_endpoint.device.name
+                    remote_int_reported = dev.interfaces[
+                        intf_name
+                    ].remote.remote.connected_endpoint.name
+
+                    if remote_host_reported != remote_device_expected:
+                        logger.warning(
+                            f"CABLE: {dev_name}:{intf_name} is already connected but to a different device ({remote_host_reported} vs {remote_device_expected})"
+                        )
+                        cable.valid = False
+                        cable.error = "wrong-peer-device"
+                        continue
+
+                    elif (
+                        remote_host_reported == remote_device_expected
+                        and remote_intf_expected != remote_int_reported
+                    ):
+                        logger.warning(
+                            f"CABLE:  {dev_name}:{intf_name} is already connected but to a different interface ({remote_int_reported} vs {remote_intf_expected})"
+                        )
+                        cable.valid = False
+                        cable.error = "interface-already-connected"
+                        continue
+
+        return True
+
+    def update_cabling_remote(self):
+
+        for cable in self.cables.values():
+
+            if not cable.valid:
+                continue
+
+            if cable.local and cable.remote:
+                pass
+
+            elif not cable.local and cable.remote:
+                logger.debug(
+                    f"Cable {cable.unique_id}, not present locally, deleting in netbox .. "
+                )
+
+                cable.remote.delete()
+                pass
+
+            elif cable.local and not cable.remote:
+
+                dev_a_name, intf_a_name = cable.get_device_intf("a")
+                dev_z_name, intf_z_name = cable.get_device_intf("z")
+
+                dev_a = self.get_dev(dev_a_name)
+                dev_z = self.get_dev(dev_z_name)
+
+                if (
+                    not dev_a.interfaces[intf_a_name].remote.remote
+                    or not dev_a.interfaces[intf_a_name].remote.remote
+                ):
+
+                    logger.warning(
+                        f"Unable to create cable {cable.unique_id} in Netbox, both interfaces are not present"
+                    )
+                    continue
+
+                logger.info(
+                    f"Cable {cable.unique_id} not present will create it in netbox "
+                )
+
+                nbc = self.nb.dcim.cables.create(
+                    termination_a_type="dcim.interface",
+                    termination_a_id=dev_a.interfaces[intf_a_name].remote.remote.id,
+                    termination_b_type="dcim.interface",
+                    termination_b_id=dev_z.interfaces[intf_z_name].remote.remote.id,
+                )
+
+                cable_driver = get_driver("cable")
+
+                cable.remote = cable_driver()
+                cable.remote.add(cable=nbc)
+
+    # --------------------------------------------------------------------------
+    # Transceivers
+    # --------------------------------------------------------------------------
+
+    def import_transceivers_from_cmds(self):
+        """ """
+
+        logger.info("Collecting Transceiver information from devices .. ")
+
+        if not config.main["data_use_cache"]:
+            results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                task=collect_transceivers_info, on_failed=True
+            )
+        else:
+            results = self.devs.filter(filter_func=valid_devs).run(
+                task=collect_transceivers_info_from_cache, on_failed=True
             )
 
-            try:
-
-                if unique_id in already_connected_links:
-                    logger.debug(f"Link {unique_id} already connected .. SKIPPING")
-                    continue
-
-                if local_host not in self.devs.inventory.hosts.keys():
-                    logger.debug(f"LINK: {local_host} not present in devices list")
-                    continue
-                elif remote_host not in self.devs.inventory.hosts.keys():
-                    logger.debug(f"LINK: {remote_host} not present in devices list")
-                    continue
-
-                local_obj = self.devs.inventory.hosts[local_host].data["obj"]
-                remote_obj = self.devs.inventory.hosts[remote_host].data["obj"]
-
-                if local_intf not in local_obj.interfaces.keys():
-                    logger.warning(
-                        f"LINK: {local_host}:{local_intf} not present in interfaces list"
-                    )
-                    continue
-                elif remote_intf not in remote_obj.interfaces.keys():
-                    logger.warning(
-                        f"LINK: {remote_host}:{remote_intf} not present in interfaces list"
-                    )
-                    continue
-
-                if local_obj.interfaces[local_intf].is_virtual:
-                    logger.debug(
-                        f"LINK: {local_host}:{local_intf} is a virtual interface, can't be used for cabling SKIPPING"
-                    )
-                    continue
-                elif remote_obj.interfaces[remote_intf].is_virtual:
-                    logger.debug(
-                        f"LINK: {remote_host}:{remote_intf} is a virtual interface, can't be used for cabling SKIPPING"
-                    )
-                    continue
-
-                if not local_obj.interfaces[local_intf].remote:
-                    logger.warning(
-                        f"LINK: {local_host}:{local_intf} remote object not present SKIPPING"
-                    )
-                    continue
-                elif not remote_obj.interfaces[remote_intf].remote:
-                    logger.warning(
-                        f"LINK: {remote_host}:{remote_intf} remote object not present SKIPPING"
-                    )
-                    continue
-
-                ## Check if both interfaces are already connected or not
-                if local_obj.interfaces[local_intf].remote.connection_status:
-                    remote_host_reported = local_obj.interfaces[
-                        local_intf
-                    ].remote.connected_endpoint.device.name
-                    remote_int_reported = local_obj.interfaces[
-                        local_intf
-                    ].remote.connected_endpoint.name
-
-                    if remote_host_reported != remote_host:
-                        logger.warning(
-                            f"LINK: {local_host}:{local_intf} is already connected but to a different device ({remote_host_reported} vs {remote_host})"
-                        )
-                    elif (
-                        remote_host_reported == remote_host
-                        and remote_intf != remote_int_reported
-                    ):
-                        logger.warning(
-                            f"LINK: {local_host}:{local_intf} is already connected but to a different interface ({remote_int_reported} vs {remote_intf})"
-                        )
-
-                    continue
-
-                elif remote_obj.interfaces[remote_intf].remote.connection_status:
-                    local_host_reported = remote_obj.interfaces[
-                        remote_intf
-                    ].remote.connected_endpoint.device.name
-                    local_int_reported = remote_obj.interfaces[
-                        remote_intf
-                    ].remote.connected_endpoint.name
-
-                    if local_host_reported != local_host:
-                        logger.warning(
-                            f"LINK: {remote_host}:{remote_intf} is already connected but to a different device ({local_host_reported} vs {local_host})"
-                        )
-                    elif (
-                        local_host_reported == local_host
-                        and local_intf != local_int_reported
-                    ):
-                        logger.warning(
-                            f"LINK:  {remote_host}:{remote_intf} is already connected but to a different interface ({local_int_reported} vs {local_intf})"
-                        )
-
-                    continue
-
-                else:
-                    logger.info(
-                        f"Link not present will create it in netbox ({local_host}:{local_intf} || {remote_host}:{remote_intf}) "
-                    )
-                    link = self.nb.dcim.cables.create(
-                        termination_a_type="dcim.interface",
-                        termination_a_id=local_obj.interfaces[local_intf].remote.id,
-                        termination_b_type="dcim.interface",
-                        termination_b_id=remote_obj.interfaces[remote_intf].remote.id,
-                    )
-
-                    already_connected_links[unique_id] = 1
-            except:
+        for dev_name, items in results.items():
+            if items[0].failed:
                 logger.warning(
-                    f"Something went wrong while processing the link {unique_id}",
-                    exc_info=True,
+                    f"{dev_name} | Something went wrong while trying to pull the transceiver information (1) "
                 )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
+
+            transceivers = items[0].result
+
+            if not isinstance(transceivers, list):
+                logger.warning(
+                    f"{dev_name} | Something went wrong while trying to pull the transceiver information (2)"
+                )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
+
+            logger.info(f"{dev_name} | Found {len(transceivers)} transceivers")
+            for transceiver in transceivers:
+
+                nio = Optic(
+                    name=transceiver["serial"].strip(),
+                    optic_type=transceiver["type"].strip(),
+                    intf=transceiver["interface"].strip(),
+                    serial=transceiver["serial"].strip(),
+                )
+
+                self.devs.inventory.hosts[dev_name].data["obj"].add_optic(
+                    intf_name=transceiver["interface"].strip(), optic=nio
+                )
+
+    def import_vlans_from_cmds(self):
+
+        logger.info("Collecting Vlan information from devices .. ")
+
+        if not config.main["data_use_cache"]:
+            results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+                task=collect_vlans_info, on_failed=True
+            )
+        else:
+            results = self.devs.filter(filter_func=valid_devs).run(
+                task=collect_vlans_info_from_cache, on_failed=True
+            )
+
+        for dev_name, items in results.items():
+
+            if items[0].failed:
+                logger.warning(
+                    f"{dev_name} | Something went wrong while trying to pull the vlan information"
+                )
+                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
+
+            for vlan in items[0].result:
+                if (
+                    vlan["id"]
+                    not in self.devs.inventory.hosts[dev_name]
+                    .data["obj"]
+                    .site.vlans.keys()
+                ):
+
+                    self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
+                        vlan=Vlan(name=vlan["name"], vid=vlan["id"]), device=dev_name,
+                    )
+
+    # --------------------------------------------------------------------------
+    # Private methods
+    # --------------------------------------------------------------------------
+
+    def __add_cable_local(self, dev_a, intf_a, dev_z, intf_z):
+        """ 
+        
+        Print on Screen all devices, interfaces and IPs and how their current status compare to remote
+          Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
+          This print function might be better off in the device object ...
+
+        Args:
+            dev_a: Name of the device on the side A of the cable
+            intf_a:  Name of the interface on the side A of the cable
+            dev_z: Name of the device on the side Z of the cable
+            intf_z:  Name of the interface on the side Z of the cable
+
+        Returns:
+            boolean: 
+                True if the cable has been properly added
+                False if the cable was already present
+
+        """
+
+        cable = Cable()
+        cable.add_device(
+            device=dev_a, interface=intf_a,
+        )
+        cable.add_device(
+            device=dev_z, interface=intf_z,
+        )
+
+        if cable.unique_id and cable.unique_id not in self.cables:
+
+            nic = NetworkImporterCable(id=cable.unique_id)
+            nic.local = cable
+            self.cables[cable.unique_id] = nic
+            return True
+
+        elif cable.unique_id and cable.unique_id in self.cables:
+
+            if not self.cables[cable.unique_id].local:
+                self.cables[cable.unique_id].local = cable
+                return True
+
+        return False
+
+    def __create_nb_handler(self):
+        """ """
+
+        self.nb = pynetbox.api(
+            url=config.netbox["address"],
+            token=config.netbox["token"],
+            ssl_verify=config.netbox["request_ssl_verify"],
+        )
+        return True
