@@ -1,0 +1,213 @@
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "id": 5,
+      "name": "test_dev1_2",
+      "display_name": "test_dev1_2",
+      "device_type": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/device-types/1/",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost:32768/api/dcim/manufacturers/1/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "ios",
+        "slug": "ios",
+        "display_name": "cisco ios"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/device-roles/1/",
+        "name": "access",
+        "slug": "access"
+      },
+      "tenant": null,
+      "platform": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/platforms/1/",
+        "name": "cisco_ios",
+        "slug": "cisco_ios"
+      },
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/sites/1/",
+        "name": "test_site",
+        "slug": "test_site"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": 1,
+        "label": "Active"
+      },
+      "primary_ip": null,
+      "primary_ip4": null,
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/virtual-chassis/1/",
+        "master": {
+          "id": 4,
+          "url": "http://localhost:32768/api/dcim/devices/4/",
+          "name": "test_dev1",
+          "display_name": "test_dev1"
+        }
+      },
+      "vc_position": 2,
+      "vc_priority": 14,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-19",
+      "last_updated": "2020-02-19T19:35:45.568873Z"
+    },
+    {
+      "id": 4,
+      "name": "test_dev1",
+      "display_name": "test_dev1",
+      "device_type": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/device-types/1/",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost:32768/api/dcim/manufacturers/1/",
+          "name": "cisco",
+          "slug": "cisco"
+        },
+        "model": "ios",
+        "slug": "ios",
+        "display_name": "cisco ios"
+      },
+      "device_role": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/device-roles/1/",
+        "name": "access",
+        "slug": "access"
+      },
+      "tenant": null,
+      "platform": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/platforms/1/",
+        "name": "cisco_ios",
+        "slug": "cisco_ios"
+      },
+      "serial": "",
+      "asset_tag": null,
+      "site": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/sites/1/",
+        "name": "test_site",
+        "slug": "test_site"
+      },
+      "rack": null,
+      "position": null,
+      "face": null,
+      "parent_device": null,
+      "status": {
+        "value": 1,
+        "label": "Active"
+      },
+      "primary_ip": {
+        "id": 3,
+        "url": "http://localhost:32768/api/ipam/ip-addresses/3/",
+        "family": 4,
+        "address": "10.50.3.2/32"
+      },
+      "primary_ip4": {
+        "id": 3,
+        "url": "http://localhost:32768/api/ipam/ip-addresses/3/",
+        "family": 4,
+        "address": "10.50.3.2/32"
+      },
+      "primary_ip6": null,
+      "cluster": null,
+      "virtual_chassis": {
+        "id": 1,
+        "url": "http://localhost:32768/api/dcim/virtual-chassis/1/",
+        "master": {
+          "id": 4,
+          "url": "http://localhost:32768/api/dcim/devices/4/",
+          "name": "test_dev1",
+          "display_name": "test_dev1"
+        }
+      },
+      "vc_position": 1,
+      "vc_priority": 15,
+      "comments": "",
+      "local_context_data": null,
+      "tags": [],
+      "custom_fields": {},
+      "config_context": {},
+      "created": "2020-02-19",
+      "last_updated": "2020-02-19T19:38:47.113568Z"
+    },
+    {
+        "id": 10,
+        "name": "amarillo",
+        "display_name": "amarillo",
+        "device_type": {
+          "id": 2,
+          "url": "http://localhost:32768/api/dcim/device-types/2/",
+          "manufacturer": {
+            "id": 3,
+            "url": "http://localhost:32768/api/dcim/manufacturers/3/",
+            "name": "juniper",
+            "slug": "juniper"
+          },
+          "model": "junos",
+          "slug": "junos",
+          "display_name": "juniper junos"
+        },
+        "device_role": {
+          "id": 2,
+          "url": "http://localhost:32768/api/dcim/device-roles/2/",
+          "name": "spine",
+          "slug": "spine"
+        },
+        "tenant": null,
+        "platform": null,
+        "serial": "",
+        "asset_tag": null,
+        "site": {
+          "id": 3,
+          "url": "http://localhost:32768/api/dcim/sites/3/",
+          "name": "ni_example_01",
+          "slug": "ni_example_01"
+        },
+        "rack": null,
+        "position": null,
+        "face": null,
+        "parent_device": null,
+        "status": {
+          "value": 1,
+          "label": "Active"
+        },
+        "primary_ip": null,
+        "primary_ip4": null,
+        "primary_ip6": null,
+        "cluster": null,
+        "virtual_chassis": null,
+        "vc_position": null,
+        "vc_priority": null,
+        "comments": "",
+        "local_context_data": null,
+        "tags": [],
+        "custom_fields": {},
+        "config_context": {},
+        "created": "2020-02-19",
+        "last_updated": "2020-02-19T19:31:54.203479Z"
+    }
+  ]
+}
