@@ -21,7 +21,7 @@ HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "config/fixtures/NBInventory"
 
 
-def test_nb_inventory(requests_mock):
+def test_nb_inventory_all(requests_mock):
     """
     Test netbox dynamic inventory filter parameters
     """
@@ -31,17 +31,32 @@ def test_nb_inventory(requests_mock):
 
     # Load mock data fixtures
     dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+
+    # Set up mock requests
+    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+
+    inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+
+    assert len(inv.hosts.keys()) == 6
+
+
+def test_nb_inventory_filtered(requests_mock):
+    """
+    Test netbox dynamic inventory filter parameters
+    """
+
+    # Load config data, needed by NBInventory function
+    config.load_config()
+
+    # Load mock data fixtures
     dev_filtered_mock_data = yaml.safe_load(
         open(f"{HERE}/{FIXTURES}/filtered_devices.json")
     )
 
     # Set up mock requests
-    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
     requests_mock.get(
         "http://mock/api/dcim/devices/?name=el-paso", json=dev_filtered_mock_data
     )
-
-    inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
     inv_filtered = NBInventory(  # nosec
         nb_url="http://mock",  # nosec
@@ -49,7 +64,6 @@ def test_nb_inventory(requests_mock):
         filter_parameters={"name": "el-paso"},  # nosec
     )  # nosec
 
-    assert len(inv.hosts.keys()) == 6
     assert len(inv_filtered.hosts.keys()) == 1
     assert "el-paso" in inv_filtered.hosts.keys()
     assert "amarillo" not in inv_filtered.hosts.keys()
