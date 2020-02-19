@@ -430,12 +430,7 @@ class NetworkImporter:
 
             self.get_dev(host).check_data_consistency()
 
-    def get_nb_handler(self):
-        """ """
-        if not self.nb:
-            self.create_nb_handler()
 
-        return self.nb
 
     def check_nb_params(self, exit_on_failure=True):
         """
@@ -449,7 +444,7 @@ class NetworkImporter:
         """
 
         if not self.nb:
-            self.create_nb_handler()
+            self.__create_nb_handler()
 
         try:
             self.nb.dcim.devices.get(name="notpresent")
@@ -553,16 +548,6 @@ class NetworkImporter:
                 "not_reacheable_raison", "Raison not defined"
             )
             logger.warning(f"{host} device is not reacheable, {raison}")
-
-    def create_nb_handler(self):
-        """ """
-
-        self.nb = pynetbox.api(
-            url=config.netbox["address"],
-            token=config.netbox["token"],
-            ssl_verify=config.netbox["request_ssl_verify"],
-        )
-        return True
 
     @timeit
     def init_bf_session(self):
@@ -831,3 +816,13 @@ class NetworkImporter:
                     f"Something went wrong while processing the link {unique_id}",
                     exc_info=True,
                 )
+
+    def __create_nb_handler(self):
+        """ """
+
+        self.nb = pynetbox.api(
+            url=config.netbox["address"],
+            token=config.netbox["token"],
+            ssl_verify=config.netbox["request_ssl_verify"],
+        )
+        return True
