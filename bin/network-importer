@@ -187,9 +187,9 @@ def main():
     if options.diff:
         ni.print_diffs()
 
-    logger.info(
-        f"Execution finished, processed {perf.time_tracker.nbr_devices} device(s) "
-    )
+    # logger.info(
+    #    f"Execution finished, processed {perf.time_tracker.nbr_devices} device(s) "
+    # )
     if options.debug:
         pdb.set_trace()
 

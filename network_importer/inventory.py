@@ -140,6 +140,15 @@ class NBInventory(Inventory):
             groups["global"]["password"] = config.network["password"]
 
         for dev in nb_devices:
+
+            # Only add virtual chassis master as inventory element
+
+            if dev.virtual_chassis:
+                if dev.id != dev.virtual_chassis.master.id:
+                    continue
+
+                host["data"]["virtual_chassis"] = True
+
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Add value for IP address
