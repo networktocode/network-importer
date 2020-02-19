@@ -121,9 +121,13 @@ class NBInventory(Inventory):
 
         # fetch devices from netbox
         if filter_parameters:
-            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.filter(**filter_parameters)
+            nb_devices: List[
+                pynetbox.modules.dcim.Devices
+            ] = nb_session.dcim.devices.filter(**filter_parameters)
         else:
-            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
+            nb_devices: List[
+                pynetbox.modules.dcim.Devices
+            ] = nb_session.dcim.devices.all()
 
         hosts = {}
         groups = {"global": {}}
