@@ -23,7 +23,12 @@ FIXTURES = "config/fixtures/NBInventory"
 
 def test_nb_inventory_all(requests_mock):
     """
-    Test netbox dynamic inventory filter parameters
+    Test netbox dynamic inventory without filter parameters
+
+    Args:
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
     """
 
     # Load config data, needed by NBInventory function
@@ -42,7 +47,12 @@ def test_nb_inventory_all(requests_mock):
 
 def test_nb_inventory_filtered(requests_mock):
     """
-    Test netbox dynamic inventory filter parameters
+    Test netbox dynamic inventory with filter parameters
+
+    Args:
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
     """
 
     # Load config data, needed by NBInventory function
@@ -74,7 +84,9 @@ def test_nb_inventory_stack(requests_mock):
     Test netbox virtual_chassis attribute set correctly
 
     Args:
-        requests_mock ([type]): [description]
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
     """
 
     # Load config data, needed by NBInventory function
@@ -91,5 +103,5 @@ def test_nb_inventory_stack(requests_mock):
     assert len(inv.hosts.keys()) == 2
     assert "test_dev1_2" not in inv.hosts.keys()
     assert "test_dev1" in inv.hosts.keys()
-    assert inv.hosts["test_dev1"].data["virtual_chassis"] == True
-    assert inv.hosts["amarillo"].data["virtual_chassis"] == False
+    assert inv.hosts["test_dev1"].data["virtual_chassis"]
+    assert not inv.hosts["amarillo"].data["virtual_chassis"]
