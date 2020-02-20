@@ -13,7 +13,6 @@ limitations under the License.
 """
 # pylint: disable=invalid-name,redefined-builtin
 import logging
-import sys
 import re
 import network_importer.config as config
 
@@ -51,7 +50,7 @@ class NetworkImporterObjBase:
         if self.exist_local() and hasattr(self.local, name):
             return getattr(self.local, name)
 
-        elif self.exist_remote() and hasattr(self.remote, name):
+        if self.exist_remote() and hasattr(self.remote, name):
             return getattr(self.local, name)
 
         raise AttributeError(f"object has no attribute '{name}'")
@@ -477,7 +476,7 @@ class NetworkImporterDevice:
                 )
 
     def check_data_consistency(self):
-        """ 
+        """
         Ensure the vlans configured for each interface exist in the system
         On some vendors, it's possible to have a list larger than what is really available
         """
@@ -1213,7 +1212,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
         self.interfaces = {}
 
     def add_interface(self, intf):
-        """  
+        """
         Attached a NetworkImporterInterface object to the cable
         The object will be used later to create or update the cable
         """
@@ -1232,7 +1231,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
 
         return True
 
-    def update_remote(self, nb):
+    def update_remote(self, nb):  # pylint: disable=W0221
         """ """
         if not self.is_valid:
             return False
@@ -1240,28 +1239,21 @@ class NetworkImporterCable(NetworkImporterObjBase):
         if self.local and self.remote:
             return False
 
-        elif not self.local and self.remote:
+        if not self.local and self.remote:
             logger.debug(f"Cable {self.id} not present locally, deleting in netbox .. ")
-
             self.remote.delete()
             return True
 
-        elif self.local and not self.remote:
+        if self.local and not self.remote:
 
-            # dev_a_name, intf_a_name = self.get_device_intf("a")
-            # dev_z_name, intf_z_name = self.get_device_intf("z")
-
-            # dev_a = self.get_dev(dev_a_name)
-            # dev_z = self.get_dev(dev_z_name)
-
-            if not "a" in self.interfaces or not "z" in self.interfaces:
+            if "a" not in self.interfaces or "z" not in self.interfaces:
 
                 logger.warning(
                     f"Unable to create cable {self.id} in Netbox, both interfaces are not present"
                 )
                 return False
 
-            elif (
+            if (
                 not self.interfaces["a"].remote.remote
                 or not self.interfaces["z"].remote.remote
             ):
@@ -1284,14 +1276,6 @@ class NetworkImporterCable(NetworkImporterObjBase):
             self.remote = cable_driver()
             self.remote.add(cable=nbc)
 
-    # def add_remote(self, remote):
-    #     """ """
-    #     cable_driver = get_driver("cable")
-    #     self.remote = cable_driver()
-    #     self.remote.add(remote)
-
-    #     return True
-
     def get_device_intf(self, side):
         """
         Return the device name or the interface name of either side A or side Z of the cable
@@ -1299,7 +1283,8 @@ class NetworkImporterCable(NetworkImporterObjBase):
 
         if self.remote:
             return self.remote.get_device_intf(side)
-        elif self.local:
+
+        if self.local:
             return self.local.get_device_intf(side)
-        else:
-            return None, None
+
+        return None, None

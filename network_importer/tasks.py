@@ -402,7 +402,9 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
     return Result(host=task.host, result=results[0].result)
 
 
-def collect_transceivers_info(task: Task, update_cache=True, use_cache=False) -> Result:
+def collect_transceivers_info(  # pylint: disable=R0911
+    task: Task, update_cache=True, use_cache=False
+) -> Result:
     """
     Collect transceiver informaton on all devices
 

@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# pylint: disable=R1724,W0611,R1710,R1710,E1101,W0613,C0103,C0413
+# pylint: disable=R1724,W0611,R1710,R1710,E1101,W0613,C0103,C0413,R0904
 
 import logging
 import sys
@@ -26,11 +26,7 @@ from jinja2 import Template, Environment, FileSystemLoader
 from pybatfish.client.session import Session
 from termcolor import colored
 
-import network_importer
-import network_importer.config as config
-
 warnings.filterwarnings("ignore", category=DeprecationWarning)
-
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -354,15 +350,15 @@ class NetworkImporter:
 
     def update_devices_status(self):
         """
-        Update the status of the device on the remote system 
+        Update the status of the device on the remote system
         """
 
         self.devs.run(task=update_device_status, on_failed=True)
 
     def check_data_consistency(self):
-        """ 
-        After import, do some consistency validation on the data for: 
-        - Devices 
+        """
+        After import, do some consistency validation on the data for:
+        - Devices
         - Cables
         """
 
@@ -484,7 +480,6 @@ class NetworkImporter:
     def warning_devices_not_reacheable(self, msg=""):
         """
 
-
         Args:
           msg: (Default value = "")
 
@@ -504,7 +499,6 @@ class NetworkImporter:
     def init_bf_session(self):
         """
         Initialize Batfish
-        
         """
 
         # if "configs_directory" not in config.main.keys():
@@ -521,7 +515,7 @@ class NetworkImporter:
         return True
 
     def diff_local_remote(self):
-        """ 
+        """
         Check if a device is in sync between the local and the remote system and print the status
         """
 
@@ -556,7 +550,7 @@ class NetworkImporter:
 
     @timeit
     def update_remote(self):
-        """ 
+        """
         Update all objects on the remote system
           - 1/ Update the site and the vlans (serial)
           - 2/ Update all devices in parallel
@@ -616,9 +610,9 @@ class NetworkImporter:
 
             self.__add_cable_local(
                 dev_a=link.Interface.hostname,
-                intf_a=re.sub("\.\d+$", "", link.Interface.interface),
+                intf_a=re.sub(r"\.\d+$", "", link.Interface.interface),
                 dev_z=link.Remote_Interface.hostname,
-                intf_z=re.sub("\.\d+$", "", link.Remote_Interface.interface),
+                intf_z=re.sub(r"\.\d+$", "", link.Remote_Interface.interface),
                 source="config",
             )
 
@@ -682,7 +676,7 @@ class NetworkImporter:
             Check that both interfaces are not already connected to a different device/interface
 
         When a cable is not valid, update the flag valid on the object itself
-        Non valid cables will be ignored later on for update/creation 
+        Non valid cables will be ignored later on for update/creation
         """
 
         for cable in self.cables.values():
@@ -877,8 +871,7 @@ class NetworkImporter:
     # --------------------------------------------------------------------------
 
     def __add_cable_local(self, dev_a, intf_a, dev_z, intf_z, source=None):
-        """ 
-        
+        """
         Print on Screen all devices, interfaces and IPs and how their current status compare to remote
           Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
           This print function might be better off in the device object ...
@@ -891,10 +884,9 @@ class NetworkImporter:
             source: origin of the data
 
         Returns:
-            boolean: 
+            boolean:
                 True if the cable has been properly added
                 False if the cable was already present
-
         """
 
         cable = Cable(origin=source)
@@ -906,14 +898,12 @@ class NetworkImporter:
         )
 
         if cable.unique_id and cable.unique_id not in self.cables:
-
             nic = NetworkImporterCable(id=cable.unique_id)
             nic.local = cable
             self.cables[cable.unique_id] = nic
             return True
 
-        elif cable.unique_id and cable.unique_id in self.cables:
-
+        if cable.unique_id and cable.unique_id in self.cables:
             if not self.cables[cable.unique_id].local:
                 self.cables[cable.unique_id].local = cable
                 return True
