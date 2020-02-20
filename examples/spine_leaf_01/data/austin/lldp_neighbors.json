@@ -2,7 +2,7 @@
     "lldp_neighbors": {
         "GigabitEthernet0/0/0/0": [
             {
-                "hostname": "austin.local",
+                "hostname": "dallas.local",
                 "port": "GigabitEthernet0/0/0/0"
             }
         ]

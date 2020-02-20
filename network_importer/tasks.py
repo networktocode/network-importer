@@ -570,7 +570,7 @@ def check_if_reacheable(task: Task) -> Result:
         results = task.run(task=tcp_ping, ports=[port_to_check])
     except:
         logger.debug(
-            "An exception occured while running running the reachability test (tcp_ping)",
+            "An exception occured while running the reachability test (tcp_ping)",
             exc_info=True,
         )
         return Result(host=task.host, failed=True)
