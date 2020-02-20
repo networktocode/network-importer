@@ -477,10 +477,11 @@ class NetworkImporterDevice:
                 )
 
     def check_data_consistency(self):
-        """ """
+        """ 
+        Ensure the vlans configured for each interface exist in the system
+        On some vendors, it's possible to have a list larger than what is really available
+        """
 
-        # Ensure the vlans configured for each interface exist in the system
-        #  On some devices, it's possible tp define a list larger than what is really available
         for intf in self.interfaces.values():
             if intf.exist_local() and intf.local.allowed_vlans:
                 intf.local.allowed_vlans = [

@@ -45,9 +45,7 @@ from network_importer.tasks import (
     initialize_devices,
     update_configuration,
     collect_transceivers_info,
-    collect_transceivers_info_from_cache,
     collect_vlans_info,
-    collect_vlans_info_from_cache,
     collect_lldp_neighbors,
     device_update_remote,
     check_if_reacheable,
@@ -287,21 +285,16 @@ class NetworkImporter:
                 dev.data["obj"].site = self.sites[site_slug]
 
             ## Get all remote cables and update cables inventory
-            remote_cables = dev.data["obj"].get_remote_cables()
+            if config.main["import_cabling"]:
+                remote_cables = dev.data["obj"].get_remote_cables()
 
-            for cable_id, cable in remote_cables.items():
-                if cable_id not in self.cables:
-                    self.cables[cable_id] = NetworkImporterCable(id=cable_id)
-                    self.cables[cable_id].remote = cable
+                for cable_id, cable in remote_cables.items():
+                    if cable_id not in self.cables:
+                        self.cables[cable_id] = NetworkImporterCable(id=cable_id)
+                        self.cables[cable_id].remote = cable
 
-                elif cable_id in self.cables and not self.cables[cable_id].remote:
-                    self.cables[cable_id].remote = cable
-
-                # elif cable_id in self.cables and self.cables[cable_id].remote:
-                #     # might need to remove this log message because all cable should be reported at least twice
-                #     logger.debug(
-                #         f"Cable {cable_id} already present while importing from remote"
-                #     )
+                    elif cable_id in self.cables and not self.cables[cable_id].remote:
+                        self.cables[cable_id].remote = cable
 
         return True
 
@@ -357,9 +350,6 @@ class NetworkImporter:
         if config.main["import_transceivers"]:
             self.import_transceivers_from_cmds()
 
-        if config.main["import_cabling"]:
-            self.import_cabling_from_cmds()
-
         return True
 
     def update_devices_status(self):
@@ -370,8 +360,13 @@ class NetworkImporter:
         self.devs.run(task=update_device_status, on_failed=True)
 
     def check_data_consistency(self):
-        """ """
+        """ 
+        After import, do some consistency validation on the data for: 
+        - Devices 
+        - Cables
+        """
 
+        # Devices
         for host in self.devs.inventory.hosts.keys():
 
             if not self.devs.inventory.hosts[host].data["has_config"]:
@@ -379,6 +374,7 @@ class NetworkImporter:
 
             self.get_dev(host).check_data_consistency()
 
+        # Cabling
         self.validate_cabling()
 
     def check_nb_params(self, exit_on_failure=True):
@@ -595,15 +591,24 @@ class NetworkImporter:
     # Cabling
     # --------------------------------------------------------------------------
 
+    def import_cabling(self):
+
+        if config.main["import_cabling"] in ["no", False]:
+            return False
+
+        if config.main["import_cabling"] in ["config", True]:
+            self.import_cabling_from_configs()
+
+        if config.main["import_cabling"] in ["cli", True]:
+            self.import_cabling_from_cmds()
+
+        return True
+
     @timeit
     def import_cabling_from_configs(self):
         """
         Import cabling information from Batfish layer3Edges
-
         """
-
-        if not config.main["import_cabling"]:
-            return False
 
         p2p_links = self.bf.q.layer3Edges().answer()
 
@@ -626,6 +631,7 @@ class NetworkImporter:
 
         results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
             task=collect_lldp_neighbors,
+            update_cache=config.main["data_update_cache"],
             use_cache=config.main["data_use_cache"],
             on_failed=True,
         )
@@ -792,14 +798,12 @@ class NetworkImporter:
 
         logger.info("Collecting Transceiver information from devices .. ")
 
-        if not config.main["data_use_cache"]:
-            results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-                task=collect_transceivers_info, on_failed=True
-            )
-        else:
-            results = self.devs.filter(filter_func=valid_devs).run(
-                task=collect_transceivers_info_from_cache, on_failed=True
-            )
+        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+            task=collect_transceivers_info,
+            update_cache=config.main["data_update_cache"],
+            use_cache=config.main["data_use_cache"],
+            on_failed=True,
+        )
 
         for dev_name, items in results.items():
             if items[0].failed:
@@ -840,14 +844,12 @@ class NetworkImporter:
 
         logger.info("Collecting Vlan information from devices .. ")
 
-        if not config.main["data_use_cache"]:
-            results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-                task=collect_vlans_info, on_failed=True
-            )
-        else:
-            results = self.devs.filter(filter_func=valid_devs).run(
-                task=collect_vlans_info_from_cache, on_failed=True
-            )
+        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+            task=collect_vlans_info,
+            update_cache=config.main["data_update_cache"],
+            use_cache=config.main["data_use_cache"],
+            on_failed=True,
+        )
 
         for dev_name, items in results.items():
 
