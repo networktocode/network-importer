@@ -12,31 +12,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import json
-import math
 import os
+import logging
+import math
 from time import strftime, time
 import network_importer.config as config
-import logging
 
-time_tracker = None
-logger = logging.getLogger("network-importer")
+TIME_TRACKER = None
+logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def init():
     """ """
-    global time_tracker
+    global TIME_TRACKER
 
-    if not time_tracker:
-        time_tracker = TimeTracker()
+    if not TIME_TRACKER:
+        TIME_TRACKER = TimeTracker()
 
 
-def print_from_ms(ms) -> str:
+def print_from_ms(msec) -> str:
     """
-    
+
 
     Args:
-      ms: 
+      ms:
 
     Returns:
 
@@ -45,57 +44,57 @@ def print_from_ms(ms) -> str:
     ms_per_sec = 1000
     ms_per_min = ms_per_sec * 60
 
-    minutes = math.floor((ms / ms_per_min))
-    seconds = math.floor(((ms - (ms_per_min * minutes)) / ms_per_sec))
-    millis = ms - (ms_per_min * minutes) - (ms_per_sec * seconds)
+    minutes = math.floor((msec / ms_per_min))
+    seconds = math.floor(((msec - (ms_per_min * minutes)) / ms_per_sec))
+    millis = msec - (ms_per_min * minutes) - (ms_per_sec * seconds)
 
     if minutes == 0 and seconds == 0:
         return "%dms" % (millis)
-    elif minutes == 0:
+    if minutes == 0:
         return "%ds %dms" % (seconds, millis)
-    else:
-        return "%dm %ds %dms" % (minutes, seconds, millis)
+
+    return "%dm %ds %dms" % (minutes, seconds, millis)
 
 
 def timeit(method):
     """
-    
+
 
     Args:
-      method: 
+      method:
 
     Returns:
 
     """
-    global time_tracker
+    global TIME_TRACKER
 
     def timed(*args, **kw):
         """
-        
+
 
         Args:
-          *args: 
-          **kw: 
+          *args:
+          **kw:
 
         Returns:
 
         """
-        ts = time()
+        timestart = time()
         result = method(*args, **kw)
-        te = time()
+        timeend = time()
 
         name = method.__name__.upper()
-        exec_time = int((te - ts) * 1000)
+        exec_time = int((timeend - timestart) * 1000)
 
-        if time_tracker:
-            time_tracker.times[name] = exec_time
+        if TIME_TRACKER:
+            TIME_TRACKER.times[name] = exec_time
 
         return result
 
     return timed
 
 
-class TimeTracker(object):
+class TimeTracker:
     """ """
 
     def __init__(self):
@@ -106,10 +105,10 @@ class TimeTracker(object):
 
     def set_nbr_devices(self, nbr: int):
         """
-        
+
 
         Args:
-          nbr: 
+          nbr:
 
         Returns:
 
@@ -130,13 +129,13 @@ class TimeTracker(object):
             config.logs["performance_log_directory"] + "/" + perflog_filename
         )
 
-        with open(perflog_file_path, "w") as f:
+        with open(perflog_file_path, "w") as file_:
 
             if self.nbr_devices:
-                f.write(f"Report for {self.nbr_devices} devices\n")
+                file_.write(f"Report for {self.nbr_devices} devices\n")
 
             total_time = exec_time = int((time() - self.start_time) * 1000)
-            f.write(f"Total execution time: {print_from_ms(total_time)}\n")
+            file_.write(f"Total execution time: {print_from_ms(total_time)}\n")
 
             for funct, exec_time in self.times.items():
                 if self.nbr_devices:
@@ -146,4 +145,4 @@ class TimeTracker(object):
                 else:
                     log = f"{funct} finished in {print_from_ms(exec_time)}"
 
-                f.write(log + "\n")
+                file_.write(log + "\n")
