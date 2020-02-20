@@ -352,15 +352,12 @@ class NetworkImporter:
             self.warning_devices_not_reacheable()
 
         if config.main["import_vlans"] == "cli":
-
             self.import_vlans_from_cmds()
 
         if config.main["import_transceivers"]:
-
             self.import_transceivers_from_cmds()
 
         if config.main["import_cabling"]:
-
             self.import_cabling_from_cmds()
 
         return True
@@ -527,67 +524,13 @@ class NetworkImporter:
 
         return True
 
-    def print_screen(self):
-        """
-        Print on Screen all devices, interfaces and IPs and how their current status compare to remote
-          Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
-          This print function might be better off in the device object ...
-
-        Args:
-
-        Returns:
-
-        """
-        PRESENT = colored("PRESENT", "green")
-        ABSENT = colored("ABSENT", "yellow")
-
-        for site in self.sites.values():
-            print(f"-- Site {site.name} -- ")
-            for vlan in site.vlans.values():
-                if vlan.exist_remote:
-                    print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", PRESENT))
-                else:
-                    print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", ABSENT))
-
-            print("  ")
-
-            for dev in self.devs.values():
-                if dev.site.name != site.name:
-                    continue
-                if dev.exist_remote:
-                    print("{:4}{:42}{:12}".format("", f"Device {dev.name}", PRESENT))
-                else:
-                    print("{:4}{:42}{:12}".format("", f"Device {dev.name}", ABSENT))
-
-                for intf_name in sorted(dev.interfaces.keys(), key=sort_by_digits):
-                    intf = dev.interfaces[intf_name]
-                    if intf.exist_remote:
-                        print("{:8}{:38}{:12}".format("", f"{intf.name}", PRESENT))
-                    else:
-                        print("{:8}{:38}{:12}".format("", f"{intf.name}", ABSENT))
-
-                    for ip in intf.ips.values():
-                        if ip.exist_remote:
-                            print(
-                                "{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT)
-                            )
-                        else:
-                            print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
-                print("  ")
-
-        return True
-
     def diff_local_remote(self):
-        """ """
+        """ 
+        Check if a device is in sync between the local and the remote system and print the status
+        """
 
         for dev_name in self.devs.inventory.hosts.keys():
-
-            diff = self.devs.inventory.hosts[dev_name].data["obj"].diff()
-
-            if diff.has_diffs():
-                logger.info(f"{dev_name} is NOT up to date on the remote system")
-            else:
-                logger.info(f"{dev_name} is up to date")
+            self.get_dev(dev_name).print_sync_status()
 
     def print_diffs(self):
         """ """
@@ -608,7 +551,7 @@ class NetworkImporter:
                 diff.print_detailed()
 
         for cable in self.cables.values():
-            if not cable.valid:
+            if not cable.is_valid:
                 continue
 
             diff = cable.diff()
@@ -617,11 +560,18 @@ class NetworkImporter:
 
     @timeit
     def update_remote(self):
-        """ """
-
+        """ 
+        Update all objects on the remote system
+          - 1/ Update the site and the vlans (serial)
+          - 2/ Update all devices in parallel
+          - 3/ Update all cables (serial)
+        """
+        
+        # Site (serial)
         for site in self.sites.values():
             site.update_remote()
 
+        # Devices (parallel)
         results = self.devs.filter(filter_func=valid_devs).run(
             task=device_update_remote
         )
@@ -635,7 +585,9 @@ class NetworkImporter:
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
-        self.update_cabling_remote()
+        # Cables (serial)
+        for cable in self.cables.values():
+            cable.update_remote(self.nb)
 
         return True
 
@@ -646,9 +598,7 @@ class NetworkImporter:
     @timeit
     def import_cabling_from_configs(self):
         """
-        Build cabling
-          Currently we are only getting the information from the L3 EDGE in Batfish
-          We need to pull LLDP data as well using Nornir to complement that
+        Import cabling information from Batfish layer3Edges
 
         """
 
@@ -664,29 +614,8 @@ class NetworkImporter:
                 intf_a=re.sub("\.\d+$", "", link.Interface.interface),
                 dev_z=link.Remote_Interface.hostname,
                 intf_z=re.sub("\.\d+$", "", link.Remote_Interface.interface),
+                source="config"
             )
-            # cable = Cable()
-            # cable.add_device(
-
-            # )
-            # cable.add_device(
-
-            # )
-
-            # if cable.unique_id and cable.unique_id not in self.cables:
-
-            #     nic = NetworkImporterCable(id=cable.unique_id)
-            #     nic.local = cable
-            #     self.cables[cable.unique_id] = nic
-
-            # elif cable.unique_id and cable.unique_id in self.cables:
-
-            #     if self.cables[cable.unique_id].local:
-            #         logger.debug(
-            #             f"Cable {cable.unique_id} already has a local object .. SKIPPING"
-            #         )
-            #     elif not self.cables[cable.unique_id].local:
-            #         self.cables[cable.unique_id].local = cable
 
         return True
 
@@ -732,6 +661,7 @@ class NetworkImporter:
                         intf_a=interface,
                         dev_z=clean_name,
                         intf_z=neighbors[0]["port"],
+                        source="lldp"
                     )
 
         return True
@@ -746,11 +676,12 @@ class NetworkImporter:
             Check that both interfaces are not already connected to a different device/interface
 
         When a cable is not valid, update the flag valid on the object itself
+        Non valid cables will be ignored later on for update/creation 
         """
 
         for cable in self.cables.values():
 
-            cable.valid = True
+            cable.is_valid = True
 
             for side in ["a", "z"]:
 
@@ -760,7 +691,7 @@ class NetworkImporter:
                     logger.debug(
                         f"CABLE: {dev_name} not present in devices list ({side} side)"
                     )
-                    cable.valid = False
+                    cable.is_valid = False
                     cable.error = "missing-device"
                     continue
 
@@ -770,7 +701,7 @@ class NetworkImporter:
                     logger.warning(
                         f"CABLE: {dev_name}:{intf_name} not present in interfaces list"
                     )
-                    cable.valid = False
+                    cable.is_valid = False
                     cable.error = "missing-interface"
                     continue
 
@@ -778,9 +709,11 @@ class NetworkImporter:
                     logger.debug(
                         f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
                     )
-                    cable.valid = False
+                    cable.is_valid = False
                     cable.error = "virtual-interface"
                     continue
+
+                cable.add_interface(dev.interfaces[intf_name])
 
                 remote_side = "z"
                 if side == "z":
@@ -811,7 +744,7 @@ class NetworkImporter:
                     logger.debug(
                         f"CABLE: {dev_name}:{intf_name} is already connected but to a different type of interface  ({cable_type})"
                     )
-                    cable.valid = False
+                    cable.is_valid = False
                     cable.error = "wrong-cable-type"
                     continue
 
@@ -827,7 +760,7 @@ class NetworkImporter:
                         logger.warning(
                             f"CABLE: {dev_name}:{intf_name} is already connected but to a different device ({remote_host_reported} vs {remote_device_expected})"
                         )
-                        cable.valid = False
+                        cable.is_valid = False
                         cable.error = "wrong-peer-device"
                         continue
 
@@ -838,7 +771,7 @@ class NetworkImporter:
                         logger.warning(
                             f"CABLE:  {dev_name}:{intf_name} is already connected but to a different interface ({remote_int_reported} vs {remote_intf_expected})"
                         )
-                        cable.valid = False
+                        cable.is_valid = False
                         cable.error = "interface-already-connected"
                         continue
 
@@ -848,54 +781,9 @@ class NetworkImporter:
 
         for cable in self.cables.values():
 
-            if not cable.valid:
-                continue
+            cable.update_remote(self.nb)
 
-            if cable.local and cable.remote:
-                pass
-
-            elif not cable.local and cable.remote:
-                logger.debug(
-                    f"Cable {cable.unique_id}, not present locally, deleting in netbox .. "
-                )
-
-                cable.remote.delete()
-                pass
-
-            elif cable.local and not cable.remote:
-
-                dev_a_name, intf_a_name = cable.get_device_intf("a")
-                dev_z_name, intf_z_name = cable.get_device_intf("z")
-
-                dev_a = self.get_dev(dev_a_name)
-                dev_z = self.get_dev(dev_z_name)
-
-                if (
-                    not dev_a.interfaces[intf_a_name].remote.remote
-                    or not dev_a.interfaces[intf_a_name].remote.remote
-                ):
-
-                    logger.warning(
-                        f"Unable to create cable {cable.unique_id} in Netbox, both interfaces are not present"
-                    )
-                    continue
-
-                logger.info(
-                    f"Cable {cable.unique_id} not present will create it in netbox "
-                )
-
-                nbc = self.nb.dcim.cables.create(
-                    termination_a_type="dcim.interface",
-                    termination_a_id=dev_a.interfaces[intf_a_name].remote.remote.id,
-                    termination_b_type="dcim.interface",
-                    termination_b_id=dev_z.interfaces[intf_z_name].remote.remote.id,
-                )
-
-                cable_driver = get_driver("cable")
-
-                cable.remote = cable_driver()
-                cable.remote.add(cable=nbc)
-
+         
     # --------------------------------------------------------------------------
     # Transceivers
     # --------------------------------------------------------------------------
@@ -945,6 +833,10 @@ class NetworkImporter:
                     intf_name=transceiver["interface"].strip(), optic=nio
                 )
 
+    # --------------------------------------------------------------------------
+    # Vlans
+    # --------------------------------------------------------------------------
+
     def import_vlans_from_cmds(self):
 
         logger.info("Collecting Vlan information from devices .. ")
@@ -983,7 +875,7 @@ class NetworkImporter:
     # Private methods
     # --------------------------------------------------------------------------
 
-    def __add_cable_local(self, dev_a, intf_a, dev_z, intf_z):
+    def __add_cable_local(self, dev_a, intf_a, dev_z, intf_z, source=None):
         """ 
         
         Print on Screen all devices, interfaces and IPs and how their current status compare to remote
@@ -995,6 +887,7 @@ class NetworkImporter:
             intf_a:  Name of the interface on the side A of the cable
             dev_z: Name of the device on the side Z of the cable
             intf_z:  Name of the interface on the side Z of the cable
+            source: origin of the data
 
         Returns:
             boolean: 
@@ -1003,7 +896,7 @@ class NetworkImporter:
 
         """
 
-        cable = Cable()
+        cable = Cable(origin=source)
         cable.add_device(
             device=dev_a, interface=intf_a,
         )
@@ -1035,3 +928,54 @@ class NetworkImporter:
             ssl_verify=config.netbox["request_ssl_verify"],
         )
         return True
+
+
+    # def print_screen(self):
+    #     """
+    #     Print on Screen all devices, interfaces and IPs and how their current status compare to remote
+    #       Currently we only track PRESENT and ABSENT but we should also track DIFF and UPDATED
+    #       This print function might be better off in the device object ...
+
+    #     Args:
+
+    #     Returns:
+
+    #     """
+    #     PRESENT = colored("PRESENT", "green")
+    #     ABSENT = colored("ABSENT", "yellow")
+
+    #     for site in self.sites.values():
+    #         print(f"-- Site {site.name} -- ")
+    #         for vlan in site.vlans.values():
+    #             if vlan.exist_remote:
+    #                 print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", PRESENT))
+    #             else:
+    #                 print("{:4}{:32}{:12}".format("", f"Vlan {vlan.vid}", ABSENT))
+
+    #         print("  ")
+
+    #         for dev in self.devs.values():
+    #             if dev.site.name != site.name:
+    #                 continue
+    #             if dev.exist_remote:
+    #                 print("{:4}{:42}{:12}".format("", f"Device {dev.name}", PRESENT))
+    #             else:
+    #                 print("{:4}{:42}{:12}".format("", f"Device {dev.name}", ABSENT))
+
+    #             for intf_name in sorted(dev.interfaces.keys(), key=sort_by_digits):
+    #                 intf = dev.interfaces[intf_name]
+    #                 if intf.exist_remote:
+    #                     print("{:8}{:38}{:12}".format("", f"{intf.name}", PRESENT))
+    #                 else:
+    #                     print("{:8}{:38}{:12}".format("", f"{intf.name}", ABSENT))
+
+    #                 for ip in intf.ips.values():
+    #                     if ip.exist_remote:
+    #                         print(
+    #                             "{:12}{:34}{:12}".format("", f"{ip.address}", PRESENT)
+    #                         )
+    #                     else:
+    #                         print("{:12}{:34}{:12}".format("", f"{ip.address}", ABSENT))
+    #             print("  ")
+
+    #     return True

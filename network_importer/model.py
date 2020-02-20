@@ -242,9 +242,21 @@ class NetworkImporterDevice:
 
         return diff
 
-    def update_interface_remote(  # pylint: disable=inconsistent-return-statements
-        self, intf
-    ):
+    def print_sync_status(self):
+        """
+        Check of the device is in sync between local and remote and print the status
+        """
+
+        diff = self.diff()
+
+        if diff.has_diffs():
+            logger.info(f"{self.name} | NOT up to date on the remote system")
+        else:
+            logger.info(f"{self.name} | up to date on the remote system")
+
+        return True
+
+    def update_interface_remote(self, intf):
         """
         Update Interface on the remote system
           Create or Update interface as needed
@@ -585,7 +597,8 @@ class NetworkImporterDevice:
         if self.nb:
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
-            self._get_remote_inventory_list()
+            if config.main["import_transceivers"]: 
+                self._get_remote_inventory_list()
 
         return True
 
@@ -649,12 +662,7 @@ class NetworkImporterDevice:
 
     def _get_remote_inventory_list(self):
         """
-        Query Netbox for the remote inventory items
-          Extrac
-
-        Args:
-
-        Returns:
+        Query Netbox for the remote inventory items to find transceiver
 
         """
 
@@ -1197,15 +1205,92 @@ class NetworkImporterCable(NetworkImporterObjBase):
 
     obj_type = "cable"
 
+
     def __init__(self, id=None):
         """ """
         self.id = id
-        self.valid = None
+        self.is_valid = None
+        self.interfaces = {}
 
-    def update_remote(self):
+    def add_interface(self, intf):
+        """  
+        Attached a NetworkImporterInterface object to the cable
+        The object will be used later to create or update the cable
+        """
+
+        side = None
+        if "a" not in self.interfaces.keys():
+            side = "a"
+        elif "z" not in self.interfaces.keys():
+            side = "z"
+        else:
+            raise Exception(
+                f"NetworkImporterCable {self.id}, Maximum number of interfaces already reached"
+            )
+
+        self.interfaces[side] = intf
+
+        return True
+
+    def update_remote(self, nb):
         """ """
-        if not self.valid:
+        if not self.is_valid:
             return False
+
+        if self.local and self.remote:
+            return False
+
+        elif not self.local and self.remote:
+            logger.debug(
+                f"Cable {self.id} not present locally, deleting in netbox .. "
+            )
+
+            self.remote.delete()
+            return True
+
+        elif self.local and not self.remote:
+
+            # dev_a_name, intf_a_name = self.get_device_intf("a")
+            # dev_z_name, intf_z_name = self.get_device_intf("z")
+
+            # dev_a = self.get_dev(dev_a_name)
+            # dev_z = self.get_dev(dev_z_name)
+
+            if (
+                not "a" in self.interfaces
+                or not "z" in self.interfaces
+            ):
+
+                logger.warning(
+                    f"Unable to create cable {self.id} in Netbox, both interfaces are not present"
+                )
+                return False
+
+            elif (
+                not self.interfaces["a"].remote.remote
+                or not self.interfaces["z"].remote.remote
+            ):
+
+                logger.warning(
+                    f"Unable to create cable {self.id} in Netbox, both interfaces do not have a remote object"
+                )
+                return False
+
+            logger.info(
+                f"Cable {self.id} not present will create it in netbox "
+            )
+
+            nbc = nb.dcim.cables.create(
+                termination_a_type="dcim.interface",
+                termination_a_id=self.interfaces["a"].remote.remote.id,
+                termination_b_type="dcim.interface",
+                termination_b_id=self.interfaces["z"].remote.remote.id,
+            )
+
+            cable_driver = get_driver("cable")
+            self.remote = cable_driver()
+            self.remote.add(cable=nbc)
+
 
     # def add_remote(self, remote):
     #     """ """
