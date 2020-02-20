@@ -161,12 +161,13 @@ class Cable(BaseModel):
     Base Class for cable
     """
 
-    exclude_from_diff = ["connections"]
+    exclude_from_diff = ["connections", "origin"]
     valid_sides = ["a", "z"]
 
-    def __init__(self):
+    def __init__(self, origin=None):
         self.connections = {}
         self.unique_id = None
+        self.origin = origin
 
     def get_device_intf(self, side):
         """
