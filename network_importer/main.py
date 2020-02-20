@@ -566,7 +566,7 @@ class NetworkImporter:
           - 2/ Update all devices in parallel
           - 3/ Update all cables (serial)
         """
-        
+
         # Site (serial)
         for site in self.sites.values():
             site.update_remote()
@@ -614,7 +614,7 @@ class NetworkImporter:
                 intf_a=re.sub("\.\d+$", "", link.Interface.interface),
                 dev_z=link.Remote_Interface.hostname,
                 intf_z=re.sub("\.\d+$", "", link.Remote_Interface.interface),
-                source="config"
+                source="config",
             )
 
         return True
@@ -661,7 +661,7 @@ class NetworkImporter:
                         intf_a=interface,
                         dev_z=clean_name,
                         intf_z=neighbors[0]["port"],
-                        source="lldp"
+                        source="lldp",
                     )
 
         return True
@@ -783,7 +783,6 @@ class NetworkImporter:
 
             cable.update_remote(self.nb)
 
-         
     # --------------------------------------------------------------------------
     # Transceivers
     # --------------------------------------------------------------------------
@@ -928,7 +927,6 @@ class NetworkImporter:
             ssl_verify=config.netbox["request_ssl_verify"],
         )
         return True
-
 
     # def print_screen(self):
     #     """

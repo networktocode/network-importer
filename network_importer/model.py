@@ -597,7 +597,7 @@ class NetworkImporterDevice:
         if self.nb:
             self._get_remote_interfaces_list()
             self._get_remote_ips_list()
-            if config.main["import_transceivers"]: 
+            if config.main["import_transceivers"]:
                 self._get_remote_inventory_list()
 
         return True
@@ -1205,7 +1205,6 @@ class NetworkImporterCable(NetworkImporterObjBase):
 
     obj_type = "cable"
 
-
     def __init__(self, id=None):
         """ """
         self.id = id
@@ -1241,9 +1240,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
             return False
 
         elif not self.local and self.remote:
-            logger.debug(
-                f"Cable {self.id} not present locally, deleting in netbox .. "
-            )
+            logger.debug(f"Cable {self.id} not present locally, deleting in netbox .. ")
 
             self.remote.delete()
             return True
@@ -1256,10 +1253,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
             # dev_a = self.get_dev(dev_a_name)
             # dev_z = self.get_dev(dev_z_name)
 
-            if (
-                not "a" in self.interfaces
-                or not "z" in self.interfaces
-            ):
+            if not "a" in self.interfaces or not "z" in self.interfaces:
 
                 logger.warning(
                     f"Unable to create cable {self.id} in Netbox, both interfaces are not present"
@@ -1276,9 +1270,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
                 )
                 return False
 
-            logger.info(
-                f"Cable {self.id} not present will create it in netbox "
-            )
+            logger.info(f"Cable {self.id} not present will create it in netbox ")
 
             nbc = nb.dcim.cables.create(
                 termination_a_type="dcim.interface",
@@ -1290,7 +1282,6 @@ class NetworkImporterCable(NetworkImporterObjBase):
             cable_driver = get_driver("cable")
             self.remote = cable_driver()
             self.remote.add(cable=nbc)
-
 
     # def add_remote(self, remote):
     #     """ """
