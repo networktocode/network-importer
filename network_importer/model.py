@@ -20,13 +20,6 @@ from network_importer.utils import expand_vlans_list
 
 from network_importer.drivers import get_driver
 
-from network_importer.remote.netbox import (
-    VlanRemote,
-    InterfaceRemote,
-    IPAddressRemote,
-    OpticRemote,
-    get_netbox_interface_properties,
-)
 from network_importer.base_model import (  # pylint: disable=unused-import
     Interface,
     IPAddress,
@@ -860,20 +853,16 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
     def ip_on_interface(self, ip_addr):
         """Examine IP to determine if it exists on this interface
-        
+
         Args:
             ip_addr (:obj:`NetworkImporterIP`): IP address object to be examined
-        
+
         Returns:
             bool: indicates whether (True) or not (False) the IP address passed
                   into the function exists on this interface
         """
 
-        if ip_addr in self.ips.keys():
-            return True
-
-        else:
-            return False
+        return ip_addr in self.ips.keys()
 
 
 class NetworkImporterSite:
