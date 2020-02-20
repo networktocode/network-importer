@@ -1,0 +1,33 @@
+{
+    "id": 251,
+    "device": {
+      "id": 3,
+      "url": "https://localhost/api/dcim/devices/3/",
+      "name": "deviceA",
+      "display_name": "deviceA"
+    },
+    "name": "loopback0",
+    "type": {
+      "value": 0,
+      "label": "Virtual"
+    },
+    "form_factor": {
+      "value": 0,
+      "label": "Virtual"
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": 1500,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "loopback description",
+    "connected_endpoint_type": null,
+    "connected_endpoint": null,
+    "connection_status": null,
+    "cable": null,
+    "mode": null,
+    "untagged_vlan": null,
+    "tagged_vlans": [],
+    "tags": [],
+    "count_ipaddresses": 1
+  }

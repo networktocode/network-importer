@@ -16,93 +16,50 @@ from network_importer.base_model import Interface, IPAddress, Optic, Vlan
 import network_importer.config as config
 
 
-def get_netbox_interface_properties(intf):
-    """
-    Get a dict with all interface properties in Netbox format
-
-    Input: Vlan
-    Output: Dictionnary of properties ready to pass to netbox
-    minus the vlans IDs that needs to be converted
-
-    Args:
-      intf:
-
-    Returns:
-
-    """
-
-    intf_properties = dict()
-
-    if intf.is_lag:
-        intf_properties["type"] = 200
-    elif intf.is_virtual:
-        intf_properties["type"] = 0
-    elif intf.speed == 1000000000:
-        intf_properties["type"] = 800
-    elif intf.speed == 1000000000:
-        intf_properties["type"] = 1100
-    elif intf.speed == 10000000000:
-        intf_properties["type"] = 1200
-    elif intf.speed == 25000000000:
-        intf_properties["type"] = 1350
-    elif intf.speed == 40000000000:
-        intf_properties["type"] = 1400
-    elif intf.speed == 100000000000:
-        intf_properties["type"] = 1600
-    else:
-        intf_properties["type"] = 1100
-
-    if intf.mtu:
-        intf_properties["mtu"] = intf.mtu
-
-    if intf.description is not None:
-        intf_properties["description"] = intf.description
-
-    # TODO Add a check here to see what is the current status
-    if intf.switchport_mode == "ACCESS":
-        intf_properties["mode"] = 100
-    elif intf.switchport_mode == "TRUNK":
-        intf_properties["mode"] = 200
-    else:
-        intf_properties["mode"] = None
-
-    if not intf.active is None:
-        intf_properties["enabled"] = intf.active
-
-    return intf_properties
-
-
-class InterfaceRemote(Interface):
-    """
-    Remote Interface class
-    """
+class NetboxInterface(Interface):
+    """ """
 
     def __init__(self, **kargs):
-        """
-
-
-        Args:
-          **kargs:
-
-        Returns:
-
-        """
+        """ """
         super().__init__(**kargs)
         self.remote = None
 
-    def add_remote_info(self, rem):
-        """
+    def add(self, rem):
+        """ """
+        raise NotImplementedError
+
+    def update(self, rem):
+        """ """
+
+        # Clear all existing info first
+        self.mode = None  # TRUNK, ACCESS, L3, NONE
+        self.is_virtual = None
+        self.active = None
+        self.is_lag_member = None
+        self.parent = None
+        self.is_lag = None
+        self.lag_members = None
+
+        self.description = None
+        self.speed = None
+        self.mtu = None
+        self.switchport_mode = None  # = None
+        self.access_vlan = None
+        self.allowed_vlans = None
+
+        self.add(rem)
+
+    def delete(self):
+        """ """
+        self.remote.delete()
+        return True
 
 
-        Args:
-          rem:
-
-        Returns:
-
-        """
+class Netbox26Interface(NetboxInterface):
+    def add(self, rem):
+        """ """
 
         self.remote = rem
-
         self.name = rem.name
 
         if config.main["import_intf_status"]:
@@ -159,41 +116,165 @@ class InterfaceRemote(Interface):
 
         return True
 
-    def update_remote_info(self, rem):
+    @staticmethod
+    def get_properties(intf):
         """
+        Get a dict with all interface properties in Netbox format
 
+        Input: Vlan
+        Output: Dictionnary of properties ready to pass to netbox
+        minus the vlans IDs that needs to be converted
 
         Args:
-          rem:
+        intf:
 
         Returns:
 
         """
 
-        # Clear all existing info first
-        self.mode = None  # TRUNK, ACCESS, L3, NONE
-        self.is_virtual = None
-        self.active = None
-        self.is_lag_member = None
-        self.parent = None
-        self.is_lag = None
-        self.lag_members = None
+        intf_properties = dict()
 
-        self.description = None
-        self.speed = None
-        self.mtu = None
-        self.switchport_mode = None  # = None
-        self.access_vlan = None
-        self.allowed_vlans = None
+        if intf.is_lag:
+            intf_properties["type"] = 200
+        elif intf.is_virtual:
+            intf_properties["type"] = 0
+        elif intf.speed == 1000000000:
+            intf_properties["type"] = 800
+        elif intf.speed == 1000000000:
+            intf_properties["type"] = 1100
+        elif intf.speed == 10000000000:
+            intf_properties["type"] = 1200
+        elif intf.speed == 25000000000:
+            intf_properties["type"] = 1350
+        elif intf.speed == 40000000000:
+            intf_properties["type"] = 1400
+        elif intf.speed == 100000000000:
+            intf_properties["type"] = 1600
+        else:
+            intf_properties["type"] = 1100
 
-        self.add_remote_info(rem)
+        if intf.mtu:
+            intf_properties["mtu"] = intf.mtu
 
-    def delete(self):
-        """
-        Delete remote
-        """
-        self.remote.delete()
+        if intf.description is not None:
+            intf_properties["description"] = intf.description
+
+        # TODO Add a check here to see what is the current status
+        if intf.switchport_mode == "ACCESS":
+            intf_properties["mode"] = 100
+        elif intf.switchport_mode == "TRUNK":
+            intf_properties["mode"] = 200
+        else:
+            intf_properties["mode"] = None
+
+        if not intf.active is None:
+            intf_properties["enabled"] = intf.active
+
+        return intf_properties
+
+
+class Netbox27Interface(NetboxInterface):
+    def add(self, rem):
+        """ """
+
+        self.remote = rem
+        self.name = rem.name
+
+        if config.main["import_intf_status"]:
+            self.active = rem.enabled
+        else:
+            self.active = None
+
+        self.description = rem.description
+
+        if rem.type.value == "lag":
+            self.is_lag = True
+            self.is_virtual = False
+        elif rem.type.value == "virtual":
+            self.is_virtual = True
+            self.is_lag = False
+        else:
+            self.is_lag = False
+            self.is_virtual = False
+
+        if rem.lag:
+            self.is_lag_member = True
+            self.is_lag = False
+            self.is_virtual = False
+            self.parent = rem.lag.name
+
+        if rem.mode and rem.mode.value == "access":
+            self.switchport_mode = "ACCESS"
+            self.mode = self.switchport_mode
+        elif rem.mode and rem.mode.value == "tagged":
+            self.switchport_mode = "TRUNK"
+            self.mode = self.switchport_mode
+        else:
+            self.switchport_mode = "NONE"
+            self.mode = "NONE"
+
+        if rem.type.value == 800:
+            self.speed = 1000000000
+        elif rem.type.value == 1100:
+            self.speed = 1000000000
+        elif rem.type.value == 1200:
+            self.speed = 10000000000
+        elif rem.type.value == 1350:
+            self.speed = 25000000000
+        elif rem.type.value == 1400:
+            self.speed = 40000000000
+        elif rem.type.value == 1600:
+            self.speed = 100000000000
+
+        if rem.tagged_vlans:
+            self.allowed_vlans = [v.vid for v in rem.tagged_vlans]
+
+        if rem.untagged_vlan:
+            self.access_vlan = rem.untagged_vlan.vid
+
         return True
+
+    @staticmethod
+    def get_properties(intf):
+        """
+        Get a dict with all interface properties in Netbox format
+
+        Input: Vlan
+        Output: Dictionnary of properties ready to pass to netbox
+        minus the vlans IDs that needs to be converted
+
+        Args:
+        intf:
+
+        Returns:
+
+        """
+
+        intf_properties = dict()
+
+        if intf.is_lag:
+            intf_properties["type"] = "lag"
+        elif intf.is_virtual:
+            intf_properties["type"] = "virtual"
+        else:
+            intf_properties["type"] = "10gbase-x-sfpp"
+
+        if intf.mtu:
+            intf_properties["mtu"] = intf.mtu
+
+        if intf.description is not None:
+            intf_properties["description"] = intf.description
+
+        # TODO Add a check here to see what is the current status
+        if intf.switchport_mode == "ACCESS":
+            intf_properties["mode"] = "access"
+        elif intf.switchport_mode == "TRUNK":
+            intf_properties["mode"] = "tagged"
+
+        if not intf.active is None:
+            intf_properties["enabled"] = intf.active
+
+        return intf_properties
 
 
 # TODO need to find a way to build a table to convert back and forth
@@ -227,49 +308,23 @@ class InterfaceRemote(Interface):
 # IFACE_TYPE_400GE_QSFP_DD = 1750
 
 
-class IPAddressRemote(IPAddress):
-    """
-    Remote IP Address class definition
-    """
+class NetboxIPAddress(IPAddress):
+    """ """
 
     def __init__(self, **kargs):
-        """
-
-
-        Args:
-          **kargs:
-
-        Returns:
-
-        """
+        """ """
         super().__init__(**kargs)
         self.remote = None
 
-    def add_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
+    def add(self, rem):
+        """ """
         self.address = rem.address
         self.family = rem.family
         self.remote = rem
 
-    def update_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
-        self.add_remote_info(rem)
+    def update(self, rem):
+        """ """
+        self.add(rem)
 
     def delete(self):
         """
@@ -279,51 +334,25 @@ class IPAddressRemote(IPAddress):
         return True
 
 
-class OpticRemote(Optic):
-    """
-    Remote Optic class
-    """
+class NetboxOptic(Optic):
+    """ """
 
     def __init__(self, **kargs):
-        """
-
-
-        Args:
-          **kargs:
-
-        Returns:
-
-        """
+        """ """
         super().__init__(**kargs)
         self.remote = None
 
-    def add_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
+    def add(self, rem):
+        """ """
         self.optic_type = rem.part_id
         self.intf = rem.description
         self.serial = rem.serial
         self.name = rem.serial
         self.remote = rem
 
-    def update_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
-        self.add_remote_info(rem)
+    def update(self, rem):
+        """ """
+        self.add(rem)
 
     def delete(self):
         """
@@ -338,35 +367,16 @@ class OpticRemote(Optic):
         return True
 
 
-class VlanRemote(Vlan):
-    """
-    Remote VLAN Class
-    """
+class NetboxVlan(Vlan):
+    """ """
 
     def __init__(self, **kargs):
-        """
-
-
-        Args:
-          **kargs:
-
-        Returns:
-
-        """
+        """ """
         super().__init__(**kargs)
         self.remote = None
 
-    def add_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
-
+    def add(self, rem):
+        """ """
         self.vid = rem.vid
         self.name = rem.name
 
@@ -378,17 +388,9 @@ class VlanRemote(Vlan):
 
         self.remote = rem
 
-    def update_remote_info(self, rem):
-        """
-
-
-        Args:
-          rem:
-
-        Returns:
-
-        """
-        self.add_remote_info(rem)
+    def update(self, rem):
+        """ """
+        self.add(rem)
 
     def delete(self):
         """

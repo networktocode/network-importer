@@ -17,13 +17,9 @@ import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
 from network_importer.utils import expand_vlans_list
-from network_importer.remote.netbox import (
-    VlanRemote,
-    InterfaceRemote,
-    IPAddressRemote,
-    OpticRemote,
-    get_netbox_interface_properties,
-)
+
+from network_importer.drivers import get_driver
+
 from network_importer.base_model import (  # pylint: disable=unused-import
     Interface,
     IPAddress,
@@ -51,7 +47,6 @@ class NetworkImporterObjBase:
     def add_local(self, local):
         """
 
-
         Args:
           local:
 
@@ -70,7 +65,7 @@ class NetworkImporterObjBase:
         Returns:
 
         """
-        self.remote.update_remote_info(remote)
+        self.remote.update(remote)
 
     def delete_remote(self):
         """ """
@@ -227,7 +222,18 @@ class NetworkImporterDevice:
         sorted_intfs_delete = intfs_regs + intfs_lag_members + intfs_lags
 
         for intf in sorted_intfs_delete:
-            if not intf.exist_local() and intf.exist_remote():
+            if self.remote.primary_ip and intf.ip_on_interface(
+                self.remote.primary_ip.address
+            ):
+                logger.warning(
+                    f"{self.name} | Will not delete {intf.name}, currently primary mgmt interface",
+                )
+
+            if (
+                not intf.exist_local()
+                and intf.exist_remote()
+                and not intf.ip_on_interface(self.remote.primary_ip.address)
+            ):
                 intf.delete_remote()
 
     def diff(self):
@@ -253,9 +259,9 @@ class NetworkImporterDevice:
         Returns:
 
         """
-
         if intf.exist_local():
-            intf_properties = get_netbox_interface_properties(intf.local)
+            intf_driver = get_driver("interface")
+            intf_properties = intf_driver.get_properties(intf.local)
 
             # Hack for VMX to set the interface type properly
             if self.vendor and self.vendor == "juniper" and "." not in intf.name:
@@ -384,6 +390,7 @@ class NetworkImporterDevice:
                 )
 
             # TODO need to implement IP update
+            # If IP address isn't on the device, delete it from netbox, unless it's the primary IP
             elif not ip.exist_local() and ip.exist_remote():
                 if (
                     self.remote.primary_ip
@@ -533,7 +540,7 @@ class NetworkImporterDevice:
 
         Inputs:
             intf_name: string, name of the interface to associated the new IP with
-            address: string, ip address of the new IP
+            ip: string, ip address of the new IP
 
         Args:
           intf_name:
@@ -825,9 +832,9 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         Returns:
 
         """
-
-        self.remote = InterfaceRemote()
-        self.remote.add_remote_info(remote)
+        intf_driver = get_driver("interface")
+        self.remote = intf_driver()
+        self.remote.add(remote)
 
         return True
 
@@ -843,6 +850,19 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             diff.add_child(self.optic.diff())
 
         return diff
+
+    def ip_on_interface(self, ip_addr):
+        """Examine IP to determine if it exists on this interface
+
+        Args:
+            ip_addr (:obj:`NetworkImporterIP`): IP address object to be examined
+
+        Returns:
+            bool: indicates whether (True) or not (False) the IP address passed
+                  into the function exists on this interface
+        """
+
+        return ip_addr in self.ips.keys()
 
 
 class NetworkImporterSite:
@@ -1080,8 +1100,9 @@ class NetworkImporterVlan(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = VlanRemote()
-        self.remote.add_remote_info(remote)
+        vlan_driver = get_driver("vlan")
+        self.remote = vlan_driver()
+        self.remote.add(remote)
 
     def add_related_device(self, dev_name):
         """
@@ -1131,8 +1152,9 @@ class NetworkImporterIP(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = IPAddressRemote()
-        self.remote.add_remote_info(remote)
+        ip_driver = get_driver("ip_address")
+        self.remote = ip_driver()
+        self.remote.add(remote)
 
         return True
 
@@ -1162,8 +1184,9 @@ class NetworkImporterOptic(NetworkImporterObjBase):
         Returns:
 
         """
-        self.remote = OpticRemote()
-        self.remote.add_remote_info(remote)
+        optic_driver = get_driver("optic")
+        self.remote = optic_driver()
+        self.remote.add(remote)
 
         if not self.id and self.remote.serial:
             self.id = self.remote.serial

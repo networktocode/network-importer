@@ -1,0 +1,36 @@
+{
+    "id": 15,
+    "family": {
+      "value": 4,
+      "label": "IPv4"
+    },
+    "address": "10.63.0.2/31",
+    "vrf": null,
+    "tenant": null,
+    "status": {
+      "value": "active",
+      "label": "Active",
+      "id": 1
+    },
+    "role": null,
+    "interface": {
+      "id": 302,
+      "url": "http://localhost/api/dcim/interfaces/302/",
+      "device": {
+        "id": 29,
+        "url": "http://localhost/api/dcim/devices/29/",
+        "name": "HQ-CORE-SW02",
+        "display_name": "HQ-CORE-SW02"
+      },
+      "virtual_machine": null,
+      "name": "TenGigabitEthernet1/0/1"
+    },
+    "nat_inside": null,
+    "nat_outside": null,
+    "dns_name": "",
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2020-01-16",
+    "last_updated": "2020-01-16T06:03:16.986000Z"
+  }
