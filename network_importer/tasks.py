@@ -19,7 +19,7 @@ import hashlib
 import copy
 import json
 from pathlib import Path
-
+from collections import defaultdict
 import pynetbox
 
 from nornir.core.task import Result, Task
@@ -323,35 +323,35 @@ def update_configuration(  # pylint: disable=C0330
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    if task.host.platform in ["nxos", "ios"]:
-        try:
-            results = task.run(task=netmiko_send_command, command_string="show run")
-        except:
-            logger.debug(
-                "An exception occured while pulling the configuration", exc_info=True
-            )
-            return Result(host=task.host, failed=True)
+    # if task.host.platform in ["nxos", "ios"]:
+    #     try:
+    #         results = task.run(task=netmiko_send_command, command_string="show run")
+    #     except:
+    #         logger.debug(
+    #             "An exception occured while pulling the configuration", exc_info=True
+    #         )
+    #         return Result(host=task.host, failed=True)
 
-        if results.failed:
-            return Result(host=task.host, failed=True)
+    #     if results.failed:
+    #         return Result(host=task.host, failed=True)
 
-        new_config = results[0].result
+    #     new_config = results[0].result
 
-    else:
-        try:
-            results = task.run(
-                task=napalm_get, getters=["config"], retrieve="running", full=False
-            )
-        except:
-            logger.debug(
-                "An exception occured while pulling the configuration", exc_info=True
-            )
-            return Result(host=task.host, failed=True)
+    # else:
+    try:
+        results = task.run(
+            task=napalm_get, getters=["config"], retrieve="running", full=False
+        )
+    except:
+        logger.debug(
+            "An exception occured while pulling the configuration", exc_info=True
+        )
+        return Result(host=task.host, failed=True)
 
-        if results.failed:
-            return Result(host=task.host, failed=True)
+    if results.failed:
+        return Result(host=task.host, failed=True)
 
-        new_config = results[0].result["config"]["running"]
+    new_config = results[0].result["config"]["running"]
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
@@ -390,16 +390,44 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
         data = get_data_from_file(task.host.name, cache_name)
         return Result(host=task.host, result=data)
 
-    try:
-        results = task.run(task=napalm_get, getters=["lldp_neighbors"])
-    except:
-        logger.debug("An exception occured while pulling lldp_data", exc_info=True)
-        return Result(host=task.host, failed=True)
+    neighbors = {}
+
+    if config.main["import_cabling"] == "lldp":
+
+        try:
+            results = task.run(task=napalm_get, getters=["lldp_neighbors"])
+            neighbors = results[0].result
+        except:
+            logger.debug("An exception occured while pulling lldp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+    elif config.main["import_cabling"] == "cdp":
+        try:
+            results = task.run(
+                task=netmiko_send_command, 
+                command_string="show cdp neighbors detail", 
+                use_textfsm=True,
+            )
+
+            neighbors = {"lldp_neighbors": defaultdict(list)}
+
+        except:
+            logger.debug("An exception occured while pulling cdp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+        # Convert CDP details output to Napalm LLDP format
+        for neighbor in results[0].result:
+            neighbors["lldp_neighbors"][neighbor["local_port"]].append(
+                dict(
+                    hostname=neighbor["destination_host"],
+                    port=neighbor["remote_port"]
+                )
+            )
 
     if update_cache:
-        save_data_to_file(task.host.name, cache_name, results[0].result)
+        save_data_to_file(task.host.name, cache_name, neighbors)
 
-    return Result(host=task.host, result=results[0].result)
+    return Result(host=task.host, result=neighbors)
 
 
 def collect_transceivers_info(  # pylint: disable=R0911

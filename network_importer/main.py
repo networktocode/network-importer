@@ -593,7 +593,7 @@ class NetworkImporter:
         if config.main["import_cabling"] in ["config", True]:
             self.import_cabling_from_configs()
 
-        if config.main["import_cabling"] in ["cli", True]:
+        if config.main["import_cabling"] in ["lldp", "cdp", True]:
             self.import_cabling_from_cmds()
 
         return True
