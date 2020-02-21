@@ -72,8 +72,8 @@ config_schema = dict(
         network=dict(
             type="object",
             properties=dict(
-                login=dict(type=["string", "null"]),
-                password=dict(type=["string", "null"]),
+                login=dict(type=["string", "null"], default=None),
+                password=dict(type=["string", "null"], default=None),
                 enable=dict(type="boolean", default=True),
             ),
             default={},
