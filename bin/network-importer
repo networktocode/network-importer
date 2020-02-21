@@ -178,8 +178,8 @@ def main():
         ni.diff_local_remote()
 
     if config.logs["performance_log"]:
-        perf.time_tracker.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
-        perf.time_tracker.print_all()
+        perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
+        perf.TIME_TRACKER.print_all()
 
     if config.netbox["status_update"] and options.apply:
         ni.update_devices_status()
@@ -188,7 +188,7 @@ def main():
         ni.print_diffs()
 
     logger.info(
-        f"Execution finished, processed {perf.time_tracker.nbr_devices} device(s) "
+        f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
     )
     if options.debug:
         pdb.set_trace()
