@@ -130,7 +130,7 @@ class NBInventory(Inventory):
             ] = nb_session.dcim.devices.all()
 
         platforms = nb_session.dcim.platforms.all()
-        platforms_mapping = { platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
+        platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
 
         hosts = {}
         groups = {"global": {}}
@@ -156,7 +156,6 @@ class NBInventory(Inventory):
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Only add virtual chassis master as inventory element
-
             if dev.virtual_chassis:
                 if dev.id != dev.virtual_chassis.master.id:
                     continue
@@ -164,6 +163,16 @@ class NBInventory(Inventory):
 
             else:
                 host["data"]["virtual_chassis"] = False
+
+            # If supported_platforms is provided
+            # skip all devices that do not match the list of supported platforms
+            # TODO need to see if we can filter when doing the query directly
+            if config.netbox["supported_platforms"]:
+                if not dev.platform:
+                    continue
+
+                if dev.platform.slug not in config.netbox["supported_platforms"]:
+                    continue
 
             # Add value for IP address
             if dev.primary_ip:

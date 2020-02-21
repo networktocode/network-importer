@@ -57,6 +57,7 @@ config_schema = dict(
             properties=dict(
                 address=dict(type="string", default="http://localhost"),
                 token=dict(type=["string", "null"]),
+                supported_platforms=dict(type="array", items=dict(type="string"), default=[]),
                 status_update=dict(type="boolean", default=False),
                 status_on_pass=dict(type="number", min=0, default=1),
                 status_on_fail=dict(type="number", min=0, default=4),
