@@ -47,6 +47,7 @@ def test_nb_inventory_all(requests_mock):
     assert "el-paso" in inv.hosts.keys()
     assert inv.hosts["el-paso"].platform == "asa"
 
+
 def test_nb_inventory_filtered(requests_mock):
     """
     Test netbox dynamic inventory with filter parameters
@@ -118,19 +119,21 @@ def test_nb_inventory_supported_platforms(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NBInventory(
-        nb_url="http://mock", 
-        nb_token="12349askdnfanasdf",
-        supported_platforms=["ios", "nxos"])  # nosec
+    inv = NBInventory(  # nosec
+        nb_url="http://mock",  # nosec
+        nb_token="12349askdnfanasdf",  # nosec
+        supported_platforms=["ios", "nxos"],  # nosec
+    )  # nosec
 
     assert len(inv.hosts.keys()) == 2
     assert "austin" in inv.hosts.keys()
     assert "dallas" in inv.hosts.keys()
 
-    inv = NBInventory(
-        nb_url="http://mock", 
-        nb_token="12349askdnfanasdf",
-        supported_platforms=["ios"])  # nosec
+    inv = NBInventory(  # nosec
+        nb_url="http://mock",  # nosec
+        nb_token="12349askdnfanasdf",  # nosec
+        supported_platforms=["ios"],  # nosec
+    )  # nosec
 
     assert len(inv.hosts.keys()) == 1
     assert "austin" in inv.hosts.keys()

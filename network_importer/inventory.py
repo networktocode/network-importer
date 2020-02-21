@@ -74,7 +74,7 @@ class NBInventory(Inventory):
     Netbox Inventory Class
     """
 
-    # pylint: disable=C0330
+    # pylint: disable=C0330,W0102
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -106,7 +106,7 @@ class NBInventory(Inventory):
 
         """
         filter_parameters = filter_parameters or {}
-        
+
         # Instantiate netbox session using pynetbox
         nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
 
@@ -121,7 +121,11 @@ class NBInventory(Inventory):
             ] = nb_session.dcim.devices.all()
 
         platforms = nb_session.dcim.platforms.all()
-        platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
+        platforms_mapping = {
+            platform.slug: platform.napalm_driver
+            for platform in platforms
+            if platform.napalm_driver
+        }
 
         hosts = {}
         groups = {"global": {}}
@@ -135,11 +139,7 @@ class NBInventory(Inventory):
             if enable:
                 groups["global"]["connection_options"] = {
                     "netmiko": {"extras": {"secret": password}},
-                    "napalm": {
-                        "extras": {
-                            "optional_args": {"secret": password}
-                        }
-                    },
+                    "napalm": {"extras": {"optional_args": {"secret": password}}},
                 }
 
         for dev in nb_devices:
