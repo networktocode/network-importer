@@ -14,7 +14,6 @@ limitations under the License.
 
 from os import path
 import yaml
-import network_importer.config as config
 from network_importer.inventory import NBInventory
 
 HERE = path.abspath(path.dirname(__file__))
@@ -31,18 +30,22 @@ def test_nb_inventory_all(requests_mock):
         not needed for unit test.
     """
 
-    # Load config data, needed by NBInventory function
-    config.load_config()
-
     # Load mock data fixtures
-    dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
 
-    # Set up mock requests
-    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
     assert len(inv.hosts.keys()) == 6
+    assert "austin" in inv.hosts.keys()
+    assert inv.hosts["austin"].platform == "ios_naplam"
+    assert "dallas" in inv.hosts.keys()
+    assert inv.hosts["dallas"].platform == "nxos_naplam"
+    assert "el-paso" in inv.hosts.keys()
+    assert inv.hosts["el-paso"].platform == "asa"
 
 
 def test_nb_inventory_filtered(requests_mock):
@@ -55,18 +58,12 @@ def test_nb_inventory_filtered(requests_mock):
         not needed for unit test.
     """
 
-    # Load config data, needed by NBInventory function
-    config.load_config()
-
     # Load mock data fixtures
-    dev_filtered_mock_data = yaml.safe_load(
-        open(f"{HERE}/{FIXTURES}/filtered_devices.json")
-    )
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/?name=el-paso", json=data1)
 
-    # Set up mock requests
-    requests_mock.get(
-        "http://mock/api/dcim/devices/?name=el-paso", json=dev_filtered_mock_data
-    )
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv_filtered = NBInventory(  # nosec
         nb_url="http://mock",  # nosec
@@ -89,14 +86,12 @@ def test_nb_inventory_virtual_chassis(requests_mock):
         not needed for unit test.
     """
 
-    # Load config data, needed by NBInventory function
-    config.load_config()
-
     # Load mock data fixtures
-    dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
 
-    # Set up mock requests
-    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
@@ -105,3 +100,41 @@ def test_nb_inventory_virtual_chassis(requests_mock):
     assert "test_dev1" in inv.hosts.keys()
     assert inv.hosts["test_dev1"].data["virtual_chassis"]
     assert not inv.hosts["amarillo"].data["virtual_chassis"]
+
+
+def test_nb_inventory_supported_platforms(requests_mock):
+    """
+    Test netbox dynamic inventory with a list of supported platforms
+
+    Args:
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
+    """
+
+    # Load mock data fixtures
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
+
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
+
+    inv = NBInventory(  # nosec
+        nb_url="http://mock",  # nosec
+        nb_token="12349askdnfanasdf",  # nosec
+        supported_platforms=["ios", "nxos"],  # nosec
+    )  # nosec
+
+    assert len(inv.hosts.keys()) == 2
+    assert "austin" in inv.hosts.keys()
+    assert "dallas" in inv.hosts.keys()
+
+    inv = NBInventory(  # nosec
+        nb_url="http://mock",  # nosec
+        nb_token="12349askdnfanasdf",  # nosec
+        supported_platforms=["ios"],  # nosec
+    )  # nosec
+
+    assert len(inv.hosts.keys()) == 1
+    assert "austin" in inv.hosts.keys()
+    assert "dallas" not in inv.hosts.keys()

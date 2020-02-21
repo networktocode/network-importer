@@ -9,10 +9,10 @@
             "display_name": "el-paso",
             "device_type": {
                 "id": 2,
-                "url": "http://localhost:32769/api/dcim/device-types/2/",
+                "url": "http://localhost/api/dcim/device-types/2/",
                 "manufacturer": {
                     "id": 2,
-                    "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+                    "url": "http://localhost/api/dcim/manufacturers/2/",
                     "name": "cisco",
                     "slug": "cisco"
                 },
@@ -22,7 +22,7 @@
             },
             "device_role": {
                 "id": 1,
-                "url": "http://localhost:32769/api/dcim/device-roles/1/",
+                "url": "http://localhost/api/dcim/device-roles/1/",
                 "name": "spine",
                 "slug": "spine"
             },
@@ -32,7 +32,7 @@
             "asset_tag": null,
             "site": {
                 "id": 1,
-                "url": "http://localhost:32769/api/dcim/sites/1/",
+                "url": "http://localhost/api/dcim/sites/1/",
                 "name": "ni_example_01",
                 "slug": "ni_example_01"
             },

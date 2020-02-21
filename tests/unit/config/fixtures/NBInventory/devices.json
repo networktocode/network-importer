@@ -9,10 +9,10 @@
       "display_name": "amarillo",
       "device_type": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/device-types/1/",
+        "url": "http://localhost/api/dcim/device-types/1/",
         "manufacturer": {
           "id": 1,
-          "url": "http://localhost:32769/api/dcim/manufacturers/1/",
+          "url": "http://localhost/api/dcim/manufacturers/1/",
           "name": "juniper",
           "slug": "juniper"
         },
@@ -22,7 +22,7 @@
       },
       "device_role": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "url": "http://localhost/api/dcim/device-roles/1/",
         "name": "spine",
         "slug": "spine"
       },
@@ -32,7 +32,7 @@
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },
@@ -66,10 +66,10 @@
       "display_name": "austin",
       "device_type": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "url": "http://localhost/api/dcim/device-types/2/",
         "manufacturer": {
           "id": 2,
-          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "url": "http://localhost/api/dcim/manufacturers/2/",
           "name": "cisco",
           "slug": "cisco"
         },
@@ -79,17 +79,22 @@
       },
       "device_role": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "url": "http://localhost/api/dcim/device-roles/1/",
         "name": "spine",
         "slug": "spine"
       },
       "tenant": null,
-      "platform": null,
+      "platform": {
+        "id": 2,
+        "url": "http://localhost/api/dcim/platforms/2/",
+        "name": "ios",
+        "slug": "ios"
+      },
       "serial": "",
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },
@@ -123,10 +128,10 @@
       "display_name": "dallas",
       "device_type": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "url": "http://localhost/api/dcim/device-types/2/",
         "manufacturer": {
           "id": 2,
-          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "url": "http://localhost/api/dcim/manufacturers/2/",
           "name": "cisco",
           "slug": "cisco"
         },
@@ -136,17 +141,22 @@
       },
       "device_role": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-roles/2/",
+        "url": "http://localhost/api/dcim/device-roles/2/",
         "name": "leaf",
         "slug": "leaf"
       },
       "tenant": null,
-      "platform": null,
+      "platform": {
+        "id": 3,
+        "url": "http://localhost/api/dcim/platforms/3/",
+        "name": "nxos",
+        "slug": "nxos"
+      },
       "serial": "",
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },
@@ -180,10 +190,10 @@
       "display_name": "el-paso",
       "device_type": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "url": "http://localhost/api/dcim/device-types/2/",
         "manufacturer": {
           "id": 2,
-          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "url": "http://localhost/api/dcim/manufacturers/2/",
           "name": "cisco",
           "slug": "cisco"
         },
@@ -193,17 +203,22 @@
       },
       "device_role": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "url": "http://localhost/api/dcim/device-roles/1/",
         "name": "spine",
         "slug": "spine"
       },
       "tenant": null,
-      "platform": null,
+      "platform": {
+        "id": 4,
+        "url": "http://localhost/api/dcim/platforms/4/",
+        "name": "asa",
+        "slug": "asa"
+      },
       "serial": "",
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },
@@ -237,10 +252,10 @@
       "display_name": "houston",
       "device_type": {
         "id": 3,
-        "url": "http://localhost:32769/api/dcim/device-types/3/",
+        "url": "http://localhost/api/dcim/device-types/3/",
         "manufacturer": {
           "id": 3,
-          "url": "http://localhost:32769/api/dcim/manufacturers/3/",
+          "url": "http://localhost/api/dcim/manufacturers/3/",
           "name": "arista",
           "slug": "arista"
         },
@@ -250,7 +265,7 @@
       },
       "device_role": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-roles/2/",
+        "url": "http://localhost/api/dcim/device-roles/2/",
         "name": "leaf",
         "slug": "leaf"
       },
@@ -260,7 +275,7 @@
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },
@@ -294,10 +309,10 @@
       "display_name": "san-antonio",
       "device_type": {
         "id": 2,
-        "url": "http://localhost:32769/api/dcim/device-types/2/",
+        "url": "http://localhost/api/dcim/device-types/2/",
         "manufacturer": {
           "id": 2,
-          "url": "http://localhost:32769/api/dcim/manufacturers/2/",
+          "url": "http://localhost/api/dcim/manufacturers/2/",
           "name": "cisco",
           "slug": "cisco"
         },
@@ -307,7 +322,7 @@
       },
       "device_role": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/device-roles/1/",
+        "url": "http://localhost/api/dcim/device-roles/1/",
         "name": "spine",
         "slug": "spine"
       },
@@ -317,7 +332,7 @@
       "asset_tag": null,
       "site": {
         "id": 1,
-        "url": "http://localhost:32769/api/dcim/sites/1/",
+        "url": "http://localhost/api/dcim/sites/1/",
         "name": "ni_example_01",
         "slug": "ni_example_01"
       },

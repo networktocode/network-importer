@@ -14,7 +14,6 @@ limitations under the License.
 # Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
 # pylint: disable=R0913,R0914,E1101,W0613
 
-import os
 import copy
 from typing import Any, Dict, List, Optional, Union
 import pynetbox
@@ -75,14 +74,16 @@ class NBInventory(Inventory):
     Netbox Inventory Class
     """
 
-    # pylint: disable=C0330
+    # pylint: disable=C0330,W0102
     def __init__(
         self,
         nb_url: Optional[str] = None,
         nb_token: Optional[str] = None,
-        use_slugs: bool = True,
         ssl_verify: Union[bool, str] = True,
-        flatten_custom_fields: bool = True,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        enable: Optional[bool] = True,
+        supported_platforms: Optional[List[str]] = [],
         filter_parameters: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
@@ -92,16 +93,10 @@ class NBInventory(Inventory):
           need to see how to contribute back some of these modifications
 
         Args:
-          nb_url: Netbox url
-          You: can also use env variable NB_URL
-          nb_token: Netbokx token
-          use_slugs: Whether to use slugs or not
-          ssl_verify: Enable
           flatten_custom_fields: Whether to assign custom fields directly to the host or not
           filter_parameters: Key
           nb_url: Optional[str]:  (Default value = None)
           nb_token: Optional[str]:  (Default value = None)
-          use_slugs: bool:  (Default value = True)
           ssl_verify: (Default value = True)
           flatten_custom_fields: bool:  (Default value = True)
           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
@@ -111,10 +106,6 @@ class NBInventory(Inventory):
 
         """
         filter_parameters = filter_parameters or {}
-        nb_url = nb_url or os.environ.get("NB_URL", "http://localhost:8080")
-        nb_token = nb_token or os.environ.get(
-            "NB_TOKEN", "0123456789abcdef0123456789abcdef01234567"
-        )
 
         # Instantiate netbox session using pynetbox
         nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
@@ -129,23 +120,26 @@ class NBInventory(Inventory):
                 pynetbox.modules.dcim.Devices
             ] = nb_session.dcim.devices.all()
 
+        platforms = nb_session.dcim.platforms.all()
+        platforms_mapping = {
+            platform.slug: platform.napalm_driver
+            for platform in platforms
+            if platform.napalm_driver
+        }
+
         hosts = {}
         groups = {"global": {}}
 
         # Pull the login and password from the NI config object if available
-        if "login" in config.network and config.network["login"]:
-            groups["global"]["username"] = config.network["login"]
+        if username:
+            groups["global"]["username"] = username
 
-        if "password" in config.network and config.network["password"]:
-            groups["global"]["password"] = config.network["password"]
-            if "enable" in config.network and config.network["enable"]:
+        if password:
+            groups["global"]["password"] = password
+            if enable:
                 groups["global"]["connection_options"] = {
-                    "netmiko": {"extras": {"secret": config.network["password"]}},
-                    "napalm": {
-                        "extras": {
-                            "optional_args": {"secret": config.network["password"]}
-                        }
-                    },
+                    "netmiko": {"extras": {"secret": password}},
+                    "napalm": {"extras": {"optional_args": {"secret": password}}},
                 }
 
         for dev in nb_devices:
@@ -153,7 +147,6 @@ class NBInventory(Inventory):
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Only add virtual chassis master as inventory element
-
             if dev.virtual_chassis:
                 if dev.id != dev.virtual_chassis.master.id:
                     continue
@@ -161,6 +154,16 @@ class NBInventory(Inventory):
 
             else:
                 host["data"]["virtual_chassis"] = False
+
+            # If supported_platforms is provided
+            # skip all devices that do not match the list of supported platforms
+            # TODO need to see if we can filter when doing the query directly
+            if supported_platforms:
+                if not dev.platform:
+                    continue
+
+                if dev.platform.slug not in supported_platforms:
+                    continue
 
             # Add value for IP address
             if dev.primary_ip:
@@ -171,27 +174,21 @@ class NBInventory(Inventory):
                     "not_reacheable_raison"
                 ] = f"primary ip not defined in Netbox"
 
-            # Add values that don't have an option for 'slug'
             host["data"]["serial"] = dev.serial
             host["data"]["vendor"] = dev.device_type.manufacturer.slug
             host["data"]["asset_tag"] = dev.asset_tag
-
-            if flatten_custom_fields:
-                for cust_field, value in dev.custom_fields.items():
-                    host["data"][cust_field] = value
-            else:
-                host["data"]["custom_fields"] = dev.custom_fields
-
-            # Add values that do have an option for 'slug'
+            host["data"]["custom_fields"] = dev.custom_fields
             host["data"]["site"] = dev.site.slug
             host["data"]["role"] = dev.device_role.slug
             host["data"]["model"] = dev.device_type.slug
 
             # Attempt to add 'platform' based of value in 'slug'
-            host["platform"] = dev.platform.slug if dev.platform else None
-
-            #     "cisco_" + d["platform"]["slug"] if d["platform"] else None
-            # )
+            if dev.platform and dev.platform.slug in platforms_mapping:
+                host["platform"] = platforms_mapping[dev.platform.slug]
+            elif dev.platform:
+                host["platform"] = dev.platform.slug
+            else:
+                host["platform"] = None
 
             host["groups"] = ["global", dev.site.slug, dev.device_role.slug]
 
