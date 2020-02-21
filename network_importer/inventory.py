@@ -129,6 +129,9 @@ class NBInventory(Inventory):
                 pynetbox.modules.dcim.Devices
             ] = nb_session.dcim.devices.all()
 
+        platforms = nb_session.dcim.platforms.all()
+        platforms_mapping = { platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
+
         hosts = {}
         groups = {"global": {}}
 
@@ -188,10 +191,12 @@ class NBInventory(Inventory):
             host["data"]["model"] = dev.device_type.slug
 
             # Attempt to add 'platform' based of value in 'slug'
-            host["platform"] = dev.platform.slug if dev.platform else None
-
-            #     "cisco_" + d["platform"]["slug"] if d["platform"] else None
-            # )
+            if dev.platform and dev.platform.slug in platforms_mapping:
+                host["platform"] = platforms_mapping[dev.platform.slug]
+            elif dev.platform:
+                host["platform"] = dev.platform.slug
+            else:
+                host["platform"] = None
 
             host["groups"] = ["global", dev.site.slug, dev.device_role.slug]
 

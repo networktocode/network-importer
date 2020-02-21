@@ -35,10 +35,11 @@ def test_nb_inventory_all(requests_mock):
     config.load_config()
 
     # Load mock data fixtures
-    dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
 
-    # Set up mock requests
-    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
@@ -59,14 +60,11 @@ def test_nb_inventory_filtered(requests_mock):
     config.load_config()
 
     # Load mock data fixtures
-    dev_filtered_mock_data = yaml.safe_load(
-        open(f"{HERE}/{FIXTURES}/filtered_devices.json")
-    )
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/?name=el-paso", json=data1)
 
-    # Set up mock requests
-    requests_mock.get(
-        "http://mock/api/dcim/devices/?name=el-paso", json=dev_filtered_mock_data
-    )
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv_filtered = NBInventory(  # nosec
         nb_url="http://mock",  # nosec
@@ -93,10 +91,11 @@ def test_nb_inventory_virtual_chassis(requests_mock):
     config.load_config()
 
     # Load mock data fixtures
-    dev_mock_data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
 
-    # Set up mock requests
-    requests_mock.get("http://mock/api/dcim/devices/", json=dev_mock_data)
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
