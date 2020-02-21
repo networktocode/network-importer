@@ -14,7 +14,6 @@ limitations under the License.
 
 from os import path
 import yaml
-import network_importer.config as config
 from network_importer.inventory import NBInventory
 
 HERE = path.abspath(path.dirname(__file__))
@@ -30,9 +29,6 @@ def test_nb_inventory_all(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
-    # Load config data, needed by NBInventory function
-    config.load_config()
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
@@ -55,9 +51,6 @@ def test_nb_inventory_filtered(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
-    # Load config data, needed by NBInventory function
-    config.load_config()
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
@@ -86,9 +79,6 @@ def test_nb_inventory_virtual_chassis(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
-    # Load config data, needed by NBInventory function
-    config.load_config()
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))

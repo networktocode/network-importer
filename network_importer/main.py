@@ -172,6 +172,10 @@ class NetworkImporter:
                         "nb_token": config.netbox["token"],
                         "filter_parameters": params,
                         "ssl_verify": config.netbox["request_ssl_verify"],
+                        "username": config.network["username"],
+                        "password": config.network["password"],
+                        "enable": config.network["enable"],
+                        "supported_platforms": config.network["supported_platforms"],
                     },
                 },
             )
