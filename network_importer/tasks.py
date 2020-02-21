@@ -323,21 +323,6 @@ def update_configuration(  # pylint: disable=C0330
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    # if task.host.platform in ["nxos", "ios"]:
-    #     try:
-    #         results = task.run(task=netmiko_send_command, command_string="show run")
-    #     except:
-    #         logger.debug(
-    #             "An exception occured while pulling the configuration", exc_info=True
-    #         )
-    #         return Result(host=task.host, failed=True)
-
-    #     if results.failed:
-    #         return Result(host=task.host, failed=True)
-
-    #     new_config = results[0].result
-
-    # else:
     try:
         results = task.run(
             task=napalm_get, getters=["config"], retrieve="running", full=False
@@ -404,8 +389,8 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
     elif config.main["import_cabling"] == "cdp":
         try:
             results = task.run(
-                task=netmiko_send_command, 
-                command_string="show cdp neighbors detail", 
+                task=netmiko_send_command,
+                command_string="show cdp neighbors detail",
                 use_textfsm=True,
             )
 
@@ -419,8 +404,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
         for neighbor in results[0].result:
             neighbors["lldp_neighbors"][neighbor["local_port"]].append(
                 dict(
-                    hostname=neighbor["destination_host"],
-                    port=neighbor["remote_port"]
+                    hostname=neighbor["destination_host"], port=neighbor["remote_port"]
                 )
             )
 
