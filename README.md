@@ -23,14 +23,14 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 ```toml
 [main]
 # import_ips = true 
-# import_cabling = true
+# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
 # import_transceivers = false 
 # import_intf_status = true     # If set as False, interface status will be ignore all together
-# import_vlans="config"         # Valid options are ["cli", "config", "no"]
+# import_vlans="config"         # Valid options are ["cli", "config", true, false]
 
 # nbr_workers= 25
 
-# Not fully fonctional right, need to revisit that part
+# Not fully fonctional right now, need to revisit that part
 # generate_hostvars = false 
 # hostvars_directory= "host_vars"
 
