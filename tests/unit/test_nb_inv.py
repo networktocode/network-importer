@@ -40,7 +40,12 @@ def test_nb_inventory_all(requests_mock):
     inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
     assert len(inv.hosts.keys()) == 6
-
+    assert "austin" in inv.hosts.keys()
+    assert inv.hosts["austin"].platform == "ios_naplam"
+    assert "dallas" in inv.hosts.keys()
+    assert inv.hosts["dallas"].platform == "nxos_naplam"
+    assert "el-paso" in inv.hosts.keys()
+    assert inv.hosts["el-paso"].platform == "asa"
 
 def test_nb_inventory_filtered(requests_mock):
     """
@@ -94,3 +99,39 @@ def test_nb_inventory_virtual_chassis(requests_mock):
     assert "test_dev1" in inv.hosts.keys()
     assert inv.hosts["test_dev1"].data["virtual_chassis"]
     assert not inv.hosts["amarillo"].data["virtual_chassis"]
+
+
+def test_nb_inventory_supported_platforms(requests_mock):
+    """
+    Test netbox dynamic inventory with a list of supported platforms
+
+    Args:
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
+    """
+
+    # Load mock data fixtures
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
+
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
+
+    inv = NBInventory(
+        nb_url="http://mock", 
+        nb_token="12349askdnfanasdf",
+        supported_platforms=["ios", "nxos"])  # nosec
+
+    assert len(inv.hosts.keys()) == 2
+    assert "austin" in inv.hosts.keys()
+    assert "dallas" in inv.hosts.keys()
+
+    inv = NBInventory(
+        nb_url="http://mock", 
+        nb_token="12349askdnfanasdf",
+        supported_platforms=["ios"])  # nosec
+
+    assert len(inv.hosts.keys()) == 1
+    assert "austin" in inv.hosts.keys()
+    assert "dallas" not in inv.hosts.keys()
