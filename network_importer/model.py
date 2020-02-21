@@ -51,7 +51,7 @@ class NetworkImporterObjBase:
             return getattr(self.local, name)
 
         if self.exist_remote() and hasattr(self.remote, name):
-            return getattr(self.local, name)
+            return getattr(self.remote, name)
 
         raise AttributeError(f"object has no attribute '{name}'")
 

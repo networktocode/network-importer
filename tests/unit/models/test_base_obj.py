@@ -28,11 +28,25 @@ def test_base_obj_passthrough_attribute():
             self.firstname = firstname
             self.lastname = lastname
 
+    # Local only
     mymodel = NetworkImporterObjBase()
-    mymodel.add_local(Person("local_first", "local_last"))
-
+    mymodel.local = Person("local_first", "local_last")
     assert mymodel.firstname == "local_first"
     assert mymodel.lastname == "local_last"
 
+    # Remote only
+    mymodel = NetworkImporterObjBase()
+    mymodel.remote = Person("remote_first", "remote_last")
+    assert mymodel.firstname == "remote_first"
+    assert mymodel.lastname == "remote_last"
+
+    # Both Remote and local
+    mymodel = NetworkImporterObjBase()
+    mymodel.remote = Person("remote_first", "remote_last")
+    mymodel.local = Person("local_first", "local_last")
+    assert mymodel.firstname == "local_first"
+    assert mymodel.lastname == "local_last"
+
+    # No attribute
     with pytest.raises(AttributeError):
         value = mymodel.notanattr
