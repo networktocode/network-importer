@@ -19,13 +19,13 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 
 ## Check/Create your devices in Netbox
 
-Currently, the networ-importer is not creating the devices in Netbox.
-A bare device needs to be already present in Netbox and the network-importer will be able to import all vlans, interfaces, ip addresses, cables, transceivers etc ..
+A bare device needs to be already present in Netbox and the network-importer will be able to import all vlans, interfaces, ip addresses, cables, transceivers etc ..  
+Currently, the network-importer is not creating the devices in Netbox.   
 
 To be able to connect to the device the following information needs to be defined in NetBox:
-- primary ip address
-- platform (must be a valid napalm driver or have a valid napalm driver defined)
-> Connecting to the device is not mandatory but some features depend on it: configuration update, transceivers, mostly cabling.
+- Primary ip address
+- Platform (must be a valid napalm driver or have a valid napalm driver defined)
+> Connecting to the device is not mandatory but some features depends on it: configuration update, transceivers, mostly cabling.
 
 ## Configuration file
 
