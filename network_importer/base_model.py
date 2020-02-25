@@ -154,3 +154,70 @@ class Optic(BaseModel):
         self.intf = intf
         self.serial = serial
         self.name = name
+
+
+class Cable(BaseModel):
+    """
+    Base Class for cable
+    """
+
+    exclude_from_diff = ["connections", "origin"]
+    valid_sides = ["a", "z"]
+
+    def __init__(self, origin=None):
+        self.connections = {}
+        self.unique_id = None
+        self.origin = origin
+
+    def get_device_intf(self, side):
+        """
+        Return the device name or the interface name of either side A or side Z of the cable
+        """
+
+        if side not in self.valid_sides:
+            raise ValueError(
+                f"{side} is not a valid parameter for get_side(), (supported: {self.valid_sides}"
+            )
+
+        if self.nbr_connections() != 2:
+            return None, None
+
+        return self.connections[side]["name"], self.connections[side]["interface"]
+
+    def add_device(self, device, interface):
+
+        side = None
+        if "a" not in self.connections.keys():
+            side = "a"
+        elif "z" not in self.connections.keys():
+            side = "z"
+        else:
+            raise Exception(
+                f"Cable {self.unique_id}, Maximum number of connection already reached"
+            )
+
+        self.connections[side] = {
+            "type": "device",
+            "name": device,
+            "interface": interface,
+        }
+
+        self.__update_unique_id()
+
+    def __update_unique_id(self):
+
+        if self.nbr_connections() == 2:
+            self.unique_id = "_".join(
+                sorted(
+                    [
+                        f"{self.connections['a']['name']}:{self.connections['a']['interface']}",
+                        f"{self.connections['z']['name']}:{self.connections['z']['interface']}",
+                    ]
+                )
+            )
+        else:
+            self.unique_id = None
+
+    def nbr_connections(self):
+
+        return len(self.connections.keys())

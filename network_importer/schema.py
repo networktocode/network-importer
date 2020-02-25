@@ -21,11 +21,17 @@ config_schema = dict(
             type="object",
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
-                import_cabling=dict(type="boolean", default=True),
+                import_cabling=dict(
+                    type=["string", "boolean"],
+                    enum=["lldp", "cdp", "config", False],
+                    default="lldp",
+                ),
                 import_transceivers=dict(type="boolean", default=False),
                 import_intf_status=dict(type="boolean", default=True),
                 import_vlans=dict(
-                    type="string", enum=["cli", "config", "no"], default="config"
+                    type=["string", "boolean"],
+                    enum=["cli", "config", True, False],
+                    default="config",
                 ),
                 generate_hostvars=dict(type="boolean", default=False),
                 hostvars_directory=dict(type="string", default="host_vars"),

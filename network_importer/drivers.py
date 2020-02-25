@@ -8,6 +8,7 @@ DRIVERS = {
             "vlan": netbox.NetboxVlan,
             "ip_address": netbox.NetboxIPAddress,
             "optic": netbox.NetboxOptic,
+            "cable": netbox.NetboxCable,
         },
         "2.7": {"interface": netbox.Netbox27Interface},
     }

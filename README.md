@@ -32,14 +32,14 @@ To be able to connect to the device the following information needs to be define
 ```toml
 [main]
 # import_ips = true 
-# import_cabling = true
+# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
 # import_transceivers = false 
 # import_intf_status = true     # If set as False, interface status will be ignore all together
-# import_vlans="config"         # Valid options are ["cli", "config", "no"]
+# import_vlans="config"         # Valid options are ["cli", "config", true, false]
 
 # nbr_workers= 25
 
-# Not fully fonctional right, need to revisit that part
+# Not fully fonctional right now, need to revisit that part
 # generate_hostvars = false 
 # hostvars_directory= "host_vars"
 

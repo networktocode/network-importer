@@ -19,7 +19,7 @@ import hashlib
 import copy
 import json
 from pathlib import Path
-
+from collections import defaultdict
 import pynetbox
 
 from nornir.core.task import Result, Task
@@ -221,7 +221,7 @@ def device_generate_hostvars(task: Task) -> Result:
     return Result(host=task.host)
 
 
-def collect_vlans_info(task: Task, update_cache=True) -> Result:
+def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -231,12 +231,19 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
     Args:
       task: Task:
       update_cache: (Default value = True)
+      use_cache: (Default value = False)
 
     Returns:
 
     """
 
     check_data_dir(task.host.name)
+
+    cache_name = "vlans"
+
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
     vlans = []
 
@@ -248,9 +255,16 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
     results = None
 
     if task.host.platform in ["ios", "nxos"]:
-        results = task.run(
-            task=netmiko_send_command, command_string="show vlan", use_genie=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string="show vlan", use_genie=True
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the vlans information",
+                exc_info=True,
+            )
+            return Result(host=task.host, failed=True)
 
         if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
             logger.warning(f"{task.host.name} | No vlans information returned")
@@ -276,26 +290,9 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
         return Result(host=task.host, result=False)
 
     if update_cache and results:
-        save_data_to_file(task.host.name, "vlans", vlans)
+        save_data_to_file(task.host.name, cache_name, vlans)
 
     return Result(host=task.host, result=vlans)
-
-
-def collect_vlans_info_from_cache(task: Task) -> Result:
-    """
-    Collect Vlans information from cache data
-
-    Args:
-      task: Task:
-      task: Task:
-      task: Task:
-
-    Returns:
-
-    """
-    data = get_data_from_file(task.host.name, "vlans")
-
-    return Result(host=task.host, result=data)
 
 
 def update_configuration(  # pylint: disable=C0330
@@ -326,25 +323,20 @@ def update_configuration(  # pylint: disable=C0330
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    if task.host.platform in ["nxos", "ios"]:
-        results = task.run(
-            task=netmiko_send_command, command_string="show run", enable=True
-        )
-
-        if results.failed:
-            return Result(host=task.host, failed=True)
-
-        new_config = results[0].result
-
-    else:
+    try:
         results = task.run(
             task=napalm_get, getters=["config"], retrieve="running", full=False
         )
+    except:
+        logger.debug(
+            "An exception occured while pulling the configuration", exc_info=True
+        )
+        return Result(host=task.host, failed=True)
 
-        if results.failed:
-            return Result(host=task.host, failed=True)
+    if results.failed:
+        return Result(host=task.host, failed=True)
 
-        new_config = results[0].result["config"]["running"]
+    new_config = results[0].result["config"]["running"]
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
@@ -364,35 +356,67 @@ def update_configuration(  # pylint: disable=C0330
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task) -> Result:
+def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect LLDP neighbor information on all devices
 
-    Supported Devices:
-        Cisco only
-
     Args:
       task: Task:
-
-    Returns:
+      update_cache: (Default value = True)
+      use_cache: (Default value = False)
 
     """
 
+    cache_name = "lldp_neighbors"
+
     check_data_dir(task.host.name)
 
-    ## TODO Check if device is if the right type
-    ## TODO check if all information are available to connect
-    ## TODO Check if reacheable
-    ## TODO Manage exception
-    results = task.run(
-        task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True
-    )
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
-    # TODO check if task went well
-    return Result(host=task.host, result=results[0].result)
+    neighbors = {}
+
+    if config.main["import_cabling"] == "lldp":
+
+        try:
+            results = task.run(task=napalm_get, getters=["lldp_neighbors"])
+            neighbors = results[0].result
+        except:
+            logger.debug("An exception occured while pulling lldp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+    elif config.main["import_cabling"] == "cdp":
+        try:
+            results = task.run(
+                task=netmiko_send_command,
+                command_string="show cdp neighbors detail",
+                use_textfsm=True,
+            )
+
+            neighbors = {"lldp_neighbors": defaultdict(list)}
+
+        except:
+            logger.debug("An exception occured while pulling cdp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+        # Convert CDP details output to Napalm LLDP format
+        for neighbor in results[0].result:
+            neighbors["lldp_neighbors"][neighbor["local_port"]].append(
+                dict(
+                    hostname=neighbor["destination_host"], port=neighbor["remote_port"]
+                )
+            )
+
+    if update_cache:
+        save_data_to_file(task.host.name, cache_name, neighbors)
+
+    return Result(host=task.host, result=neighbors)
 
 
-def collect_transceivers_info(task: Task, update_cache=True) -> Result:
+def collect_transceivers_info(  # pylint: disable=R0911
+    task: Task, update_cache=True, use_cache=False
+) -> Result:
     """
     Collect transceiver informaton on all devices
 
@@ -403,11 +427,16 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
     Args:
       task: Task:
       update_cache: (Default value = True)
-
+      use_cache: (Default value = False)
 
     Returns:
 
     """
+    cache_name = "transceivers"
+
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
     transceivers_inventory = []
 
@@ -423,15 +452,31 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     if task.host.platform == "ios":
 
-        results = task.run(
-            task=netmiko_send_command, command_string="show inventory", use_textfsm=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command,
+                command_string="show inventory",
+                use_textfsm=True,
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the inventory", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         inventory = results[0].result
 
         cmd = "show interface transceiver"
-        results = task.run(
-            task=netmiko_send_command, command_string=cmd, use_textfsm=True,
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string=cmd, use_textfsm=True,
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the transceiver info", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         transceivers = results[0].result
 
         if not isinstance(transceivers, list):
@@ -464,9 +509,16 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     elif task.host.platform == "nxos":
         cmd = "show interface transceiver"
-        results = task.run(
-            task=netmiko_send_command, command_string=cmd, use_textfsm=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string=cmd, use_textfsm=True
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the transceiver info", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         transceivers = results[0].result
 
         if not isinstance(transceivers, list):
@@ -508,24 +560,9 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
         )
 
     if update_cache and transceivers_inventory:
-        save_data_to_file(task.host.name, "transceivers", transceivers_inventory)
+        save_data_to_file(task.host.name, cache_name, transceivers_inventory)
 
     return Result(host=task.host, result=transceivers_inventory)
-
-
-def collect_transceivers_info_from_cache(task: Task) -> Result:
-    """
-    Collect Transceiver information from cache data
-
-    Args:
-      task: Task:
-
-    Returns:
-
-    """
-    data = get_data_from_file(task.host.name, "transceivers")
-
-    return Result(host=task.host, result=data)
 
 
 def check_if_reacheable(task: Task) -> Result:
@@ -543,7 +580,14 @@ def check_if_reacheable(task: Task) -> Result:
     """
 
     port_to_check = 22
-    results = task.run(task=tcp_ping, ports=[port_to_check])
+    try:
+        results = task.run(task=tcp_ping, ports=[port_to_check])
+    except:
+        logger.debug(
+            "An exception occured while running the reachability test (tcp_ping)",
+            exc_info=True,
+        )
+        return Result(host=task.host, failed=True)
 
     is_reacheable = results[0].result[port_to_check]
 
