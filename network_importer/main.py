@@ -494,10 +494,10 @@ class NetworkImporter:
         for host in self.devs.filter(
             filter_func=lambda h: h.data["is_reachable"] is False
         ).inventory.hosts:
-            raison = self.devs.inventory.hosts[host].data.get(
-                "not_reachable_raison", "Raison not defined"
+            reason = self.devs.inventory.hosts[host].data.get(
+                "not_reachable_reason", "reason not defined"
             )
-            logger.warning(f"{host} device is not reachable, {raison}")
+            logger.warning(f"{host} device is not reachable, {reason}")
 
     @timeit
     def init_bf_session(self):

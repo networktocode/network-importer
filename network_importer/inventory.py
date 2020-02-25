@@ -171,7 +171,7 @@ class NBInventory(Inventory):
             else:
                 host["data"]["is_reachable"] = False
                 host["data"][
-                    "not_reachable_raison"
+                    "not_reachable_reason"
                 ] = f"primary ip not defined in Netbox"
 
             host["data"]["serial"] = dev.serial

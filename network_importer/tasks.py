@@ -597,7 +597,7 @@ def check_if_reachable(task: Task) -> Result:
         )
         task.host.data["is_reachable"] = False
         task.host.data[
-            "not_reachable_raison"
+            "not_reachable_reason"
         ] = f"device not reachable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
