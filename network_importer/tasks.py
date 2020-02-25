@@ -565,11 +565,11 @@ def collect_transceivers_info(  # pylint: disable=R0911
     return Result(host=task.host, result=transceivers_inventory)
 
 
-def check_if_reacheable(task: Task) -> Result:
+def check_if_reachable(task: Task) -> Result:
     """
-    Check if a device is reacheable by doing a TCP ping it on port 22
+    Check if a device is reachable by doing a TCP ping it on port 22
 
-    Will change the status of the variable `is_reacheable` in host.data based on the results
+    Will change the status of the variable `is_reachable` in host.data based on the results
 
    Args:
       task: Nornir Task
@@ -589,19 +589,19 @@ def check_if_reacheable(task: Task) -> Result:
         )
         return Result(host=task.host, failed=True)
 
-    is_reacheable = results[0].result[port_to_check]
+    is_reachable = results[0].result[port_to_check]
 
-    if not is_reacheable:
+    if not is_reachable:
         logger.debug(
-            f"{task.host.name} | device is not reacheable on port {port_to_check}"
+            f"{task.host.name} | device is not reachable on port {port_to_check}"
         )
-        task.host.data["is_reacheable"] = False
+        task.host.data["is_reachable"] = False
         task.host.data[
-            "not_reacheable_raison"
-        ] = f"device not reacheable on port {port_to_check}"
+            "not_reachable_raison"
+        ] = f"device not reachable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
-    return Result(host=task.host, result=is_reacheable)
+    return Result(host=task.host, result=is_reachable)
 
 
 def update_device_status(task: Task) -> Result:

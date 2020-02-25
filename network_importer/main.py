@@ -44,7 +44,7 @@ from network_importer.tasks import (
     collect_vlans_info,
     collect_lldp_neighbors,
     device_update_remote,
-    check_if_reacheable,
+    check_if_reachable,
     update_device_status,
 )
 
@@ -62,9 +62,9 @@ from network_importer.base_model import Optic, Vlan, Cable, IPAddress
 from network_importer.inventory import (
     valid_devs,
     non_valid_devs,
-    reacheable_devs,
-    non_reacheable_devs,
-    valid_and_reacheable_devs,
+    reachable_devs,
+    non_reachable_devs,
+    valid_and_reachable_devs,
 )
 
 from network_importer.performance import timeit
@@ -207,7 +207,7 @@ class NetworkImporter:
     def init(self, limit=None):
         """
         Initilize NetworkImporter Object
-            Check if NB is reacheable
+            Check if NB is reachable
             Create inventory
             Create all NetworkImporterDevice object
             Create all sites
@@ -338,11 +338,11 @@ class NetworkImporter:
         """ """
 
         if not config.main["data_use_cache"]:
-            self.devs.filter(filter_func=valid_and_reacheable_devs).run(
-                task=check_if_reacheable, on_failed=True
+            self.devs.filter(filter_func=valid_and_reachable_devs).run(
+                task=check_if_reachable, on_failed=True
             )
 
-            self.warning_devices_not_reacheable()
+            self.warning_devices_not_reachable()
 
         if config.main["import_vlans"] == "cli":
             self.import_vlans_from_cmds()
@@ -444,12 +444,12 @@ class NetworkImporter:
         # ----------------------------------------------------
         # Do a pre-check to ensure that all devices are reachable
         # ----------------------------------------------------
-        self.devs.filter(filter_func=reacheable_devs).run(
-            task=check_if_reacheable, on_failed=True
+        self.devs.filter(filter_func=reachable_devs).run(
+            task=check_if_reachable, on_failed=True
         )
-        self.warning_devices_not_reacheable()
+        self.warning_devices_not_reachable()
 
-        results = self.devs.filter(filter_func=reacheable_devs).run(
+        results = self.devs.filter(filter_func=reachable_devs).run(
             task=update_configuration,
             configs_directory=configs_dir_lvl2,
             on_failed=True,
@@ -481,7 +481,7 @@ class NetworkImporter:
 
         return True
 
-    def warning_devices_not_reacheable(self, msg=""):
+    def warning_devices_not_reachable(self, msg=""):
         """
 
         Args:
@@ -492,12 +492,12 @@ class NetworkImporter:
         """
 
         for host in self.devs.filter(
-            filter_func=lambda h: h.data["is_reacheable"] is False
+            filter_func=lambda h: h.data["is_reachable"] is False
         ).inventory.hosts:
             raison = self.devs.inventory.hosts[host].data.get(
-                "not_reacheable_raison", "Raison not defined"
+                "not_reachable_raison", "Raison not defined"
             )
-            logger.warning(f"{host} device is not reacheable, {raison}")
+            logger.warning(f"{host} device is not reachable, {raison}")
 
     @timeit
     def init_bf_session(self):
@@ -627,7 +627,7 @@ class NetworkImporter:
 
         logger.info("Collecting cabling information from devices .. ")
 
-        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+        results = self.devs.filter(filter_func=valid_and_reachable_devs).run(
             task=collect_lldp_neighbors,
             update_cache=config.main["data_update_cache"],
             use_cache=config.main["data_use_cache"],
@@ -796,7 +796,7 @@ class NetworkImporter:
 
         logger.info("Collecting Transceiver information from devices .. ")
 
-        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+        results = self.devs.filter(filter_func=valid_and_reachable_devs).run(
             task=collect_transceivers_info,
             update_cache=config.main["data_update_cache"],
             use_cache=config.main["data_use_cache"],
@@ -842,7 +842,7 @@ class NetworkImporter:
 
         logger.info("Collecting Vlan information from devices .. ")
 
-        results = self.devs.filter(filter_func=valid_and_reacheable_devs).run(
+        results = self.devs.filter(filter_func=valid_and_reachable_devs).run(
             task=collect_vlans_info,
             update_cache=config.main["data_update_cache"],
             use_cache=config.main["data_use_cache"],
