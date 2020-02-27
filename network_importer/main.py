@@ -519,7 +519,7 @@ class NetworkImporter:
         if config.batfish["api_key"]:
             bf_params["api_key"] = config.batfish["api_key"]
 
-        self.bf = Session(**bf_params)
+        self.bf = Session.get("bf", **bf_params)
         self.bf.verify = False
         self.bf.set_network(NETWORK_NAME)
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
