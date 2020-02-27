@@ -129,6 +129,9 @@ def load_config(config_file_name=None, config_data=None):
     if "BATFISH_ADDRESS" in os.environ:
         batfish["address"] = bool(os.environ.get("BATFISH_ADDRESS"))
 
+    if "BATFISH_API_KEY" in os.environ:
+        batfish["api_key"] = bool(os.environ.get("BATFISH_API_KEY"))
+
     # -------------------------------------------------------------------------
     #                                network
     # -------------------------------------------------------------------------
