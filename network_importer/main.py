@@ -505,13 +505,21 @@ class NetworkImporter:
         Initialize Batfish
         """
 
-        # if "configs_directory" not in config.main.keys():
         CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
-        NETWORK_NAME = f"network-importer-{CURRENT_DIRECTORY}"
-        SNAPSHOT_NAME = "network-importer"
+        NETWORK_NAME = config.batfish["network_name"]
+        SNAPSHOT_NAME = config.batfish["snapshot_name"]
         SNAPSHOT_PATH = config.main["configs_directory"]
 
-        self.bf = Session(host=config.batfish["address"])
+        bf_params = dict(
+            host=config.batfish["address"],
+            port_v1=config.batfish["port_v1"],
+            port_v2=config.batfish["port_v2"],
+            ssl=config.batfish["use_ssl"],
+        )
+        if config.batfish["api_key"]:
+            bf_params["api_key"] = config.batfish["api_key"]
+
+        self.bf = Session(**bf_params)
         self.bf.verify = False
         self.bf.set_network(NETWORK_NAME)
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
