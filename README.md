@@ -48,6 +48,12 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 
 [batfish]
 address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
+# api_key= "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
+# network_name="network-importer"
+# snapshot_name="latest"
+# port_v1= 9997
+# port_v2= 9996
+# use_ssl= false
 
 [netbox]
 # The information to connect to netbox needs to be provided, either in the config file or as environment variables
