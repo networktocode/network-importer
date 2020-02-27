@@ -26,17 +26,17 @@ from network_importer.model import NetworkImporterDevice
 ### ------------------------------------------------------------
 ### Network Importer Base Dict for device data
 ###   status:
-###     ok: device is reacheable
+###     ok: device is reachable
 ###     fail-ip: Primary IP address not reachable
 ###     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or
 ###                  responding.
 ###     fail-login: Unable to login authenticate with device
 ###     fail-other:  Other general processing error (also catches traps/bug)
-###   is_reacheable: Global Flag to indicate if we are able to connect to a device
+###   is_reachable: Global Flag to indicate if we are able to connect to a device
 ###   has_config: Indicate if the configuration is present and has been properly imported in Batfish
 ### ------------------------------------------------------------
 
-BASE_DATA = {"is_reacheable": None, "status": "ok", "has_config": False, "obj": None}
+BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False, "obj": None}
 
 ### ------------------------------------------------------------
 ### Inventory Classes
@@ -169,9 +169,9 @@ class NBInventory(Inventory):
             if dev.primary_ip:
                 host["hostname"] = dev.primary_ip.address.split("/")[0]
             else:
-                host["data"]["is_reacheable"] = False
+                host["data"]["is_reachable"] = False
                 host["data"][
-                    "not_reacheable_raison"
+                    "not_reachable_reason"
                 ] = f"primary ip not defined in Netbox"
 
             host["data"]["serial"] = dev.serial
@@ -211,7 +211,7 @@ class NBInventory(Inventory):
                 and "platform" in host
                 and host["platform"]
             ):
-                host["data"]["is_reacheable"] = True
+                host["data"]["is_reachable"] = True
 
             # Assign temporary dict to outer dict
             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
@@ -248,7 +248,7 @@ class StaticInventory(Inventory):
         for host_ in hosts:
 
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
-            host["data"]["is_reacheable"] = True
+            host["data"]["is_reachable"] = True
 
             host["hostname"] = host_["ip_address"]
             host["platform"] = host_["platform"]
@@ -306,7 +306,7 @@ def non_valid_devs(host):
     return True
 
 
-def reacheable_devs(host):
+def reachable_devs(host):
     """
 
 
@@ -316,13 +316,13 @@ def reacheable_devs(host):
     Returns:
 
     """
-    if host.data["is_reacheable"]:
+    if host.data["is_reachable"]:
         return True
 
     return False
 
 
-def non_reacheable_devs(host):
+def non_reachable_devs(host):
     """
 
 
@@ -332,13 +332,13 @@ def non_reacheable_devs(host):
     Returns:
 
     """
-    if host.data["is_reacheable"]:
+    if host.data["is_reachable"]:
         return False
 
     return True
 
 
-def valid_and_reacheable_devs(host):
+def valid_and_reachable_devs(host):
     """
 
 
@@ -348,7 +348,7 @@ def valid_and_reacheable_devs(host):
     Returns:
 
     """
-    if host.data["is_reacheable"] and host.data["has_config"]:
+    if host.data["is_reachable"] and host.data["has_config"]:
         return True
 
     return False
