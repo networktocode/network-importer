@@ -17,7 +17,6 @@ import logging
 from urllib3 import connectionpool, poolmanager
 import yaml
 
-
 logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
