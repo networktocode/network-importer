@@ -57,6 +57,12 @@ To be able to connect to the device the following information needs to be define
 
 [batfish]
 address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
+# api_key= "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
+# network_name="network-importer"
+# snapshot_name="latest"
+# port_v1= 9997
+# port_v2= 9996
+# use_ssl= false
 
 [netbox]
 # The information to connect to netbox needs to be provided, either in the config file or as environment variables
