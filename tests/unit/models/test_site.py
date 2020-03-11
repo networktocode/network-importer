@@ -1,4 +1,3 @@
-
 """
 (c) 2019 Network To Code
 
@@ -13,12 +12,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from network_importer.model import NetworkImporterSite
+from network_importer.model import NetworkImporterSite, NetworkImporterPrefix
 
 
-
-def test_site_import_prefix_from_ip():
-
+def test_site_add_prefix_from_ip():
+    """
+    Validate add_prefix_from_ip() is working as expected
+        Adding the same IP multiple times shouldn't create multiple prefix
+        Adding a /32 shouldn't create a prefix
+        Adding a prefix belonging to an existing NetworkImporterPrefix will add the local object
+    """
     site = NetworkImporterSite(name="test")
 
     assert site.prefixes == {}
@@ -33,6 +36,15 @@ def test_site_import_prefix_from_ip():
     assert "10.10.10.0/24" in site.prefixes.keys()
     assert len(site.prefixes.keys()) == 1
 
+    site.add_prefix_from_ip("10.10.10.30/24")
+    assert "10.10.10.0/24" in site.prefixes.keys()
+    assert len(site.prefixes.keys()) == 1
+
     site.add_prefix_from_ip("12.12.10.4/32")
     assert "12.12.10.4/32" not in site.prefixes.keys()
     assert len(site.prefixes.keys()) == 1
+
+    site.prefixes["1.1.1.0/24"] = NetworkImporterPrefix("1.1.1.0/24")
+    site.add_prefix_from_ip("1.1.1.10/24")
+    assert site.prefixes["1.1.1.0/24"].exist_local()
+    assert len(site.prefixes.keys()) == 2

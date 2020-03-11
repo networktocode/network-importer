@@ -994,9 +994,14 @@ class NetworkImporterSite:
     def add_prefix_from_ip(self, ip):
         """
         Add a prefix to the site based on an IP address
+        - Identify the prefix associated with the ip address
+        - Ignore network with only 1 hosts (/32)
+        - Check if the NIPrefix object already exist, if not create it
+        - Check if the local object already exist, if not create it
 
-        args:
+        Args:
             ip: str 1.2.3.4/24
+
         """
 
         prefix = ipaddress.ip_network(ip, strict=False)
@@ -1016,14 +1021,11 @@ class NetworkImporterSite:
         """
         Convert Vlan IDs into Vlan Netbox IDs
 
-        Input: Vlan ID
-        Output: Netbox Vlan ID
-
         Args:
-          vids:
+          vids: List of Vlan ID
 
         Returns:
-
+            List of Netbox Vlan ID
         """
 
         output = []
