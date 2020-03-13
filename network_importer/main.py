@@ -23,8 +23,8 @@ import requests
 import pynetbox
 
 from jinja2 import Template, Environment, FileSystemLoader
-from pybatfish.client.session import Session
 from termcolor import colored
+from pybatfish.client.session import Session
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
