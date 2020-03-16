@@ -18,9 +18,9 @@ import os
 import hashlib
 import copy
 import json
-import yaml
 from pathlib import Path
 from collections import defaultdict
+import yaml
 import pynetbox
 
 from nornir.core.task import Result, Task
@@ -28,7 +28,6 @@ from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napa
 
 from napalm.base.helpers import canonical_interface_name
 
-import network_importer
 import network_importer.config as config
 
 from network_importer.model import (  # pylint: disable=W0611
@@ -229,7 +228,6 @@ def device_save_hostvars(task: Task) -> Result:
     # # env.filters["to_yaml_dict"] = jinja_filter_toyaml_dict
     # # template = env.get_template("hostvars.j2")
     # # hostvars_str = template.render(dev_facts)
-
 
 def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result:
     """
