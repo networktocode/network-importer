@@ -331,6 +331,11 @@ class NetworkImporter:
                         device=dev.name,
                     )
 
+            if config.main["generate_hostvars"]:
+                dev_facts = self.bf.extract_facts(nodes=dev.name)["nodes"][dev.name]
+                del dev_facts["Interfaces"]
+                dev.hostvars = dev_facts
+
         return True
 
     @timeit
