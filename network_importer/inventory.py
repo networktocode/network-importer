@@ -93,13 +93,14 @@ class NBInventory(Inventory):
           need to see how to contribute back some of these modifications
 
         Args:
-          flatten_custom_fields: Whether to assign custom fields directly to the host or not
           filter_parameters: Key
           nb_url: Optional[str]:  (Default value = None)
           nb_token: Optional[str]:  (Default value = None)
           ssl_verify: (Default value = True)
-          flatten_custom_fields: bool:  (Default value = True)
           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
+          username: Optional[str] 
+          password: Optional[str]
+          supported_platforms: Optional[List[str]]
           **kwargs: Any:
 
         Returns:
@@ -120,6 +121,7 @@ class NBInventory(Inventory):
                 pynetbox.modules.dcim.Devices
             ] = nb_session.dcim.devices.all()
 
+        # fetch all platforms from Netbox and build mapping:   platform:  napalm_driver
         platforms = nb_session.dcim.platforms.all()
         platforms_mapping = {
             platform.slug: platform.napalm_driver
@@ -128,7 +130,14 @@ class NBInventory(Inventory):
         }
 
         hosts = {}
-        groups = {"global": {}}
+        groups = {
+            "global": {
+                "connection_options": {
+                    "netmiko": {"extras": {}},
+                    "napalm": {"extras": {}},
+                }
+            }
+        }
 
         # Pull the login and password from the NI config object if available
         if username:
@@ -137,9 +146,11 @@ class NBInventory(Inventory):
         if password:
             groups["global"]["password"] = password
             if enable:
-                groups["global"]["connection_options"] = {
-                    "netmiko": {"extras": {"secret": password}},
-                    "napalm": {"extras": {"optional_args": {"secret": password}}},
+                groups["global"]["connection_options"]["netmiko"]["extras"] = {
+                    "secret": password
+                }
+                groups["global"]["connection_options"]["napalm"]["extras"] = {
+                    "optional_args": {"secret": password}
                 }
 
         for dev in nb_devices:
@@ -184,8 +195,11 @@ class NBInventory(Inventory):
 
             # Attempt to add 'platform' based of value in 'slug'
             if dev.platform and dev.platform.slug in platforms_mapping:
-                host["platform"] = platforms_mapping[dev.platform.slug]
-            elif dev.platform:
+                host["connection_options"] = {
+                    "napalm": {"platform": platforms_mapping[dev.platform.slug]}
+                }
+
+            if dev.platform:
                 host["platform"] = dev.platform.slug
             else:
                 host["platform"] = None
