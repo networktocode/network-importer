@@ -19,6 +19,7 @@ import os
 import re
 import warnings
 from collections import defaultdict
+import ipaddress
 import requests
 import pynetbox
 
@@ -319,9 +320,12 @@ class NetworkImporter:
                 intf_name = bf_intf.Interface.interface
                 dev.add_batfish_interface(intf_name, bf_intf)
 
-                if config.main["import_ips"]:
-                    for prfx in bf_intf.All_Prefixes:
+                for prfx in bf_intf.All_Prefixes:
+                    if config.main["import_ips"]:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
+
+                    if config.main["import_prefixes"]:
+                        dev.site.add_prefix_from_ip(ip=prfx)
 
             if config.main["import_vlans"] == "config":
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()

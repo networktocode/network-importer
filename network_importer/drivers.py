@@ -7,6 +7,7 @@ DRIVERS = {
             "interface": netbox.Netbox26Interface,
             "vlan": netbox.NetboxVlan,
             "ip_address": netbox.NetboxIPAddress,
+            "prefix": netbox.NetboxPrefix,
             "optic": netbox.NetboxOptic,
             "cable": netbox.NetboxCable,
         },

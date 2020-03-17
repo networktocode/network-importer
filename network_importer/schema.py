@@ -21,6 +21,7 @@ config_schema = dict(
             type="object",
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
+                import_prefixes=dict(type="boolean", default=False),
                 import_cabling=dict(
                     type=["string", "boolean"],
                     enum=["lldp", "cdp", "config", False],
