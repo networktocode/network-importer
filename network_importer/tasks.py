@@ -191,7 +191,10 @@ def device_save_hostvars(task: Task) -> Result:
       Result
     """
 
-    # Save device variables in file
+    if not task.host.data["obj"].hostvars:
+        return Result(host=task.host)
+
+    # Save device hostvars in file
     if not os.path.exists(f"{config.main['hostvars_directory']}/{task.host.name}"):
         os.makedirs(f"{config.main['hostvars_directory']}/{task.host.name}")
         logger.debug(
