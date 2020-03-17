@@ -32,6 +32,7 @@ To be able to connect to the device the following information needs to be define
 ```toml
 [main]
 # import_ips = true 
+# import_prefixes = false
 # import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
 # import_transceivers = false 
 # import_intf_status = true     # If set as False, interface status will be ignore all together

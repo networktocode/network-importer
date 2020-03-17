@@ -14,6 +14,7 @@ limitations under the License.
 # pylint: disable=invalid-name,redefined-builtin
 import logging
 import re
+import ipaddress
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
@@ -25,6 +26,7 @@ from network_importer.base_model import (  # pylint: disable=unused-import
     Interface,
     IPAddress,
     Optic,
+    Prefix,
     Vlan,
 )
 
@@ -541,13 +543,11 @@ class NetworkImporterDevice:
     def add_ip(self, intf_name, ip):
         """
         Add an IP to an existing interface and try to match the IP with an existing IP in netbox
-        THe match is done based on a local cache
+        The match is done based on a local cache
 
         Inputs:
             intf_name: string, name of the interface to associated the new IP with
             ip: string, ip address of the new IP
-
-        Returns:
 
         """
 
@@ -710,7 +710,6 @@ class NetworkImporterInterface(NetworkImporterObjBase):
     def __init__(self, name, device_name):
         """
 
-
         Args:
           name:
           device_name:
@@ -725,7 +724,6 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         self.optic = None
         self.ips = dict()
         self.mtu = None
-        super()
 
     def add_batfish_interface(self, bf):
         """
@@ -893,11 +891,13 @@ class NetworkImporterSite:
         self.nb = nb
 
         self.vlans = dict()
+        self.prefixes = dict()
 
         if self.nb:
             self.remote = self.nb.dcim.sites.get(slug=self.name)
             if self.remote:
                 self._get_remote_vlans_list()
+                self._get_remote_prefixes_list()
 
     def update_remote(self):  # pylint: disable=inconsistent-return-statements
         """
@@ -910,11 +910,18 @@ class NetworkImporterSite:
 
         """
 
-        if config.main["import_vlans"] == "no":
-            return False
+        logger.info(f"Site {self.name}, Updating remote (Netbox) ... ")
 
-        logger.debug(f"Site {self.name}, Updating remote (Netbox) ... ")
+        if config.main["import_vlans"] != "no":
+            self.update_vlan_remote()
 
+        if config.main["import_prefixes"]:
+            self.update_prefix_remote()
+
+    def update_vlan_remote(self):
+        """
+        Update Vlans on the remote system
+        """
         for vlan in self.vlans.values():
             if vlan.exist_local() and not vlan.exist_remote():
                 remote = self.nb.ipam.vlans.create(
@@ -938,7 +945,28 @@ class NetworkImporterSite:
             # elif not vlan.exist_local() and vlan.exist_remote():
             #     vlan.delete_remote()
 
-    def add_vlan(self, vlan, device=None):
+    def update_prefix_remote(self):
+        """
+        Update Prefix on the remote system
+        """
+
+        for prefix in self.prefixes.values():
+            if prefix.exist_local() and not prefix.exist_remote():
+                remote = self.nb.ipam.prefixes.create(
+                    prefix=prefix.prefix, site=self.remote.id
+                )
+                logger.debug(
+                    f"Site {self.name}, created prefix {prefix.local.prefix} ({remote.id}) in netbox"
+                )
+                prefix.add_remote(remote)
+                changelog_create(
+                    "prefix",
+                    prefix.local.prefix,
+                    remote.id,
+                    params=dict(prefix=prefix.prefix, site=self.remote.id),
+                )
+
+    def add_vlan(self, vlan: Vlan, device=None):
         """
         Vlan object
 
@@ -947,7 +975,6 @@ class NetworkImporterSite:
           device: (Default value = None)
 
         Returns:
-
         """
 
         vid = vlan.vid
@@ -964,18 +991,41 @@ class NetworkImporterSite:
 
         return True
 
+    def add_prefix_from_ip(self, ip):
+        """
+        Add a prefix to the site based on an IP address
+        - Identify the prefix associated with the ip address
+        - Ignore network with only 1 hosts (/32)
+        - Check if the NIPrefix object already exist, if not create it
+        - Check if the local object already exist, if not create it
+
+        Args:
+            ip: str 1.2.3.4/24
+
+        """
+
+        prefix = ipaddress.ip_network(ip, strict=False)
+
+        if prefix.num_addresses == 1:
+            return False
+
+        prefix_str = str(prefix)
+        if prefix_str not in self.prefixes.keys():
+            self.prefixes[prefix_str] = NetworkImporterPrefix(prefix=prefix_str)
+
+        if not self.prefixes[prefix_str].exist_local():
+            self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str))
+            logger.debug(f"Site {self.name} | Prefix {prefix_str} added (local)")
+
     def convert_vids_to_nids(self, vids):
         """
         Convert Vlan IDs into Vlan Netbox IDs
 
-        Input: Vlan ID
-        Output: Netbox Vlan ID
-
         Args:
-          vids:
+          vids: List of Vlan ID
 
         Returns:
-
+            List of Netbox Vlan ID
         """
 
         output = []
@@ -1035,6 +1085,31 @@ class NetworkImporterSite:
 
         return True
 
+    def _get_remote_prefixes_list(self):
+        """Query Netbox for all prefixes associated with this site and keep them in cache"""
+
+        if not config.main["import_prefixes"]:
+            return False
+
+        prefixes = self.nb.ipam.prefixes.filter(site=self.name)
+
+        logger.debug(
+            f"{self.name} - _get_remote_prefixes_list(), found {len(prefixes)} prefixes"
+        )
+
+        for prefix in prefixes:
+            if prefix.prefix not in self.prefixes.keys():
+                self.prefixes[prefix.prefix] = NetworkImporterPrefix(
+                    prefix=prefix.prefix
+                )
+
+            if not self.prefixes[prefix.prefix].exist_remote():
+                self.prefixes[prefix.prefix].add_remote(prefix)
+            else:
+                self.prefixes[prefix.prefix].update_remote(prefix)
+
+        return True
+
     def diff(self):
         """ """
 
@@ -1042,6 +1117,9 @@ class NetworkImporterSite:
 
         for vlan in self.vlans.values():
             diff.add_child(vlan.diff())
+
+        for prefix in self.prefixes.values():
+            diff.add_child(prefix.diff())
 
         return diff
 
@@ -1063,7 +1141,6 @@ class NetworkImporterVlan(NetworkImporterObjBase):
 
         """
         self.id = f"{site}-{vid}"
-        super()
 
     def update_remote_status(self):
         """ """
@@ -1131,6 +1208,37 @@ class NetworkImporterVlan(NetworkImporterObjBase):
         return False
 
 
+class NetworkImporterPrefix(NetworkImporterObjBase):
+    """ """
+
+    obj_type = "prefix"
+
+    def __init__(self, prefix):
+        """
+
+        Args:
+          prefix: str
+
+        """
+        self.id = prefix
+        self.prefix = prefix
+
+    def add_remote(self, remote):
+        """
+
+        Args:
+          remote: object
+
+        Returns:
+
+        """
+        prefix_driver = get_driver("prefix")
+        self.remote = prefix_driver()
+        self.remote.add(remote)
+
+        return True
+
+
 class NetworkImporterIP(NetworkImporterObjBase):
     """ """
 
@@ -1139,11 +1247,8 @@ class NetworkImporterIP(NetworkImporterObjBase):
     def __init__(self, address):
         """
 
-
         Args:
           address:
-
-        Returns:
 
         """
         self.id = address
@@ -1151,7 +1256,6 @@ class NetworkImporterIP(NetworkImporterObjBase):
 
     def add_remote(self, remote):
         """
-
 
         Args:
           remote:

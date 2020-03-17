@@ -13,7 +13,7 @@ limitations under the License.
 """
 import logging
 
-from network_importer.base_model import Interface, IPAddress, Optic, Vlan, Cable
+from network_importer.base_model import Interface, IPAddress, Prefix, Optic, Vlan, Cable
 import network_importer.config as config
 
 logger = logging.getLogger("network-importer")  # pylint: disable=C0103
@@ -332,6 +332,31 @@ class NetboxIPAddress(IPAddress):
     def delete(self):
         """
         Remote delete IP address
+        """
+        self.remote.delete()
+        return True
+
+
+class NetboxPrefix(Prefix):
+    """ """
+
+    def __init__(self, **kargs):
+        """ """
+        super().__init__(**kargs)
+        self.remote = None
+
+    def add(self, rem):
+        """ """
+        self.prefix = rem.prefix
+        self.remote = rem
+
+    def update(self, rem):
+        """ """
+        self.add(rem)
+
+    def delete(self):
+        """
+        Remote delete Prefix
         """
         self.remote.delete()
         return True

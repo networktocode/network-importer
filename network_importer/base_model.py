@@ -116,7 +116,6 @@ class IPAddress(BaseModel):
     def __init__(self, address: str = None):
         """
 
-
         Args:
           address:  (Default value = None)
 
@@ -124,6 +123,21 @@ class IPAddress(BaseModel):
 
         """
         self.address = address
+        self.family = None
+
+
+class Prefix(BaseModel):
+    """
+    Base Class for Prefix
+    """
+
+    def __init__(self, prefix: str = None):
+        """
+
+        Args:
+          prefix:  (Default value = None)
+        """
+        self.prefix = prefix
         self.family = None
 
 
