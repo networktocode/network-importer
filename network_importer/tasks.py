@@ -232,6 +232,7 @@ def device_save_hostvars(task: Task) -> Result:
     # # template = env.get_template("hostvars.j2")
     # # hostvars_str = template.render(dev_facts)
 
+
 def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect Vlans information on all devices
