@@ -41,9 +41,11 @@ def test_nb_inventory_all(requests_mock):
 
     assert len(inv.hosts.keys()) == 6
     assert "austin" in inv.hosts.keys()
-    assert inv.hosts["austin"].platform == "ios_naplam"
+    assert inv.hosts["austin"].platform == "ios"
+    assert inv.hosts["austin"].connection_options["napalm"].platform == "ios_naplam"
     assert "dallas" in inv.hosts.keys()
-    assert inv.hosts["dallas"].platform == "nxos_naplam"
+    assert inv.hosts["dallas"].platform == "nxos"
+    assert inv.hosts["dallas"].connection_options["napalm"].platform == "nxos_naplam"
     assert "el-paso" in inv.hosts.keys()
     assert inv.hosts["el-paso"].platform == "asa"
 
