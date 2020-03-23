@@ -335,6 +335,19 @@ class NetworkImporter:
                         device=dev.name,
                     )
 
+            if config.main["generate_hostvars"]:
+
+                resp = self.bf.extract_facts(nodes=dev.name)
+                if len(resp["nodes"].keys()) == 0:
+                    logger.warning(f"{dev.name} | Unable to find hostvars ... ")
+                elif len(resp["nodes"].keys()) != 1:
+                    logger.warning(
+                        f"{dev.name} | Unable to extract hostvars, more than 1 device returned ... "
+                    )
+                else:
+                    dev.hostvars = list(resp["nodes"].values())[0]
+                    del dev.hostvars["Interfaces"]
+
         return True
 
     @timeit

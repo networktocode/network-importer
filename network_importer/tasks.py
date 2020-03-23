@@ -20,6 +20,7 @@ import copy
 import json
 from pathlib import Path
 from collections import defaultdict
+import yaml
 import pynetbox
 
 from nornir.core.task import Result, Task
@@ -27,7 +28,6 @@ from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napa
 
 from napalm.base.helpers import canonical_interface_name
 
-import network_importer
 import network_importer.config as config
 
 from network_importer.model import (  # pylint: disable=W0611
@@ -173,31 +173,54 @@ def device_update_remote(task: Task) -> Result:
 
     res = task.host.data["obj"].update_remote()
 
+    if config.main["generate_hostvars"]:
+
+        results = task.run(task=device_save_hostvars)
+
     return Result(host=task.host, result=res)
 
 
-def device_generate_hostvars(task: Task) -> Result:
+def device_save_hostvars(task: Task) -> Result:
     """
-    Extract the facts for each device from Batfish to generate the host_vars
-    Cleaning up the interfaces for now since these information are already in netbox
+    Save the device hostvars into a yaml file
 
     Args:
       task: Task:
 
     Returns:
-
+      Result
     """
-    module_path = os.path.dirname(network_importer.__file__)
-    template_dir = f"{module_path}/templates/"
 
-    # # Save device variables in file
-    # if not os.path.exists(f"{options.output}/{dev.name}"):
-    #     os.makedirs(f"{options.output}/{dev.name}")
-    #     logger.debug(
-    #         f"Directory {options.output}/{dev.name} was missing, created it"
-    #     )
+    if not task.host.data["obj"].hostvars:
+        return Result(host=task.host)
 
-    # dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
+    # Save device hostvars in file
+    if not os.path.exists(f"{config.main['hostvars_directory']}/{task.host.name}"):
+        os.makedirs(f"{config.main['hostvars_directory']}/{task.host.name}")
+        logger.debug(
+            f"Directory {config.main['hostvars_directory']}/{task.host.name} was missing, created it"
+        )
+
+    with open(
+        f"{config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml",
+        "w",
+    ) as out_file:
+        out_file.write(
+            yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False)
+        )
+        logger.debug(
+            f"{task.host.name} - Host variables saved in {config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml"
+        )
+
+    return Result(host=task.host)
+
+    # -------------------------------------------------------------------
+    # Old code that need used previously to generate the hostvars from a jinja templates
+    # -------------------------------------------------------------------
+    # module_path = os.path.dirname(network_importer.__file__)
+    # template_dir = f"{module_path}/templates/"
+
+    # dev_facts = task.host.data["obj"].bf.extract_facts(nodes=task.host.name)["nodes"][task.host.name]
     # del dev_facts["Interfaces"]
 
     # # Load Jinja2 template
@@ -208,17 +231,6 @@ def device_generate_hostvars(task: Task) -> Result:
     # # env.filters["to_yaml_dict"] = jinja_filter_toyaml_dict
     # # template = env.get_template("hostvars.j2")
     # # hostvars_str = template.render(dev_facts)
-
-    # with open(
-    #     f"{options.output}/{dev.name}/network_importer.yaml", "w"
-    # ) as out_file:
-    #     out_file.write( yaml.dump(dev_facts, default_flow_style=False))
-    #     # out_file.write( hostvars_str)
-    #     logger.debug(
-    #         f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
-    #     )
-
-    return Result(host=task.host)
 
 
 def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result:
