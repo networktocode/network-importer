@@ -98,7 +98,7 @@ class NBInventory(Inventory):
           nb_token: Optional[str]:  (Default value = None)
           ssl_verify: (Default value = True)
           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
-          username: Optional[str] 
+          username: Optional[str]
           password: Optional[str]
           supported_platforms: Optional[List[str]]
           **kwargs: Any:
