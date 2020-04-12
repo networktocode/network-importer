@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "network-importer"
-version = "0.5.0"
+version = "0.5.0-dev"
 description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
 authors = ["Damien Garros <dgarros@gmail.com>"]
 license = "Apache-2.0"
@@ -15,6 +15,7 @@ jsonschema = {version = "^3.2.0" }
 toml = {version = "^0.10.0" }
 nornir = "^2.4.0"
 termcolor = "^1.1.0"
+click = "^7.1.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"
