@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 (c) 2019 Network To Code
 
@@ -13,19 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+# pylint: disable=C0103,W0102,C0415,R1724,W0611,R1710,R1710,E1101,W0613,,C0413,R0904
 
 import logging
-
 import argparse
 import sys
-import os
-import json
-import yaml
-
 import pdb
-import re
-import time
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
@@ -130,7 +121,7 @@ def main():
         import network_importer
 
         print(f"Network Importer ver: {network_importer.__version__}")
-        exit(0)
+        sys.exit(0)
 
     config.load_config(options.config)
     perf.init()
