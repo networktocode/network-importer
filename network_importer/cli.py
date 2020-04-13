@@ -11,12 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# pylint: disable=C0103,W0102,C0415,R1724,W0611,R1710,R1710,E1101,W0613,,C0413,R0904
+# pylint: disable=C0103,W0102,C0415,R1724,W0611,R1710,R1710,E1101,W0613,,C0413,R0904,E1120
 
 import logging
-import click
 import sys
 import pdb
+import click
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
@@ -117,7 +117,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
         perf.TIME_TRACKER.print_all()
 
-    if config.netbox["status_update"] and options.apply:
+    if config.netbox["status_update"] and apply:
         ni.update_devices_status()
 
     if diff:
