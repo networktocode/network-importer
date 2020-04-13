@@ -11,12 +11,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-# pylint: disable=C0103,W0102,C0415,R1724,W0611,R1710,R1710,E1101,W0613,,C0413,R0904
+# pylint: disable=C0103,W0102,C0415,R1724,W0611,R1710,R1710,E1101,W0613,,C0413,R0904,E1120
 
 import logging
-import argparse
 import sys
 import pdb
+import click
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
@@ -29,101 +29,40 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 logger = logging.getLogger("network-importer")
 
 
-class CustomFormatter(
-    argparse.RawDescriptionHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
-):
-    pass
+@click.command()
+@click.version_option()
+@click.option(
+    "--config",
+    "config_file",
+    default="network_importer.toml",
+    help="Network Importer Configuration file (TOML format)",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "--limit",
+    default=False,
+    help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
+    type=str,
+)
+@click.option("--diff", is_flag=True, help="Show the diff for all objects")
+@click.option("--apply", is_flag=True, help="Save changes in Backend")
+@click.option(
+    "--check",
+    is_flag=True,
+    help="Display what are the differences but do not save them",
+)
+@click.option(
+    "--debug",
+    is_flag=True,
+    help="Keep the script in interactive mode once finished for troubleshooting",
+)
+@click.option(
+    "--update-configs", is_flag=True, help="Pull the latest configs from the devices"
+)
+def main(config_file, limit, diff, apply, check, debug, update_configs):
 
-
-def parse_args(args=sys.argv[1:]):
-    """Parse arguments."""
-    parser = argparse.ArgumentParser(description="", formatter_class=CustomFormatter)
-
-    parser.add_argument(
-        "--version",
-        action="store_true",
-        default=False,
-        help="Show the version of code the library is running",
-    )
-
-    parser.add_argument(
-        "--config",
-        type=str,
-        help="Network Importer Configuration file (TOML format)",
-        default="network_importer.toml",
-    )
-
-    # parser.add_argument(
-    #     "--configs",
-    #     metavar="DIR",
-    #     type=str,
-    #     help="Directory where to find the network configurations (in batfish format)",
-    #     default=False,
-    # )
-
-    # parser.add_argument(
-    #     "--output",
-    #     metavar="DIR",
-    #     type=str,
-    #     help="Directory where to save the device variables",
-    #     default="host_vars",
-    # )
-
-    parser.add_argument(
-        "--update-configs",
-        action="store_true",
-        default=False,
-        help="Pull the latest configs from the devices",
-    )
-
-    parser.add_argument(
-        "--limit",
-        type=str,
-        help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Keep the script in interactive mode once finished for troubleshooting",
-    )
-
-    parser.add_argument(
-        "--diff",
-        action="store_true",
-        default=False,
-        help="Show the diff for all objects",
-    )
-
-    parser.add_argument("--inventory", help="Inventory file", type=str, default=False)
-
-    g = parser.add_mutually_exclusive_group(required=False)
-    g.add_argument(
-        "--check",
-        action="store_true",
-        default=False,
-        help="Display what are the differences but do not save them",
-    )
-
-    g.add_argument(
-        "--apply", action="store_true", default=False, help="Save changes in Backend"
-    )
-
-    return parser.parse_args(args)
-
-
-def main():
-
-    options = parse_args()
-
-    if options.version:
-        import network_importer
-
-        print(f"Network Importer ver: {network_importer.__version__}")
-        sys.exit(0)
-
-    config.load_config(options.config)
+    config.load_config(config_file)
     perf.init()
 
     # ------------------------------------------------------------
@@ -152,11 +91,11 @@ def main():
 
     ni = NetworkImporter()
 
-    if options.update_configs:
-        ni.build_inventory(limit=options.limit)
+    if update_configs:
+        ni.build_inventory(limit=limit)
         ni.update_configurations()
 
-    ni.init(limit=options.limit)
+    ni.init(limit=limit)
 
     ni.import_devices_from_configs()
     ni.import_devices_from_cmds()
@@ -168,26 +107,26 @@ def main():
     # ------------------------------------------------------------------------------------
     # Update Remote if apply is enabled
     # ------------------------------------------------------------------------------------
-    if options.apply:
+    if apply:
         ni.update_remote()
 
-    elif options.check:
+    elif check:
         ni.diff_local_remote()
 
     if config.logs["performance_log"]:
         perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
         perf.TIME_TRACKER.print_all()
 
-    if config.netbox["status_update"] and options.apply:
+    if config.netbox["status_update"] and apply:
         ni.update_devices_status()
 
-    if options.diff:
+    if diff:
         ni.print_diffs()
 
     logger.info(
         f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
     )
-    if options.debug:
+    if debug:
         pdb.set_trace()
 
 
