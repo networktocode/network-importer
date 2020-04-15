@@ -336,9 +336,7 @@ def update_configuration(  # pylint: disable=C0330
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
     try:
-        results = task.run(
-            task=napalm_get, getters=["config"], retrieve="running", full=False
-        )
+        results = task.run(task=napalm_get, getters=["config"], retrieve="running")
     except:
         logger.debug(
             "An exception occured while pulling the configuration", exc_info=True
