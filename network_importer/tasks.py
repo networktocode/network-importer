@@ -337,7 +337,7 @@ def update_configuration(  # pylint: disable=C0330
 
     try:
         results = task.run(
-            task=napalm_get, getters=["config"], retrieve="running", full=False
+            task=napalm_get, getters=["config"], retrieve="running"
         )
     except:
         logger.debug(
