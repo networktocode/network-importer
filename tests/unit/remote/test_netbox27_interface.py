@@ -48,6 +48,7 @@ def test_netbox27_add_interface_lag_member():
     assert intf.access_vlan == None
     assert intf.allowed_vlans == None
 
+
 def test_netbox27_add_interface_no_type():
 
     config.load_config()
@@ -62,6 +63,7 @@ def test_netbox27_add_interface_no_type():
     assert intf.is_lag_member == None
     assert intf.switchport_mode == "ACCESS"
     assert intf.access_vlan == 300
+
 
 def test_netbox27_add_interface_lag_trunk():
 
