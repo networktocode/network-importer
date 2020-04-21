@@ -48,6 +48,20 @@ def test_netbox27_add_interface_lag_member():
     assert intf.access_vlan == None
     assert intf.allowed_vlans == None
 
+def test_netbox27_add_interface_no_type():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_no_type.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox27Interface()
+    intf.add(rem)
+
+    assert intf.is_lag == False
+    assert intf.is_virtual == False
+    assert intf.is_lag_member == None
+    assert intf.switchport_mode == "ACCESS"
+    assert intf.access_vlan == 300
 
 def test_netbox27_add_interface_lag_trunk():
 
