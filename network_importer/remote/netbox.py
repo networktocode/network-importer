@@ -190,10 +190,10 @@ class Netbox27Interface(NetboxInterface):
 
         self.description = rem.description
 
-        if rem.type.value == "lag":
+        if rem.type and rem.type.value == "lag":
             self.is_lag = True
             self.is_virtual = False
-        elif rem.type.value == "virtual":
+        elif rem.type and rem.type.value == "virtual":
             self.is_virtual = True
             self.is_lag = False
         else:
@@ -216,17 +216,17 @@ class Netbox27Interface(NetboxInterface):
             self.switchport_mode = "NONE"
             self.mode = "NONE"
 
-        if rem.type.value == 800:
+        if rem.type and rem.type.value == 800:
             self.speed = 1000000000
-        elif rem.type.value == 1100:
+        elif rem.type and rem.type.value == 1100:
             self.speed = 1000000000
-        elif rem.type.value == 1200:
+        elif rem.type and rem.type.value == 1200:
             self.speed = 10000000000
-        elif rem.type.value == 1350:
+        elif rem.type and rem.type.value == 1350:
             self.speed = 25000000000
-        elif rem.type.value == 1400:
+        elif rem.type and rem.type.value == 1400:
             self.speed = 40000000000
-        elif rem.type.value == 1600:
+        elif rem.type and rem.type.value == 1600:
             self.speed = 100000000000
 
         if rem.tagged_vlans:
