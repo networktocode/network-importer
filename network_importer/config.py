@@ -12,6 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 # pylint: disable=invalid-name,redefined-outer-name
+import sys
 import os.path
 from pathlib import Path
 from jsonschema import Draft7Validator, validators
@@ -157,9 +158,16 @@ def load_config(config_file_name=None, config_data=None):
     # -------------------------------------------------------------------------
 
     config_validator = extend_with_default(Draft7Validator)
+    v = config_validator(schema.config_schema)
+    config_errors = sorted(v.iter_errors(config), key=str)
 
-    config_validator(schema.config_schema).validate(config)
-    # TODO Catch jsonschema.exceptions.ValidationError  and print proper error message
+    if len(config_errors) != 0:
+        print(
+            f"Found {len(config_errors)} error(s) in the configuration file ({config_file_name})"
+        )
+        for error in config_errors:
+            print(f"  {error.message} in {'/'.join(error.absolute_path)}")
+        sys.exit(1)
 
     # since the code will open a netbox connection in multiple places,
     # store the actual value provided to the pynetbox.Api, which is
