@@ -161,7 +161,7 @@ def load_config(config_file_name=None, config_data=None):
     v = config_validator(schema.config_schema)
     config_errors = sorted(v.iter_errors(config), key=str)
 
-    if len(config_errors) is not 0:
+    if len(config_errors) != 0:
         print(
             f"Found {len(config_errors)} error(s) in the configuration file ({config_file_name})"
         )
