@@ -33,7 +33,9 @@ def test_nb_inventory_all(requests_mock):
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
-    requests_mock.get("http://mock/api/dcim/devices/", json=data1)
+    requests_mock.get(
+        "http://mock/api/dcim/devices/?exclude=config_context", json=data1
+    )
 
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
@@ -63,7 +65,9 @@ def test_nb_inventory_filtered(requests_mock):
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
-    requests_mock.get("http://mock/api/dcim/devices/?name=el-paso", json=data1)
+    requests_mock.get(
+        "http://mock/api/dcim/devices/?name=el-paso&exclude=config_context", json=data1
+    )
 
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
@@ -77,6 +81,32 @@ def test_nb_inventory_filtered(requests_mock):
     assert len(inv_filtered.hosts.keys()) == 1
     assert "el-paso" in inv_filtered.hosts.keys()
     assert "amarillo" not in inv_filtered.hosts.keys()
+
+
+def test_nb_inventory_exclude(requests_mock):
+    """
+    Test netbox dynamic inventory with exclude filter parameters
+
+    Args:
+        requests_mock (:obj:`requests_mock.mocker.Mocker`): Automatically inserted
+        by pytest library, mocks requests get to external API so external API call is
+        not needed for unit test.
+    """
+
+    # Load mock data fixtures
+    data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
+    requests_mock.get("http://mock/api/dcim/devices/?exclude=platform", json=data1)
+
+    data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
+    requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
+
+    inv = NBInventory(  # nosec
+        nb_url="http://mock",  # nosec
+        nb_token="12349askdnfanasdf",  # nosec
+        filter_parameters={"exclude": "platform"},  # nosec
+    )  # nosec
+
+    assert len(inv.hosts.keys()) == 6
 
 
 def test_nb_inventory_virtual_chassis(requests_mock):

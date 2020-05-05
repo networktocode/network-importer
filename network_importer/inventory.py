@@ -108,6 +108,9 @@ class NBInventory(Inventory):
         """
         filter_parameters = filter_parameters or {}
 
+        if "exclude" not in filter_parameters.keys():
+            filter_parameters["exclude"] = "config_context"
+
         # Instantiate netbox session using pynetbox
         nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
 
