@@ -349,7 +349,7 @@ class NetboxPrefix(Prefix):
         """ """
         self.prefix = rem.prefix
 
-        if rem.vlan:
+        if rem.vlan and not isinstance(rem.vlan, int):
             self.vlan = rem.vlan.vid
 
         self.remote = rem
