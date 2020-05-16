@@ -131,13 +131,15 @@ class Prefix(BaseModel):
     Base Class for Prefix
     """
 
-    def __init__(self, prefix: str = None):
+    def __init__(self, prefix: str = None, vlan_id: int = None):
         """
 
         Args:
-          prefix:  (Default value = None)
+          prefix: str (Default value = None)
+          vlan_id: int (Default value = None)
         """
         self.prefix = prefix
+        self.vlan = vlan_id
         self.family = None
 
 

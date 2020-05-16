@@ -348,6 +348,10 @@ class NetboxPrefix(Prefix):
     def add(self, rem):
         """ """
         self.prefix = rem.prefix
+
+        if rem.vlan:
+            self.vlan = rem.vlan.vid
+
         self.remote = rem
 
     def update(self, rem):

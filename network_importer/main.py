@@ -314,6 +314,22 @@ class NetworkImporter:
 
             bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
 
+            interface_vlans_mapping = defaultdict(list)
+
+            if config.main["import_vlans"] == "config":
+                bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
+                for vlan in bf_vlans.frame().itertuples():
+                    dev.site.add_vlan(
+                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
+                        device=dev.name,
+                    )
+
+                    # Save interface to vlan mapping for later use
+                    for intf in vlan.Interfaces:
+                        if intf.hostname != dev.name:
+                            continue
+                        interface_vlans_mapping[intf.interface].append(vlan.VLAN_ID)
+
             for bf_intf in bf_ints.frame().itertuples():
                 found_intf = False
 
@@ -325,7 +341,15 @@ class NetworkImporter:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
 
                     if config.main["import_prefixes"]:
-                        dev.site.add_prefix_from_ip(ip=prfx)
+                        vlan = None
+                        if len(interface_vlans_mapping[intf_name]) == 1:
+                            vlan = interface_vlans_mapping[intf_name][0]
+                        elif len(interface_vlans_mapping[intf_name]) >= 1:
+                            logger.warning(
+                                f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({interface_vlans_mapping[intf_name]})"
+                            )
+
+                        dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)
 
             if config.main["import_vlans"] == "config":
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()

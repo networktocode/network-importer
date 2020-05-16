@@ -991,7 +991,7 @@ class NetworkImporterSite:
 
         return True
 
-    def add_prefix_from_ip(self, ip):
+    def add_prefix_from_ip(self, ip, vlan=None):
         """
         Add a prefix to the site based on an IP address
         - Identify the prefix associated with the ip address
@@ -1001,20 +1001,27 @@ class NetworkImporterSite:
 
         Args:
             ip: str 1.2.3.4/24
-
+            vlan: int Vlan ID of a Potential vlan associated with this prefix 
         """
 
         prefix = ipaddress.ip_network(ip, strict=False)
 
+        # If the prefix has only 1 ip it's a loopback and not a prefix
         if prefix.num_addresses == 1:
             return False
 
+        associated_vlan = None
+        if vlan and vlan in self.vlans.keys():
+            associated_vlan = self.vlans[vlan]
+
         prefix_str = str(prefix)
         if prefix_str not in self.prefixes.keys():
-            self.prefixes[prefix_str] = NetworkImporterPrefix(prefix=prefix_str)
+            self.prefixes[prefix_str] = NetworkImporterPrefix(
+                prefix=prefix_str, vlan=associated_vlan
+            )
 
         if not self.prefixes[prefix_str].exist_local():
-            self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str))
+            self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
             logger.debug(f"Site {self.name} | Prefix {prefix_str} added (local)")
 
     def convert_vids_to_nids(self, vids):
@@ -1098,9 +1105,14 @@ class NetworkImporterSite:
         )
 
         for prefix in prefixes:
+
             if prefix.prefix not in self.prefixes.keys():
+                vlan = None
+                if prefix.vlan:
+                    vlan = prefix.vlan.vid
+
                 self.prefixes[prefix.prefix] = NetworkImporterPrefix(
-                    prefix=prefix.prefix
+                    prefix=prefix.prefix, vlan=vlan
                 )
 
             if not self.prefixes[prefix.prefix].exist_remote():
@@ -1213,7 +1225,7 @@ class NetworkImporterPrefix(NetworkImporterObjBase):
 
     obj_type = "prefix"
 
-    def __init__(self, prefix):
+    def __init__(self, prefix, vlan=None):
         """
 
         Args:
@@ -1222,6 +1234,7 @@ class NetworkImporterPrefix(NetworkImporterObjBase):
         """
         self.id = prefix
         self.prefix = prefix
+        self.vlan = vlan
 
     def add_remote(self, remote):
         """
