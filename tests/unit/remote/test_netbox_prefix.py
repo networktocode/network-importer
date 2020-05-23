@@ -22,6 +22,7 @@ def test_netbox27_prefix_no_vlan():
     assert item.prefix == "10.1.111.0/24"
     assert item.vlan == None
 
+
 def test_netbox27_prefix_vlan():
 
     data = yaml.safe_load(open(f"{HERE}/{FIXTURE_27}/prefix_vlan.json"))
