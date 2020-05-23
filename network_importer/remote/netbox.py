@@ -141,20 +141,8 @@ class Netbox26Interface(NetboxInterface):
             intf_properties["type"] = 200
         elif intf.is_virtual:
             intf_properties["type"] = 0
-        elif intf.speed == 1000000000:
-            intf_properties["type"] = 800
-        elif intf.speed == 1000000000:
-            intf_properties["type"] = 1100
-        elif intf.speed == 10000000000:
-            intf_properties["type"] = 1200
-        elif intf.speed == 25000000000:
-            intf_properties["type"] = 1350
-        elif intf.speed == 40000000000:
-            intf_properties["type"] = 1400
-        elif intf.speed == 100000000000:
-            intf_properties["type"] = 1600
         else:
-            intf_properties["type"] = 1100
+            intf_properties["type"] = 32767
 
         if intf.mtu:
             intf_properties["mtu"] = intf.mtu
@@ -260,7 +248,7 @@ class Netbox27Interface(NetboxInterface):
         elif intf.is_virtual:
             intf_properties["type"] = "virtual"
         else:
-            intf_properties["type"] = "10gbase-x-sfpp"
+            intf_properties["type"] = "other"
 
         if intf.mtu:
             intf_properties["mtu"] = intf.mtu
