@@ -71,13 +71,12 @@ def sort_by_digits(if_name: str) -> tuple:
     return tuple(map(int, find_digit.findall(if_name)))
 
 
-def is_interface_physical(name, vendor=None):
+def is_interface_physical(name):  # pylint: disable=R0911
     """
     Function evaludate if an interface is likely to be a physical interface
-    
+
     Args:
       name: str name of the interface to evaluate
-      vendor: str name of the vendor (optional)
 
     Return:
       True, False or None
@@ -119,10 +118,10 @@ def is_interface_physical(name, vendor=None):
     return None
 
 
-def is_interface_lag(name, vendor=None):
+def is_interface_lag(name):
     """
     Function evaluate if an interface is likely to be a lag
-    
+
     Args:
       name: str name of the interface to evaluate
       vendor: str name of the vendor (optional)

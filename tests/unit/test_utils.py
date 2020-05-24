@@ -41,6 +41,7 @@ def test_sort_by_digits():
 
 
 def test_is_interface_physical():
+    # pylint: disable=C0121
     """
     Test is_interface_physical
     """
@@ -62,6 +63,7 @@ def test_is_interface_physical():
 
 
 def test_is_interface_lag():
+    # pylint: disable=C0121
     """
     Test is_interface_log
     """

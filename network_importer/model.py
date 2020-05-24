@@ -13,7 +13,6 @@ limitations under the License.
 """
 # pylint: disable=invalid-name,redefined-builtin
 import logging
-import re
 import ipaddress
 import network_importer.config as config
 
@@ -754,7 +753,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         if is_lag:
             self.local.is_lag = True
             self.local.is_virtual = False
-        elif is_physical == False:
+        elif is_physical == False:  # pylint: disable=C0121
             self.local.is_virtual = True
         else:
             self.local.is_virtual = False
