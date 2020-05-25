@@ -148,7 +148,13 @@ class Netbox26Interface(NetboxInterface):
             intf_properties["mtu"] = intf.mtu
 
         if intf.description is not None:
-            intf_properties["description"] = intf.description
+            if len(intf.description) <= 100:
+                intf_properties["description"] = intf.description
+            else:
+                logger.warning(
+                    f"{intf.device} {intf.name} | The description has been truncated because it was over 100char"
+                )
+                intf_properties["description"] = intf.description[:98] + ".."
 
         # TODO Add a check here to see what is the current status
         if intf.switchport_mode == "ACCESS":
@@ -254,7 +260,13 @@ class Netbox27Interface(NetboxInterface):
             intf_properties["mtu"] = intf.mtu
 
         if intf.description is not None:
-            intf_properties["description"] = intf.description
+            if len(intf.description) <= 100:
+                intf_properties["description"] = intf.description
+            else:
+                logger.warning(
+                    f"{intf.device} {intf.name} | The description has been truncated because it was over 100char"
+                )
+                intf_properties["description"] = intf.description[:98] + ".."
 
         # TODO Add a check here to see what is the current status
         if intf.switchport_mode == "ACCESS":
