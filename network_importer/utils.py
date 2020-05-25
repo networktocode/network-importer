@@ -73,7 +73,7 @@ def sort_by_digits(if_name: str) -> tuple:
 
 def is_interface_physical(name):  # pylint: disable=R0911
     """
-    Function evaludate if an interface is likely to be a physical interface
+    Function evaluate if an interface is likely to be a physical interface
 
     Args:
       name: str name of the interface to evaluate
@@ -85,7 +85,7 @@ def is_interface_physical(name):  # pylint: disable=R0911
     # Match most physical interface Cisco that contains Ethernet
     #  GigabitEthernet0/0/2
     #  GigabitEthernet0/0/2:3
-    #  TenGigabitEternet0/0/4
+    #  TenGigabitEthernet0/0/4
     cisco_physical_intf = r"^[a-zA-Z]+[Ethernet][0-9\/\:]+$"
 
     # Match Sub interfaces finishing with ".<number>"

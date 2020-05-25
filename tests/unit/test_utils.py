@@ -62,6 +62,7 @@ def test_is_interface_physical():
     assert is_interface_physical("ae0.100") == False
     assert is_interface_physical("Management0/0") == True
 
+
 def test_is_interface_lag():
     # pylint: disable=C0121
     """
