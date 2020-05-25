@@ -60,7 +60,7 @@ def test_is_interface_physical():
     assert is_interface_physical("Loopback1") == False
     assert is_interface_physical("Vlan108") == False
     assert is_interface_physical("ae0.100") == False
-
+    assert is_interface_physical("Management0/0") == True
 
 def test_is_interface_lag():
     # pylint: disable=C0121
@@ -72,6 +72,7 @@ def test_is_interface_lag():
     assert is_interface_lag("ae0") == True
     assert is_interface_lag("ae0.100") == None
     assert is_interface_lag("Port-Channel100") == True
+    assert is_interface_lag("Port-Channel100.100") == None
     assert is_interface_lag("GigabitEthernet0/0/2") == None
     assert is_interface_lag("GigabitEthernet0/0/2.890") == None
     assert is_interface_lag("GigabitEthernet0/0/2.1") == None
@@ -86,3 +87,4 @@ def test_is_interface_lag():
     assert is_interface_lag("lo0.0") == None
     assert is_interface_lag("Loopback1") == None
     assert is_interface_lag("Vlan108") == None
+    assert is_interface_lag("Management0/0") == None
