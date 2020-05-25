@@ -326,7 +326,7 @@ class NetworkImporter:
 
                     # Save interface to vlan mapping for later use
                     for intf in vlan.Interfaces:
-                        if intf.hostname != dev.name:
+                        if intf.hostname != dev.name.lower():
                             continue
                         interface_vlans_mapping[intf.interface].append(vlan.VLAN_ID)
 
