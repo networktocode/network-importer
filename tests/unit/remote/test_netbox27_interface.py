@@ -132,3 +132,17 @@ def test_netbox26_properties_interface_lag_trunk():
     intf_prop = Netbox27Interface.get_properties(intf)
 
     assert intf_prop["mode"] == "tagged"
+
+
+def test_netbox27_properties_long_description():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_physical.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox27Interface()
+    intf.add(rem)
+
+    intf_prop = Netbox27Interface.get_properties(intf)
+
+    assert len(intf_prop["description"]) == 100

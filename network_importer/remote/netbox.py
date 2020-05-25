@@ -64,6 +64,7 @@ class Netbox26Interface(NetboxInterface):
 
         self.remote = rem
         self.name = rem.name
+        self.device_name = rem.device.name
 
         if config.main["import_intf_status"]:
             self.active = rem.enabled
@@ -152,7 +153,7 @@ class Netbox26Interface(NetboxInterface):
                 intf_properties["description"] = intf.description
             else:
                 logger.warning(
-                    f"{intf.device} {intf.name} | The description has been truncated because it was over 100char"
+                    f"{intf.device_name} {intf.name} | The description has been truncated because it was over 100char"
                 )
                 intf_properties["description"] = intf.description[:98] + ".."
 
@@ -176,6 +177,7 @@ class Netbox27Interface(NetboxInterface):
 
         self.remote = rem
         self.name = rem.name
+        self.device_name = rem.device.name
 
         if config.main["import_intf_status"]:
             self.active = rem.enabled
@@ -264,7 +266,7 @@ class Netbox27Interface(NetboxInterface):
                 intf_properties["description"] = intf.description
             else:
                 logger.warning(
-                    f"{intf.device} {intf.name} | The description has been truncated because it was over 100char"
+                    f"{intf.device_name} {intf.name} | The description has been truncated because it was over 100char"
                 )
                 intf_properties["description"] = intf.description[:98] + ".."
 
