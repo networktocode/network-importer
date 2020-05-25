@@ -743,6 +743,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         if not self.local:
             self.local = Interface(name=self.name)
+            self.local.device_name = self.device_name
 
         if "port-channel" in self.name:
             self.local.is_lag = True

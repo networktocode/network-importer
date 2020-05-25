@@ -76,7 +76,7 @@ class Interface(BaseModel):
     the goal is to add it back in the future
     """
 
-    exclude_from_diff = ["lag_members", "speed"]
+    exclude_from_diff = ["device_name", "lag_members", "speed"]
 
     def __init__(self, name: str = None):
         """
