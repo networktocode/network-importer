@@ -23,6 +23,7 @@ def test_netbox26_add_interface_access():
     intf = Netbox26Interface()
     intf.add(rem)
 
+    assert intf.device_name == "deviceA"
     assert intf.is_lag == False
     assert intf.is_virtual == False
     assert intf.is_lag_member == None

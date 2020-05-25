@@ -25,6 +25,7 @@ def test_netbox27_add_interface_access():
     intf = Netbox27Interface()
     intf.add(rem)
 
+    assert intf.device_name == "HQ-CORE-SW02"
     assert intf.is_lag == False
     assert intf.is_virtual == False
     assert intf.is_lag_member == None
