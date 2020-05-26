@@ -23,6 +23,10 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
+from netmod import NetMod
+from netmod_netbox import NetModNetBox
+from netmod_ni import NetModNi
+from netmod.diff import diff_attrs, update_src_dst
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -70,25 +74,45 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
 
-    if config.logs["level"] != "debug":
-        logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
-        logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
+    # if config.logs["level"] != "debug":
+    logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
+    logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
 
     logging.basicConfig(
         stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
-    if config.logs["level"] == "debug":
-        logger.setLevel(logging.DEBUG)
-    elif config.logs["level"] == "warning":
-        logger.setLevel(logging.WARNING)
-    else:
-        logger.setLevel(logging.INFO)
+    # if config.logs["level"] == "debug":
+    #     logger.setLevel(logging.DEBUG)
+    # elif config.logs["level"] == "warning":
+    #     logger.setLevel(logging.WARNING)
+    # else:
+    #     logger.setLevel(logging.INFO)
+
+    logger.setLevel(logging.DEBUG)
+
+    logger.info(f"Import NetBox Model")
+    nmnb = NetModNetBox()
+    nmnb.import_data()
+
+    logger.info(f"Import NI Model")
+    nmni = NetModNi()
+    nmni.import_data()
+
+    # session1 = nmnb.start_session()
+    # session2 = nmni.start_session()
+
+    # dev1 = session1.query(nmnb.device).all()
+    # dev2 = session2.query(nmni.device).all()
+
+    ses_src = nmni.start_session()
+    ses_dst = nmnb.start_session()
+    update_src_dst(ses_src, ses_dst)
 
     # TODO add code to set config.main["hostvars_directory"] based on options.output
     # TODO add code to set config.main["configs_directory"] based on options.configs
 
-    ni = NetworkImporter()
+    # ni = NetworkImporter()
 
     if update_configs:
         ni.build_inventory(limit=limit)
@@ -96,37 +120,37 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         if not check and not apply:
             sys.exit(0)
 
-    ni.init(limit=limit)
+    # ni.init(limit=limit)
 
-    ni.import_devices_from_configs()
-    ni.import_devices_from_cmds()
+    # ni.import_devices_from_configs()
+    # ni.import_devices_from_cmds()
 
-    ni.import_cabling()
+    # ni.import_cabling()
 
-    ni.check_data_consistency()
+    # ni.check_data_consistency()
 
-    # ------------------------------------------------------------------------------------
-    # Update Remote if apply is enabled
-    # ------------------------------------------------------------------------------------
-    if apply:
-        ni.update_remote()
+    # # ------------------------------------------------------------------------------------
+    # # Update Remote if apply is enabled
+    # # ------------------------------------------------------------------------------------
+    # if apply:
+    #     ni.update_remote()
 
-    elif check:
-        ni.diff_local_remote()
+    # elif check:
+    #     ni.diff_local_remote()
 
-    if config.logs["performance_log"]:
-        perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
-        perf.TIME_TRACKER.print_all()
+    # if config.logs["performance_log"]:
+    #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
+    #     perf.TIME_TRACKER.print_all()
 
-    if config.netbox["status_update"] and apply:
-        ni.update_devices_status()
+    # if config.netbox["status_update"] and apply:
+    #     ni.update_devices_status()
 
-    if diff:
-        ni.print_diffs()
+    # if diff:
+    #     ni.print_diffs()
 
-    logger.info(
-        f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
-    )
+    # logger.info(
+    #     f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
+    # )
     if debug:
         pdb.set_trace()
 

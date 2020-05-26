@@ -21,17 +21,17 @@
     netbox_token: "{{ lookup('env','NETBOX_TOKEN') }}"
 
   tasks:
-    - name: Create Manufacturer in Netbox
-      netbox_manufacturer:
-        netbox_url: "{{ netbox_address }}"
-        netbox_token: "{{ netbox_token }}"
-        data:
-          name: "{{ item.manufacturer }}"
-        state: present
-      loop: "{{platforms}}"
-      run_once: true
-      tags: [ manufacturer, device_type ]
-      delegate_to: localhost
+    # - name: Create Manufacturer in Netbox
+    #   netbox_manufacturer:
+    #     netbox_url: "{{ netbox_address }}"
+    #     netbox_token: "{{ netbox_token }}"
+    #     data:
+    #       name: "{{ item.manufacturer }}"
+    #     state: present
+    #   loop: "{{platforms}}"
+    #   run_once: true
+    #   tags: [ manufacturer, device_type ]
+    #   delegate_to: localhost
 
     - name: Create Device Type in Netbox
       netbox_device_type:
