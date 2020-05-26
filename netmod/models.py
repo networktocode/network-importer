@@ -13,36 +13,46 @@ Base = declarative_base()
 class BaseNetMod:
 
     def __iter__(self):
-        for v in self.__values__:
+        for v in self.values:
             yield v, getattr(self, v)
 
     def get_type(self):
         return self.__tablename__
 
+    def get_primary_keys(self):
+        return [pk.name for pk in self.__table__.primary_key]
 
-class Site(Base):
+class Site(Base, BaseNetMod):
     """
     """
 
     __tablename__ = "site"
 
     diffs = ["name"]
+    values = ["name"]
 
     name = Column(String(250), primary_key=True)
     devices = relationship("Device", back_populates="site")
 
-class Device(Base):
+    def __repr__(self):
+        return f"{self.name}"
+
+class Device(Base, BaseNetMod):
     """
     """
 
     __tablename__ = "device"
 
     diffs = ["name", "interfaces"]
+    values = ["name"]
 
     name = Column(String(250), primary_key=True)
     site_name = Column(String(250), ForeignKey("site.name"), nullable=True)
     site = relationship("Site", back_populates="devices")
     interfaces = relationship("Interface", back_populates="device")
+
+    def __repr__(self):
+        return f"{self.name}"
 
 class Interface(Base, BaseNetMod):
     """
@@ -51,7 +61,7 @@ class Interface(Base, BaseNetMod):
     __tablename__ = "interface"
 
     diffs = ["name", "description", "ips"]
-    __values__ = ["name", "device_name", "description", "mtu", "switchport_mode"]
+    values = ["name", "device_name", "description", "mtu", "switchport_mode"]
 
     name = Column(String(250), primary_key=True)
     description = Column(String(250), nullable=True)
@@ -62,13 +72,17 @@ class Interface(Base, BaseNetMod):
     device = relationship("Device", back_populates="interfaces")
     ips = relationship("IPAddress")
 
-class IPAddress(Base):
+    def __repr__(self):
+        return f"{self.device_name}::{self.name}"
+
+class IPAddress(Base, BaseNetMod):
     """
     """
 
     __tablename__ = "ip_address"
 
     diffs = ["address"]
+    values = ["address", "device_name", "interface_name"]
 
     address = Column(String(250), primary_key=True)
     interface_name = Column(String(250))
@@ -80,6 +94,9 @@ class IPAddress(Base):
             ['interface.device_name', 'interface.name'],
         ),
     )
+
+    def __repr__(self):
+        return f"{self.address}"
 
 class Cable(Base):
     """
@@ -100,6 +117,8 @@ class Cable(Base):
         ),
     )
 
+    def __repr__(self):
+        return f"Cable {self.device_a_name}::{self.interface_a_name} {self.device_z_name}::{self.interface_z_name}"
 
 # class Optic(Base):
 #     """

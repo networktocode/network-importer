@@ -51,14 +51,13 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
 
     """
 
-    top_level = False
+    local_session = False
     if not ses_src and not ses_dst:
         ses_src = mod_src.start_session()
         ses_dst = mod_dst.start_session()
-
-    if not attr_src and not attr_dst:
         attr_src = ses_src.query(mod_src.device).all()
         attr_dst = ses_dst.query(mod_dst.device).all()
+        local_session = True
 
     if type(attr_src) != type(attr_dst):
         logger.warning(f"Attribute {attr_src} are of different types")
@@ -70,11 +69,10 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
             return False
 
         logger.debug(f"{attr_src} is of type String")
-        return True
 
-    if isinstance(attr_src, list):
-        dict_src = {item.name: item for item in attr_src}
-        dict_dst = {item.name: item for item in attr_dst}
+    elif isinstance(attr_src, list):
+        dict_src = {str(item): item for item in attr_src}
+        dict_dst = {str(item): item for item in attr_dst}
 
         same_keys = intersection(dict_src.keys(), dict_dst.keys())
 
@@ -83,14 +81,20 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
 
         for i in diff1:
             logger.info(f"{i} is missing in Dest, need to Add it in Dest")
-            
             # import pdb;pdb.set_trace()
+            mod_dst.create(
+                object_type=dict_src[i].get_type(),
+                params=dict(dict_src[i]),
+                session=ses_dst
+            )
+            # TODO Continue the tree here
 
         for i in diff2:
             logger.info(f"{i} is missing in Source, need to Delete it in Dest")
 
+        logger.debug(f"Same Keys: {same_keys}")
         for i in same_keys:
-            logger.info(f"{i} is present in both, following the path for {dict_src[i].diffs}")
+            logger.debug(f"{i} is present in both, following the path for {dict_src[i].diffs}")
             for attr in dict_src[i].diffs:
                 update_src_dst(
                     mod_src=mod_src,
@@ -101,10 +105,15 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
                     attr_dst=getattr(dict_dst[i], attr)
                 )
 
-        return True
+    else:
+        logger.warning("not supported type for now")
 
-    logger.warning("not supported type for now")
+    if local_session:
+        logger.info("Saving Changes to Source and Dest NetMod")
+        ses_src.commit()
+        ses_dst.commit()
 
+    return True
 
 
 # def diff_nets(nb, foo):

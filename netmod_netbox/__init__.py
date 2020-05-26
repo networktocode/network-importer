@@ -17,6 +17,10 @@ class NetModNetBox(NetMod):
     ip_address = NetboxIPAddress
     cable = NetboxCable
 
+    def __init__(self, *args, **kwargs):
+        super(NetModNetBox, self).__init__(*args, **kwargs)
+        self.nb = None
+
     def import_data(self):
 
         device_names = []
@@ -122,3 +126,12 @@ class NetModNetBox(NetMod):
             logger.debug(f"{source} | Found {nbr_cables} cables in netbox for {site.name}")
 
         session.commit()
+
+    def create_interface(self, params, session=None):
+        
+        params["device"] = params.pop("device_name")
+        intf = self.nb.dcim.interface.create(
+            **params
+        )
+
+        

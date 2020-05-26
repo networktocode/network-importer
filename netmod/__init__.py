@@ -8,6 +8,8 @@ from sqlalchemy import create_engine
 
 from .models import *
 
+logger = logging.getLogger("network-importer")
+
 class NetMod:
 
     site = Site
@@ -40,12 +42,20 @@ class NetMod:
 
         if not hasattr(self, object_type):
             raise Exception("Unable to find this object type")
-
-        # TODO add more checks
-        # TODO check of all params are valid
-        obj = getattr(self, object_type)
-        item = obj(**params)
+        
+        if hasattr(self, f"create_{object_type}"):
+            item = getattr(self, f"create_{object_type}")(
+                params=params,
+                session=session
+            )
+        else:
+            # TODO add more checks
+            # TODO check of all params are valid
+            obj = getattr(self, object_type)
+            item = obj(**params)
+        
         session.add(item)
+        logger.debug(f"Created {object_type} - {params}")
 
         if local_session:
             session.commit()
