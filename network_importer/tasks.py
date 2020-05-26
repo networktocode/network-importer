@@ -412,12 +412,15 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
 
         # Convert CDP details output to Napalm LLDP format
         if type(results[0].result) != list:
-            logger.error(f"{task.host.name} | Bad LLDP data from device - data={results[0].result}")
+            logger.error(
+                f"{task.host.name} | Bad LLDP data from device - data={results[0].result}"
+            )
         else:
             for neighbor in results[0].result:
                 neighbors["lldp_neighbors"][neighbor["local_port"]].append(
                     dict(
-                        hostname=neighbor["destination_host"], port=neighbor["remote_port"]
+                        hostname=neighbor["destination_host"],
+                        port=neighbor["remote_port"],
                     )
                 )
 
