@@ -23,6 +23,7 @@ def test_netbox26_add_interface_access():
     intf = Netbox26Interface()
     intf.add(rem)
 
+    assert intf.device_name == "deviceA"
     assert intf.is_lag == False
     assert intf.is_virtual == False
     assert intf.is_lag_member == None
@@ -117,3 +118,17 @@ def test_netbox26_properties_interface_loopback():
     assert intf_prop["type"] == 0
     assert intf_prop["mode"] == None
     assert intf_prop["enabled"] == True
+
+
+def test_netbox26_properties_long_description():
+
+    config.load_config()
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURES}/interface_loopback.json"))
+    rem = pynetbox.models.dcim.Interfaces(data, "http://mock", 1)
+
+    intf = Netbox26Interface()
+    intf.add(rem)
+
+    intf_prop = Netbox26Interface.get_properties(intf)
+
+    assert len(intf_prop["description"]) == 100

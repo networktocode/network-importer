@@ -17,7 +17,7 @@
     "mtu": null,
     "mac_address": null,
     "mgmt_only": false,
-    "description": "HQ-CORE-SW <-> HQ-DC-SW02",
+    "description": "more than 100char description xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
     "connected_endpoint_type": "dcim.interface",
     "connected_endpoint": {
       "id": 577,
