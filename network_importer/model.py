@@ -13,12 +13,15 @@ limitations under the License.
 """
 # pylint: disable=invalid-name,redefined-builtin
 import logging
-import re
 import ipaddress
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
-from network_importer.utils import expand_vlans_list
+from network_importer.utils import (
+    expand_vlans_list,
+    is_interface_physical,
+    is_interface_lag,
+)
 
 from network_importer.drivers import get_driver
 
@@ -745,20 +748,19 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local = Interface(name=self.name)
             self.local.device_name = self.device_name
 
-        if "port-channel" in self.name:
+        is_physical = is_interface_physical(self.name)
+        is_lag = is_interface_lag(self.name)
+
+        if is_lag:
             self.local.is_lag = True
             self.local.is_virtual = False
-
-        # Hack for VMX to set the interface type properly
-        jnpr_physical_interface = r"^[a-z]+\-[0-9\/\:]+$"
-        if re.match(jnpr_physical_interface, self.name):
-            self.local.is_virtual = False
-
-        elif self.local.speed is None and bf.Speed is None and not self.local.is_lag:
+        elif is_physical == False:  # pylint: disable=C0121
             self.local.is_virtual = True
-        elif self.local.speed is None and not self.local.is_lag:
-            self.local.speed = int(bf.Speed)
+        else:
             self.local.is_virtual = False
+
+        if is_physical and self.local.speed:
+            self.local.speed = int(bf.Speed)
 
         if self.local.mtu is None:
             self.mtu = bf.MTU
