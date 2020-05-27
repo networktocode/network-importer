@@ -51,7 +51,7 @@ class NetModNi(NetMod):
     # ip_address = NetboxIPAddress
     # cable = NetboxCable
 
-    def import_data(self):
+    def init(self):
 
         # CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
         NETWORK_NAME = "network-importer"

@@ -21,7 +21,7 @@ class NetModNetBox(NetMod):
         super(NetModNetBox, self).__init__(*args, **kwargs)
         self.nb = None
 
-    def import_data(self):
+    def init(self):
 
         device_names = []
 
@@ -74,9 +74,11 @@ class NetModNetBox(NetMod):
             for intf in intfs:
                 session.add(
                     self.interface(
-                        name=intf.name, 
+                        name=intf.name,
                         device_name=dev.name,
-                        remote_id=intf.id
+                        remote_id=intf.id,
+                        description=intf.description or None,
+                        mtu=intf.mtu
                     )
                 )
 
@@ -127,11 +129,79 @@ class NetModNetBox(NetMod):
 
         session.commit()
 
-    def create_interface(self, params, session=None):
-        
-        params["device"] = params.pop("device_name")
-        intf = self.nb.dcim.interface.create(
-            **params
-        )
+    def create_interface(self, keys, params, session=None):
 
+        nb_params = {}
+        nb_params.update(keys)
+        nb_params.update(params)
+        
+        # import pdb;pdb.set_trace()
+        device = session.query(self.device).filter(self.device.name == item.device_name).first()
+        nb_params["device"] = device.remote_id
+        del nb_params["device_name"]
+
+        if "description" in nb_params and not nb_params["description"]:
+            nb_params["description"] = ""
+
+        nb_params["type"] = "other"
+
+        intf = self.nb.dcim.interfaces.create(
+            **nb_params
+        )
+        logger.info(f"Created interface {intf.name} ({intf.id}) in NetBox")
+        
+        # Create the object in the local DB
+        item = self.default_create(
+                object_type="interface",
+                keys=keys,
+                params=params,
+                session=session
+            )
+        item.remote_id = intf.id
+
+        return item
+
+    def update_interface(self, keys, params, session=None):
+
+        item = session.query(self.interface).filter_by(**keys).first()
+
+        attrs = item.get_attrs()
+        if attrs == params:
+            return item
+
+        if "description" in params and not params["description"]:
+            params["description"] = ""
+
+        intf = self.nb.dcim.interfaces.get(item.remote_id)
+        intf.update(data=params)
+
+        for key, value in params.items():
+            setattr(item, key, value)
+
+        return item
+
+        # item = self.default_update(
+        #         object_type="interface",
+        #         keys=keys,
+        #         params=params,
+        #         session=session
+        #     )
+
+    #     # import pdb;pdb.set_trace()
+    #     device = session.query(self.device).filter(self.device.name == item.device_name).first()
+    #     keys["device"] = device.remote_id
+    #     del keys["device_name"]
+
+    #     if "description" in params and not params["description"]:
+    #         params["description"] = ""
+
+    #     params["type"] = "other"
+
+    #     intf = self.nb.dcim.interfaces.create(
+    #         **keys, **params
+    #     )
+    #     logger.info(f"Created interface {intf.name} ({intf.id}) in NetBox")
+    #     item.remote_id = intf.id
+
+    #     return item
         

@@ -27,14 +27,41 @@ class NetMod:
         Base.metadata.create_all(self.engine)
         self.__sm__ = sessionmaker(bind=self.engine)
 
+    def init(self):
+        raise NotImplementedError
+
     def start_session(self):
         return self.__sm__()
 
-    # def get(self, session):
-    #     return session.query(self.network).get(1)
+    def create(self, object_type, keys, params, session=None):
 
-    def create(self, object_type, params, session=None):
+        self._crud_change(
+            action="create",
+            keys=keys,
+            object_type=object_type,
+            params=params,
+            session=session
+        )
 
+    def update(self, object_type, keys, params, session=None):
+        self._crud_change(
+            action="update",
+            object_type=object_type,
+            keys=keys,
+            params=params,
+            session=session
+        )
+
+    def delete(self, object_type, keys, params, session=None):
+        self._crud_change(
+            action="delete",
+            object_type=object_type,
+            keys=keys,
+            params=params,
+            session=session
+        )
+
+    def _crud_change(self, action, object_type, keys, params, session=None):
         local_session = False
         if not session:
             session = self.start_session()
@@ -42,29 +69,46 @@ class NetMod:
 
         if not hasattr(self, object_type):
             raise Exception("Unable to find this object type")
-        
-        if hasattr(self, f"create_{object_type}"):
-            item = getattr(self, f"create_{object_type}")(
+
+        # Check if a specific crud function is available
+        #   update_interface or create_device etc ...
+        # If not apply the default one
+        if hasattr(self, f"{action}_{object_type}"):
+            item = getattr(self, f"{action}_{object_type}")(
+                keys=keys,
                 params=params,
                 session=session
             )
+            logger.debug(f"{action}d {object_type} - {params}")
         else:
-            # TODO add more checks
-            # TODO check of all params are valid
-            obj = getattr(self, object_type)
-            item = obj(**params)
-        
-        session.add(item)
-        logger.debug(f"Created {object_type} - {params}")
+            item = getattr(self, f"default_{action}")(
+                object_type=object_type,
+                keys=keys,
+                params=params,
+                session=session
+            )
+            logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
 
         if local_session:
             session.commit()
 
         return item
 
-    # def update(self, object_type, params, session=None):
+    def default_create(self, object_type, keys, params, session):
+        """ """
+        obj = getattr(self, object_type)
+        item = obj(**keys, **params)
+        session.add(item)
+        return item
 
-    # def get_devices(self):
-    #     session = self.start_session()
-    #     return session.query(self.device).all()
+    def default_update(self, object_type, keys, params, session):
+        obj = getattr(self, object_type)
+        item = session.query(obj).get(**keys)
+        item.update(**params)
+        return item
 
+    def default_delete(self, object_type, keys, params, session):
+        obj = getattr(self, object_type)
+        item = session.query(obj).get(**keys)
+        session.delete(item)
+        return item

@@ -26,7 +26,7 @@ import network_importer.performance as perf
 from netmod import NetMod
 from netmod_netbox import NetModNetBox
 from netmod_ni import NetModNi
-from netmod.diff import diff_attrs, update_src_dst
+from netmod.diff import update_src_dst
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -93,11 +93,13 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     logger.info(f"Import NetBox Model")
     nmnb = NetModNetBox()
-    nmnb.import_data()
+    nmnb.init()
 
     logger.info(f"Import NI Model")
     nmni = NetModNi()
-    nmni.import_data()
+    nmni.init()
+
+    import pdb;pdb.set_trace()
 
     # ses_src = nmni.start_session()
     # ses_dst = nmnb.start_session()
@@ -107,7 +109,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     update_src_dst(mod_src=nmni, mod_dst=nmnb)
 
-    import pdb;pdb.set_trace()
+
 
     # TODO add code to set config.main["hostvars_directory"] based on options.output
     # TODO add code to set config.main["configs_directory"] based on options.configs

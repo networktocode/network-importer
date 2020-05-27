@@ -19,8 +19,12 @@ class BaseNetMod:
     def get_type(self):
         return self.__tablename__
 
-    def get_primary_keys(self):
-        return [pk.name for pk in self.__table__.primary_key]
+    def get_keys(self):
+        return {pk.name: getattr(self, pk.name) for pk in self.__table__.primary_key}
+
+    def get_attrs(self):
+        return {attr: getattr(self, attr) for attr in self.attributes}
+
 
 class Site(Base, BaseNetMod):
     """
@@ -28,8 +32,8 @@ class Site(Base, BaseNetMod):
 
     __tablename__ = "site"
 
-    diffs = ["name"]
-    values = ["name"]
+    childs = ["devices"]
+    attributes = []
 
     name = Column(String(250), primary_key=True)
     devices = relationship("Device", back_populates="site")
@@ -43,8 +47,8 @@ class Device(Base, BaseNetMod):
 
     __tablename__ = "device"
 
-    diffs = ["name", "interfaces"]
-    values = ["name"]
+    childs = ["interfaces"]
+    attributes = []
 
     name = Column(String(250), primary_key=True)
     site_name = Column(String(250), ForeignKey("site.name"), nullable=True)
@@ -60,8 +64,8 @@ class Interface(Base, BaseNetMod):
 
     __tablename__ = "interface"
 
-    diffs = ["name", "description", "ips"]
-    values = ["name", "device_name", "description", "mtu", "switchport_mode"]
+    childs = ["ips"]
+    attributes = ["description", "mtu", "switchport_mode"]
 
     name = Column(String(250), primary_key=True)
     description = Column(String(250), nullable=True)
@@ -81,8 +85,8 @@ class IPAddress(Base, BaseNetMod):
 
     __tablename__ = "ip_address"
 
-    diffs = ["address"]
-    values = ["address", "device_name", "interface_name"]
+    childs = []
+    attributes = []
 
     address = Column(String(250), primary_key=True)
     interface_name = Column(String(250))
@@ -98,11 +102,14 @@ class IPAddress(Base, BaseNetMod):
     def __repr__(self):
         return f"{self.address}"
 
-class Cable(Base):
+class Cable(Base, BaseNetMod):
     """
     """
 
     __tablename__ = "cable"
+
+    childs = []
+    attributes = []
 
     id = Column(Integer, primary_key=True)
     device_a_name = Column(String(250))
