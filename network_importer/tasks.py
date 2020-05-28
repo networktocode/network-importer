@@ -411,12 +411,16 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
             return Result(host=task.host, failed=True)
 
         # Convert CDP details output to Napalm LLDP format
-        for neighbor in results[0].result:
-            neighbors["lldp_neighbors"][neighbor["local_port"]].append(
-                dict(
-                    hostname=neighbor["destination_host"], port=neighbor["remote_port"]
+        if not isinstance(results[0].result, list):
+            logger.warning(f"{task.host.name} | No CDP information returned")
+        else:
+            for neighbor in results[0].result:
+                neighbors["lldp_neighbors"][neighbor["local_port"]].append(
+                    dict(
+                        hostname=neighbor["destination_host"],
+                        port=neighbor["remote_port"],
+                    )
                 )
-            )
 
     if update_cache:
         save_data_to_file(task.host.name, cache_name, neighbors)
