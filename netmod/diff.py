@@ -2,8 +2,9 @@ import logging
 
 logger = logging.getLogger("network-importer")
 
-def intersection(lst1, lst2): 
-    lst3 = [value for value in lst1 if value in lst2] 
+
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
     return lst3
 
 
@@ -46,10 +47,13 @@ def intersection(lst1, lst2):
 
 #     print(f"Type {type(attr1)} is not supported for now")
 
-def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, attr_dst=None):
+
+def update_src_dst(
+    mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, attr_dst=None
+):
     """
 
-    """0
+    """
 
     local_session = False
     if not ses_src and not ses_dst:
@@ -63,54 +67,51 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
         logger.warning(f"Attribute {attr_src} are of different types")
         return False
 
-    if isinstance(attr_src, str):
-        if attr_src != attr_dst:
-            logger.warning(f"Attribute {attr_src} have different values")
-            return False
-
-        logger.debug(f"{attr_src} is of type String")
-
-    elif isinstance(attr_src, list):
+    if isinstance(attr_src, list):
         dict_src = {str(item): item for item in attr_src}
         dict_dst = {str(item): item for item in attr_dst}
 
         same_keys = intersection(dict_src.keys(), dict_dst.keys())
 
-        diff1 = list(set(dict_src.keys())-set(same_keys))
-        diff2 = list(set(dict_dst.keys())-set(same_keys))
+        diff1 = list(set(dict_src.keys()) - set(same_keys))
+        diff2 = list(set(dict_dst.keys()) - set(same_keys))
 
         for i in diff1:
             logger.info(f"{i} is missing in Dest, need to Add it in Dest")
             # import pdb;pdb.set_trace()
-            mod_dst.create(
+            mod_dst.create_object(
                 object_type=dict_src[i].get_type(),
                 keys=dict_src[i].get_keys(),
                 params=dict_src[i].get_attrs(),
-                session=ses_dst
+                session=ses_dst,
             )
             # TODO Continue the tree here
 
         for i in diff2:
             logger.info(f"{i} is missing in Source, need to Delete it in Dest")
-            mod_dst.delete(
+            mod_dst.delete_object(
                 object_type=dict_src[i].get_type(),
                 keys=dict_src[i].get_keys(),
                 params=dict_src[i].get_attrs(),
-                session=ses_dst
+                session=ses_dst,
             )
 
         # logger.debug(f"Same Keys: {same_keys}")
         for i in same_keys:
             if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
-                logger.info(f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating")
-                mod_dst.update(
+                logger.info(
+                    f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating"
+                )
+                mod_dst.update_object(
                     object_type=dict_src[i].get_type(),
                     keys=dict_dst[i].get_keys(),
                     params=dict_src[i].get_attrs(),
-                    session=ses_dst
+                    session=ses_dst,
                 )
 
-            logger.debug(f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}")
+            logger.debug(
+                f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
+            )
             for child in dict_src[i].childs:
                 update_src_dst(
                     mod_src=mod_src,
@@ -118,7 +119,7 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
                     ses_src=ses_src,
                     ses_dst=ses_dst,
                     attr_src=getattr(dict_src[i], child),
-                    attr_dst=getattr(dict_dst[i], child)
+                    attr_dst=getattr(dict_dst[i], child),
                 )
 
     else:
@@ -143,4 +144,3 @@ def update_src_dst(mod_src, mod_dst, ses_src=None, ses_dst=None, attr_src=None, 
 
 #         i1 = getattr(nw1, item)
 #         i2 = getattr(nw2, item)
-

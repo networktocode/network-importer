@@ -1,5 +1,3 @@
-
-
 import logging
 import pynetbox
 from netmod import NetMod
@@ -8,6 +6,7 @@ from .models import *
 logger = logging.getLogger("network-importer")
 
 source = "NetBox"
+
 
 class NetModNetBox(NetMod):
 
@@ -43,18 +42,11 @@ class NetModNetBox(NetMod):
 
             site = session.query(self.site).filter_by(name=device.site.slug).first()
             if not site:
-                session.add(
-                    self.site(
-                        name=device.site.slug, 
-                        remote_id=device.site.id,
-                    )
-                )
+                session.add(self.site(name=device.site.slug, remote_id=device.site.id,))
 
             session.add(
                 self.device(
-                    name=device.name, 
-                    remote_id=device.id,
-                    site_name=device.site.slug
+                    name=device.name, remote_id=device.id, site_name=device.site.slug
                 )
             )
 
@@ -78,7 +70,7 @@ class NetModNetBox(NetMod):
                         device_name=dev.name,
                         remote_id=intf.id,
                         description=intf.description or None,
-                        mtu=intf.mtu
+                        mtu=intf.mtu,
                     )
                 )
 
@@ -89,11 +81,13 @@ class NetModNetBox(NetMod):
                     self.ip_address(
                         address=ip.address,
                         device_name=dev.name,
-                        remote_id=ip.interface.name
+                        remote_id=ip.interface.name,
                     )
                 )
 
-            logger.debug(f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}")
+            logger.debug(
+                f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}"
+            )
 
         # -------------------------------------------------------------
         # Import Cables
@@ -103,15 +97,22 @@ class NetModNetBox(NetMod):
             cables = self.nb.dcim.cables.filter(site=site.name)
 
             for cable in cables:
-                if cable.termination_a_type != "dcim.interface" or cable.termination_b_type != "dcim.interface":
+                if (
+                    cable.termination_a_type != "dcim.interface"
+                    or cable.termination_b_type != "dcim.interface"
+                ):
                     continue
 
                 if cable.termination_a.device.name not in device_names:
-                    print(f"{source} | Skipping cable {cable.id} because {cable.termination_a.device.name} is not in the list of devices")
+                    print(
+                        f"{source} | Skipping cable {cable.id} because {cable.termination_a.device.name} is not in the list of devices"
+                    )
                     continue
 
                 elif cable.termination_b.device.name not in device_names:
-                    print(f"{source} | Skipping cable {cable.id} because {cable.termination_b.device.name} is not in the list of devices")
+                    print(
+                        f"{source} | Skipping cable {cable.id} because {cable.termination_b.device.name} is not in the list of devices"
+                    )
                     continue
 
                 session.add(
@@ -122,10 +123,12 @@ class NetModNetBox(NetMod):
                         interface_z_name=cable.termination_b.name,
                         remote_id=cable.id,
                     )
-                )   
+                )
 
-            nbr_cables = session.query(self.cable.id).count()
-            logger.debug(f"{source} | Found {nbr_cables} cables in netbox for {site.name}")
+            nbr_cables = session.query(self.cable).count()
+            logger.debug(
+                f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
+            )
 
         session.commit()
 
@@ -134,9 +137,9 @@ class NetModNetBox(NetMod):
         nb_params = {}
         nb_params.update(keys)
         nb_params.update(params)
-        
+
         # import pdb;pdb.set_trace()
-        device = session.query(self.device).filter(self.device.name == item.device_name).first()
+        device = session.query(self.device).filter_by(name=keys["device_name"]).first()
         nb_params["device"] = device.remote_id
         del nb_params["device_name"]
 
@@ -145,18 +148,13 @@ class NetModNetBox(NetMod):
 
         nb_params["type"] = "other"
 
-        intf = self.nb.dcim.interfaces.create(
-            **nb_params
-        )
+        intf = self.nb.dcim.interfaces.create(**nb_params)
         logger.info(f"Created interface {intf.name} ({intf.id}) in NetBox")
-        
+
         # Create the object in the local DB
         item = self.default_create(
-                object_type="interface",
-                keys=keys,
-                params=params,
-                session=session
-            )
+            object_type="interface", keys=keys, params=params, session=session
+        )
         item.remote_id = intf.id
 
         return item
@@ -180,28 +178,44 @@ class NetModNetBox(NetMod):
 
         return item
 
-        # item = self.default_update(
-        #         object_type="interface",
-        #         keys=keys,
-        #         params=params,
-        #         session=session
-        #     )
+    def create_cable(self, keys, params, session=None):
 
-    #     # import pdb;pdb.set_trace()
-    #     device = session.query(self.device).filter(self.device.name == item.device_name).first()
-    #     keys["device"] = device.remote_id
-    #     del keys["device_name"]
+        interface_a = (
+            session.query(self.interface)
+            .filter_by(
+                name=keys["interface_a_name"], device_name=keys["device_a_name"],
+            )
+            .first()
+        )
+        interface_z = (
+            session.query(self.interface)
+            .filter_by(
+                name=keys["interface_z_name"], device_name=keys["device_z_name"],
+            )
+            .first()
+        )
 
-    #     if "description" in params and not params["description"]:
-    #         params["description"] = ""
+        cable = self.nb.dcim.cables.create(
+            termination_a_type="dcim.interface",
+            termination_b_type="dcim.interface",
+            termination_a_id=interface_a.remote_id,
+            termination_b_id=interface_z.remote_id,
+        )
 
-    #     params["type"] = "other"
+        # Create the object in the local DB
+        item = self.default_create(
+            object_type="cable", keys=keys, params=params, session=session
+        )
 
-    #     intf = self.nb.dcim.interfaces.create(
-    #         **keys, **params
-    #     )
-    #     logger.info(f"Created interface {intf.name} ({intf.id}) in NetBox")
-    #     item.remote_id = intf.id
+        item.remote_id = cable.id
 
-    #     return item
-        
+        return item
+
+    def delete_cable(self, keys, params, session=None):
+        pass
+
+    def create_ip_address(self, keys, params, session=None):
+        pass
+
+    def delete_ip_address(self, keys, params, session=None):
+        pass

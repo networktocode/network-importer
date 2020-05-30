@@ -1,17 +1,21 @@
-
-
-
-
 import os
 import sys
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Table, ForeignKeyConstraint
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    DateTime,
+    Table,
+    ForeignKeyConstraint,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-class BaseNetMod:
 
+class BaseNetMod:
     def __iter__(self):
         for v in self.values:
             yield v, getattr(self, v)
@@ -39,7 +43,8 @@ class Site(Base, BaseNetMod):
     devices = relationship("Device", back_populates="site")
 
     def __repr__(self):
-        return f"{self.name}"
+        return str(self.name)
+
 
 class Device(Base, BaseNetMod):
     """
@@ -56,7 +61,8 @@ class Device(Base, BaseNetMod):
     interfaces = relationship("Interface", back_populates="device")
 
     def __repr__(self):
-        return f"{self.name}"
+        return str(self.name)
+
 
 class Interface(Base, BaseNetMod):
     """
@@ -72,12 +78,15 @@ class Interface(Base, BaseNetMod):
     mtu = Column(Integer, nullable=True)
     switchport_mode = Column(String(250), nullable=True)
 
-    device_name = Column(Integer, ForeignKey("device.name"), nullable=False, primary_key=True)
+    device_name = Column(
+        Integer, ForeignKey("device.name"), nullable=False, primary_key=True
+    )
     device = relationship("Device", back_populates="interfaces")
     ips = relationship("IPAddress")
 
     def __repr__(self):
         return f"{self.device_name}::{self.name}"
+
 
 class IPAddress(Base, BaseNetMod):
     """
@@ -94,13 +103,14 @@ class IPAddress(Base, BaseNetMod):
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ['device_name', 'interface_name'],
-            ['interface.device_name', 'interface.name'],
+            ["device_name", "interface_name"],
+            ["interface.device_name", "interface.name"],
         ),
     )
 
     def __repr__(self):
-        return f"{self.address}"
+        return str(self.address)
+
 
 class Cable(Base, BaseNetMod):
     """
@@ -111,21 +121,53 @@ class Cable(Base, BaseNetMod):
     childs = []
     attributes = []
 
-    id = Column(Integer, primary_key=True)
-    device_a_name = Column(String(250))
-    interface_a_name = Column(String(250))
-    device_z_name = Column(String(250))
-    interface_z_name = Column(String(250))
+    # id = Column(Integer, primary_key=True)
+    device_a_name = Column(String(250), primary_key=True)
+    interface_a_name = Column(String(250), primary_key=True)
+    device_z_name = Column(String(250), primary_key=True)
+    interface_z_name = Column(String(250), primary_key=True)
 
     __table_args__ = (
         ForeignKeyConstraint(
-            ['device_a_name', 'interface_a_name', 'device_z_name', 'interface_z_name'],
-            ['interface.device_name', 'interface.name', 'interface.device_name', 'interface.name'],
+            ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name"],
+            [
+                "interface.device_name",
+                "interface.name",
+                "interface.device_name",
+                "interface.name",
+            ],
         ),
     )
 
+    def __init__(
+        self, device_a_name, interface_a_name, device_z_name, interface_z_name
+    ):
+
+        devices = [device_a_name, device_z_name]
+        if sorted(devices) == devices:
+            self.device_a_name = device_a_name
+            self.interface_a_name = interface_a_name
+            self.device_z_name = device_z_name
+            self.interface_z_name = interface_z_name
+        else:
+            self.device_a_name = device_z_name
+            self.interface_a_name = interface_z_name
+            self.device_z_name = device_a_name
+            self.interface_z_name = interface_a_name
+
+    def unique_id(self):
+        return "_".join(
+            sorted(
+                [
+                    f"{self.device_a_name}:{self.interface_a_name}",
+                    f"{self.device_z_name}:{self.interface_z_name}",
+                ]
+            )
+        )
+
     def __repr__(self):
-        return f"Cable {self.device_a_name}::{self.interface_a_name} {self.device_z_name}::{self.interface_z_name}"
+        return str(self.unique_id())
+
 
 # class Optic(Base):
 #     """

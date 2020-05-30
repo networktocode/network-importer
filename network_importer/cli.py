@@ -99,7 +99,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     nmni = NetModNi()
     nmni.init()
 
-    import pdb;pdb.set_trace()
+    # import pdb;pdb.set_trace()
 
     # ses_src = nmni.start_session()
     # ses_dst = nmnb.start_session()
@@ -107,9 +107,9 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # dev1 = session1.query(nmnb.device).all()
     # dev2 = session2.query(nmni.device).all()
 
-    update_src_dst(mod_src=nmni, mod_dst=nmnb)
+    # update_src_dst(mod_src=nmni, mod_dst=nmnb)
 
-
+    # nmnb.sync(nmni)
 
     # TODO add code to set config.main["hostvars_directory"] based on options.output
     # TODO add code to set config.main["configs_directory"] based on options.configs
