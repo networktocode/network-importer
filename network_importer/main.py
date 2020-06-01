@@ -341,6 +341,15 @@ class NetworkImporter:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
 
                     if config.main["import_prefixes"]:
+                        if bf_intf.Encapsulation_VLAN:
+                            interface_vlans_mapping[intf_name].append(
+                                bf_intf.Encapsulation_VLAN
+                            )
+                            vlan = bf_intf.Encapsulation_VLAN
+                        else:
+                            vlan = None
+
+                    if config.main["import_prefixes"]:
                         vlan = None
                         if len(interface_vlans_mapping[intf_name]) == 1:
                             vlan = interface_vlans_mapping[intf_name][0]
@@ -350,14 +359,6 @@ class NetworkImporter:
                             )
 
                         dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)
-
-            if config.main["import_vlans"] == "config":
-                bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
-                for vlan in bf_vlans.frame().itertuples():
-                    dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
-                        device=dev.name,
-                    )
 
             if config.main["generate_hostvars"]:
 
