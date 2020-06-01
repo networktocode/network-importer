@@ -1,6 +1,6 @@
 
-DOCKER_IMAGE = baxter/network-importer
-DOCKER_VER = 56daf94-0.0.4
+DOCKER_IMAGE = networktocode/network-importer
+DOCKER_VER = 0.5.0dev
 
 format:
 	black .
