@@ -287,11 +287,17 @@ class NetworkImporterDevice:
                 ):
                     intf_properties["untagged_vlan"] = None
 
-                if intf.local.mode in ["TRUNK","L3_SUB_VLAN"] and intf.local.allowed_vlans:
+                if (
+                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
+                    and intf.local.allowed_vlans
+                ):
                     intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
                         intf.local.allowed_vlans
                     )
-                elif intf.local.mode in ["TRUNK","L3_SUB_VLAN"] and not intf.local.allowed_vlans:
+                elif (
+                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
+                    and not intf.local.allowed_vlans
+                ):
                     intf_properties["tagged_vlans"] = []
 
             if intf.local.is_lag_member:
