@@ -113,15 +113,13 @@ class IPAddress(Base, BaseNetMod):
 
 
 class Cable(Base, BaseNetMod):
-    """
-    """
+    """ """
 
     __tablename__ = "cable"
 
     childs = []
     attributes = []
 
-    # id = Column(Integer, primary_key=True)
     device_a_name = Column(String(250), primary_key=True)
     interface_a_name = Column(String(250), primary_key=True)
     device_z_name = Column(String(250), primary_key=True)
@@ -169,31 +167,28 @@ class Cable(Base, BaseNetMod):
         return str(self.unique_id())
 
 
-# class Optic(Base):
-#     """
-#     """
+class Vlan(Base, BaseNetMod):
+    """ """
 
-#     __tablename__ = "optic"
+    __tablename__ = "vlan"
 
-#     id = Column(Integer, primary_key=True)
-#     serial = Column(String(250), nullable=True)
-#     interface = Column(Integer, ForeignKey("interface.id"), nullable=True)
+    childs = []
+    attributes = ["name"]
 
-# class Vlan(Base):
-#     """
-#     """
+    name = Column(String(250), nullable=True)
+    vid = Column(Integer, primary_key=True)
+    site_name = Column(String(250), ForeignKey("site.name"), primary_key=True)
+    site = relationship("Site", back_populates="vlans")
 
-#     __tablename__ = "vlan"
+class Prefix(Base, BaseNetMod):
+    """
+    """
 
-#     id = Column(Integer, primary_key=True)
-#     name = Column(String(250), nullable=True)
-#     vid = Column(Integer, nullable=True)
+    __tablename__ = "prefix"
 
-# class Prefix(Base):
-#     """
-#     """
+    childs = []
+    attributes = []
 
-#     __tablename__ = "prefix"
-
-#     id = Column(Integer, primary_key=True)
-#     prefix = Column(String(250), nullable=True)
+    prefix = Column(String(250),primary_key=True)
+    site_name = Column(String(250), ForeignKey("site.name"), nullable=True)
+    site = relationship("Site", back_populates="prefixes")

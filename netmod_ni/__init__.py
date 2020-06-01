@@ -8,13 +8,15 @@ logger = logging.getLogger("network-importer")
 
 class NetModNi(NetMod):
 
-    # site = NetboxSite
-    # device = NetboxDevice
-    # interface = NetboxInterface
-    # ip_address = NetboxIPAddress
-    # cable = NetboxCable
-
     def init(self):
+
+        session = self.start_session()
+        # self.get)inventory
+        # Create site
+        self.import_batfish(session)
+        session.commit()
+
+    def import_batfish(self, session):
 
         # CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
         NETWORK_NAME = "network-importer"
@@ -30,7 +32,15 @@ class NetModNi(NetMod):
 
         self.bf.set_snapshot(SNAPSHOT_NAME)
 
-        session = self.start_session()
+        self.import_batfish_device(session)
+        self.import_batfish_cable(session)
+
+    def import_batfish_device(self, session):
+        """Import all devices from Batfish
+
+        Args:
+            session: sqlalquemy session
+        """
         devices = self.bf.q.nodeProperties().answer().frame()
 
         for _, dev in devices.iterrows():
@@ -47,32 +57,37 @@ class NetModNi(NetMod):
         # Import Device, Interface & IPs
         # -------------------------------------------------------------
         for dev in devices:
+            self.import_batfish_interface(dev, session)
 
-            intfs = self.bf.q.interfaceProperties(nodes=dev.name).answer().frame()
+    def import_batfish_interface(self, device, session):
 
-            for _, intf in intfs.iterrows():
+        intfs = self.bf.q.interfaceProperties(nodes=device.name).answer().frame()
+
+        for _, intf in intfs.iterrows():
+            session.add(
+                self.interface(
+                    name=intf["Interface"].interface,
+                    device_name=device.name,
+                    description=intf["Description"],
+                )
+            )
+
+            for prefix in intf["All_Prefixes"]:
                 session.add(
-                    self.interface(
-                        name=intf["Interface"].interface,
-                        device_name=dev.name,
-                        description=intf["Description"],
+                    self.ip_address(
+                        address=prefix,
+                        device_name=device.name,
+                        interface_name=intf["Interface"].interface,
                     )
                 )
 
-                for prefix in intf["All_Prefixes"]:
-                    session.add(
-                        self.ip_address(
-                            address=prefix,
-                            device_name=dev.name,
-                            interface_name=intf["Interface"].interface,
-                        )
-                    )
+        logger.debug(f"Found {len(intfs)} interfaces in netbox for {device.name}")
 
-            logger.debug(f"Found {len(intfs)} interfaces in netbox for {dev.name}")
+    def import_batfish_ip_address(self):
+        pass
 
-        # -------------------------------------------------------------
-        # Import Cables
-        # -------------------------------------------------------------
+    def import_batfish_cable(self, session):
+
         p2p_links = self.bf.q.layer3Edges().answer()
         existing_cables = []
         for link in p2p_links.frame().itertuples():
@@ -92,4 +107,3 @@ class NetModNi(NetMod):
         nbr_cables = session.query(self.cable).count()
         logger.debug(f"Found {nbr_cables} cables in Batfish")
 
-        session.commit()

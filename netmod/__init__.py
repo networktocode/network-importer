@@ -24,9 +24,9 @@ class NetMod:
 
     top_level = ["device", "cable"]
 
-    def __init__(self):
+    def __init__(self, db="sqlite:///:memory:"):
 
-        self.engine = create_engine(f"sqlite:///:memory:")
+        self.engine = create_engine(db)
         Base.metadata.bind = self.engine
         Base.metadata.create_all(self.engine)
         self.__sm__ = sessionmaker(bind=self.engine)
@@ -34,15 +34,23 @@ class NetMod:
     def init(self):
         raise NotImplementedError
 
+    def clean(self):
+        pass
+
     def start_session(self):
         return self.__sm__()
 
     def sync(self, source):
+        """Syncronize the current NetMod object with the source
+
+        Args:
+            source: NetMod object to sync with this one
+        """
         source_session = source.start_session()
         local_session = self.start_session()
 
         for obj in self.top_level:
-            self.sync_object(
+            self.sync_objects(
                 source=source_session.query(getattr(source, obj)).all(),
                 dest=local_session.query(getattr(source, obj)).all(),
                 session=local_session,
@@ -51,7 +59,12 @@ class NetMod:
         logger.info("Saving Changes")
         source_session.commit()
 
-    def sync_object(self, source, dest, session):
+    def sync_objects(self, source, dest, session):
+        """Syncronize the current NetMod object with the source
+
+        Args:
+            source: NetMod object to sync with this one
+        """
 
         if type(source) != type(dest):
             logger.warning(f"Attribute {source} are of different types")
@@ -103,7 +116,7 @@ class NetMod:
                     f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
                 )
                 for child in dict_src[i].childs:
-                    self.sync_object(
+                    self.sync_objects(
                         session=session,
                         source=getattr(dict_src[i], child),
                         dest=getattr(dict_dst[i], child),

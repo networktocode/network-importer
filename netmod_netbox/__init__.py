@@ -132,6 +132,9 @@ class NetModNetBox(NetMod):
 
         session.commit()
 
+    # -----------------------------------------------------
+    # Interface
+    # -----------------------------------------------------
     def create_interface(self, keys, params, session=None):
 
         nb_params = {}
@@ -178,6 +181,9 @@ class NetModNetBox(NetMod):
 
         return item
 
+    # -----------------------------------------------------
+    # Cable
+    # -----------------------------------------------------
     def create_cable(self, keys, params, session=None):
 
         interface_a = (
@@ -214,8 +220,39 @@ class NetModNetBox(NetMod):
     def delete_cable(self, keys, params, session=None):
         pass
 
+    # -----------------------------------------------------
+    # IP Address
+    # -----------------------------------------------------
     def create_ip_address(self, keys, params, session=None):
-        pass
+        
+
+        self.nb.ipam.ip_addresses.create()
+        # Create the object in the local DB
+        item = self.default_create(
+            object_type="ip_address", keys=keys, params=params, session=session
+        )
+        # item.remote_id = ip_address.id
+
+        return item
+
 
     def delete_ip_address(self, keys, params, session=None):
+        pass
+
+    # -----------------------------------------------------
+    # Prefix
+    # -----------------------------------------------------
+    def create_prefix(self, keys, params, session=None):
+        pass
+    
+    def delete_prefix(self, keys, params, session=None):
+        pass
+
+    # -----------------------------------------------------
+    # Vlans
+    # -----------------------------------------------------
+    def create_vlan(self, keys, params, session=None):
+        pass
+    
+    def delete_vlan(self, keys, params, session=None):
         pass
