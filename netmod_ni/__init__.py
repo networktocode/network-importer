@@ -11,7 +11,7 @@ class NetModNi(NetMod):
     def init(self):
 
         session = self.start_session()
-        # self.get)inventory
+        # self.get_inventory
         # Create site
         self.import_batfish(session)
         session.commit()
@@ -23,7 +23,7 @@ class NetModNi(NetMod):
         SNAPSHOT_NAME = "latest"
         SNAPSHOT_PATH = "configs"
 
-        bf_params = dict(host="localhost", port_v1=9997, port_v2=9996, ssl=False,)
+        bf_params = dict(host="localhost", port_v1=9997, port_v2=9996, ssl=False)
 
         self.bf = Session.get("bf", **bf_params)
         self.bf.verify = False

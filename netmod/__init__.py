@@ -13,7 +13,6 @@ def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
     return lst3
 
-
 class NetMod:
 
     site = Site
@@ -49,7 +48,7 @@ class NetMod:
         source_session = source.start_session()
         local_session = self.start_session()
 
-        for obj in self.top_level:
+        for obj in intersection(self.top_level, source.top_level):
             self.sync_objects(
                 source=source_session.query(getattr(source, obj)).all(),
                 dest=local_session.query(getattr(source, obj)).all(),
@@ -58,6 +57,9 @@ class NetMod:
 
         logger.info("Saving Changes")
         source_session.commit()
+
+    def diff(self, source):
+        pass
 
     def sync_objects(self, source, dest, session):
         """Syncronize the current NetMod object with the source
@@ -93,9 +95,9 @@ class NetMod:
             for i in diff2:
                 logger.info(f"{i} is missing in Source, need to Delete")
                 self.delete_object(
-                    object_type=dict_src[i].get_type(),
-                    keys=dict_src[i].get_keys(),
-                    params=dict_src[i].get_attrs(),
+                    object_type=dict_dst[i].get_type(),
+                    keys=dict_dst[i].get_keys(),
+                    params=dict_dst[i].get_attrs(),
                     session=session,
                 )
 
@@ -200,6 +202,6 @@ class NetMod:
 
     def default_delete(self, object_type, keys, params, session):
         obj = getattr(self, object_type)
-        item = session.query(obj).get(**keys)
+        item = session.query(obj).filter_by(**keys).first()
         session.delete(item)
         return item

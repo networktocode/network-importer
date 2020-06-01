@@ -17,23 +17,30 @@ class NetModNetBox(NetMod):
     cable = NetboxCable
 
     def __init__(self, *args, **kwargs):
-        super(NetModNetBox, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.nb = None
 
-    def init(self):
+    def init(self, url, token, filters=None):
 
-        device_names = []
 
         self.nb = pynetbox.api(
-            url="http://localhost",
-            token="1234567890abcdefghijklmnopqrstuvwxyz0123",
+            url=url,
+            token=token,
             ssl_verify=False,
         )
 
         session = self.start_session()
 
-        nb_devs = self.nb.dcim.devices.filter(site="ni_example_01")
+
+        devices_list = self.import_netbox_device(filters, session)
+        self.import_netbox_cable(devices_list, session)
+        session.commit()
+
+    def import_netbox_device(self, filters, session):
+
+        nb_devs = self.nb.dcim.devices.filter(**filters)
         logger.debug(f"{source} | Found {len(nb_devs)} devices in netbox")
+        device_names = []
 
         # -------------------------------------------------------------
         # Import Devices
@@ -81,7 +88,8 @@ class NetModNetBox(NetMod):
                     self.ip_address(
                         address=ip.address,
                         device_name=dev.name,
-                        remote_id=ip.interface.name,
+                        interface_name=ip.interface.name,
+                        remote_id=ip.id,
                     )
                 )
 
@@ -89,9 +97,9 @@ class NetModNetBox(NetMod):
                 f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}"
             )
 
-        # -------------------------------------------------------------
-        # Import Cables
-        # -------------------------------------------------------------
+        return device_names
+
+    def import_netbox_cable(self, device_names, session):
         sites = session.query(self.site).all()
         for site in sites:
             cables = self.nb.dcim.cables.filter(site=site.name)
@@ -130,7 +138,6 @@ class NetModNetBox(NetMod):
                 f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
             )
 
-        session.commit()
 
     # -----------------------------------------------------
     # Interface
@@ -212,7 +219,6 @@ class NetModNetBox(NetMod):
         item = self.default_create(
             object_type="cable", keys=keys, params=params, session=session
         )
-
         item.remote_id = cable.id
 
         return item
@@ -224,20 +230,42 @@ class NetModNetBox(NetMod):
     # IP Address
     # -----------------------------------------------------
     def create_ip_address(self, keys, params, session=None):
-        
 
-        self.nb.ipam.ip_addresses.create()
-        # Create the object in the local DB
+        interface = None
+        if "interface_name" in params and "device_name" in params:
+            interface = session.query(self.interface).filter_by(
+                    name=params["interface_name"], device_name=params["device_name"],
+                ).first()
+
+        if interface:
+            ip_address = self.nb.ipam.ip_addresses.create(
+                address=keys["address"],
+                interface=interface.remote_id
+            )
+        else:
+            ip_address = self.nb.ipam.ip_addresses.create(
+                address=keys["address"]
+            )
+
         item = self.default_create(
             object_type="ip_address", keys=keys, params=params, session=session
         )
-        # item.remote_id = ip_address.id
+        item.remote_id = ip_address.id
 
         return item
 
-
     def delete_ip_address(self, keys, params, session=None):
-        pass
+
+        item = session.query(self.ip_address).filter_by(**keys).first()
+
+        ip = self.nb.ipam.ip_addresses.get(item.remote_id)
+        ip.delete()
+
+        item = self.default_delete(
+            object_type="ip_address", keys=keys, params=params, session=session
+        )
+
+        return item
 
     # -----------------------------------------------------
     # Prefix

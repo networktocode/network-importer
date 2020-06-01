@@ -24,9 +24,10 @@ from network_importer.main import NetworkImporter
 import network_importer.performance as perf
 
 from netmod import NetMod
+from netmod.utils import print_to_yaml
 from netmod_netbox import NetModNetBox
 from netmod_ni import NetModNi
-from netmod.diff import update_src_dst
+from netmod_yaml import NetModYaml
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -92,22 +93,25 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logger.setLevel(logging.DEBUG)
 
     logger.info(f"Import NetBox Model")
-    nmnb = NetModNetBox()
-    nmnb.init()
+    nb = NetModNetBox()
+    nb.init(
+        url="http://localhost",
+        token="1234567890abcdefghijklmnopqrstuvwxyz0123", 
+        filters=dict(site="ni_example_01")
+    )
+    nb_session = nb.start_session()
 
-    logger.info(f"Import NI Model")
-    nmni = NetModNi()
-    nmni.init()
+    # logger.info(f"Import NI Model")
+    # ni = NetModNi()
+    # ni.init()
+    # ni_session = ni.start_session()
+
+    logger.info(f"Import Yaml Model")
+    yml = NetModYaml()
+    yml.init(directory="/Users/damien/projects/network-importer/examples/spine_leaf_yaml")
+    yml_session = yml.start_session()
 
     # import pdb;pdb.set_trace()
-
-    # ses_src = nmni.start_session()
-    # ses_dst = nmnb.start_session()
-
-    # dev1 = session1.query(nmnb.device).all()
-    # dev2 = session2.query(nmni.device).all()
-
-    # update_src_dst(mod_src=nmni, mod_dst=nmnb)
 
     # nmnb.sync(nmni)
 

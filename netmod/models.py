@@ -1,5 +1,4 @@
-import os
-import sys
+import copy
 from sqlalchemy import (
     Column,
     ForeignKey,
@@ -13,7 +12,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
-
 
 class BaseNetMod:
     def __iter__(self):
@@ -41,6 +39,8 @@ class Site(Base, BaseNetMod):
 
     name = Column(String(250), primary_key=True)
     devices = relationship("Device", back_populates="site")
+    vlans = relationship("Vlan", back_populates="site")
+    prefixes = relationship("Prefix", back_populates="site")
 
     def __repr__(self):
         return str(self.name)
@@ -95,7 +95,7 @@ class IPAddress(Base, BaseNetMod):
     __tablename__ = "ip_address"
 
     childs = []
-    attributes = []
+    attributes = ["device_name", "interface_name"]
 
     address = Column(String(250), primary_key=True)
     interface_name = Column(String(250))
@@ -137,21 +137,17 @@ class Cable(Base, BaseNetMod):
         ),
     )
 
-    def __init__(
-        self, device_a_name, interface_a_name, device_z_name, interface_z_name
-    ):
+    def __init__(self, *args, **kwargs):
+        """ Ensure the """
+        new_kwargs = copy.deepcopy(kwargs)
+        devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
+        if sorted(devices) != devices:
+            new_kwargs["device_a_name"] = kwargs["device_z_name"]
+            new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
+            new_kwargs["device_z_name"] = kwargs["device_a_name"]
+            new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
 
-        devices = [device_a_name, device_z_name]
-        if sorted(devices) == devices:
-            self.device_a_name = device_a_name
-            self.interface_a_name = interface_a_name
-            self.device_z_name = device_z_name
-            self.interface_z_name = interface_z_name
-        else:
-            self.device_a_name = device_z_name
-            self.interface_a_name = interface_z_name
-            self.device_z_name = device_a_name
-            self.interface_z_name = interface_a_name
+        super().__init__(*args, **new_kwargs)
 
     def unique_id(self):
         return "_".join(
