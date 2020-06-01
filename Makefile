@@ -1,6 +1,6 @@
 
-DOCKER_IMAGE = networktocode/network-importer
-DOCKER_VER = 0.5.0dev
+DOCKER_IMAGE = baxter/network-importer
+DOCKER_VER = 56daf94-0.0.4
 
 format:
 	black .
@@ -22,6 +22,19 @@ tests: check-format unit-tests
 build:
 	docker build -t $(DOCKER_IMAGE):$(DOCKER_VER) .
 	docker tag $(DOCKER_IMAGE):$(DOCKER_VER) $(DOCKER_IMAGE):latest
+
+.PHONY: import
+import:
+	@echo "Starting Network-Importer"
+	@docker run -it \
+		--env-file .env \
+		-v $(shell pwd)/network_importer:/source/network_importer \
+		-v $(shell pwd)/examples:/source/examples \
+		-v $(shell pwd)/tests:/source/tests \
+		$(DOCKER_IMAGE):$(DOCKER_VER) network-importer $(NI_OPTS) 
+	@echo "Network-Importer complete"
+	@echo "Restarting Batfish to release memory ..."
+	@docker restart batfish
 
 .PHONY: dev
 dev:

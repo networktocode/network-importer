@@ -1,10 +1,11 @@
+# Network Importer
 The network importer is a tool to import/synchronize an existing network with a Network Source of Truth, it's designed to be idempotent and by default it's only showing the difference between the running network and the remote database. 
 
 The main use cases for the network importer 
  - Import an existing network into a SOT (Netbox) as a first step to automate a brownfield network
  - Check the differences between the running network and the Source of Truth
 
-# How to use 
+## How to use 
 
 The network importer can run either in `check` mode or in `apply` mode. 
  - In `check` mode, no modification will be made to the SOT, the differences will be printed on the screen
@@ -104,13 +105,31 @@ password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
 # change_log_filename= "changelog"
 ```
 
-# How does it work
+## Execution
+Though exectuion can be performed directly from your shell via the `network-importer` command. It is recommended to use the Makefile helper.
+There are multiple benfits of using this helper, such as:
+* Any environment variables container within `.env`, such as network credentials will be exported into your environment.
+* Your execution will be completey isolated.
+* Batfish will be automatically restarted once your execution is complete. This will ensure the Batfish soft-cache memory allocation is released.
+
+```
+sudo make import NI_OPTS="--config ./dev.toml  --diff --check --update-configs"
+```
+
+Note: Before executing ensure you have your network device credentials have been added to `.env`. Please use `.env-example` for reference.
+
+
+## How does it work
 
 The network importer is using different tools to collect information from the network devices: 
 - [batfish](https://github.com/batfish/batfish) to parse the configurations and extract a vendor neutral data model. 
 - [nornir], [naplam], [netmiko] and [ntc-templates] to extract some information from the device cli if available
 
-# disclaimer / Assumption
+
+
+
+
+## Disclaimer / Assumption
 
 Currently the library only supports netbox but the idea for 1.0 is to support multiple backend SOT
 Currently the assumption is that vlans are global to a site. need to find a way to provide more flexibility here without making it too complex
