@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
 from .models import *
+from .diff import Diff
 
 logger = logging.getLogger("network-importer")
 
@@ -57,9 +58,6 @@ class NetMod:
 
         logger.info("Saving Changes")
         source_session.commit()
-
-    def diff(self, source):
-        pass
 
     def sync_objects(self, source, dest, session):
         """Syncronize the current NetMod object with the source
@@ -129,8 +127,101 @@ class NetMod:
 
         return True
 
-    def diff(self):
-        raise NotImplementedError
+    def diff(self, source):
+        
+        source_session = source.start_session()
+        local_session = self.start_session()
+        diffs = {}
+        for obj in intersection(self.top_level, source.top_level):
+
+            diffs[obj]= self.diff_objects(
+                source=source_session.query(getattr(source, obj)).all(),
+                dest=local_session.query(getattr(source, obj)).all(),
+                session=local_session,
+            )
+
+        return diffs
+
+    def diff_objects(self, source, dest, session):
+        """ """
+        if type(source) != type(dest):
+            logger.warning(f"Attribute {source} are of different types")
+            return False
+
+        diffs = []
+
+        if isinstance(source, list):
+            dict_src = {str(item): item for item in source}
+            dict_dst = {str(item): item for item in dest}
+
+            same_keys = intersection(dict_src.keys(), dict_dst.keys())
+
+            diff1 = list(set(dict_src.keys()) - set(same_keys))
+            diff2 = list(set(dict_dst.keys()) - set(same_keys))
+
+            for i in diff1:
+                logger.info(f"{i} is missing, need to Add it")
+                
+                diff = Diff(obj_type=dict_src[i].get_type(), name=str(dict_src[i]))
+                diff.missing_local = True
+                # self.create_object(
+                #     object_type=,
+                #     keys=dict_src[i].get_keys(),
+                #     params=dict_src[i].get_attrs(),
+                #     session=session,
+                # )
+                # TODO Continue the tree here
+                diffs.append(diff)
+
+            for i in diff2:
+                logger.info(f"{i} is missing in Source, need to Delete")
+                diff = Diff(obj_type=dict_dst[i].get_type(), name=str(dict_dst[i]))
+                diff.missing_remote = True
+                # self.delete_object(
+                #     object_type=dict_dst[i].get_type(),
+                #     keys=dict_dst[i].get_keys(),
+                #     params=dict_dst[i].get_attrs(),
+                #     session=session,
+                # )
+                diffs.append(diff)
+            # logger.debug(f"Same Keys: {same_keys}")
+            for i in same_keys:
+
+                diff = Diff(obj_type=dict_dst[i].get_type(), name=str(dict_dst[i]))
+
+                if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
+                    for k, v in dict_src[i].get_attrs():
+                        diff.add_item(k, v, getattr(dict_dst[i], k))
+                    # logger.info(
+                    #     f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating"
+                    # )
+                    # # self.update_object(
+                    #     object_type=dict_src[i].get_type(),
+                    #     keys=dict_dst[i].get_keys(),
+                    #     params=dict_src[i].get_attrs(),
+                    #     session=session,
+                    # )
+
+                logger.debug(
+                    f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
+                )
+                for child in dict_src[i].childs:
+                    childs = self.diff_objects(
+                        session=session,
+                        source=getattr(dict_src[i], child),
+                        dest=getattr(dict_dst[i], child),
+                    )
+
+                    for c in childs:
+                        diff.add_child(c)
+
+                diffs.append(diff)
+
+        else:
+            print(f"Type {type(source)} is not supported for now")
+
+        return diffs
+
 
     def create_object(self, object_type, keys, params, session=None):
         self._crud_change(
