@@ -1064,7 +1064,7 @@ class NetworkImporterSite:
         Args:
           vids: List of Vlan ID
 
-        Returns: 
+        Returns:
             List of Netbox Vlan ID
         """
 
