@@ -1025,7 +1025,6 @@ class NetworkImporterSite:
             ip: str 1.2.3.4/24
             vlan: int Vlan ID of a Potential vlan associated with this prefix
         """
-
         prefix = ipaddress.ip_network(ip, strict=False)
 
         # If the prefix has only 1 ip it's a loopback and not a prefix
@@ -1043,9 +1042,16 @@ class NetworkImporterSite:
         if associated_vlan:
             self.prefixes[prefix_str].vlan = associated_vlan
 
+        
         if not self.prefixes[prefix_str].exist_local():
             self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
-            logger.debug(f"Site {self.name} | Prefix {prefix_str} added (local)")
+            logger.debug(
+                f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)"
+            )
+        elif (self.prefixes[prefix_str].exist_local() and not self.prefixes[prefix_str].local.vlan and vlan):
+            self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
+            logger.debug(f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)")
+
 
     def convert_vids_to_nids(self, vids):
         """
@@ -1054,7 +1060,7 @@ class NetworkImporterSite:
         Args:
           vids: List of Vlan ID
 
-        Returns:
+        Returns: 
             List of Netbox Vlan ID
         """
 
