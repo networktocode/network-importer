@@ -337,21 +337,18 @@ class NetworkImporter:
                 dev.add_batfish_interface(intf_name, bf_intf)
 
                 for prfx in bf_intf.All_Prefixes:
+                    
                     if config.main["import_ips"]:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
 
                     if config.main["import_prefixes"]:
+                        vlan = None
                         if bf_intf.Encapsulation_VLAN:
                             interface_vlans_mapping[intf_name].append(
                                 bf_intf.Encapsulation_VLAN
                             )
                             vlan = bf_intf.Encapsulation_VLAN
-                        else:
-                            vlan = None
-
-                    if config.main["import_prefixes"]:
-                        vlan = None
-                        if len(interface_vlans_mapping[intf_name]) == 1:
+                        elif len(interface_vlans_mapping[intf_name]) == 1:
                             vlan = interface_vlans_mapping[intf_name][0]
                         elif len(interface_vlans_mapping[intf_name]) >= 1:
                             logger.warning(
