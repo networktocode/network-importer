@@ -1042,16 +1042,20 @@ class NetworkImporterSite:
         if associated_vlan:
             self.prefixes[prefix_str].vlan = associated_vlan
 
-        
         if not self.prefixes[prefix_str].exist_local():
             self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
             logger.debug(
                 f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)"
             )
-        elif (self.prefixes[prefix_str].exist_local() and not self.prefixes[prefix_str].local.vlan and vlan):
+        elif (
+            self.prefixes[prefix_str].exist_local()
+            and not self.prefixes[prefix_str].local.vlan
+            and vlan
+        ):
             self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
-            logger.debug(f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)")
-
+            logger.debug(
+                f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)"
+            )
 
     def convert_vids_to_nids(self, vids):
         """
