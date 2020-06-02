@@ -337,7 +337,7 @@ class NetworkImporter:
                 dev.add_batfish_interface(intf_name, bf_intf)
 
                 for prfx in bf_intf.All_Prefixes:
-                    
+
                     if config.main["import_ips"]:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
 
