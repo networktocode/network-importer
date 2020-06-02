@@ -13,6 +13,7 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
+
 class BaseNetMod:
     def __iter__(self):
         for v in self.values:
@@ -176,6 +177,7 @@ class Vlan(Base, BaseNetMod):
     site_name = Column(String(250), ForeignKey("site.name"), primary_key=True)
     site = relationship("Site", back_populates="vlans")
 
+
 class Prefix(Base, BaseNetMod):
     """
     """
@@ -185,6 +187,6 @@ class Prefix(Base, BaseNetMod):
     childs = []
     attributes = []
 
-    prefix = Column(String(250),primary_key=True)
+    prefix = Column(String(250), primary_key=True)
     site_name = Column(String(250), ForeignKey("site.name"), nullable=True)
     site = relationship("Site", back_populates="prefixes")

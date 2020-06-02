@@ -101,10 +101,10 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     )
     nb_session = nb.start_session()
 
-    # logger.info(f"Import NI Model")
-    # ni = NetModNi()
-    # ni.init()
-    # ni_session = ni.start_session()
+    logger.info(f"Import NI Model")
+    ni = NetModNi()
+    ni.init()
+    ni_session = ni.start_session()
 
     logger.info(f"Import Yaml Model")
     yml = NetModYaml()

@@ -22,15 +22,9 @@ class NetModNetBox(NetMod):
 
     def init(self, url, token, filters=None):
 
-
-        self.nb = pynetbox.api(
-            url=url,
-            token=token,
-            ssl_verify=False,
-        )
+        self.nb = pynetbox.api(url=url, token=token, ssl_verify=False,)
 
         session = self.start_session()
-
 
         devices_list = self.import_netbox_device(filters, session)
         self.import_netbox_cable(devices_list, session)
@@ -138,7 +132,6 @@ class NetModNetBox(NetMod):
                 f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
             )
 
-
     # -----------------------------------------------------
     # Interface
     # -----------------------------------------------------
@@ -188,6 +181,19 @@ class NetModNetBox(NetMod):
 
         return item
 
+    def delete_interface(self, keys, params, session=None):
+
+        item = session.query(self.interface).filter_by(**keys).first()
+
+        intf = self.nb.dcim.interfaces.get(item.remote_id)
+        intf.delete()
+
+        item = self.default_delete(
+            object_type="interface", keys=keys, params=params, session=session
+        )
+
+        return item
+
     # -----------------------------------------------------
     # Cable
     # -----------------------------------------------------
@@ -233,19 +239,20 @@ class NetModNetBox(NetMod):
 
         interface = None
         if "interface_name" in params and "device_name" in params:
-            interface = session.query(self.interface).filter_by(
+            interface = (
+                session.query(self.interface)
+                .filter_by(
                     name=params["interface_name"], device_name=params["device_name"],
-                ).first()
+                )
+                .first()
+            )
 
         if interface:
             ip_address = self.nb.ipam.ip_addresses.create(
-                address=keys["address"],
-                interface=interface.remote_id
+                address=keys["address"], interface=interface.remote_id
             )
         else:
-            ip_address = self.nb.ipam.ip_addresses.create(
-                address=keys["address"]
-            )
+            ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"])
 
         item = self.default_create(
             object_type="ip_address", keys=keys, params=params, session=session
@@ -272,7 +279,7 @@ class NetModNetBox(NetMod):
     # -----------------------------------------------------
     def create_prefix(self, keys, params, session=None):
         pass
-    
+
     def delete_prefix(self, keys, params, session=None):
         pass
 
@@ -281,6 +288,6 @@ class NetModNetBox(NetMod):
     # -----------------------------------------------------
     def create_vlan(self, keys, params, session=None):
         pass
-    
+
     def delete_vlan(self, keys, params, session=None):
         pass

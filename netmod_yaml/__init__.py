@@ -7,6 +7,7 @@ from netmod import NetMod
 
 logger = logging.getLogger("network-importer")
 
+
 class NetModYaml(NetMod):
 
     top_level = ["device"]
@@ -24,16 +25,14 @@ class NetModYaml(NetMod):
 
             logger.debug(f"Add site {site_name}")
 
-            device_list = mylist = [f for f in glob.glob(f"{directory}/sites/{site_name}/devices/*.yaml")]
+            device_list = mylist = [
+                f for f in glob.glob(f"{directory}/sites/{site_name}/devices/*.yaml")
+            ]
 
             for device_file in device_list:
-                
+
                 device_name = device_file.split("/").pop().replace(".yaml", "")
-                session.add(
-                    self.device(
-                        name=device_name, site_name=site_name
-                    )
-                )
+                session.add(self.device(name=device_name, site_name=site_name))
                 logger.debug(f"Add Device {device_name}")
 
                 data = yaml.safe_load(open(device_file))
@@ -42,10 +41,7 @@ class NetModYaml(NetMod):
 
                 for intf_name, intf_data in data["interfaces"].items():
                     values = {}
-                    intf = self.interface(
-                            name=intf_name,
-                            device_name=device_name
-                        )
+                    intf = self.interface(name=intf_name, device_name=device_name)
                     for attr in self.interface.attributes:
                         if attr in intf_data:
                             setattr(intf, attr, intf_data[attr])
@@ -59,7 +55,7 @@ class NetModYaml(NetMod):
                                 self.ip_address(
                                     address=ip,
                                     interface_name=intf_name,
-                                    device_name=device_name
+                                    device_name=device_name,
                                 )
                             )
 

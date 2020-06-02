@@ -7,7 +7,6 @@ logger = logging.getLogger("network-importer")
 
 
 class NetModNi(NetMod):
-
     def init(self):
 
         session = self.start_session()
@@ -106,4 +105,3 @@ class NetModNi(NetMod):
 
         nbr_cables = session.query(self.cable).count()
         logger.debug(f"Found {nbr_cables} cables in Batfish")
-
