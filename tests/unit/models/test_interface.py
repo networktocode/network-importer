@@ -96,7 +96,7 @@ def test_add_batfish_interface_intf_ether_sub():
         "Switchport_Mode": "NONE",
         "Switchport": False,
         "Native_VLAN": None,
-        "Encapsulation_VLAN": None,
+        "Encapsulation_VLAN": 201,
         "Description": "my description",
         "Channel_Group_Members": [],
         "Channel_Group": None,
@@ -107,6 +107,7 @@ def test_add_batfish_interface_intf_ether_sub():
 
     assert isinstance(intf.local, Interface)
     assert intf.local.is_virtual
+    assert intf.local.allowed_vlans == [201]
     assert not intf.local.is_lag
     assert not intf.local.is_lag_member
 
