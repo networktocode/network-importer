@@ -38,6 +38,7 @@ def test_add_batfish_interface_loopback():
         "Switchport_Mode": "NONE",
         "Switchport": False,
         "Native_VLAN": None,
+        "Encapsulation_VLAN": None,
         "Description": "intf1 description",
         "Channel_Group_Members": [],
         "Channel_Group": None,
@@ -66,6 +67,7 @@ def test_add_batfish_interface_phy_intf_ether_std():
         "Switchport_Mode": "NONE",
         "Switchport": False,
         "Native_VLAN": None,
+        "Encapsulation_VLAN": None,
         "Description": "my description",
         "Channel_Group_Members": [],
         "Channel_Group": None,
@@ -94,6 +96,7 @@ def test_add_batfish_interface_intf_ether_sub():
         "Switchport_Mode": "NONE",
         "Switchport": False,
         "Native_VLAN": None,
+        "Encapsulation_VLAN": 201,
         "Description": "my description",
         "Channel_Group_Members": [],
         "Channel_Group": None,
@@ -104,6 +107,7 @@ def test_add_batfish_interface_intf_ether_sub():
 
     assert isinstance(intf.local, Interface)
     assert intf.local.is_virtual
+    assert intf.local.allowed_vlans == [201]
     assert not intf.local.is_lag
     assert not intf.local.is_lag_member
 
@@ -123,6 +127,7 @@ def test_add_batfish_interface_intf_lag_member():
         "Switchport_Mode": "TRUNK",
         "Switchport": True,
         "Native_VLAN": 1,
+        "Encapsulation_VLAN": None,
         "Description": "my description",
         "Channel_Group_Members": [],
         "Channel_Group": "Port-Channel111",
@@ -153,6 +158,7 @@ def test_add_batfish_interface_intf_lag():
         "Switchport_Mode": "TRUNK",
         "Switchport": True,
         "Native_VLAN": 1,
+        "Encapsulation_VLAN": None,
         "Description": "my description",
         "Channel_Group_Members": ["TenGigabitEthernet2/1/3", "TenGigabitEthernet2/1/4"],
         "Channel_Group": None,
@@ -183,6 +189,7 @@ def test_add_batfish_interface_intf_serial():
         "Switchport_Mode": "NONE",
         "Switchport": False,
         "Native_VLAN": None,
+        "Encapsulation_VLAN": None,
         "Description": "my description",
         "Channel_Group_Members": [],
         "Channel_Group": None,

@@ -287,11 +287,17 @@ class NetworkImporterDevice:
                 ):
                     intf_properties["untagged_vlan"] = None
 
-                if intf.local.mode == "TRUNK" and intf.local.allowed_vlans:
+                if (
+                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
+                    and intf.local.allowed_vlans
+                ):
                     intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
                         intf.local.allowed_vlans
                     )
-                elif intf.local.mode == "TRUNK" and not intf.local.allowed_vlans:
+                elif (
+                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
+                    and not intf.local.allowed_vlans
+                ):
                     intf_properties["tagged_vlans"] = []
 
             if intf.local.is_lag_member:
@@ -793,7 +799,11 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.is_lag = False
 
         if self.local.mode is None and self.local.switchport_mode:
-            self.local.mode = self.local.switchport_mode
+            if bf.Encapsulation_VLAN:
+                self.local.mode = "L3_SUB_VLAN"
+                self.local.allowed_vlans = [bf.Encapsulation_VLAN]
+            else:
+                self.local.mode = self.local.switchport_mode
 
         if self.local.mode == "TRUNK":
             self.local.allowed_vlans = expand_vlans_list(bf.Allowed_VLANs)
