@@ -1,14 +1,13 @@
 language: python
 python:
-  - 3.6
   - 3.7
 
 before_install:
   - make build
 
-install:
-  - pip install -r requirements-develop.txt
-  - python setup.py develop
+# install:
+#   - pip install -r requirements-develop.txt
+#   - python setup.py develop
 
 script: 
   - make tests # run tests

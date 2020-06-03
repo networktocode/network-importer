@@ -1,0 +1,49 @@
+{
+    "id": 15800,
+    "device": {
+      "id": 293,
+      "url": "http://localhost/api/dcim/devices/293/",
+      "name": "austin",
+      "display_name": "austin"
+    },
+    "name": "GigabitEthernet0/0/0/1",
+    "type": {
+      "value": 800,
+      "label": "100BASE-TX (10/100ME)"
+    },
+    "form_factor": {
+      "value": 800,
+      "label": "100BASE-TX (10/100ME)"
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": null,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "",
+    "connected_endpoint_type": "circuits.circuittermination",
+    "connected_endpoint": {
+      "id": 1,
+      "url": "http://localhost/api/circuits/circuit-terminations/1/",
+      "circuit": {
+        "id": 1,
+        "url": "http://localhost/api/circuits/circuits/1/",
+        "cid": "123456"
+      },
+      "term_side": "A"
+    },
+    "connection_status": {
+      "value": true,
+      "label": "Connected"
+    },
+    "cable": {
+      "id": 346,
+      "url": "http://localhost/api/dcim/cables/346/",
+      "label": ""
+    },
+    "mode": null,
+    "untagged_vlan": null,
+    "tagged_vlans": [],
+    "tags": [],
+    "count_ipaddresses": 1
+  }

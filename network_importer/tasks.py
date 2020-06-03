@@ -19,7 +19,8 @@ import hashlib
 import copy
 import json
 from pathlib import Path
-
+from collections import defaultdict
+import yaml
 import pynetbox
 
 from nornir.core.task import Result, Task
@@ -27,7 +28,6 @@ from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napa
 
 from napalm.base.helpers import canonical_interface_name
 
-import network_importer
 import network_importer.config as config
 
 from network_importer.model import (  # pylint: disable=W0611
@@ -173,31 +173,54 @@ def device_update_remote(task: Task) -> Result:
 
     res = task.host.data["obj"].update_remote()
 
+    if config.main["generate_hostvars"]:
+
+        results = task.run(task=device_save_hostvars)
+
     return Result(host=task.host, result=res)
 
 
-def device_generate_hostvars(task: Task) -> Result:
+def device_save_hostvars(task: Task) -> Result:
     """
-    Extract the facts for each device from Batfish to generate the host_vars
-    Cleaning up the interfaces for now since these information are already in netbox
+    Save the device hostvars into a yaml file
 
     Args:
       task: Task:
 
     Returns:
-
+      Result
     """
-    module_path = os.path.dirname(network_importer.__file__)
-    template_dir = f"{module_path}/templates/"
 
-    # # Save device variables in file
-    # if not os.path.exists(f"{options.output}/{dev.name}"):
-    #     os.makedirs(f"{options.output}/{dev.name}")
-    #     logger.debug(
-    #         f"Directory {options.output}/{dev.name} was missing, created it"
-    #     )
+    if not task.host.data["obj"].hostvars:
+        return Result(host=task.host)
 
-    # dev_facts = batfish_session.extract_facts(nodes=dev.name)["nodes"][dev.name]
+    # Save device hostvars in file
+    if not os.path.exists(f"{config.main['hostvars_directory']}/{task.host.name}"):
+        os.makedirs(f"{config.main['hostvars_directory']}/{task.host.name}")
+        logger.debug(
+            f"Directory {config.main['hostvars_directory']}/{task.host.name} was missing, created it"
+        )
+
+    with open(
+        f"{config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml",
+        "w",
+    ) as out_file:
+        out_file.write(
+            yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False)
+        )
+        logger.debug(
+            f"{task.host.name} - Host variables saved in {config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml"
+        )
+
+    return Result(host=task.host)
+
+    # -------------------------------------------------------------------
+    # Old code that need used previously to generate the hostvars from a jinja templates
+    # -------------------------------------------------------------------
+    # module_path = os.path.dirname(network_importer.__file__)
+    # template_dir = f"{module_path}/templates/"
+
+    # dev_facts = task.host.data["obj"].bf.extract_facts(nodes=task.host.name)["nodes"][task.host.name]
     # del dev_facts["Interfaces"]
 
     # # Load Jinja2 template
@@ -209,19 +232,8 @@ def device_generate_hostvars(task: Task) -> Result:
     # # template = env.get_template("hostvars.j2")
     # # hostvars_str = template.render(dev_facts)
 
-    # with open(
-    #     f"{options.output}/{dev.name}/network_importer.yaml", "w"
-    # ) as out_file:
-    #     out_file.write( yaml.dump(dev_facts, default_flow_style=False))
-    #     # out_file.write( hostvars_str)
-    #     logger.debug(
-    #         f"{dev.name} - Host variables saved in {options.output}/{dev.name}/network_importer.yaml"
-    #     )
 
-    return Result(host=task.host)
-
-
-def collect_vlans_info(task: Task, update_cache=True) -> Result:
+def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect Vlans information on all devices
     Supported Devices:
@@ -231,12 +243,19 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
     Args:
       task: Task:
       update_cache: (Default value = True)
+      use_cache: (Default value = False)
 
     Returns:
 
     """
 
     check_data_dir(task.host.name)
+
+    cache_name = "vlans"
+
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
     vlans = []
 
@@ -248,9 +267,16 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
     results = None
 
     if task.host.platform in ["ios", "nxos"]:
-        results = task.run(
-            task=netmiko_send_command, command_string="show vlan", use_genie=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string="show vlan", use_genie=True
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the vlans information",
+                exc_info=True,
+            )
+            return Result(host=task.host, failed=True)
 
         if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
             logger.warning(f"{task.host.name} | No vlans information returned")
@@ -276,26 +302,9 @@ def collect_vlans_info(task: Task, update_cache=True) -> Result:
         return Result(host=task.host, result=False)
 
     if update_cache and results:
-        save_data_to_file(task.host.name, "vlans", vlans)
+        save_data_to_file(task.host.name, cache_name, vlans)
 
     return Result(host=task.host, result=vlans)
-
-
-def collect_vlans_info_from_cache(task: Task) -> Result:
-    """
-    Collect Vlans information from cache data
-
-    Args:
-      task: Task:
-      task: Task:
-      task: Task:
-
-    Returns:
-
-    """
-    data = get_data_from_file(task.host.name, "vlans")
-
-    return Result(host=task.host, result=data)
 
 
 def update_configuration(  # pylint: disable=C0330
@@ -326,23 +335,18 @@ def update_configuration(  # pylint: disable=C0330
         current_config = Path(config_filename).read_text()
         previous_md5 = hashlib.md5(current_config.encode("utf-8")).hexdigest()
 
-    if task.host.platform in ["nxos", "ios"]:
-        results = task.run(task=netmiko_send_command, command_string="show run")
-
-        if results.failed:
-            return Result(host=task.host, failed=True)
-
-        new_config = results[0].result
-
-    else:
-        results = task.run(
-            task=napalm_get, getters=["config"], retrieve="running", full=False
+    try:
+        results = task.run(task=napalm_get, getters=["config"], retrieve="running")
+    except:
+        logger.debug(
+            "An exception occured while pulling the configuration", exc_info=True
         )
+        return Result(host=task.host, failed=True)
 
-        if results.failed:
-            return Result(host=task.host, failed=True)
+    if results.failed:
+        return Result(host=task.host, failed=True)
 
-        new_config = results[0].result["config"]["running"]
+    new_config = results[0].result["config"]["running"]
 
     # Currently the configuration is going to be different everytime because there is a timestamp on it
     # Will need to do some clean up
@@ -362,35 +366,71 @@ def update_configuration(  # pylint: disable=C0330
     return Result(host=task.host, result=True, changed=changed)
 
 
-def collect_lldp_neighbors(task: Task) -> Result:
+def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Result:
     """
     Collect LLDP neighbor information on all devices
 
-    Supported Devices:
-        Cisco only
-
     Args:
       task: Task:
-
-    Returns:
+      update_cache: (Default value = True)
+      use_cache: (Default value = False)
 
     """
 
+    cache_name = "lldp_neighbors"
+
     check_data_dir(task.host.name)
 
-    ## TODO Check if device is if the right type
-    ## TODO check if all information are available to connect
-    ## TODO Check if reacheable
-    ## TODO Manage exception
-    results = task.run(
-        task=netmiko_send_command, command_string="show lldp neighbors", use_genie=True
-    )
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
-    # TODO check if task went well
-    return Result(host=task.host, result=results[0].result)
+    neighbors = {}
+
+    if config.main["import_cabling"] == "lldp":
+
+        try:
+            results = task.run(task=napalm_get, getters=["lldp_neighbors"])
+            neighbors = results[0].result
+        except:
+            logger.debug("An exception occured while pulling lldp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+    elif config.main["import_cabling"] == "cdp":
+        try:
+            results = task.run(
+                task=netmiko_send_command,
+                command_string="show cdp neighbors detail",
+                use_textfsm=True,
+            )
+
+            neighbors = {"lldp_neighbors": defaultdict(list)}
+
+        except:
+            logger.debug("An exception occured while pulling cdp_data", exc_info=True)
+            return Result(host=task.host, failed=True)
+
+        # Convert CDP details output to Napalm LLDP format
+        if not isinstance(results[0].result, list):
+            logger.warning(f"{task.host.name} | No CDP information returned")
+        else:
+            for neighbor in results[0].result:
+                neighbors["lldp_neighbors"][neighbor["local_port"]].append(
+                    dict(
+                        hostname=neighbor["destination_host"],
+                        port=neighbor["remote_port"],
+                    )
+                )
+
+    if update_cache:
+        save_data_to_file(task.host.name, cache_name, neighbors)
+
+    return Result(host=task.host, result=neighbors)
 
 
-def collect_transceivers_info(task: Task, update_cache=True) -> Result:
+def collect_transceivers_info(  # pylint: disable=R0911
+    task: Task, update_cache=True, use_cache=False
+) -> Result:
     """
     Collect transceiver informaton on all devices
 
@@ -401,11 +441,16 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
     Args:
       task: Task:
       update_cache: (Default value = True)
-
+      use_cache: (Default value = False)
 
     Returns:
 
     """
+    cache_name = "transceivers"
+
+    if use_cache:
+        data = get_data_from_file(task.host.name, cache_name)
+        return Result(host=task.host, result=data)
 
     transceivers_inventory = []
 
@@ -421,15 +466,31 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     if task.host.platform == "ios":
 
-        results = task.run(
-            task=netmiko_send_command, command_string="show inventory", use_textfsm=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command,
+                command_string="show inventory",
+                use_textfsm=True,
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the inventory", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         inventory = results[0].result
 
         cmd = "show interface transceiver"
-        results = task.run(
-            task=netmiko_send_command, command_string=cmd, use_textfsm=True,
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string=cmd, use_textfsm=True,
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the transceiver info", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         transceivers = results[0].result
 
         if not isinstance(transceivers, list):
@@ -462,9 +523,16 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
 
     elif task.host.platform == "nxos":
         cmd = "show interface transceiver"
-        results = task.run(
-            task=netmiko_send_command, command_string=cmd, use_textfsm=True
-        )
+        try:
+            results = task.run(
+                task=netmiko_send_command, command_string=cmd, use_textfsm=True
+            )
+        except:
+            logger.debug(
+                "An exception occured while pulling the transceiver info", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
         transceivers = results[0].result
 
         if not isinstance(transceivers, list):
@@ -506,31 +574,16 @@ def collect_transceivers_info(task: Task, update_cache=True) -> Result:
         )
 
     if update_cache and transceivers_inventory:
-        save_data_to_file(task.host.name, "transceivers", transceivers_inventory)
+        save_data_to_file(task.host.name, cache_name, transceivers_inventory)
 
     return Result(host=task.host, result=transceivers_inventory)
 
 
-def collect_transceivers_info_from_cache(task: Task) -> Result:
+def check_if_reachable(task: Task) -> Result:
     """
-    Collect Transceiver information from cache data
+    Check if a device is reachable by doing a TCP ping it on port 22
 
-    Args:
-      task: Task:
-
-    Returns:
-
-    """
-    data = get_data_from_file(task.host.name, "transceivers")
-
-    return Result(host=task.host, result=data)
-
-
-def check_if_reacheable(task: Task) -> Result:
-    """
-    Check if a device is reacheable by doing a TCP ping it on port 22
-
-    Will change the status of the variable `is_reacheable` in host.data based on the results
+    Will change the status of the variable `is_reachable` in host.data based on the results
 
    Args:
       task: Nornir Task
@@ -541,21 +594,28 @@ def check_if_reacheable(task: Task) -> Result:
     """
 
     port_to_check = 22
-    results = task.run(task=tcp_ping, ports=[port_to_check])
-
-    is_reacheable = results[0].result[port_to_check]
-
-    if not is_reacheable:
+    try:
+        results = task.run(task=tcp_ping, ports=[port_to_check])
+    except:
         logger.debug(
-            f"{task.host.name} | device is not reacheable on port {port_to_check}"
+            "An exception occured while running the reachability test (tcp_ping)",
+            exc_info=True,
         )
-        task.host.data["is_reacheable"] = False
+        return Result(host=task.host, failed=True)
+
+    is_reachable = results[0].result[port_to_check]
+
+    if not is_reachable:
+        logger.debug(
+            f"{task.host.name} | device is not reachable on port {port_to_check}"
+        )
+        task.host.data["is_reachable"] = False
         task.host.data[
-            "not_reacheable_raison"
-        ] = f"device not reacheable on port {port_to_check}"
+            "not_reachable_reason"
+        ] = f"device not reachable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
-    return Result(host=task.host, result=is_reacheable)
+    return Result(host=task.host, result=is_reachable)
 
 
 def update_device_status(task: Task) -> Result:

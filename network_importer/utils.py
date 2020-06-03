@@ -14,9 +14,8 @@ limitations under the License.
 
 import re
 import logging
-import yaml
 from urllib3 import connectionpool, poolmanager
-
+import yaml
 
 logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 
@@ -70,6 +69,79 @@ def sort_by_digits(if_name: str) -> tuple:
     """
     find_digit = re.compile(r"\D?(\d+)\D?")
     return tuple(map(int, find_digit.findall(if_name)))
+
+
+def is_interface_physical(name):  # pylint: disable=R0911
+    """
+    Function evaluate if an interface is likely to be a physical interface
+
+    Args:
+      name: str name of the interface to evaluate
+
+    Return:
+      True, False or None
+    """
+
+    # Match most physical interface Cisco that contains Ethernet
+    #  GigabitEthernet0/0/2
+    #  GigabitEthernet0/0/2:3
+    #  TenGigabitEthernet0/0/4
+    cisco_physical_intf = r"^[a-zA-Z]+[Ethernet][0-9\/\:]+$"
+
+    # Match Sub interfaces finishing with ".<number>"
+    sub_intf = r".*\.[0-9]+$"
+
+    # Regex for loopback and vlan interface
+    loopback = r"^(L|l)(oopback|o)[0-9]+$"
+    vlan = r"^(V|v)(lan)[0-9]+$"
+
+    # Generic physical interface match
+    #  mainly looking for <int>/<int> or <int>/<int>/<int> at the end
+    generic_physical_intf = r"^[a-zA-Z\-]+[0-9]+\/[0-9\/\:]+$"
+
+    # Match Juniper Interfaces
+    jnpr_physical_intf = r"^[a-z]+\-[0-9\/\:]+$"
+
+    if re.match(loopback, name):
+        return False
+    if re.match(vlan, name):
+        return False
+    if re.match(cisco_physical_intf, name):
+        return True
+    if re.match(sub_intf, name):
+        return False
+    if re.match(jnpr_physical_intf, name):
+        return True
+    if re.match(generic_physical_intf, name):
+        return True
+
+    return None
+
+
+def is_interface_lag(name):
+    """
+    Function evaluate if an interface is likely to be a lag
+
+    Args:
+      name: str name of the interface to evaluate
+      vendor: str name of the vendor (optional)
+
+    Return:
+      True, False or None
+    """
+
+    port_channel_intf = r"^port\-channel[0-9]+$"
+    po_intf = r"^po[0-9]+$"
+    ae_intf = r"^ae[0-9]+$"
+
+    if re.match(port_channel_intf, name.lower()):
+        return True
+    if re.match(ae_intf, name):
+        return True
+    if re.match(po_intf, name):
+        return True
+
+    return None
 
 
 def jinja_filter_toyaml_list(value) -> str:

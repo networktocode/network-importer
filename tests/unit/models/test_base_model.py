@@ -1,3 +1,5 @@
+# pylint: disable=C0116,C0121,R0801
+
 """
 (c) 2019 Network To Code
 

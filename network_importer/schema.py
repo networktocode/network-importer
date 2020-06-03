@@ -11,14 +11,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+# pylint: disable=invalid-name
+# Jsonschema definition for the configuation file (network_importer.toml by default)
 
-import toml
-import os.path
-from pathlib import Path
-
-"""
-Jsonschema definition for the configuation file (network_importer.toml by default)
-"""
 config_schema = dict(
     type="object",
     properties=dict(
@@ -26,11 +21,18 @@ config_schema = dict(
             type="object",
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
-                import_cabling=dict(type="boolean", default=True),
+                import_prefixes=dict(type="boolean", default=False),
+                import_cabling=dict(
+                    type=["string", "boolean"],
+                    enum=["lldp", "cdp", "config", False],
+                    default="lldp",
+                ),
                 import_transceivers=dict(type="boolean", default=False),
                 import_intf_status=dict(type="boolean", default=True),
                 import_vlans=dict(
-                    type="string", enum=["cli", "config", "no"], default="config"
+                    type=["string", "boolean"],
+                    enum=["cli", "config", True, False],
+                    default="config",
                 ),
                 generate_hostvars=dict(type="boolean", default=False),
                 hostvars_directory=dict(type="string", default="host_vars"),
@@ -43,6 +45,8 @@ config_schema = dict(
                 data_directory=dict(type="string", default="data"),
                 data_update_cache=dict(type="boolean", default=True),
                 data_use_cache=dict(type="boolean", default=False),
+                backend_type=dict(type="string", enum=["netbox"], default="netbox"),
+                backend_version=dict(type="string", default="default"),
             ),
             default={},
         ),
@@ -50,8 +54,12 @@ config_schema = dict(
             type="object",
             properties=dict(
                 address=dict(type="string", default="localhost"),
-                network_name=dict(type="string"),
-                snapshot_name=dict(type="string"),
+                network_name=dict(type="string", default="network-importer"),
+                snapshot_name=dict(type="string", default="latest"),
+                port_v1=dict(type="number", min=0, default=9997),
+                port_v2=dict(type="number", min=0, default=9996),
+                use_ssl=dict(type="boolean", default=False),
+                api_key=dict(type=["string", "null"], default=None),
             ),
             default={},
         ),
@@ -60,6 +68,9 @@ config_schema = dict(
             properties=dict(
                 address=dict(type="string", default="http://localhost"),
                 token=dict(type=["string", "null"]),
+                supported_platforms=dict(
+                    type="array", items=dict(type="string"), default=[]
+                ),
                 status_update=dict(type="boolean", default=False),
                 status_on_pass=dict(type="number", min=0, default=1),
                 status_on_fail=dict(type="number", min=0, default=4),
@@ -72,8 +83,9 @@ config_schema = dict(
         network=dict(
             type="object",
             properties=dict(
-                login=dict(type=["string", "null"]),
-                password=dict(type=["string", "null"]),
+                login=dict(type=["string", "null"], default=None),
+                password=dict(type=["string", "null"], default=None),
+                enable=dict(type="boolean", default=True),
             ),
             default={},
         ),

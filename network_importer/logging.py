@@ -13,7 +13,6 @@ limitations under the License.
 """
 
 import json
-import math
 from time import strftime, time
 import network_importer.config as config
 
@@ -26,79 +25,83 @@ def changelog_create(obj_type, obj_name, obj_id, params):
       obj_id:
 
     Returns:
-      
+
     """
-    cl = ChangelogCreate(
+    changelog = ChangelogCreate(
         obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
     )
-    cl.save()
+    changelog.save()
 
 
 def changelog_update(obj_type, obj_name, obj_id, params):
     """
 
     Args:
-      obj_type: 
-      obj_name: 
-      obj_id: 
-      params: 
+      obj_type:
+      obj_name:
+      obj_id:
+      params:
 
     Returns:
-      
+
 
     """
-    cl = ChangelogUpdate(
+    changelog = ChangelogUpdate(
         obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
     )
-    cl.save()
+    changelog.save()
 
 
 def changelog_delete(obj_type, obj_name, obj_id):
     """
-    
+
     Args:
-      obj_type: 
-      obj_name: 
-      obj_id: 
+      obj_type:
+      obj_name:
+      obj_id:
 
     Returns:
 
     """
-    cl = ChangelogDelete(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name)
-    cl.save()
+    changelog = ChangelogDelete(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name)
+    changelog.save()
 
 
-class Changelog(object):
-    """ 
-    Base Changelog object to track a specific changes done on the remote system. 
+class Changelog:
+    """
+    Base Changelog object to track a specific changes done on the remote system.
     A changelog is defined by an Id a type and a name. It can also includes additional parameters
     """
 
     def __init__(self, obj_type, obj_id, obj_name, params=None):
         """
-        
+
 
         Args:
-          obj_type: 
-          obj_id: 
-          obj_name: 
+          obj_type:
+          obj_id:
+          obj_name:
           params:  (Default value = None)
 
         Returns:
 
         """
+
+        # ------------------------------------------------------------------------------------------
+        # TODO: Add definition for self.log_type
+        # ------------------------------------------------------------------------------------------
         self.obj_id = obj_id
         self.obj_name = obj_name
         self.obj_type = obj_type
         self.params = params
 
     def save(self):
-        """ 
+        """
         Save the changelog, the destination is defined by the configuration file
         Currenlty only support  jsonlines and text
 
         Returns:
-          Bool: True is the changelog was properly saved, False if not 
+          Bool: True is the changelog was properly saved, False if not
         """
 
         if not config.logs["change_log"]:
@@ -112,13 +115,13 @@ class Changelog(object):
         return True
 
     def print_jsonlines(self):
-        """ 
+        """
         Write the changelog in jsonlines format in the file defined in the configuration file
         """
         jcl = {
             "timestamp": int(time() * 1000),
             "time": strftime("%Y-%m-%d %H:%M:%S"),
-            "action": self.log_type,
+            "action": self.log_type,  # pylint: disable=no-member
             "object": {
                 "id": self.obj_id,
                 "name": self.obj_name,
@@ -127,25 +130,25 @@ class Changelog(object):
             "params": self.params,
         }
 
-        with open(config.logs["change_log_filename"] + ".jsonl", "a") as f:
-            f.write(json.dumps(jcl) + "\n")
+        with open(config.logs["change_log_filename"] + ".jsonl", "a") as file_:
+            file_.write(json.dumps(jcl) + "\n")
 
     def print_text(self):
-        """ 
+        """
         Write the changelog in text format in the file defined in the configuration file
         """
 
         log = "{time} {action} {obj_type} {obj_name} ({obj_id}) {params}".format(
             time=strftime("%Y-%m-%d %H:%M:%S"),
-            action=self.log_type,
+            action=self.log_type,  # pylint: disable=no-member
             obj_id=self.obj_id,
             obj_name=self.obj_name,
             obj_type=self.obj_type,
             params=self.params,
         )
 
-        with open(config.logs["change_log_filename"] + ".log", "a") as f:
-            f.write(log + "\n")
+        with open(config.logs["change_log_filename"] + ".log", "a") as file_:
+            file_.write(log + "\n")
 
 
 class ChangelogCreate(Changelog):

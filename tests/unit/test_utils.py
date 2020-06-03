@@ -12,7 +12,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from network_importer.utils import expand_vlans_list, sort_by_digits
+from network_importer.utils import (
+    expand_vlans_list,
+    sort_by_digits,
+    is_interface_physical,
+    is_interface_lag,
+)
 
 
 def test_expand_vlans_list():
@@ -33,3 +38,54 @@ def test_sort_by_digits():
     assert sort_by_digits("Eth0/2/543/14/6") == (0, 2, 543, 14, 6,)
     assert sort_by_digits("Eth0") == (0,)
     assert sort_by_digits("Eth") == ()
+
+
+def test_is_interface_physical():
+    # pylint: disable=C0121
+    """
+    Test is_interface_physical
+    """
+    assert is_interface_physical("GigabitEthernet0/0/2") == True
+    assert is_interface_physical("GigabitEthernet0/0/2.890") == False
+    assert is_interface_physical("GigabitEthernet0/0/2.1") == False
+    assert is_interface_physical("Ethernet0.1") == False
+    assert is_interface_physical("Ethernet1") == True
+    assert is_interface_physical("Serial0/1/0:15") == True
+    assert is_interface_physical("Service-Engine0/1/0") == True
+    assert is_interface_physical("Service-Engine0/1/0.152") == False
+    assert is_interface_physical("GigabitEthernet0") == True
+    assert is_interface_physical("ge-0/0/0") == True
+    assert is_interface_physical("ge-0/0/0.10") == False
+    assert is_interface_physical("lo0.0") == False
+    assert is_interface_physical("Loopback1") == False
+    assert is_interface_physical("Vlan108") == False
+    assert is_interface_physical("ae0.100") == False
+    assert is_interface_physical("Management0/0") == True
+
+
+def test_is_interface_lag():
+    # pylint: disable=C0121
+    """
+    Test is_interface_log
+    """
+    assert is_interface_lag("port-channel100") == True
+    assert is_interface_lag("Port-Channel100") == True
+    assert is_interface_lag("ae0") == True
+    assert is_interface_lag("ae0.100") == None
+    assert is_interface_lag("Port-Channel100") == True
+    assert is_interface_lag("Port-Channel100.100") == None
+    assert is_interface_lag("GigabitEthernet0/0/2") == None
+    assert is_interface_lag("GigabitEthernet0/0/2.890") == None
+    assert is_interface_lag("GigabitEthernet0/0/2.1") == None
+    assert is_interface_lag("Ethernet0.1") == None
+    assert is_interface_lag("Ethernet1") == None
+    assert is_interface_lag("Serial0/1/0:15") == None
+    assert is_interface_lag("Service-Engine0/1/0") == None
+    assert is_interface_lag("Service-Engine0/1/0.152") == None
+    assert is_interface_lag("GigabitEthernet0") == None
+    assert is_interface_lag("ge-0/0/0") == None
+    assert is_interface_lag("ge-0/0/0.10") == None
+    assert is_interface_lag("lo0.0") == None
+    assert is_interface_lag("Loopback1") == None
+    assert is_interface_lag("Vlan108") == None
+    assert is_interface_lag("Management0/0") == None

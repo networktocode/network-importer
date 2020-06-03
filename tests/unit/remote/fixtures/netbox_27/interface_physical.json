@@ -1,0 +1,54 @@
+{
+    "id": 308,
+    "device": {
+      "id": 29,
+      "url": "http://localhost/api/dcim/devices/29/",
+      "name": "HQ-CORE-SW02",
+      "display_name": "HQ-CORE-SW02"
+    },
+    "name": "TenGigabitEthernet1/0/4",
+    "type": {
+      "value": "10gbase-x-sfpp",
+      "label": "SFP+ (10GE)",
+      "id": 1200
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": null,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "more than 100char description xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "connected_endpoint_type": "dcim.interface",
+    "connected_endpoint": {
+      "id": 577,
+      "url": "http://localhost/api/dcim/interfaces/577/",
+      "device": {
+        "id": 40,
+        "url": "http://localhost/api/dcim/devices/40/",
+        "name": "HQ-DC-SW02",
+        "display_name": "HQ-DC-SW02"
+      },
+      "name": "Ethernet1/2",
+      "cable": 98,
+      "connection_status": {
+        "value": true,
+        "label": "Connected"
+      }
+    },
+    "connection_status": {
+      "value": true,
+      "label": "Connected"
+    },
+    "cable": {
+      "id": 98,
+      "url": "http://localhost/api/dcim/cables/98/",
+      "label": ""
+    },
+    "mode": null,
+    "untagged_vlan": null,
+    "tagged_vlans": [],
+    "tags": [
+      "role=downlink"
+    ],
+    "count_ipaddresses": 0
+  }

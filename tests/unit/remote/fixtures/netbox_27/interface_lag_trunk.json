@@ -1,0 +1,55 @@
+{
+    "id": 603,
+    "device": {
+      "id": 29,
+      "url": "http://localhost/api/dcim/devices/29/",
+      "name": "HQ-CORE-SW02",
+      "display_name": "HQ-CORE-SW02"
+    },
+    "name": "Port-channel1",
+    "type": {
+      "value": "lag",
+      "label": "Link Aggregation Group (LAG)",
+      "id": 200
+    },
+    "enabled": true,
+    "lag": null,
+    "mtu": null,
+    "mac_address": null,
+    "mgmt_only": false,
+    "description": "",
+    "connected_endpoint_type": null,
+    "connected_endpoint": null,
+    "connection_status": null,
+    "cable": null,
+    "mode": {
+      "value": "tagged",
+      "label": "Tagged",
+      "id": 200
+    },
+    "untagged_vlan": {
+      "id": 16,
+      "url": "http://localhost/api/ipam/vlans/16/",
+      "vid": 300,
+      "name": "storage",
+      "display_name": "300 (storage)"
+    },
+    "tagged_vlans": [
+      {
+        "id": 16,
+        "url": "http://localhost/api/ipam/vlans/16/",
+        "vid": 300,
+        "name": "storage",
+        "display_name": "300 (storage)"
+      },
+      {
+        "id": 17,
+        "url": "http://localhost/api/ipam/vlans/17/",
+        "vid": 301,
+        "name": "compute",
+        "display_name": "301 (compute)"
+      }
+    ],
+    "tags": [],
+    "count_ipaddresses": 0
+  }

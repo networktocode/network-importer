@@ -15,7 +15,7 @@ limitations under the License.
 from typing import List
 
 
-class BaseModel(object):
+class BaseModel:
     """ """
 
     exclude_from_diff = []
@@ -48,7 +48,7 @@ class Vlan(BaseModel):
 
     def __init__(self, name: str = None, vid=None, site: str = None):
         """
-        
+
         Args:
           name: name of the vlan (Default value = None)
           vid: vlan id for the vlan, automatically converted to integer if provided (Default value = None)
@@ -69,18 +69,18 @@ class Vlan(BaseModel):
 
 
 class Interface(BaseModel):
-    """ 
+    """
     Base Class for Interface
 
     For now, speed has been excluded from the diff
     the goal is to add it back in the future
     """
 
-    exclude_from_diff = ["lag_members", "speed"]
+    exclude_from_diff = ["device_name", "lag_members", "speed"]
 
     def __init__(self, name: str = None):
         """
-        
+
         Args:
           name:  (Default value = None)
 
@@ -106,7 +106,7 @@ class Interface(BaseModel):
 
 
 class IPAddress(BaseModel):
-    """ 
+    """
     Base Class for IPaddress
     Current support only address
     """
@@ -115,7 +115,6 @@ class IPAddress(BaseModel):
 
     def __init__(self, address: str = None):
         """
-        
 
         Args:
           address:  (Default value = None)
@@ -127,8 +126,25 @@ class IPAddress(BaseModel):
         self.family = None
 
 
+class Prefix(BaseModel):
+    """
+    Base Class for Prefix
+    """
+
+    def __init__(self, prefix: str = None, vlan_id: int = None):
+        """
+
+        Args:
+          prefix: str (Default value = None)
+          vlan_id: int (Default value = None)
+        """
+        self.prefix = prefix
+        self.vlan = vlan_id
+        self.family = None
+
+
 class Optic(BaseModel):
-    """ 
+    """
     Base Class for an optic
     """
 
@@ -140,7 +156,7 @@ class Optic(BaseModel):
         serial: str = None,
     ):
         """
-        
+
         Args:
           name:  (Default value = None)
           optic_type:  (Default value = None)
@@ -154,3 +170,70 @@ class Optic(BaseModel):
         self.intf = intf
         self.serial = serial
         self.name = name
+
+
+class Cable(BaseModel):
+    """
+    Base Class for cable
+    """
+
+    exclude_from_diff = ["connections", "origin"]
+    valid_sides = ["a", "z"]
+
+    def __init__(self, origin=None):
+        self.connections = {}
+        self.unique_id = None
+        self.origin = origin
+
+    def get_device_intf(self, side):
+        """
+        Return the device name or the interface name of either side A or side Z of the cable
+        """
+
+        if side not in self.valid_sides:
+            raise ValueError(
+                f"{side} is not a valid parameter for get_side(), (supported: {self.valid_sides}"
+            )
+
+        if self.nbr_connections() != 2:
+            return None, None
+
+        return self.connections[side]["name"], self.connections[side]["interface"]
+
+    def add_device(self, device, interface):
+
+        side = None
+        if "a" not in self.connections.keys():
+            side = "a"
+        elif "z" not in self.connections.keys():
+            side = "z"
+        else:
+            raise Exception(
+                f"Cable {self.unique_id}, Maximum number of connection already reached"
+            )
+
+        self.connections[side] = {
+            "type": "device",
+            "name": device,
+            "interface": interface,
+        }
+
+        self.__update_unique_id()
+
+    def __update_unique_id(self):
+
+        if self.nbr_connections() == 2:
+            self.unique_id = "_".join(
+                sorted(
+                    [
+                        f"{self.connections['a']['name']}:{self.connections['a']['interface']}",
+                        f"{self.connections['z']['name']}:{self.connections['z']['interface']}",
+                    ]
+                )
+            )
+        else:
+            self.unique_id = None
+
+    def nbr_connections(self):
+
+        return len(self.connections.keys())

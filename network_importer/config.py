@@ -11,14 +11,20 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import toml
+# pylint: disable=invalid-name,redefined-outer-name
+import sys
 import os.path
 from pathlib import Path
 from jsonschema import Draft7Validator, validators
+import toml
 from . import schema
 
 # -----------------------------------------------------------------------------
 #                                 GLOBALS
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+#   TODO: update globals to upper case for Pylint
 # -----------------------------------------------------------------------------
 
 main = None
@@ -30,10 +36,10 @@ network = None
 
 def extend_with_default(validator_class):
     """
-    
+
 
     Args:
-      validator_class: 
+      validator_class:
 
     Returns:
 
@@ -42,13 +48,13 @@ def extend_with_default(validator_class):
 
     def set_defaults(validator, properties, instance, schema):
         """
-        
+
 
         Args:
-          validator: 
-          properties: 
-          instance: 
-          schema: 
+          validator:
+          properties:
+          instance:
+          schema:
 
         Returns:
 
@@ -80,7 +86,7 @@ def env_var_to_bool(var):
 
 def load_config(config_file_name=None, config_data=None):
     """
-    
+
     Args:
       config_file_name: (Default value = DEFAULT_CONFIG_FILE_NAME)
 
@@ -89,7 +95,7 @@ def load_config(config_file_name=None, config_data=None):
     """
     global main, logs, netbox, batfish, network
 
-    if config_file_name == None and config_data == None:
+    if config_file_name is None and config_data is None:
         config = {}
     elif config_data:
         config = config_data
@@ -129,6 +135,9 @@ def load_config(config_file_name=None, config_data=None):
     if "BATFISH_ADDRESS" in os.environ:
         batfish["address"] = bool(os.environ.get("BATFISH_ADDRESS"))
 
+    if "BATFISH_API_KEY" in os.environ:
+        batfish["api_key"] = bool(os.environ.get("BATFISH_API_KEY"))
+
     # -------------------------------------------------------------------------
     #                                network
     # -------------------------------------------------------------------------
@@ -149,9 +158,16 @@ def load_config(config_file_name=None, config_data=None):
     # -------------------------------------------------------------------------
 
     config_validator = extend_with_default(Draft7Validator)
+    v = config_validator(schema.config_schema)
+    config_errors = sorted(v.iter_errors(config), key=str)
 
-    config_validator(schema.config_schema).validate(config)
-    # TODO Catch jsonschema.exceptions.ValidationError  and print proper error message
+    if len(config_errors) != 0:
+        print(
+            f"Found {len(config_errors)} error(s) in the configuration file ({config_file_name})"
+        )
+        for error in config_errors:
+            print(f"  {error.message} in {'/'.join(error.absolute_path)}")
+        sys.exit(1)
 
     # since the code will open a netbox connection in multiple places,
     # store the actual value provided to the pynetbox.Api, which is

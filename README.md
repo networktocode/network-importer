@@ -17,20 +17,30 @@ The network-importer requires to have access to a working batfish environment, y
 docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 ```
 
+## Check/Create your devices in Netbox
+
+A bare device needs to be already present in Netbox and the network-importer will be able to import all vlans, interfaces, ip addresses, cables, transceivers etc ..  
+Currently, the network-importer is not creating the devices in Netbox.   
+
+To be able to connect to the device the following information needs to be defined in NetBox:
+- Primary ip address
+- Platform (must be a valid napalm driver or have a valid napalm driver defined)
+> Connecting to the device is not mandatory but some features depends on it: configuration update, transceivers, mostly cabling.
 
 ## Configuration file
 
 ```toml
 [main]
 # import_ips = true 
-# import_cabling = true
+# import_prefixes = false
+# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
 # import_transceivers = false 
 # import_intf_status = true     # If set as False, interface status will be ignore all together
-# import_vlans="config"         # Valid options are ["cli", "config", "no"]
+# import_vlans="config"         # Valid options are ["cli", "config", true, false]
 
 # nbr_workers= 25
 
-# Not fully fonctional right, need to revisit that part
+# Not fully fonctional right now, need to revisit that part
 # generate_hostvars = false 
 # hostvars_directory= "host_vars"
 
@@ -48,6 +58,12 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 
 [batfish]
 address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
+# api_key= "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
+# network_name="network-importer"
+# snapshot_name="latest"
+# port_v1= 9997
+# port_v2= 9996
+# use_ssl= false
 
 [netbox]
 # The information to connect to netbox needs to be provided, either in the config file or as environment variables
@@ -55,6 +71,10 @@ address = "http://localhost:8080"                   # Alternative Env Variable :
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
 verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
 cacert = "/tmp/netbox.crt"                          # Alternative Env Variable : NETBOX_CACERT
+
+# Define a list of supported platform, 
+# if defined all devices without platform or with a different platforms will be removed from the inventory
+# supported_platforms = [ "ios", "nxos" ]
 
 # Update device configuration on Netbox add the end of the execution
 # status_update = false 
@@ -88,8 +108,7 @@ password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
 
 The network importer is using different tools to collect information from the network devices: 
 - [batfish](https://github.com/batfish/batfish) to parse the configurations and extract a vendor neutral data model. 
-- [nornir], [netmiko] and ntc-templates to extract some information from the device cli if available
-
+- [nornir], [naplam], [netmiko] and [ntc-templates] to extract some information from the device cli if available
 
 # disclaimer / Assumption
 
