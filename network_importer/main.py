@@ -900,22 +900,27 @@ class NetworkImporter:
 
             if items[0].failed:
                 logger.warning(
-                    f"{dev_name} | Something went wrong while trying to pull the vlan information"
+                    f"{dev_name} | Something went wrong while trying to pull the VLAN information"
                 )
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
+            elif not items[0].result:
+                logger.warning(
+                    f"{dev_name} | No VLAN results returned."
+                )
+                continue
+            else:
+                for vlan in items[0].result:
+                    if (
+                        vlan["id"]
+                        not in self.devs.inventory.hosts[dev_name]
+                        .data["obj"]
+                        .site.vlans.keys()
+                    ):
 
-            for vlan in items[0].result:
-                if (
-                    vlan["id"]
-                    not in self.devs.inventory.hosts[dev_name]
-                    .data["obj"]
-                    .site.vlans.keys()
-                ):
-
-                    self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                        vlan=Vlan(name=vlan["name"], vid=vlan["id"]), device=dev_name,
-                    )
+                        self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
+                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]), device=dev_name,
+                        )
 
     # --------------------------------------------------------------------------
     # Private methods

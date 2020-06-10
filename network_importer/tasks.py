@@ -266,7 +266,7 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
 
     results = None
 
-    if task.host.platform in ["ios", "nxos"]:
+    if task.host.platform in ["cisco_ios", "cisco_nxos"]:
         try:
             results = task.run(
                 task=netmiko_send_command, command_string="show vlan", use_genie=True
@@ -299,7 +299,7 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
             vlans.append(dict(name=data["name"], id=vid))
 
     else:
-        return Result(host=task.host, result=False)
+        logger.warning(f"{task.host.name} | Unable to collect VLAN information via cmd - Unsupported device type {task.host.platform}")
 
     if update_cache and results:
         save_data_to_file(task.host.name, cache_name, vlans)
