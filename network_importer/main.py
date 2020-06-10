@@ -905,9 +905,7 @@ class NetworkImporter:
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
             elif not items[0].result:
-                logger.warning(
-                    f"{dev_name} | No VLAN results returned."
-                )
+                logger.warning(f"{dev_name} | No VLAN results returned.")
                 continue
             else:
                 for vlan in items[0].result:
@@ -919,7 +917,8 @@ class NetworkImporter:
                     ):
 
                         self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
-                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]), device=dev_name,
+                            vlan=Vlan(name=vlan["name"], vid=vlan["id"]),
+                            device=dev_name,
                         )
 
     # --------------------------------------------------------------------------

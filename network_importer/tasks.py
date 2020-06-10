@@ -299,7 +299,9 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
             vlans.append(dict(name=data["name"], id=vid))
 
     else:
-        logger.warning(f"{task.host.name} | Unable to collect VLAN information via cmd - Unsupported device type {task.host.platform}")
+        logger.warning(
+            f"{task.host.name} | Unable to collect VLAN information via cmd - Unsupported device type {task.host.platform}"
+        )
 
     if update_cache and results:
         save_data_to_file(task.host.name, cache_name, vlans)
