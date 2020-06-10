@@ -1,23 +1,25 @@
+# Network Importer
+
 The network importer is a tool to import/synchronize an existing network with a Network Source of Truth, it's designed to be idempotent and by default it's only showing the difference between the running network and the remote database. 
 
 The main use cases for the network importer 
  - Import an existing network into a SOT (Netbox) as a first step to automate a brownfield network
  - Check the differences between the running network and the Source of Truth
 
-# How to use 
+## How to use 
 
 The network importer can run either in `check` mode or in `apply` mode. 
  - In `check` mode, no modification will be made to the SOT, the differences will be printed on the screen
  - in `apply` mode, the SOT will be updated will all interfaces, IPs, vlans etc
 
-## Start Batfish in a container
+### Start Batfish in a container
 
 The network-importer requires to have access to a working batfish environment, you can easily start one using docker
 ```
 docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.01.11.363
 ```
 
-## Check/Create your devices in Netbox
+### Check/Create your devices in Netbox
 
 A bare device needs to be already present in Netbox and the network-importer will be able to import all vlans, interfaces, ip addresses, cables, transceivers etc ..  
 Currently, the network-importer is not creating the devices in Netbox.   
@@ -27,7 +29,7 @@ To be able to connect to the device the following information needs to be define
 - Platform (must be a valid napalm driver or have a valid napalm driver defined)
 > Connecting to the device is not mandatory but some features depends on it: configuration update, transceivers, mostly cabling.
 
-## Configuration file
+### Configuration file
 
 ```toml
 [main]
@@ -104,13 +106,22 @@ password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
 # change_log_filename= "changelog"
 ```
 
-# How does it work
+## How does it work
 
 The network importer is using different tools to collect information from the network devices: 
 - [batfish](https://github.com/batfish/batfish) to parse the configurations and extract a vendor neutral data model. 
 - [nornir], [naplam], [netmiko] and [ntc-templates] to extract some information from the device cli if available
 
-# disclaimer / Assumption
+## Development
+In addition to the supplied Makefile you can also use `docker-compose` to bring up the required service stack. Like so:
+```
+sudo docker-compose up -d
+sudo docker-compose exec network-importer bash
+sudo docker-compose down
+```
 
-Currently the library only supports netbox but the idea for 1.0 is to support multiple backend SOT
-Currently the assumption is that vlans are global to a site. need to find a way to provide more flexibility here without making it too complex
+
+## Disclaimer / Assumption
+
+Currently the library only supports netbox but the idea for 1.0 is to support multiple backend SOT.
+Currently the assumption is that vlans are global to a site. need to find a way to provide more flexibility here without making it too complex.
