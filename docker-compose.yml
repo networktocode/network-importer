@@ -1,0 +1,23 @@
+version: '3.5'
+services:
+  network_importer:
+    container_name: network_importer
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    env_file:
+      - ".env"
+    depends_on:
+      - "batfish"
+    volumes:
+      - ./network_importer:/source/network_importer
+      - ./examples:/source/examples
+      - ./tests:/source/tests
+  batfish:
+      container_name: batfish-test
+      image: batfish/batfish:test-526
+      ports:
+        - 9997:9997
+        - 9996:9996
