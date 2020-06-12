@@ -1,3 +1,27 @@
+
+
+
+
+
+
+class DSyncMixin:
+    def __iter__(self):
+        for v in self.values:
+            yield v, getattr(self, v)
+
+    def get_type(self):
+        return self.__tablename__
+
+    def get_keys(self):
+        return {pk.name: getattr(self, pk.name) for pk in self.__table__.primary_key}
+
+    def get_attrs(self):
+        return {attr: getattr(self, attr) for attr in self.attributes}
+
+
+
+
+
 def print_to_yaml(obj, i=0):
     if isinstance(obj, list):
         for item in obj:

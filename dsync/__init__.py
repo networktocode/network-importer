@@ -1,10 +1,22 @@
+"""
+(c) 2020 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import logging
 from os import path
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from .models import *
 from .diff import Diff
 
 logger = logging.getLogger("network-importer")
@@ -15,15 +27,30 @@ def intersection(lst1, lst2):
     return lst3
 
 
-class NetMod:
+class DSyncMixin:
+    def __iter__(self):
+        for v in self.values:
+            yield v, getattr(self, v)
 
-    site = Site
-    device = Device
-    interface = Interface
-    ip_address = IPAddress
-    cable = Cable
+    def get_type(self):
+        return self.__tablename__
 
-    top_level = ["device", "cable"]
+    def get_keys(self):
+        return {pk.name: getattr(self, pk.name) for pk in self.__table__.primary_key}
+
+    def get_attrs(self):
+        return {attr: getattr(self, attr) for attr in self.attributes}
+
+
+class DSync:
+
+    # site = Site
+    # device = Device
+    # interface = Interface
+    # ip_address = IPAddress
+    # cable = Cable
+
+    # top_level = ["device", "cable"]
 
     def __init__(self, db="sqlite:///:memory:"):
 
