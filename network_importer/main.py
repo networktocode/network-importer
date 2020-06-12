@@ -18,7 +18,6 @@ import sys
 import os
 import re
 import warnings
-from collections import defaultdict
 import ipaddress
 import requests
 import pynetbox
@@ -347,22 +346,6 @@ class NetworkImporter:
                     if config.main["import_ips"]:
                         dev.add_ip(intf_name, IPAddress(address=prfx))
 
-                    if config.main["import_prefixes"]:
-                        vlan = None
-                        if bf_intf.Encapsulation_VLAN:
-                            dev.local_interface_vlans_mapping[intf_name].append(
-                                bf_intf.Encapsulation_VLAN
-                            )
-                            vlan = bf_intf.Encapsulation_VLAN
-                        elif len(dev.local_interface_vlans_mapping[intf_name]) == 1:
-                            vlan = dev.local_interface_vlans_mapping[intf_name][0]
-                        elif len(dev.local_interface_vlans_mapping[intf_name]) >= 1:
-                            logger.warning(
-                                f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({dev.local_interface_vlans_mapping[intf_name]})"
-                            )
-
-                        dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)
-
             if config.main["generate_hostvars"]:
 
                 resp = self.bf.extract_facts(nodes=dev.name)
@@ -417,10 +400,24 @@ class NetworkImporter:
             if not self.devs.inventory.hosts[host].data["has_config"]:
                 continue
 
-            self.get_dev(host).check_data_consistency()
+            dev = self.get_dev(host)
+
+            dev.check_data_consistency()
+            dev.import_local_prefix()
 
         # Cabling
         self.validate_cabling()
+
+    # def create_local_prefix_from_ip(self):
+
+    #     # For each device
+    #     #  Go over the interface_vlan_mapping dict
+    #     #    for each interface, check if the vlan exists ()
+    #     #      if the vlan exist, and for all prefix/ip defined on the interface
+    #     #        check if the mapping vlan_prefix already exist in local
+
+    #     for host in self.devs.inventory.hosts.keys():
+    #         dev = host.data["obj"]
 
     def check_nb_params(self, exit_on_failure=True):
         """

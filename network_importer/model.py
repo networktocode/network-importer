@@ -507,6 +507,50 @@ class NetworkImporterDevice:
                     if vlan in self.site.vlans.keys()
                 ]
 
+    def import_local_prefix(self):
+
+        for intf_name in self.interfaces.items():
+            for ip_address, ip in self.interfaces[intf_name].ips.items():
+                if not ip.local:
+                    continue
+
+                # Check the interface to vlan mapping, extract the list of vlan associated with this interface
+                #  only 1 vlan supported for now
+                all_local_intf_vlan_mapping = self.local_interface_vlans_mapping[
+                    intf_name
+                ]
+                valid_local_intf_vlan_mapping = [
+                    vlan
+                    for vlan in all_local_intf_vlan_mapping
+                    if vlan in self.site.vlans.keys()
+                ]
+
+                vlan = None
+                if len(valid_local_intf_vlan_mapping) == 1:
+                    vlan = valid_local_intf_vlan_mapping[0]
+                elif len(self.local_interface_vlans_mapping[intf_name]) >= 1:
+                    logger.warning(
+                        f"{self.name} | More than 1 vlan associated with interface {intf_name} ({valid_local_intf_vlan_mapping})"
+                    )
+
+                self.site.add_prefix_from_ip(ip=ip.local.prefix, vlan=vlan)
+
+            # if intf_name in dev.local_interface_vlans_mapping:
+            #     for vlan in dev.local_interface_vlans_mapping[intf_name]:
+            #         if vlan in self.dev.site.vlans.keys():
+
+            # if bf_intf.Encapsulation_VLAN:
+            #     dev.local_interface_vlans_mapping[intf_name].append(
+            #         bf_intf.Encapsulation_VLAN
+            #     )
+            #     vlan = bf_intf.Encapsulation_VLAN
+            # elif len(dev.local_interface_vlans_mapping[intf_name]) == 1:
+            #     vlan = dev.local_interface_vlans_mapping[intf_name][0]
+            # elif len(dev.local_interface_vlans_mapping[intf_name]) >= 1:
+            #     logger.warning(
+            #         f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({dev.local_interface_vlans_mapping[intf_name]})"
+            #     )
+
     def add_batfish_interface(self, intf_name, bf):
         """
         Add an interface to the device and try to match it with an existing interface in netbox
