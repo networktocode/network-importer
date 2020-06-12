@@ -314,22 +314,28 @@ class NetworkImporter:
 
             bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
 
-            interface_vlans_mapping = defaultdict(list)
+            # Discover the vlans on the devices, and extract the interface to vlans mapping
+            # if the vlans should be imported from the configuration, create them in the site object.
 
-            if config.main["import_vlans"] == "config":
+            if config.main["import_vlans"] != False:
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
-                    dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
-                        device=dev.name,
-                    )
+                    if config.main["import_vlans"] == "config":
+                        dev.site.add_vlan(
+                            vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
+                            device=dev.name,
+                        )
 
                     # Save interface to vlan mapping for later use
                     for intf in vlan.Interfaces:
                         if intf.hostname != dev.name.lower():
                             continue
-                        interface_vlans_mapping[intf.interface].append(vlan.VLAN_ID)
+                        dev.local_interface_vlans_mapping[intf.interface].append(
+                            vlan.VLAN_ID
+                        )
 
+            # Import all interfaces and associated IP addresses from the configuration
+            # Prefixes are derived from the IP addresses too
             for bf_intf in bf_ints.frame().itertuples():
                 found_intf = False
 
@@ -344,15 +350,15 @@ class NetworkImporter:
                     if config.main["import_prefixes"]:
                         vlan = None
                         if bf_intf.Encapsulation_VLAN:
-                            interface_vlans_mapping[intf_name].append(
+                            dev.local_interface_vlans_mapping[intf_name].append(
                                 bf_intf.Encapsulation_VLAN
                             )
                             vlan = bf_intf.Encapsulation_VLAN
-                        elif len(interface_vlans_mapping[intf_name]) == 1:
-                            vlan = interface_vlans_mapping[intf_name][0]
-                        elif len(interface_vlans_mapping[intf_name]) >= 1:
+                        elif len(dev.local_interface_vlans_mapping[intf_name]) == 1:
+                            vlan = dev.local_interface_vlans_mapping[intf_name][0]
+                        elif len(dev.local_interface_vlans_mapping[intf_name]) >= 1:
                             logger.warning(
-                                f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({interface_vlans_mapping[intf_name]})"
+                                f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({dev.local_interface_vlans_mapping[intf_name]})"
                             )
 
                         dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)

@@ -14,6 +14,7 @@ limitations under the License.
 # pylint: disable=invalid-name,redefined-builtin
 import logging
 import ipaddress
+from collections import defaultdict
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
@@ -179,6 +180,12 @@ class NetworkImporterDevice:
 
         self.interfaces = dict()
         self.hostvars = dict()
+
+        # Interface to vlans mapping structure
+        # {
+        #    "interface_name": [ <vlan_id>, <vlan_id> ]
+        # }
+        self.local_interface_vlans_mapping = defaultdict(list)
 
         self.site = None
 
