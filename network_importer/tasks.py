@@ -417,11 +417,13 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
             logger.warning(f"{task.host.name} | No CDP information returned")
         else:
             for neighbor in results[0].result:
+                neighbor_hostname = neighbor.get("destination_host") or neighbor.get(
+                    "dest_host"
+                )
+                neighbor_port = neighbor["remote_port"]
+
                 neighbors["lldp_neighbors"][neighbor["local_port"]].append(
-                    dict(
-                        hostname=neighbor["destination_host"],
-                        port=neighbor["remote_port"],
-                    )
+                    dict(hostname=neighbor_hostname, port=neighbor_port,)
                 )
 
     if update_cache:
