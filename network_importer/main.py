@@ -146,7 +146,13 @@ class NetworkImporter:
                     continue
 
                 key, value = csp.split("=", 1)
-                params[key] = value
+                existing_value = params.get(key)
+                if existing_value and isinstance(existing_value, list):
+                    params[key].append(value)
+                elif existing_value and isinstance(existing_value, str):
+                    params[key] = [existing_value, value]
+                else:
+                    params[key] = value
 
         if limit:
             if "=" not in limit:
