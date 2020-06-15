@@ -530,10 +530,8 @@ class NetworkImporterDevice:
                     logger.warning(
                         f"{self.name} | More than 1 vlan associated with interface {intf_name} ({valid_local_intf_vlan_mapping})"
                     )
-                
+
                 self.site.add_prefix_from_ip(ip=ip.local.address, vlan=vlan)
-                
-            
 
     def add_batfish_interface(self, intf_name, bf):
         """
@@ -847,7 +845,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
 
         elif self.local.mode == "ACCESS" and bf.Access_VLAN:
             self.local.access_vlan = bf.Access_VLAN
-        
+
         if (
             self.local.is_lag is False
             and self.local.is_lag_member is None
@@ -856,6 +854,13 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.parent = bf.Channel_Group
             self.local.is_lag_member = True
             self.local.is_virtual = False
+
+        print(
+            self.name, self.local.mode, self.local.allowed_vlans, self.local.access_vlan
+        )
+        import pdb
+
+        pdb.set_trace()
 
     def add_ip(self, ip):
         """

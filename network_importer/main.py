@@ -344,7 +344,7 @@ class NetworkImporter:
                             vlan=Vlan(name=f"vlan-{encap_vlan}", vid=encap_vlan),
                             device=dev.name,
                         )
-            
+
             # Import all interfaces and associated IP addresses from the configuration
             # Prefixes are derived from the IP addresses too
             for bf_intf in bf_ints.frame().itertuples():
@@ -420,7 +420,6 @@ class NetworkImporter:
         # Cabling
         self.validate_cabling()
 
- 
     def check_nb_params(self, exit_on_failure=True):
         """
         TODO add support for non exist on failure
