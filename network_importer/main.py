@@ -420,17 +420,7 @@ class NetworkImporter:
         # Cabling
         self.validate_cabling()
 
-    # def create_local_prefix_from_ip(self):
-
-    #     # For each device
-    #     #  Go over the interface_vlan_mapping dict
-    #     #    for each interface, check if the vlan exists ()
-    #     #      if the vlan exist, and for all prefix/ip defined on the interface
-    #     #        check if the mapping vlan_prefix already exist in local
-
-    #     for host in self.devs.inventory.hosts.keys():
-    #         dev = host.data["obj"]
-
+ 
     def check_nb_params(self, exit_on_failure=True):
         """
         TODO add support for non exist on failure
