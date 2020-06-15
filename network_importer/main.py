@@ -332,7 +332,7 @@ class NetworkImporter:
                         dev.local_interface_vlans_mapping[intf.interface].append(
                             vlan.VLAN_ID
                         )
-                # l3 interface vlans are not present within the vlan db. So we add the vlan via the encap vlan.
+                # l3 interface vlans are not present within the vlan db. So we must add the vlan via the encap vlan value.
                 for bf_local_interface in bf_ints.frame().itertuples():
                     encap_vlan = bf_local_interface.Encapsulation_VLAN
                     if encap_vlan:
@@ -345,27 +345,6 @@ class NetworkImporter:
                             device=dev.name,
                         )
             
-
-
-
-# if intf_name in dev.local_interface_vlans_mapping:
-            #     for vlan in dev.local_interface_vlans_mapping[intf_name]:
-            #         if vlan in self.dev.site.vlans.keys():
-
-            # if bf_intf.Encapsulation_VLAN:
-            #     dev.local_interface_vlans_mapping[intf_name].append(
-            #         bf_intf.Encapsulation_VLAN
-            #     )
-            #     vlan = bf_intf.Encapsulation_VLAN
-            # elif len(dev.local_interface_vlans_mapping[intf_name]) == 1:
-            #     vlan = dev.local_interface_vlans_mapping[intf_name][0]
-            # elif len(dev.local_interface_vlans_mapping[intf_name]) >= 1:
-            #     logger.warning(
-            #         f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({dev.local_interface_vlans_mapping[intf_name]})"
-            #     )
-
-
-
             # Import all interfaces and associated IP addresses from the configuration
             # Prefixes are derived from the IP addresses too
             for bf_intf in bf_ints.frame().itertuples():
