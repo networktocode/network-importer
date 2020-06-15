@@ -316,7 +316,7 @@ class NetworkImporter:
             # Discover the vlans on the devices, and extract the interface to vlans mapping
             # if the vlans should be imported from the configuration, create them in the site object.
 
-            if config.main["import_vlans"] != False:
+            if config.main["import_vlans"]:
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     if config.main["import_vlans"] == "config":

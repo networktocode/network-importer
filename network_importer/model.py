@@ -508,7 +508,7 @@ class NetworkImporterDevice:
                 ]
 
     def import_local_prefix(self):
-        for intf_name in self.interfaces.keys():
+        for intf_name, intf_values in self.interfaces.items():
             for ip_address, ip in self.interfaces[intf_name].ips.items():
                 if not ip.local:
                     continue
