@@ -855,13 +855,6 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.is_lag_member = True
             self.local.is_virtual = False
 
-        print(
-            self.name, self.local.mode, self.local.allowed_vlans, self.local.access_vlan
-        )
-        import pdb
-
-        pdb.set_trace()
-
     def add_ip(self, ip):
         """
         Add new IP address to the interface
