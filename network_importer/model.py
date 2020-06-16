@@ -14,6 +14,7 @@ limitations under the License.
 # pylint: disable=invalid-name,redefined-builtin
 import logging
 import ipaddress
+from collections import defaultdict
 import network_importer.config as config
 
 from network_importer.diff import NetworkImporterDiff
@@ -179,6 +180,12 @@ class NetworkImporterDevice:
 
         self.interfaces = dict()
         self.hostvars = dict()
+
+        # Interface to vlans mapping structure
+        # {
+        #    "interface_name": [ <vlan_id>, <vlan_id> ]
+        # }
+        self.local_interface_vlans_mapping = defaultdict(list)
 
         self.site = None
 
@@ -499,6 +506,32 @@ class NetworkImporterDevice:
                     for vlan in intf.local.allowed_vlans
                     if vlan in self.site.vlans.keys()
                 ]
+
+    def import_local_prefix(self):
+        for intf_name, intf_values in self.interfaces.items():
+            for ip_address, ip in self.interfaces[intf_name].ips.items():
+                if not ip.local:
+                    continue
+                # Check the interface to vlan mapping, extract the list of vlan associated with this interface
+                #  only 1 vlan supported for now
+                all_local_intf_vlan_mapping = self.local_interface_vlans_mapping[
+                    intf_name
+                ]
+                valid_local_intf_vlan_mapping = [
+                    vlan
+                    for vlan in all_local_intf_vlan_mapping
+                    if vlan in self.site.vlans.keys()
+                ]
+
+                vlan = None
+                if len(valid_local_intf_vlan_mapping) == 1:
+                    vlan = valid_local_intf_vlan_mapping[0]
+                elif len(self.local_interface_vlans_mapping[intf_name]) >= 1:
+                    logger.warning(
+                        f"{self.name} | More than 1 vlan associated with interface {intf_name} ({valid_local_intf_vlan_mapping})"
+                    )
+
+                self.site.add_prefix_from_ip(ip=ip.local.address, vlan=vlan)
 
     def add_batfish_interface(self, intf_name, bf):
         """
