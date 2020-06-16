@@ -283,7 +283,10 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
             return Result(host=task.host, result=False)
 
         for vid, data in results[0].result["vlans"].items():
-            vlans.append(dict(name=data["name"], id=data["vlan_id"]))
+            if not data.get("name", None):
+                logger.warning(f"{task.host.name} | Unknown VLAN data, VLAN {vid}")
+            else:
+                vlans.append(dict(name=data["name"], id=data["vlan_id"]))
 
     elif task.host.platform == "eos":
 
