@@ -285,7 +285,7 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
         for vid, data in results[0].result["vlans"].items():
             if not data.get("name", None):
                 logger.warning(f"{task.host.name} | Unknown VLAN data, VLAN {vid}")
-            if data.get("state", None) == "unsupport":
+            elif data.get("state", None) == "unsupport":
                 logger.warning(f"{task.host.name} | Unsupported VLAN found, VLAN {vid}")
             else:
                 vlans.append(dict(name=data["name"], id=data["vlan_id"]))
