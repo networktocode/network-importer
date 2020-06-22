@@ -39,7 +39,7 @@ To be able to connect to the device the following information needs to be define
 # import_transceivers = false 
 # import_intf_status = true     # If set as False, interface status will be ignore all together
 # import_vlans="config"         # Valid options are ["cli", "config", true, false]
-
+# excluded_platforms_cabling = ["cisco_asa"]
 # nbr_workers= 25
 
 # Not fully fonctional right now, need to revisit that part

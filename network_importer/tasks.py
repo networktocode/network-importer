@@ -394,8 +394,13 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
 
     neighbors = {}
 
-    if config.main["import_cabling"] == "lldp":
+    if task.host.platform in config.main["excluded_platforms_cabling"]:
+        logger.debug(
+            f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling"
+        )
+        return Result(host=task.host, result={})
 
+    if config.main["import_cabling"] == "lldp":
         try:
             results = task.run(task=napalm_get, getters=["lldp_neighbors"])
             neighbors = results[0].result
