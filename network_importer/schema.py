@@ -47,6 +47,9 @@ config_schema = dict(
                 data_use_cache=dict(type="boolean", default=False),
                 backend_type=dict(type="string", enum=["netbox"], default="netbox"),
                 backend_version=dict(type="string", default="default"),
+                excluded_platforms_cabling=dict(
+                    type="array", items=dict(type="string"), default=[]
+                ),
             ),
             default={},
         ),
