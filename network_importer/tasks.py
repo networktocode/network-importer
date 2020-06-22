@@ -393,17 +393,17 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
     neighbors = {}
 
     if task.host.platform in config.main["excluded_platforms_cabling"]:
-        logger.debug(f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
+        logger.debug(
+            f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling"
+        )
         return Result(host=task.host, result={})
 
-    if config.main["import_cabling"] == "lldp":    
+    if config.main["import_cabling"] == "lldp":
         try:
             results = task.run(task=napalm_get, getters=["lldp_neighbors"])
             neighbors = results[0].result
         except:
-            logger.debug(
-                "An exception occured while pulling lldp_data", exc_info=True
-            )
+            logger.debug("An exception occured while pulling lldp_data", exc_info=True)
             return Result(host=task.host, failed=True)
 
     elif config.main["import_cabling"] == "cdp":
@@ -417,9 +417,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
             neighbors = {"lldp_neighbors": defaultdict(list)}
 
         except:
-            logger.debug(
-                "An exception occured while pulling cdp_data", exc_info=True
-            )
+            logger.debug("An exception occured while pulling cdp_data", exc_info=True)
             return Result(host=task.host, failed=True)
 
         # Convert CDP details output to Napalm LLDP format
@@ -427,9 +425,9 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
             logger.warning(f"{task.host.name} | No CDP information returned")
         else:
             for neighbor in results[0].result:
-                neighbor_hostname = neighbor.get(
-                    "destination_host"
-                ) or neighbor.get("dest_host")
+                neighbor_hostname = neighbor.get("destination_host") or neighbor.get(
+                    "dest_host"
+                )
                 neighbor_port = neighbor["remote_port"]
 
                 neighbors["lldp_neighbors"][neighbor["local_port"]].append(
