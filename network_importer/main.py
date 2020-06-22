@@ -251,7 +251,7 @@ class NetworkImporter:
         #  - Create NID object
         #  - Pull cache information from Netbox
         # --------------------------------------------------------
-        results = self.devs.run(task=initialize_devices, bfs=self.bf)
+        results = self.devs.filter(filter_func=reachable_devs).run(task=initialize_devices, bfs=self.bf)
 
         for dev_name, items in results.items():
             if items[0].failed:
