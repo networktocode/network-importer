@@ -392,47 +392,49 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
 
     neighbors = {}
 
-    if task.host.platform not in ["cisco_asa"]:
-        if config.main["import_cabling"] == "lldp":
+    if task.host.platform in config.main["excluded_platforms_cabling"]:
+        logger.debug(f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
+        return Result(host=task.host, result={})
 
-            try:
-                results = task.run(task=napalm_get, getters=["lldp_neighbors"])
-                neighbors = results[0].result
-            except:
-                logger.debug(
-                    "An exception occured while pulling lldp_data", exc_info=True
+    if config.main["import_cabling"] == "lldp":    
+        try:
+            results = task.run(task=napalm_get, getters=["lldp_neighbors"])
+            neighbors = results[0].result
+        except:
+            logger.debug(
+                "An exception occured while pulling lldp_data", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
+    elif config.main["import_cabling"] == "cdp":
+        try:
+            results = task.run(
+                task=netmiko_send_command,
+                command_string="show cdp neighbors detail",
+                use_textfsm=True,
+            )
+
+            neighbors = {"lldp_neighbors": defaultdict(list)}
+
+        except:
+            logger.debug(
+                "An exception occured while pulling cdp_data", exc_info=True
+            )
+            return Result(host=task.host, failed=True)
+
+        # Convert CDP details output to Napalm LLDP format
+        if not isinstance(results[0].result, list):
+            logger.warning(f"{task.host.name} | No CDP information returned")
+        else:
+            for neighbor in results[0].result:
+                neighbor_hostname = neighbor.get(
+                    "destination_host"
+                ) or neighbor.get("dest_host")
+                neighbor_port = neighbor["remote_port"]
+
+                neighbors["lldp_neighbors"][neighbor["local_port"]].append(
+                    dict(hostname=neighbor_hostname, port=neighbor_port,)
                 )
-                return Result(host=task.host, failed=True)
-
-        elif config.main["import_cabling"] == "cdp":
-            try:
-                results = task.run(
-                    task=netmiko_send_command,
-                    command_string="show cdp neighbors detail",
-                    use_textfsm=True,
-                )
-
-                neighbors = {"lldp_neighbors": defaultdict(list)}
-
-            except:
-                logger.debug(
-                    "An exception occured while pulling cdp_data", exc_info=True
-                )
-                return Result(host=task.host, failed=True)
-
-            # Convert CDP details output to Napalm LLDP format
-            if not isinstance(results[0].result, list):
-                logger.warning(f"{task.host.name} | No CDP information returned")
-            else:
-                for neighbor in results[0].result:
-                    neighbor_hostname = neighbor.get(
-                        "destination_host"
-                    ) or neighbor.get("dest_host")
-                    neighbor_port = neighbor["remote_port"]
-
-                    neighbors["lldp_neighbors"][neighbor["local_port"]].append(
-                        dict(hostname=neighbor_hostname, port=neighbor_port,)
-                    )
 
     if update_cache:
         save_data_to_file(task.host.name, cache_name, neighbors)
