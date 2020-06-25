@@ -112,6 +112,31 @@ class NetworkImporter:
 
         return self.devs.inventory.hosts[dev_name].data["obj"]
 
+    @staticmethod
+    def _build_filter_params(filter_params, params):
+        """
+        Update parms dict() with filter args in required format
+        for pynetbox
+
+        Args:
+          filter_parmas: split string from cli or config
+          parms: dict() object to hold params
+
+        Returns:
+
+        """
+        for param_value in filter_params:
+            if "=" not in param_value:
+                continue
+            key, value = param_value.split("=", 1)
+            existing_value = params.get(key)
+            if existing_value and isinstance(existing_value, list):
+                params[key].append(value)
+            elif existing_value and isinstance(existing_value, str):
+                params[key] = [existing_value, value]
+            else:
+                params[key] = value
+
     @timeit
     def build_inventory(self, limit=None):
         """
@@ -140,24 +165,14 @@ class NetworkImporter:
 
         if "inventory_filter" in config.main.keys():
             csparams = config.main["inventory_filter"].split(",")
-            for csp in csparams:
-                if "=" not in csp:
-                    continue
-
-                key, value = csp.split("=", 1)
-                params[key] = value
+            self._build_filter_params(csparams, params)
 
         if limit:
             if "=" not in limit:
                 params["name"] = limit
-
             else:
                 csparams = limit.split(",")
-                for csp in csparams:
-                    if "=" not in csp:
-                        continue
-                    key, value = csp.split("=", 1)
-                    params[key] = value
+                self._build_filter_params(csparams, params)
 
         if config.main["inventory_source"] == "netbox":
             self.devs = InitNornir(
