@@ -655,6 +655,32 @@ class NetworkImporter:
     # Cabling
     # --------------------------------------------------------------------------
 
+    @staticmethod
+    def get_opposite_cable_side(side):
+        return [opposite_side for opposite_side in ["a", "z"] if opposite_side != side][
+            0
+        ]
+
+    def get_interface_connection_count(self):
+        """
+        Return the number of connections for each of the interfaces.
+        """
+        a_z_device_interfaces = {"a": dict(), "z": dict()}
+
+        for interface in self.cables.values():
+            a_z_device_interfaces["a"].setdefault(
+                tuple(interface.get_device_intf("a")), list()
+            ).append(1)
+            a_z_device_interfaces["z"].setdefault(
+                tuple(interface.get_device_intf("z")), list()
+            ).append(1)
+
+        for side, device_interfaces in a_z_device_interfaces.items():
+            for device_interface, total in device_interfaces.items():
+                a_z_device_interfaces[side][device_interface] = sum(total)
+
+        return a_z_device_interfaces
+
     def import_cabling(self):
 
         if config.main["import_cabling"] in ["no", False]:
@@ -749,6 +775,8 @@ class NetworkImporter:
         Non valid cables will be ignored later on for update/creation
         """
 
+        interface_connection_count = self.get_interface_connection_count()
+
         for cable in self.cables.values():
 
             cable.is_valid = True
@@ -766,6 +794,16 @@ class NetworkImporter:
                     continue
 
                 dev = self.get_dev(dev_name)
+
+                # check if an interface has multiple connections. each interface should have no more then 1.
+                opposite_cable_side = self.get_opposite_cable_side(side)
+                if interface_connection_count[side][cable.get_device_intf(side)] > 1:
+                    logger.warning(
+                        f"CABLE: {dev_name}:{intf_name} Duplicate (>1) interface connections detected (side {side}) --> {cable.get_device_intf(opposite_cable_side)})"
+                    )
+                    cable.is_valid = False
+                    cable.error = "duplicate-interface-connections"
+                    continue
 
                 if intf_name not in dev.interfaces.keys():
                     logger.warning(
