@@ -60,8 +60,14 @@ logger = logging.getLogger("network-importer")
 @click.option(
     "--update-configs", is_flag=True, help="Pull the latest configs from the devices"
 )
-def main(config_file, limit, diff, apply, check, debug, update_configs):
-
+@click.option(
+    "--update-configs-only",
+    is_flag=True,
+    help="Pull the latest configs from the devices only.",
+)
+def main(
+    config_file, limit, diff, apply, check, debug, update_configs, update_configs_only
+):
     config.load_config(config_file)
     perf.init()
 
@@ -94,6 +100,10 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     if update_configs:
         ni.build_inventory(limit=limit)
         ni.update_configurations()
+    if update_configs_only:
+        ni.build_inventory(limit=limit)
+        ni.update_configurations()
+        sys.exit(0)
 
     ni.init(limit=limit)
 
