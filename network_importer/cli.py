@@ -61,7 +61,6 @@ logger = logging.getLogger("network-importer")
     "--update-configs", is_flag=True, help="Pull the latest configs from the devices"
 )
 def main(config_file, limit, diff, apply, check, debug, update_configs):
-
     config.load_config(config_file)
     perf.init()
 
@@ -94,6 +93,8 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     if update_configs:
         ni.build_inventory(limit=limit)
         ni.update_configurations()
+        if not check and not apply:
+            sys.exit(0)
 
     ni.init(limit=limit)
 
