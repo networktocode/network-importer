@@ -13,6 +13,7 @@ limitations under the License.
 """
 # pylint: disable=R1724,W0611,R1710,R1710,E1101,W0613,C0103,C0413,R0904
 
+from collections import defaultdict
 import logging
 import sys
 import os
@@ -665,21 +666,14 @@ class NetworkImporter:
         """
         Return the number of connections for each of the interfaces.
         """
-        a_z_device_interfaces = {"a": dict(), "z": dict()}
+        a_device_interfaces = defaultdict(int)
+        z_device_interfaces = defaultdict(int)
 
         for interface in self.cables.values():
-            a_z_device_interfaces["a"].setdefault(
-                tuple(interface.get_device_intf("a")), list()
-            ).append(1)
-            a_z_device_interfaces["z"].setdefault(
-                tuple(interface.get_device_intf("z")), list()
-            ).append(1)
+            a_device_interfaces[interface.get_device_intf("a")] += 1
+            z_device_interfaces[interface.get_device_intf("z")] += 1
 
-        for side, device_interfaces in a_z_device_interfaces.items():
-            for device_interface, total in device_interfaces.items():
-                a_z_device_interfaces[side][device_interface] = sum(total)
-
-        return a_z_device_interfaces
+        return dict(a=a_device_interfaces, z=z_device_interfaces)
 
     def import_cabling(self):
 
