@@ -662,6 +662,12 @@ class NetworkImporter:
             0
         ]
 
+    @staticmethod
+    def is_a_z_interface_eq(cable, side, opposite_cable_side):
+        if cable.get_device_intf(side) == cable.get_device_intf(opposite_cable_side):
+            return True
+        return False
+
     def get_interface_connection_count(self):
         """
         Return the number of connections for each of the interfaces.
@@ -789,8 +795,18 @@ class NetworkImporter:
 
                 dev = self.get_dev(dev_name)
 
-                # check if an interface has multiple connections. each interface should have no more then 1.
                 opposite_cable_side = self.get_opposite_cable_side(side)
+
+                # check if an interface is not the same as the opposite end.
+                if self.is_a_z_interface_eq(cable, side, opposite_cable_side):
+                    logger.warning(
+                        f"CABLE: {dev_name}:{intf_name} is the same as the other side ({opposite_cable_side}) --> {cable.get_device_intf(opposite_cable_side)})"
+                    )
+                    cable.is_valid = False
+                    cable.error = "same-interfaces"
+                    continue
+
+                # check if an interface has multiple connections. each interface should have no more then 1.
                 if interface_connection_count[side][cable.get_device_intf(side)] > 1:
                     logger.warning(
                         f"CABLE: {dev_name}:{intf_name} Duplicate (>1) interface connections detected (side {side}) --> {cable.get_device_intf(opposite_cable_side)})"
