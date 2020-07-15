@@ -6,9 +6,7 @@ authors = ["Damien Garros <dgarros@gmail.com>"]
 license = "Apache-2.0"
 packages = [
     { include = "network_importer" },
-    { include = "netbox_model" },
-    { include = "network_model" },
-    { include = "ni_model" },
+    { include = "dsync" },
 ]
 
 [tool.poetry.dependencies]

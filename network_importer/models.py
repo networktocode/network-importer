@@ -27,6 +27,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
 from dsync import DSyncMixin
+
 Base = declarative_base()
 
 DEVICE_NAME_DEF = String(250)
@@ -41,13 +42,15 @@ class Site(Base, DSyncMixin):
 
     __tablename__ = "site"
 
-    childs = ["devices"]
+    childs = ["devices", "prefixes"]
     attributes = []
 
     name = Column(SITE_NAME_DEF, primary_key=True)
     devices = relationship("Device", back_populates="site")
     vlans = relationship("Vlan", back_populates="site")
     prefixes = relationship("Prefix", back_populates="site")
+
+    remote_id = Column(Integer, nullable=True)
 
     def __repr__(self):
         return str(self.name)
@@ -67,6 +70,8 @@ class Device(Base, DSyncMixin):
 
     site = relationship("Site", back_populates="devices")
     interfaces = relationship("Interface", back_populates="device")
+
+    remote_id = Column(Integer, nullable=True)
 
     def __repr__(self):
         return str(self.name)
@@ -111,6 +116,9 @@ class Interface(Base, DSyncMixin):
     device = relationship("Device", back_populates="interfaces")
     ips = relationship("IPAddress")
 
+
+    remote_id = Column(Integer, nullable=True)
+
     def __repr__(self):
         return f"{self.device_name}::{self.name}"
 
@@ -126,8 +134,8 @@ class IPAddress(Base, DSyncMixin):
     attributes = ["device_name", "interface_name"]
 
     address = Column(IP_PREFIX_DEF, primary_key=True)
-    interface_name = Column(INTF_NAME_DEF)
-    device_name = Column(DEVICE_NAME_DEF)
+    interface_name = Column(INTF_NAME_DEF, primary_key=True)
+    device_name = Column(DEVICE_NAME_DEF, primary_key=True)
     interface = relationship("Interface", back_populates="ips")
 
     __table_args__ = (
@@ -136,6 +144,8 @@ class IPAddress(Base, DSyncMixin):
             ["interface.device_name", "interface.name"],
         ),
     )
+
+    remote_id = Column(Integer, nullable=True)
 
     def __repr__(self):
         return str(self.address)
@@ -205,6 +215,8 @@ class Vlan(Base, DSyncMixin):
     name = Column(VLAN_NAME_DEF, nullable=True)
     site = relationship("Site", back_populates="vlans")
 
+    remote_id = Column(Integer, nullable=True)
+
     # interfaces_tagged = relationship("Interface",
     #                 secondary=interface_vlans_allowed,
     #                 back_populates="allowed_vlans")
@@ -216,11 +228,19 @@ class Prefix(Base, DSyncMixin):
     __tablename__ = "prefix"
 
     childs = []
-    attributes = []
+    attributes = ["prefix_type"]
 
     prefix = Column(IP_PREFIX_DEF, primary_key=True)
+    site_name = Column(SITE_NAME_DEF, ForeignKey("site.name"), primary_key=True)
+
     vlan_id = Column(Integer, ForeignKey("vlan.vid"), nullable=True)
-    site_name = Column(SITE_NAME_DEF, ForeignKey("site.name"), nullable=True)
+
     site = relationship("Site", back_populates="prefixes")
+    prefix_type =  Column(Enum("AGGREGATE"), nullable=True)
+
     # vlan = relationship("Vlan", back_populates="prefixes")
 
+    remote_id = Column(Integer, nullable=True)
+
+    def __repr__(self):
+        return f"{self.site_name} - {self.prefix} ({self.prefix_type})"

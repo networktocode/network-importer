@@ -17,14 +17,10 @@ from os import path
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
-from .diff import Diff
+from .diff import Diff, DiffElement
+from .utils import intersection
 
-logger = logging.getLogger("network-importer")
-
-
-def intersection(lst1, lst2):
-    lst3 = [value for value in lst1 if value in lst2]
-    return lst3
+logger = logging.getLogger(__name__)
 
 
 class DSyncMixin:
@@ -44,19 +40,16 @@ class DSyncMixin:
 
 class DSync:
 
-    # site = Site
-    # device = Device
-    # interface = Interface
-    # ip_address = IPAddress
-    # cable = Cable
+    # Add mapping to object here
 
-    # top_level = ["device", "cable"]
+    top_level = []
 
     def __init__(self, db="sqlite:///:memory:"):
 
-        self.engine = create_engine(db)
-        Base.metadata.bind = self.engine
-        Base.metadata.create_all(self.engine)
+        from sqlalchemy.pool import StaticPool
+        self.engine = create_engine(db, poolclass=StaticPool)
+        self.base.metadata.bind = self.engine
+        self.base.metadata.create_all(self.engine)
         self.__sm__ = sessionmaker(bind=self.engine)
 
     def init(self):
@@ -69,114 +62,142 @@ class DSync:
         return self.__sm__()
 
     def sync(self, source):
-        """Syncronize the current NetMod object with the source
+        """Syncronize the current DSync object with the source
 
         Args:
-            source: NetMod object to sync with this one
+            source: DSync object to sync with this one
         """
-        source_session = source.start_session()
-        local_session = self.start_session()
-
-        for obj in intersection(self.top_level, source.top_level):
-            self.sync_objects(
-                source=source_session.query(getattr(source, obj)).all(),
-                dest=local_session.query(getattr(source, obj)).all(),
-                session=local_session,
-            )
-
-        logger.info("Saving Changes")
-        source_session.commit()
-
-    def sync_objects(self, source, dest, session):
-        """
-
-        Args:
-            source: NetMod object to sync with this one
-        """
-
-        if type(source) != type(dest):
-            logger.warning(f"Attribute {source} are of different types")
-            return False
-
-        if isinstance(source, list):
-            dict_src = {str(item): item for item in source}
-            dict_dst = {str(item): item for item in dest}
-
-            same_keys = intersection(dict_src.keys(), dict_dst.keys())
-
-            diff1 = list(set(dict_src.keys()) - set(same_keys))
-            diff2 = list(set(dict_dst.keys()) - set(same_keys))
-
-            for i in diff1:
-                logger.info(f"{i} is missing, need to Add it")
-                # import pdb;pdb.set_trace()
-                self.create_object(
-                    object_type=dict_src[i].get_type(),
-                    keys=dict_src[i].get_keys(),
-                    params=dict_src[i].get_attrs(),
-                    session=session,
-                )
-                # TODO Continue the tree here
-
-            for i in diff2:
-                logger.info(f"{i} is missing in Source, need to Delete")
-                self.delete_object(
-                    object_type=dict_dst[i].get_type(),
-                    keys=dict_dst[i].get_keys(),
-                    params=dict_dst[i].get_attrs(),
-                    session=session,
-                )
-
-            # logger.debug(f"Same Keys: {same_keys}")
-            for i in same_keys:
-                if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
-                    logger.info(
-                        f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating"
-                    )
-                    self.update_object(
-                        object_type=dict_src[i].get_type(),
-                        keys=dict_dst[i].get_keys(),
-                        params=dict_src[i].get_attrs(),
-                        session=session,
-                    )
-
-                logger.debug(
-                    f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
-                )
-                for child in dict_src[i].childs:
-                    self.sync_objects(
-                        session=session,
-                        source=getattr(dict_src[i], child),
-                        dest=getattr(dict_dst[i], child),
-                    )
-
-        else:
-            print(f"Type {type(source)} is not supported for now")
-
-        return True
-
-    def print_diff(self, source):
 
         diff = self.diff(source)
-        for key, items in diff.items():
-            print(key.upper())
-            for item in items:
-                if item.has_diffs():
-                    item.print_detailed()
+
+        session = self.start_session()
+
+        for child in diff.get_childs():
+            self.sync_element(child, session)
+
+        logger.info("Saving Changes")
+        session.commit()
+
+    # def sync_objects(self, source, dest, session):
+    #     """
+
+    #     Args:
+    #         source: NetMod object to sync with this one
+    #     """
+
+    #     if type(source) != type(dest):
+    #         logger.warning(f"Attribute {source} are of different types")
+    #         return False
+
+    #     if isinstance(source, list):
+    #         dict_src = {str(item): item for item in source}
+    #         dict_dst = {str(item): item for item in dest}
+
+    #         same_keys = intersection(dict_src.keys(), dict_dst.keys())
+
+    #         diff1 = list(set(dict_src.keys()) - set(same_keys))
+    #         diff2 = list(set(dict_dst.keys()) - set(same_keys))
+
+    #         for i in diff1:
+    #             logger.info(f"{i} is missing, need to Add it")
+    #             # import pdb;pdb.set_trace()
+    #             self.create_object(
+    #                 object_type=dict_src[i].get_type(),
+    #                 keys=dict_src[i].get_keys(),
+    #                 params=dict_src[i].get_attrs(),
+    #                 session=session,
+    #             )
+    #             # TODO Continue the tree here
+
+    #         for i in diff2:
+    #             logger.info(f"{i} is missing in Source, need to Delete")
+    #             self.delete_object(
+    #                 object_type=dict_dst[i].get_type(),
+    #                 keys=dict_dst[i].get_keys(),
+    #                 params=dict_dst[i].get_attrs(),
+    #                 session=session,
+    #             )
+
+    #         # logger.debug(f"Same Keys: {same_keys}")
+    #         for i in same_keys:
+    #             if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
+    #                 logger.info(
+    #                     f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating"
+    #                 )
+    #                 self.update_object(
+    #                     object_type=dict_src[i].get_type(),
+    #                     keys=dict_dst[i].get_keys(),
+    #                     params=dict_src[i].get_attrs(),
+    #                     session=session,
+    #                 )
+
+    #             logger.debug(
+    #                 f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
+    #             )
+    #             for child in dict_src[i].childs:
+    #                 self.sync_objects(
+    #                     session=session,
+    #                     source=getattr(dict_src[i], child),
+    #                     dest=getattr(dict_dst[i], child),
+    #                 )
+
+    #     else:
+    #         print(f"Type {type(source)} is not supported for now")
+
+    #     return True
+
+    def sync_element(self, element: DiffElement, session):
+
+        if not element.has_diffs():
+            return False
+
+        if element.source_attrs == None:
+            self.delete_object(
+                object_type=element.type,
+                keys=element.keys,
+                params=element.dest_attrs,
+                session=session,
+            )
+        elif element.dest_attrs == None:
+            self.create_object(
+                object_type=element.type,
+                keys=element.keys,
+                params=element.source_attrs,
+                session=session,
+            )
+        elif element.source_attrs != element.dest_attrs:
+
+            self.update_object(
+                object_type=element.type,
+                keys=element.keys,
+                params=element.source_attrs,
+                session=session,
+            )
+
+        for child in element.get_childs():
+            self.sync_element(child, session)
 
     def diff(self, source):
+        """
+        Generate a Diff object between 2 DSync objects
+        """
         source_session = source.start_session()
         local_session = self.start_session()
-        diffs = {}
+
+        diff = Diff()
+
         for obj in intersection(self.top_level, source.top_level):
 
-            diffs[obj] = self.diff_objects(
+            diff_elements = self.diff_objects(
                 source=source_session.query(getattr(source, obj)).all(),
                 dest=local_session.query(getattr(source, obj)).all(),
                 session=local_session,
             )
 
-        return diffs
+            for element in diff_elements:
+                diff.add(obj, element)
+
+        return diff
 
     def diff_objects(self, source, dest, session):
         """ """
@@ -187,46 +208,75 @@ class DSync:
         diffs = []
 
         if isinstance(source, list):
+
+            # Convert both list into a Dict and using the str representation as Key
+            # in the future consider using a dedicated function as key
             dict_src = {str(item): item for item in source}
             dict_dst = {str(item): item for item in dest}
 
+            # Identify the shared keys between SRC and DST DSync
+            # The keys missing in DST Dsync
+            # The keys missing in SRT DSync
             same_keys = intersection(dict_src.keys(), dict_dst.keys())
+            missing_dst = list(set(dict_src.keys()) - set(same_keys))
+            missing_src = list(set(dict_dst.keys()) - set(same_keys))
 
-            diff1 = list(set(dict_src.keys()) - set(same_keys))
-            diff2 = list(set(dict_dst.keys()) - set(same_keys))
-
-            for i in diff1:
-                diff = Diff(obj_type=dict_src[i].get_type(), name=str(dict_src[i]))
-                diff.missing_local = True
+            for key in missing_dst:
+                de = DiffElement(
+                    obj_type=dict_src[key].get_type(),
+                    name=str(dict_src[key]),
+                    keys=dict_src[key].get_keys(),
+                )
+                de.add_attrs(source=dict_src[key].get_attrs(), dest=None)
+                diffs.append(de)
                 # TODO Continue the tree here
-                diffs.append(diff)
 
-            for i in diff2:
-                diff = Diff(obj_type=dict_dst[i].get_type(), name=str(dict_dst[i]))
-                diff.missing_remote = True
-                diffs.append(diff)
-            for i in same_keys:
+            for key in missing_src:
+                de = DiffElement(
+                    obj_type=dict_dst[key].get_type(),
+                    name=str(dict_dst[key]),
+                    keys=dict_dst[key].get_keys(),
+                )
+                de.add_attrs(source=None, dest=dict_dst[key].get_attrs())
+                diffs.append(de)
+                # TODO Continue the tree here
 
-                diff = Diff(obj_type=dict_dst[i].get_type(), name=str(dict_dst[i]))
+            for key in same_keys:
 
-                if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
-                    for k, v in dict_src[i].get_attrs():
-                        diff.add_item(k, v, getattr(dict_dst[i], k))
+                de = DiffElement(
+                    obj_type=dict_dst[key].get_type(),
+                    name=str(dict_dst[key]),
+                    keys=dict_dst[key].get_keys(),
+                )
+
+                de.add_attrs(
+                    source=dict_src[key].get_attrs(), dest=dict_dst[key].get_attrs(),
+                )
+
+                # logger.debug(
+                #     f"{dict_src[i].get_type()} {dict_dst[i]} | {i}"
+                # )
+
+                # if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
+                #     attrs = dict_src[i].get_attrs()
+                #     for k, v in attrs.items():
+                #         diff.add_item(k, v, getattr(dict_dst[i], k))
 
                 # logger.debug(
                 #     f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
                 # )
-                for child in dict_src[i].childs:
+
+                for child in dict_src[key].childs:
                     childs = self.diff_objects(
                         session=session,
-                        source=getattr(dict_src[i], child),
-                        dest=getattr(dict_dst[i], child),
+                        source=getattr(dict_src[key], child),
+                        dest=getattr(dict_dst[key], child),
                     )
 
                     for c in childs:
-                        diff.add_child(c)
+                        de.add_child(c)
 
-                diffs.append(diff)
+                diffs.append(de)
 
         else:
             logger.warning(f"Type {type(source)} is not supported for now")
@@ -297,7 +347,7 @@ class DSync:
 
     def default_update(self, object_type, keys, params, session):
         obj = getattr(self, object_type)
-        item = session.query(obj).get(**keys)
+        item = session.query(obj).filter_by(**keys).first()
         item.update(**params)
         return item
 

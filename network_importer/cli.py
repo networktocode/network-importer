@@ -19,15 +19,12 @@ import pdb
 import click
 
 import network_importer.config as config
+from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
-from netmod import NetMod
-from netmod.utils import print_to_yaml
-from netmod_netbox import NetModNetBox
-from netmod_ni import NetModNi
-from netmod_yaml import NetModYaml
+from network_importer.adapters.netbox import NetBoxAdapter
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -92,26 +89,33 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     logger.setLevel(logging.DEBUG)
 
+    filters = {}
+    build_filter_params(config.main["inventory_filter"].split((",")), filters)
+
+    print(filters)
+
     logger.info(f"Import NetBox Model")
-    nb = NetModNetBox()
+    nb = NetBoxAdapter()
     nb.init(
-        url="http://localhost",
-        token="1234567890abcdefghijklmnopqrstuvwxyz0123", 
-        filters=dict(site="ni_example_01")
+        url=config.netbox["address"],
+        token=config.netbox["token"], # 1234567890abcdefghijklmnopqrstuvwxyz0123
+        filters=filters
     )
     nb_session = nb.start_session()
 
     logger.info(f"Import NI Model")
-    ni = NetModNi()
-    ni.init()
+    ni = NetworkImporter()
+    ni.init(
+        url=config.netbox["address"],
+        token=config.netbox["token"], # 1234567890abcdefghijklmnopqrstuvwxyz0123
+        filters=filters
+    )
     ni_session = ni.start_session()
 
-    logger.info(f"Import Yaml Model")
-    yml = NetModYaml()
-    yml.init(directory="/Users/damien/projects/network-importer/examples/spine_leaf_yaml")
-    yml_session = yml.start_session()
-
-    # import pdb;pdb.set_trace()
+    # logger.info(f"Import Yaml Model")
+    # yml = NetModYaml()
+    # yml.init(directory="/Users/damien/projects/network-importer/examples/spine_leaf_yaml")
+    # yml_session = yml.start_session()
 
     # nmnb.sync(nmni)
 
@@ -120,11 +124,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     # ni = NetworkImporter()
 
-    if update_configs:
-        ni.build_inventory(limit=limit)
-        ni.update_configurations()
-        if not check and not apply:
-            sys.exit(0)
+    # if update_configs:
+    #     ni.build_inventory(limit=limit)
+    #     ni.update_configurations()
+    #     if not check and not apply:
+    #         sys.exit(0)
 
     # ni.init(limit=limit)
 

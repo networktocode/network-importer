@@ -201,3 +201,26 @@ def expand_vlans_list(vlans: str) -> list:
             )
 
     return sorted(clean_vlans_list)
+
+
+
+def build_filter_params(filter_params, params):
+    """
+    Update parms dict() with filter args in required format
+    for pynetbox
+    Args:
+      filter_parmas: split string from cli or config
+      parms: dict() object to hold params
+    Returns:
+    """
+    for param_value in filter_params:
+        if "=" not in param_value:
+            continue
+        key, value = param_value.split("=", 1)
+        existing_value = params.get(key)
+        if existing_value and isinstance(existing_value, list):
+            params[key].append(value)
+        elif existing_value and isinstance(existing_value, str):
+            params[key] = [existing_value, value]
+        else:
+            params[key] = value

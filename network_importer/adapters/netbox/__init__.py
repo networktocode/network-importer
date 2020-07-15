@@ -13,28 +13,41 @@ limitations under the License.
 """
 import logging
 import pynetbox
-from netmod import NetMod
-from .models import *
+from dsync import DSync
+# from .models import Base, NetboxSite, NetboxDevice, NetboxInterface, NetboxIPAddress, NetboxCable
 
+from network_importer.models import * 
 logger = logging.getLogger("network-importer")
 
 source = "NetBox"
 
+class NetBoxAdapter(DSync):
 
-class NetModNetBox(NetMod):
+    base = Base
 
-    site = NetboxSite
-    device = NetboxDevice
-    interface = NetboxInterface
-    ip_address = NetboxIPAddress
-    cable = NetboxCable
+    # site = NetboxSite
+    # device = NetboxDevice
+    # interface = NetboxInterface
+    # ip_address = NetboxIPAddress
+    # cable = NetboxCable
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.nb = None
+    site = Site
+    device = Device
+    interface = Interface
+    ip_address = IPAddress
+    cable = Cable
+    vlan = Vlan
+    prefix = Prefix
+
+    top_level = ["prefix"]
+
+    nb = None
+
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.nb = None
 
     def init(self, url, token, filters=None):
-
 
         self.nb = pynetbox.api(
             url=url,
@@ -44,9 +57,29 @@ class NetModNetBox(NetMod):
 
         session = self.start_session()
 
-
         devices_list = self.import_netbox_device(filters, session)
-        self.import_netbox_cable(devices_list, session)
+        # self.import_netbox_cable(devices_list, session)
+
+        # Import Prefixes
+        sites = session.query(self.site).all()
+        for site in sites:
+            prefixes = self.nb.ipam.prefixes.filter(site=site.name, status="container")
+            
+            for prefix in prefixes:
+                
+                prefix_type = None
+                if prefix.status.value == "container":
+                    prefix_type = "AGGREGATE"
+
+                session.add(
+                    self.prefix(   
+                        prefix=prefix.prefix,
+                        site=site,
+                        prefix_type=prefix_type,
+                        remote_id=prefix.id,
+                    )
+                )
+
         session.commit()
 
     def import_netbox_device(self, filters, session):
@@ -59,6 +92,9 @@ class NetModNetBox(NetMod):
         # Import Devices
         # -------------------------------------------------------------
         for device in nb_devs:
+
+            if device.name in device_names: 
+                continue
 
             site = session.query(self.site).filter_by(name=device.site.slug).first()
             if not site:
@@ -76,39 +112,39 @@ class NetModNetBox(NetMod):
         # -------------------------------------------------------------
         # Import Interface & IPs
         # -------------------------------------------------------------
-        devices = session.query(self.device).all()
-        logger.debug(f"{source} | Found {len(devices)} devices in memory")
+        # devices = session.query(self.device).all()
+        # logger.debug(f"{source} | Found {len(devices)} devices in memory")
 
-        for dev in devices:
+        # for dev in devices:
 
-            # Import Interfaces
-            intfs = self.nb.dcim.interfaces.filter(device=dev.name)
-            for intf in intfs:
-                session.add(
-                    self.interface(
-                        name=intf.name,
-                        device_name=dev.name,
-                        remote_id=intf.id,
-                        description=intf.description or None,
-                        mtu=intf.mtu,
-                    )
-                )
+        #     # Import Interfaces
+        #     intfs = self.nb.dcim.interfaces.filter(device=dev.name)
+        #     for intf in intfs:
+        #         session.add(
+        #             self.interface(
+        #                 name=intf.name,
+        #                 device_name=dev.name,
+        #                 remote_id=intf.id,
+        #                 description=intf.description or None,
+        #                 mtu=intf.mtu,
+        #             )
+        #         )
 
-            # Import IP addresses
-            ips = self.nb.ipam.ip_addresses.filter(device=dev.name)
-            for ip in ips:
-                session.add(
-                    self.ip_address(
-                        address=ip.address,
-                        device_name=dev.name,
-                        interface_name=ip.interface.name,
-                        remote_id=ip.id,
-                    )
-                )
+        #     # Import IP addresses
+        #     ips = self.nb.ipam.ip_addresses.filter(device=dev.name)
+        #     for ip in ips:
+        #         session.add(
+        #             self.ip_address(
+        #                 address=ip.address,
+        #                 device_name=dev.name,
+        #                 interface_name=ip.interface.name,
+        #                 remote_id=ip.id,
+        #             )
+        #         )
 
-            logger.debug(
-                f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}"
-            )
+        #     logger.debug(
+        #         f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}"
+        #     )
 
         return device_names
 
@@ -297,16 +333,35 @@ class NetModNetBox(NetMod):
     # Prefix
     # -----------------------------------------------------
     def create_prefix(self, keys, params, session=None):
-        pass
-    
-    def delete_prefix(self, keys, params, session=None):
-        pass
+        
+        site = session.query(self.site).filter_by(name=keys["site_name"]).first()
+
+        status = "active"
+        if params["prefix_type"] == "AGGREGATE":
+            status = "container"
+
+        prefix = self.nb.ipam.prefixes.create(
+                prefix=keys["prefix"],
+                site=site.remote_id,
+                status=status
+            )
+
+        item = self.default_create(
+            object_type="prefix", keys=keys, params=params, session=session
+        )
+        item.remote_id = prefix.id
+
+    # def update_prefix(self, keys, params, session=None):
+    #     pass
+
+    # def delete_prefix(self, keys, params, session=None):
+    #     pass
 
     # -----------------------------------------------------
     # Vlans
     # -----------------------------------------------------
-    def create_vlan(self, keys, params, session=None):
-        pass
+    # def create_vlan(self, keys, params, session=None):
+    #     pass
     
-    def delete_vlan(self, keys, params, session=None):
-        pass
+    # def delete_vlan(self, keys, params, session=None):
+    #     pass
