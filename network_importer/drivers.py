@@ -12,6 +12,7 @@ DRIVERS = {
             "cable": netbox.NetboxCable,
         },
         "2.7": {"interface": netbox.Netbox27Interface},
+        "2.8": {"interface": netbox.Netbox28Interface},
     }
 }
 

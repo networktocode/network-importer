@@ -22,6 +22,8 @@ logger = logging.getLogger("network-importer")  # pylint: disable=C0103
 class NetboxInterface(Interface):
     """ """
 
+    interface_description_length = 100
+
     def __init__(self, **kargs):
         """ """
         super().__init__(**kargs)
@@ -233,8 +235,8 @@ class Netbox27Interface(NetboxInterface):
 
         return True
 
-    @staticmethod
-    def get_properties(intf):
+    @classmethod
+    def get_properties(cls, intf):
         """
         Get a dict with all interface properties in Netbox format
 
@@ -262,7 +264,7 @@ class Netbox27Interface(NetboxInterface):
             intf_properties["mtu"] = intf.mtu
 
         if intf.description is not None:
-            if len(intf.description) <= 100:
+            if len(intf.description) <= cls.interface_description_length:
                 intf_properties["description"] = intf.description
             else:
                 logger.warning(
@@ -280,6 +282,10 @@ class Netbox27Interface(NetboxInterface):
             intf_properties["enabled"] = intf.active
 
         return intf_properties
+
+
+class Netbox28Interface(Netbox27Interface):
+    interface_description_length = 200
 
 
 # TODO need to find a way to build a table to convert back and forth
