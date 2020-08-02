@@ -133,12 +133,15 @@ def is_interface_lag(name):
     port_channel_intf = r"^port\-channel[0-9]+$"
     po_intf = r"^po[0-9]+$"
     ae_intf = r"^ae[0-9]+$"
+    bundle_intf = r"^Bundle\-Ether[0-9]+$"
 
     if re.match(port_channel_intf, name.lower()):
         return True
     if re.match(ae_intf, name):
         return True
     if re.match(po_intf, name):
+        return True
+    if re.match(bundle_intf, name):
         return True
 
     return None
