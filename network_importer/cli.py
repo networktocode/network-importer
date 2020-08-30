@@ -92,7 +92,8 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     filters = {}
     build_filter_params(config.main["inventory_filter"].split((",")), filters)
 
-    print(filters)
+    # print(filters)
+    # filters["limit"] = 100
 
     logger.info(f"Import NetBox Model")
     nb = NetBoxAdapter()
@@ -142,12 +143,12 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # # ------------------------------------------------------------------------------------
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
-    # if apply:
-    #     ni.update_remote()
+    if apply:
+        nb.sync(ni)
 
-    # elif check:
-    #     ni.diff_local_remote()
-
+    elif check:
+        diff = nb.diff(ni)
+        diff.print_detailed()
     # if config.logs["performance_log"]:
     #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
     #     perf.TIME_TRACKER.print_all()
