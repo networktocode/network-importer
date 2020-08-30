@@ -22,45 +22,35 @@ from termcolor import colored
 import logging
 from pybatfish.client.session import Session
 from dsync import DSync
-from .models import * 
+from .models import *
 
 import network_importer.config as config
 
 logger = logging.getLogger("network-importer")
 
-class NetworkImporter(DSync):
 
-    base = Base
+class NetworkImporter(DSync):
 
     site = Site
     device = Device
     interface = Interface
     ip_address = IPAddress
-    cable = Cable
-    vlan = Vlan
+    # cable = Cable
+    # vlan = Vlan
     prefix = Prefix
 
-    top_level = ["prefix"]
+    top_level = ["device"]
 
     nb = None
 
     def init(self, url, token, filters=None):
 
-        self.nb = pynetbox.api(
-            url=url,
-            token=token,
-            ssl_verify=False,
-        )
+        self.nb = pynetbox.api(url=url, token=token, ssl_verify=False,)
 
-        session = self.start_session()
+        self.import_netbox_device(filters=filters)
+        self.import_batfish()
 
-        self.import_netbox_device(filters=filters, session=session)
-        
-        # Create site
-        self.import_batfish(session)
-        session.commit()
-
-    def import_netbox_device(self, filters, session):
+    def import_netbox_device(self, filters):
 
         nb_devs = self.nb.dcim.devices.filter(**filters)
         logger.debug(f"Found {len(nb_devs)} devices in netbox")
@@ -71,27 +61,25 @@ class NetworkImporter(DSync):
         # -------------------------------------------------------------
         for device in nb_devs:
 
-            if device.name in device_names: 
+            if device.name in device_names:
                 continue
 
-            site = session.query(self.site).filter_by(name=device.site.slug).first()
+            site = self.get("site", [device.site.slug])
+
             if not site:
-                session.add(self.site(name=device.site.slug))
+                site = self.site(name=device.site.slug)
+                self.add(site)
 
-            session.add(
-                self.device(
-                    name=device.name, site_name=device.site.slug
-                )
-            )
-
+            device = self.device(name=device.name, site_name=site.name)
+            self.add(device)
             device_names.append(device.name)
 
-    def import_batfish(self, session):
+    def import_batfish(self):
 
         # CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
         NETWORK_NAME = config.batfish["network_name"]
         SNAPSHOT_NAME = config.batfish["snapshot_name"]
-        SNAPSHOT_PATH = config.main["config_directory"]
+        SNAPSHOT_PATH = config.main["configs_directory"]
 
         bf_params = dict(
             host=config.batfish["address"],
@@ -109,70 +97,69 @@ class NetworkImporter(DSync):
 
         # self.bf.set_snapshot(SNAPSHOT_NAME)
 
-        # site = self.site(name="zapopan")
-        # session.add(
-        #     site
-        # )
-
         # Import Devices
-        devices = session.query(self.device).all()
+        devices = self.get_all(self.device)
+        # import pdb; pdb.set_trace()
 
         for device in devices:
-        # devices = self.bf.q.nodeProperties().answer().frame()
-        # for _, dev in devices.iterrows():
-            self.import_batfish_device(device=device, session=session)
+            self.import_batfish_device(device=device)
 
-
-        devices = session.query(self.device).all()
-        logger.debug(f"Found {len(devices)} devices in Batfish")
-
+        # devices = session.query(self.device).all()
+        # logger.debug(f"Found {len(devices)} devices in Batfish")
         # self.import_batfish_cable(session)
 
-    def import_batfish_device(self, device, session):
+    def import_batfish_device(self, device):
         """Import all devices from Batfish
 
         Args:
-            session: sqlalquemy session
+            device
         """
-        # TODO > FIX > Temporarily disabled        
-        # intfs = self.bf.q.interfaceProperties(nodes=device.name).answer().frame()
-        # for _, intf in intfs.iterrows():
-        #     self.import_batfish_interface(device=device, intf=intf, session=session)
+        # TODO > FIX > Temporarily disabled
+        intfs = self.bf.q.interfaceProperties(nodes=device.name).answer().frame()
+        for _, intf in intfs.iterrows():
+            self.import_batfish_interface(device=device, intf=intf)
 
         # logger.debug(f"Add device {device.name} with {len(intfs)} interfaces from Batfish")
-        
-        self.import_batfish_aggregate(device=device, session=session)
 
+        # self.import_batfish_aggregate(device=device, session=session)
 
-    def import_batfish_interface(self, device, intf, session):
+    def import_batfish_interface(self, device, intf):
 
-        session.add(
-            self.interface(
-                name=intf["Interface"].interface,
-                device_name=device.name,
-                description=intf["Description"],
-            )
+        interface = self.interface(
+            name=intf["Interface"].interface,
+            device_name=device.name,
+            description=intf["Description"],
         )
+        self.add(interface)
+        device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
-            ip = session.query(self.ip_address).filter_by(
-                    address=prefix,
-                    device_name=device.name,
-                    interface_name=intf["Interface"].interface
-                ).first()
 
-            if not ip:
-                session.add(
-                    self.ip_address(
-                        address=prefix,
-                        device_name=device.name,
-                        interface_name=intf["Interface"].interface,
-                    )
-                )
-            else:
-                logger.warning(f"IP {prefix} {device.name} already present")
+            ip_address = self.ip_address(
+                address=prefix,
+                device_name=device.name,
+                interface_name=intf["Interface"].interface,
+            )
 
-            self.add_prefix_from_ip(ip=prefix, site=device.site, session=session)
+            self.add(ip_address)
+            interface.add_child(ip_address)
+
+            # ip = session.query(self.ip_address).filter_by(
+            #         address=prefix,
+            #         device_name=device.name,
+            #         interface_name=intf["Interface"].interface
+            #     ).first()
+
+            # if not ip:
+            #     session.add(
+            #         self.ip_address(
+
+            #         )
+            #     )
+            # else:
+            #     logger.warning(f"IP {prefix} {device.name} already present")
+
+            # self.add_prefix_from_ip(ip=prefix, site=device.site, session=session)
 
     def add_prefix_from_ip(self, ip, site, session):
 
@@ -181,18 +168,12 @@ class NetworkImporter(DSync):
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = session.query(self.prefix).filter_by(
-                prefix=str(prefix),
-                site=site
-            ).first()
+        prefix_obj = (
+            session.query(self.prefix).filter_by(prefix=str(prefix), site=site).first()
+        )
 
         if not prefix_obj:
-            session.add(
-                self.prefix(
-                    prefix=str(prefix),
-                    site=site
-                )
-            )
+            session.add(self.prefix(prefix=str(prefix), site=site))
             logger.debug(f"Added Prefix {prefix} from batfish")
 
     def import_batfish_ip_address(self):
@@ -221,21 +202,24 @@ class NetworkImporter(DSync):
 
     def import_batfish_aggregate(self, device, session):
 
-        aggregates = self.bf.q.routes(protocols="aggregate", nodes=device.name).answer().frame()
+        aggregates = (
+            self.bf.q.routes(protocols="aggregate", nodes=device.name).answer().frame()
+        )
 
         for item in aggregates.itertuples():
 
-            prefix_obj = session.query(self.prefix).filter_by(
-                prefix=str(item.Network),
-                site=device.site
-            ).first()
+            prefix_obj = (
+                session.query(self.prefix)
+                .filter_by(prefix=str(item.Network), site=device.site)
+                .first()
+            )
 
             if not prefix_obj:
                 session.add(
                     self.prefix(
                         prefix=str(item.Network),
                         site=device.site,
-                        prefix_type="AGGREGATE"
+                        prefix_type="AGGREGATE",
                     )
                 )
 

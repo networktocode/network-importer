@@ -14,32 +14,35 @@ limitations under the License.
 import logging
 import pynetbox
 from dsync import DSync
-# from .models import Base, NetboxSite, NetboxDevice, NetboxInterface, NetboxIPAddress, NetboxCable
+from .models import (
+    NetboxSite,
+    NetboxDevice,
+    NetboxInterface,
+    NetboxIPAddress,
+)  # , NetboxCable
 
-from network_importer.models import * 
 logger = logging.getLogger("network-importer")
 
 source = "NetBox"
 
+
 class NetBoxAdapter(DSync):
 
-    base = Base
-
-    # site = NetboxSite
-    # device = NetboxDevice
-    # interface = NetboxInterface
-    # ip_address = NetboxIPAddress
+    site = NetboxSite
+    device = NetboxDevice
+    interface = NetboxInterface
+    ip_address = NetboxIPAddress
     # cable = NetboxCable
 
-    site = Site
-    device = Device
-    interface = Interface
-    ip_address = IPAddress
-    cable = Cable
-    vlan = Vlan
-    prefix = Prefix
+    # site = Site
+    # device = Device
+    # interface = Interface
+    # ip_address = IPAddress
+    # cable = Cable
+    # vlan = Vlan
+    # prefix = Prefix
 
-    top_level = ["prefix"]
+    top_level = ["device"]
 
     nb = None
 
@@ -49,40 +52,31 @@ class NetBoxAdapter(DSync):
 
     def init(self, url, token, filters=None):
 
-        self.nb = pynetbox.api(
-            url=url,
-            token=token,
-            ssl_verify=False,
-        )
+        self.nb = pynetbox.api(url=url, token=token, ssl_verify=False,)
 
-        session = self.start_session()
+        devices_list = self.import_netbox_device(filters)
 
-        devices_list = self.import_netbox_device(filters, session)
-        # self.import_netbox_cable(devices_list, session)
+        # # Import Prefixes
+        # sites = session.query(self.site).all()
+        # for site in sites:
+        #     prefixes = self.nb.ipam.prefixes.filter(site=site.name, status="container")
 
-        # Import Prefixes
-        sites = session.query(self.site).all()
-        for site in sites:
-            prefixes = self.nb.ipam.prefixes.filter(site=site.name, status="container")
-            
-            for prefix in prefixes:
-                
-                prefix_type = None
-                if prefix.status.value == "container":
-                    prefix_type = "AGGREGATE"
+        #     for prefix in prefixes:
 
-                session.add(
-                    self.prefix(   
-                        prefix=prefix.prefix,
-                        site=site,
-                        prefix_type=prefix_type,
-                        remote_id=prefix.id,
-                    )
-                )
+        #         prefix_type = None
+        #         if prefix.status.value == "container":
+        #             prefix_type = "AGGREGATE"
 
-        session.commit()
+        #         session.add(
+        #             self.prefix(
+        #                 prefix=prefix.prefix,
+        #                 site=site,
+        #                 prefix_type=prefix_type,
+        #                 remote_id=prefix.id,
+        #             )
+        #         )
 
-    def import_netbox_device(self, filters, session):
+    def import_netbox_device(self, filters):
 
         nb_devs = self.nb.dcim.devices.filter(**filters)
         logger.debug(f"{source} | Found {len(nb_devs)} devices in netbox")
@@ -93,18 +87,19 @@ class NetBoxAdapter(DSync):
         # -------------------------------------------------------------
         for device in nb_devs:
 
-            if device.name in device_names: 
+            if device.name in device_names:
                 continue
 
-            site = session.query(self.site).filter_by(name=device.site.slug).first()
-            if not site:
-                session.add(self.site(name=device.site.slug, remote_id=device.site.id,))
+            site = self.get("site", [device.site.slug])
 
-            session.add(
-                self.device(
-                    name=device.name, remote_id=device.id, site_name=device.site.slug
-                )
+            if not site:
+                site = self.site(name=device.site.slug, remote_id=device.site.id)
+                self.add(site)
+
+            device = self.device(
+                name=device.name, site_name=site.name, remote_id=device.id
             )
+            self.add(device)
 
             # Store all devices name in a list to speed up later verification
             device_names.append(device.name)
@@ -112,43 +107,50 @@ class NetBoxAdapter(DSync):
         # -------------------------------------------------------------
         # Import Interface & IPs
         # -------------------------------------------------------------
-        # devices = session.query(self.device).all()
-        # logger.debug(f"{source} | Found {len(devices)} devices in memory")
+        devices = self.get_all(self.device)
+        logger.debug(f"{source} | Found {len(devices)} devices in memory")
 
-        # for dev in devices:
-
-        #     # Import Interfaces
-        #     intfs = self.nb.dcim.interfaces.filter(device=dev.name)
-        #     for intf in intfs:
-        #         session.add(
-        #             self.interface(
-        #                 name=intf.name,
-        #                 device_name=dev.name,
-        #                 remote_id=intf.id,
-        #                 description=intf.description or None,
-        #                 mtu=intf.mtu,
-        #             )
-        #         )
-
-        #     # Import IP addresses
-        #     ips = self.nb.ipam.ip_addresses.filter(device=dev.name)
-        #     for ip in ips:
-        #         session.add(
-        #             self.ip_address(
-        #                 address=ip.address,
-        #                 device_name=dev.name,
-        #                 interface_name=ip.interface.name,
-        #                 remote_id=ip.id,
-        #             )
-        #         )
-
-        #     logger.debug(
-        #         f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {dev.name}"
-        #     )
+        for dev in devices:
+            self.import_netbox_interface(device=dev)
 
         return device_names
 
-    def import_netbox_cable(self, device_names, session):
+    def import_netbox_interface(self, device):
+
+        # Import Interfaces
+        intfs = self.nb.dcim.interfaces.filter(device=device.name)
+        for intf in intfs:
+
+            interface = self.interface(
+                name=intf.name,
+                device_name=device.name,
+                remote_id=intf.id,
+                description=intf.description or None,
+                mtu=intf.mtu,
+            )
+
+            self.add(interface)
+            device.add_child(interface)
+
+        # Import IP addresses
+        ips = self.nb.ipam.ip_addresses.filter(device=device.name)
+        for ip in ips:
+
+            ip_address = self.ip_address(
+                address=ip.address,
+                device_name=dev.name,
+                interface_name=ip.interface.name,
+                remote_id=ip.id,
+            )
+
+            self.add(ip_address)
+            interface.add_child(ip_address)
+
+        logger.debug(
+            f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {device.name}"
+        )
+
+    def import_netbox_cable(self, device_names):
         sites = session.query(self.site).all()
         for site in sites:
             cables = self.nb.dcim.cables.filter(site=site.name)
@@ -186,7 +188,6 @@ class NetBoxAdapter(DSync):
             logger.debug(
                 f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
             )
-
 
     # -----------------------------------------------------
     # Interface
@@ -247,7 +248,7 @@ class NetBoxAdapter(DSync):
         item = self.default_delete(
             object_type="interface", keys=keys, params=params, session=session
         )
-        
+
         return item
 
     # -----------------------------------------------------
@@ -295,19 +296,20 @@ class NetBoxAdapter(DSync):
 
         interface = None
         if "interface_name" in params and "device_name" in params:
-            interface = session.query(self.interface).filter_by(
+            interface = (
+                session.query(self.interface)
+                .filter_by(
                     name=params["interface_name"], device_name=params["device_name"],
-                ).first()
+                )
+                .first()
+            )
 
         if interface:
             ip_address = self.nb.ipam.ip_addresses.create(
-                address=keys["address"],
-                interface=interface.remote_id
+                address=keys["address"], interface=interface.remote_id
             )
         else:
-            ip_address = self.nb.ipam.ip_addresses.create(
-                address=keys["address"]
-            )
+            ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"])
 
         item = self.default_create(
             object_type="ip_address", keys=keys, params=params, session=session
@@ -333,7 +335,7 @@ class NetBoxAdapter(DSync):
     # Prefix
     # -----------------------------------------------------
     def create_prefix(self, keys, params, session=None):
-        
+
         site = session.query(self.site).filter_by(name=keys["site_name"]).first()
 
         status = "active"
@@ -341,10 +343,8 @@ class NetBoxAdapter(DSync):
             status = "container"
 
         prefix = self.nb.ipam.prefixes.create(
-                prefix=keys["prefix"],
-                site=site.remote_id,
-                status=status
-            )
+            prefix=keys["prefix"], site=site.remote_id, status=status
+        )
 
         item = self.default_create(
             object_type="prefix", keys=keys, params=params, session=session
@@ -362,6 +362,6 @@ class NetBoxAdapter(DSync):
     # -----------------------------------------------------
     # def create_vlan(self, keys, params, session=None):
     #     pass
-    
+
     # def delete_vlan(self, keys, params, session=None):
     #     pass

@@ -97,33 +97,14 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     logger.info(f"Import NetBox Model")
     nb = NetBoxAdapter()
-    nb.init(
-        url=config.netbox["address"],
-        token=config.netbox["token"], # 1234567890abcdefghijklmnopqrstuvwxyz0123
-        filters=filters
-    )
-    nb_session = nb.start_session()
+    nb.init(url=config.netbox["address"], token=config.netbox["token"], filters=filters)
 
     logger.info(f"Import NI Model")
     ni = NetworkImporter()
-    ni.init(
-        url=config.netbox["address"],
-        token=config.netbox["token"], # 1234567890abcdefghijklmnopqrstuvwxyz0123
-        filters=filters
-    )
-    ni_session = ni.start_session()
-
-    # logger.info(f"Import Yaml Model")
-    # yml = NetModYaml()
-    # yml.init(directory="/Users/damien/projects/network-importer/examples/spine_leaf_yaml")
-    # yml_session = yml.start_session()
-
-    # nmnb.sync(nmni)
+    ni.init(url=config.netbox["address"], token=config.netbox["token"], filters=filters)
 
     # TODO add code to set config.main["hostvars_directory"] based on options.output
     # TODO add code to set config.main["configs_directory"] based on options.configs
-
-    # ni = NetworkImporter()
 
     # if update_configs:
     #     ni.build_inventory(limit=limit)
@@ -132,13 +113,6 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     #         sys.exit(0)
 
     # ni.init(limit=limit)
-
-    # ni.import_devices_from_configs()
-    # ni.import_devices_from_cmds()
-
-    # ni.import_cabling()
-
-    # ni.check_data_consistency()
 
     # # ------------------------------------------------------------------------------------
     # # Update Remote if apply is enabled
@@ -149,6 +123,8 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     elif check:
         diff = nb.diff(ni)
         diff.print_detailed()
+        pdb.set_trace()
+
     # if config.logs["performance_log"]:
     #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
     #     perf.TIME_TRACKER.print_all()

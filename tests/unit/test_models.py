@@ -7,8 +7,9 @@ from sqlalchemy.exc import IntegrityError
 
 from network_importer.models import *
 
-engine = create_engine("sqlite:///:memory:") # echo=True)
+engine = create_engine("sqlite:///:memory:")  # echo=True)
 Session = sessionmaker(bind=engine)
+
 
 @pytest.fixture()
 def session():
@@ -18,12 +19,14 @@ def session():
     session.close()
     Base.metadata.drop_all(bind=engine)
 
+
 def test_device(session):
     """ """
     dev = Device(name="device1")
     session.add(dev)
     devs = session.query(Device).all()
     assert len(devs) == 1
+
 
 def test_interface(session):
 
@@ -41,6 +44,7 @@ def test_interface(session):
         session.add(intf2)
         session.commit()
 
+
 def test_interface_mode(session):
 
     dev = Device(name="device1")
@@ -55,6 +59,7 @@ def test_interface_mode(session):
         intf1.mode = "NOTSUPPORTED"
         session.commit()
 
+
 def test_ip_address(session):
 
     dev = Device(name="device1")
@@ -67,7 +72,9 @@ def test_ip_address(session):
     assert ip1.interface == intf1
     assert intf1.ips == [ip1]
 
-    ip2 = IPAddress(address="10.10.10.2/32", interface_name="intf1", device_name="device1")
+    ip2 = IPAddress(
+        address="10.10.10.2/32", interface_name="intf1", device_name="device1"
+    )
     session.add(ip2)
     session.commit()
     assert ip2.interface == intf1

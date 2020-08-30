@@ -203,7 +203,6 @@ def expand_vlans_list(vlans: str) -> list:
     return sorted(clean_vlans_list)
 
 
-
 def build_filter_params(filter_params, params):
     """
     Update parms dict() with filter args in required format

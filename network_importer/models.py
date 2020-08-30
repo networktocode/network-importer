@@ -12,69 +12,43 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import copy
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    Boolean,
-    Enum,
-    DateTime,
-    Table,
-    ForeignKeyConstraint,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship
+from collections import defaultdict
+from typing import Set, Dict, List, Optional
+from pydantic import BaseModel
 
 from dsync import DSyncMixin
 
-Base = declarative_base()
 
-DEVICE_NAME_DEF = String(250)
-SITE_NAME_DEF = String(120)
-INTF_NAME_DEF = String(120)
-IP_PREFIX_DEF = String(42)
-VLAN_NAME_DEF = String(250)
-
-class Site(Base, DSyncMixin):
+class Site(BaseModel, DSyncMixin):
     """
     """
 
-    __tablename__ = "site"
+    __modelname__ = "site"
+    __identifier__ = ["name"]
+    __shortname__ = []
+    __attributes__ = []
+    __children__ = {"device": "devices", "prefix": "prefixes"}
 
-    childs = ["devices", "prefixes"]
-    attributes = []
-
-    name = Column(SITE_NAME_DEF, primary_key=True)
-    devices = relationship("Device", back_populates="site")
-    vlans = relationship("Vlan", back_populates="site")
-    prefixes = relationship("Prefix", back_populates="site")
-
-    remote_id = Column(Integer, nullable=True)
+    name: str
+    devices: List = list()
+    prefixes: List = list()
 
     def __repr__(self):
         return str(self.name)
 
 
-class Device(Base, DSyncMixin):
+class Device(BaseModel, DSyncMixin):
     """
     """
 
-    __tablename__ = "device"
+    __modelname__ = "device"
+    __identifier__ = ["name"]
+    __attributes__ = []
+    __children__ = {"interface": "interfaces"}
 
-    childs = ["interfaces"]
-    attributes = []
-
-    name = Column(DEVICE_NAME_DEF, primary_key=True)
-    site_name = Column(SITE_NAME_DEF, ForeignKey("site.name"), nullable=True)
-
-    site = relationship("Site", back_populates="devices")
-    interfaces = relationship("Interface", back_populates="device")
-
-    remote_id = Column(Integer, nullable=True)
-
-    def __repr__(self):
-        return str(self.name)
+    name: str
+    site_name: str
+    interfaces: List = list()
 
 
 # interface_vlans_allowed = Table('interface_vlans_allowed', Base.metadata,
@@ -84,163 +58,140 @@ class Device(Base, DSyncMixin):
 #     Column('device_name', DEVICE_NAME_DEF, ForeignKey('interface.device_name')),
 # )
 
-class Interface(Base, DSyncMixin):
+
+class Interface(BaseModel, DSyncMixin):
     """
     """
 
     __tablename__ = "interface"
 
-    childs = ["ips"]
-    attributes = ["description", "mtu", "switchport_mode"]
+    __modelname__ = "interface"
+    __identifier__ = ["device_name", "name"]
+    __shortname__ = ["name"]
+    __attributes__ = ["description", "mtu", "switchport_mode"]
+    __children__ = {"ip_address": "ips"}
 
-    name = Column(INTF_NAME_DEF, primary_key=True)
-    device_name = Column(
-        DEVICE_NAME_DEF, ForeignKey("device.name"), nullable=False, primary_key=True
-    )
-    description = Column(String(250), nullable=True)
-    mtu = Column(Integer, nullable=True)
-    speed = Column(Integer, nullable=True)
-    mode = Column(Enum("TRUNK", "ACCESS", "L3", "NONE"), nullable=True)
-    switchport_mode = Column(String(50), nullable=True) # Need to convert to ENUM
-    active = Column(Boolean, nullable=True)
-    is_virtual = Column(Boolean, nullable=True)
-    # is_lag_member = Column(Boolean, nullable=True)  # 
-    parent = Column(INTF_NAME_DEF, nullable=True)
-    # lag_members()
+    name: str
+    device_name: str
 
-    access_vlan = Column(Integer, nullable=True)
+    description: Optional[str]
+    mtu: Optional[int]
+    speed: Optional[int]
+    mode: Optional[str]
+    switchport_mode: Optional[str]
+    active: Optional[bool]
+    is_virtual: Optional[bool]
+    # is_lag_member = Column(Boolean, nullable=True)  #
+    parent: Optional[str]
+
+    # access_vlan = Column(Integer, nullable=True)
     # allowed_vlans = relationship("Vlan",
     #                 secondary=interface_vlans_allowed)
 
-    # Relationship
-    device = relationship("Device", back_populates="interfaces")
-    ips = relationship("IPAddress")
+    ips: List = list()
 
 
-    remote_id = Column(Integer, nullable=True)
-
-    def __repr__(self):
-        return f"{self.device_name}::{self.name}"
-
-
-
-class IPAddress(Base, DSyncMixin):
+class IPAddress(BaseModel, DSyncMixin):
     """
     """
 
-    __tablename__ = "ip_address"
+    __modelname__ = "ip_address"
+    __identifier__ = ["address"]
+    __attributes__ = ["device_name", "interface_name"]
 
-    childs = []
-    attributes = ["device_name", "interface_name"]
-
-    address = Column(IP_PREFIX_DEF, primary_key=True)
-    interface_name = Column(INTF_NAME_DEF, primary_key=True)
-    device_name = Column(DEVICE_NAME_DEF, primary_key=True)
-    interface = relationship("Interface", back_populates="ips")
-
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["device_name", "interface_name"],
-            ["interface.device_name", "interface.name"],
-        ),
-    )
-
-    remote_id = Column(Integer, nullable=True)
-
-    def __repr__(self):
-        return str(self.address)
+    address: str  # = Column(IP_PREFIX_DEF, primary_key=True)
+    interface_name: Optional[str]
+    device_name: Optional[str]
 
 
-class Cable(Base, DSyncMixin):
-    """ """
+# class Cable(BaseModel, DSyncMixin):
+#     """ """
 
-    __tablename__ = "cable"
+#     __tablename__ = "cable"
 
-    childs = []
-    attributes = []
+#     __modelname__ = "cable"
+#     __identifier__ = ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name" ]
+#     __attributes__ = []
+#     __children_types__ = []
 
-    device_a_name = Column(DEVICE_NAME_DEF, primary_key=True)
-    interface_a_name = Column(INTF_NAME_DEF, primary_key=True)
-    device_z_name = Column(DEVICE_NAME_DEF, primary_key=True)
-    interface_z_name = Column(INTF_NAME_DEF, primary_key=True)
+#     device_a_name: str # Column(DEVICE_NAME_DEF, primary_key=True)
+#     interface_a_name: str # Column(INTF_NAME_DEF, primary_key=True)
+#     device_z_name: str # Column(DEVICE_NAME_DEF, primary_key=True)
+#     interface_z_name: str # Column(INTF_NAME_DEF, primary_key=True)
 
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name"],
-            [
-                "interface.device_name",
-                "interface.name",
-                "interface.device_name",
-                "interface.name",
-            ],
-        ),
-    )
+#     # __table_args__ = (
+#     #     ForeignKeyConstraint(
+#     #         ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name"],
+#     #         [
+#     #             "interface.device_name",
+#     #             "interface.name",
+#     #             "interface.device_name",
+#     #             "interface.name",
+#     #         ],
+#     #     ),
+#     # )
 
-    def __init__(self, *args, **kwargs):
-        """ Ensure the """
-        new_kwargs = copy.deepcopy(kwargs)
-        devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
-        if sorted(devices) != devices:
-            new_kwargs["device_a_name"] = kwargs["device_z_name"]
-            new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
-            new_kwargs["device_z_name"] = kwargs["device_a_name"]
-            new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
+#     def __init__(self, *args, **kwargs):
+#         """ Ensure the """
+#         new_kwargs = copy.deepcopy(kwargs)
+#         devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
+#         if sorted(devices) != devices:
+#             new_kwargs["device_a_name"] = kwargs["device_z_name"]
+#             new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
+#             new_kwargs["device_z_name"] = kwargs["device_a_name"]
+#             new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
 
-        super().__init__(*args, **new_kwargs)
+#         super().__init__(*args, **new_kwargs)
 
-    def unique_id(self):
-        return "_".join(
-            sorted(
-                [
-                    f"{self.device_a_name}:{self.interface_a_name}",
-                    f"{self.device_z_name}:{self.interface_z_name}",
-                ]
-            )
-        )
+#     def unique_id(self):
+#         return "_".join(
+#             sorted(
+#                 [
+#                     f"{self.device_a_name}:{self.interface_a_name}",
+#                     f"{self.device_z_name}:{self.interface_z_name}",
+#                 ]
+#             )
+#         )
 
-    def __repr__(self):
-        return str(self.unique_id())
+#     def __repr__(self):
+#         return str(self.unique_id())
 
 
-class Vlan(Base, DSyncMixin):
-    """ """
+# class Vlan(BaseModel, DSyncMixin):
+#     """ """
 
-    __tablename__ = "vlan"
+#     __tablename__ = "vlan"
 
-    childs = []
-    attributes = ["name"]
 
-    vid = Column(Integer, primary_key=True)
-    site_name = Column(SITE_NAME_DEF, ForeignKey("site.name"), primary_key=True)
-    name = Column(VLAN_NAME_DEF, nullable=True)
-    site = relationship("Site", back_populates="vlans")
+#     __modelname__ = "vlan"
+#     __identifier__ = ["site", "vid"]
+#     __attributes__ = ["name"]
+#     __children_types__ = []
 
-    remote_id = Column(Integer, nullable=True)
 
-    # interfaces_tagged = relationship("Interface",
-    #                 secondary=interface_vlans_allowed,
-    #                 back_populates="allowed_vlans")
+#     vid: int
+#     site: Site
+#     name: str
 
-class Prefix(Base, DSyncMixin):
+#     # remote_id = Column(Integer, nullable=True)
+
+#     # interfaces_tagged = relationship("Interface",
+#     #                 secondary=interface_vlans_allowed,
+#     #                 back_populates="allowed_vlans")
+
+
+class Prefix(BaseModel, DSyncMixin):
     """
     """
 
-    __tablename__ = "prefix"
+    __modelname__ = "prefix"
+    __identifier__ = ["site_name", "prefix"]
+    __attributes__ = ["prefix_type"]
 
-    childs = []
-    attributes = ["prefix_type"]
+    prefix: str
+    site_name: Optional[str]
 
-    prefix = Column(IP_PREFIX_DEF, primary_key=True)
-    site_name = Column(SITE_NAME_DEF, ForeignKey("site.name"), primary_key=True)
-
-    vlan_id = Column(Integer, ForeignKey("vlan.vid"), nullable=True)
-
-    site = relationship("Site", back_populates="prefixes")
-    prefix_type =  Column(Enum("AGGREGATE"), nullable=True)
+    vlan_id: Optional[int]
+    prefix_type: Optional[str]
 
     # vlan = relationship("Vlan", back_populates="prefixes")
-
-    remote_id = Column(Integer, nullable=True)
-
-    def __repr__(self):
-        return f"{self.site_name} - {self.prefix} ({self.prefix_type})"

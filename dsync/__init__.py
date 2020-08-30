@@ -13,6 +13,7 @@ limitations under the License.
 """
 import logging
 from os import path
+from collections import defaultdict
 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -24,18 +25,57 @@ logger = logging.getLogger(__name__)
 
 
 class DSyncMixin:
-    def __iter__(self):
-        for v in self.values:
-            yield v, getattr(self, v)
 
-    def get_type(self):
-        return self.__tablename__
+    __modelname__ = None
+    __identifier__ = []
+    __shortname__ = []
+    __attributes__ = []
+    __children__ = {}
+
+    def __repr__(self):
+        return self.get_unique_id()
+
+    def __str__(self):
+        return self.get_unique_id()
+
+    @classmethod
+    def get_type(cls):
+        return cls.__modelname__
 
     def get_keys(self):
-        return {pk.name: getattr(self, pk.name) for pk in self.__table__.primary_key}
+        return {key: getattr(self, key) for key in self.__identifier__}
 
     def get_attrs(self):
-        return {attr: getattr(self, attr) for attr in self.attributes}
+        return {key: getattr(self, key) for key in self.__attributes__}
+
+    def get_unique_id(self):
+        return "__".join([getattr(self, key) for key in self.__identifier__])
+
+    def get_shortname(self):
+
+        if self.__shortname__:
+            return "__".join([getattr(self, key) for key in self.__shortname__])
+        else:
+            return self.get_unique_id()
+
+    def add_child(self, child, child_type=None):
+
+        child_type = child.get_type()
+
+        if child_type not in self.__children__:
+            raise Exception(f"Invalid Child type ({child_type}) for {self.get_type()}")
+
+        attr_name = self.__children__[child_type]
+
+        if not hasattr(self, attr_name):
+            raise Exception(
+                f"Invalid attribute name ({attr_name}) for child of type {child_type} for {self.get_type()}"
+            )
+
+        childs = getattr(self, attr_name)
+        childs.append(child.get_unique_id())
+
+        return True
 
 
 class DSync:
@@ -44,22 +84,14 @@ class DSync:
 
     top_level = []
 
-    def __init__(self, db="sqlite:///:memory:"):
-
-        from sqlalchemy.pool import StaticPool
-        self.engine = create_engine(db, poolclass=StaticPool)
-        self.base.metadata.bind = self.engine
-        self.base.metadata.create_all(self.engine)
-        self.__sm__ = sessionmaker(bind=self.engine)
+    def __init__(self):
+        self.__datas__ = defaultdict(dict)
 
     def init(self):
         raise NotImplementedError
 
     def clean(self):
         pass
-
-    def start_session(self):
-        return self.__sm__()
 
     def sync(self, source):
         """Syncronize the current DSync object with the source
@@ -70,108 +102,26 @@ class DSync:
 
         diff = self.diff(source)
 
-        session = self.start_session()
-
         for child in diff.get_childs():
-            self.sync_element(child, session)
+            self.sync_element(child)
 
-        logger.info("Saving Changes")
-        session.commit()
-
-    # def sync_objects(self, source, dest, session):
-    #     """
-
-    #     Args:
-    #         source: NetMod object to sync with this one
-    #     """
-
-    #     if type(source) != type(dest):
-    #         logger.warning(f"Attribute {source} are of different types")
-    #         return False
-
-    #     if isinstance(source, list):
-    #         dict_src = {str(item): item for item in source}
-    #         dict_dst = {str(item): item for item in dest}
-
-    #         same_keys = intersection(dict_src.keys(), dict_dst.keys())
-
-    #         diff1 = list(set(dict_src.keys()) - set(same_keys))
-    #         diff2 = list(set(dict_dst.keys()) - set(same_keys))
-
-    #         for i in diff1:
-    #             logger.info(f"{i} is missing, need to Add it")
-    #             # import pdb;pdb.set_trace()
-    #             self.create_object(
-    #                 object_type=dict_src[i].get_type(),
-    #                 keys=dict_src[i].get_keys(),
-    #                 params=dict_src[i].get_attrs(),
-    #                 session=session,
-    #             )
-    #             # TODO Continue the tree here
-
-    #         for i in diff2:
-    #             logger.info(f"{i} is missing in Source, need to Delete")
-    #             self.delete_object(
-    #                 object_type=dict_dst[i].get_type(),
-    #                 keys=dict_dst[i].get_keys(),
-    #                 params=dict_dst[i].get_attrs(),
-    #                 session=session,
-    #             )
-
-    #         # logger.debug(f"Same Keys: {same_keys}")
-    #         for i in same_keys:
-    #             if dict_src[i].get_attrs() != dict_dst[i].get_attrs():
-    #                 logger.info(
-    #                     f"{dict_src[i].get_type()} {dict_dst[i]} | SRC and DST are not in sync, updating"
-    #                 )
-    #                 self.update_object(
-    #                     object_type=dict_src[i].get_type(),
-    #                     keys=dict_dst[i].get_keys(),
-    #                     params=dict_src[i].get_attrs(),
-    #                     session=session,
-    #                 )
-
-    #             logger.debug(
-    #                 f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
-    #             )
-    #             for child in dict_src[i].childs:
-    #                 self.sync_objects(
-    #                     session=session,
-    #                     source=getattr(dict_src[i], child),
-    #                     dest=getattr(dict_dst[i], child),
-    #                 )
-
-    #     else:
-    #         print(f"Type {type(source)} is not supported for now")
-
-    #     return True
-
-    def sync_element(self, element: DiffElement, session):
+    def sync_element(self, element: DiffElement):
 
         if not element.has_diffs():
             return False
 
         if element.source_attrs == None:
             self.delete_object(
-                object_type=element.type,
-                keys=element.keys,
-                params=element.dest_attrs,
-                session=session,
+                object_type=element.type, keys=element.keys, params=element.dest_attrs
             )
         elif element.dest_attrs == None:
             self.create_object(
-                object_type=element.type,
-                keys=element.keys,
-                params=element.source_attrs,
-                session=session,
+                object_type=element.type, keys=element.keys, params=element.source_attrs
             )
         elif element.source_attrs != element.dest_attrs:
 
             self.update_object(
-                object_type=element.type,
-                keys=element.keys,
-                params=element.source_attrs,
-                session=session,
+                object_type=element.type, keys=element.keys, params=element.source_attrs
             )
 
         for child in element.get_childs():
@@ -181,17 +131,15 @@ class DSync:
         """
         Generate a Diff object between 2 DSync objects
         """
-        source_session = source.start_session()
-        local_session = self.start_session()
 
         diff = Diff()
 
         for obj in intersection(self.top_level, source.top_level):
 
             diff_elements = self.diff_objects(
-                source=source_session.query(getattr(source, obj)).all(),
-                dest=local_session.query(getattr(source, obj)).all(),
-                session=local_session,
+                source=list(source.get_all(obj)),
+                dest=list(self.get_all(obj)),
+                source_root=source,
             )
 
             for element in diff_elements:
@@ -199,20 +147,20 @@ class DSync:
 
         return diff
 
-    def diff_objects(self, source, dest, session):
+    def diff_objects(self, source, dest, source_root):
         """ """
         if type(source) != type(dest):
             logger.warning(f"Attribute {source} are of different types")
             return False
 
         diffs = []
+        import pdb
 
         if isinstance(source, list):
 
             # Convert both list into a Dict and using the str representation as Key
-            # in the future consider using a dedicated function as key
-            dict_src = {str(item): item for item in source}
-            dict_dst = {str(item): item for item in dest}
+            dict_src = {item.get_unique_id(): item for item in source}
+            dict_dst = {item.get_unique_id(): item for item in dest}
 
             # Identify the shared keys between SRC and DST DSync
             # The keys missing in DST Dsync
@@ -224,7 +172,7 @@ class DSync:
             for key in missing_dst:
                 de = DiffElement(
                     obj_type=dict_src[key].get_type(),
-                    name=str(dict_src[key]),
+                    name=dict_src[key].get_shortname(),
                     keys=dict_src[key].get_keys(),
                 )
                 de.add_attrs(source=dict_src[key].get_attrs(), dest=None)
@@ -234,7 +182,7 @@ class DSync:
             for key in missing_src:
                 de = DiffElement(
                     obj_type=dict_dst[key].get_type(),
-                    name=str(dict_dst[key]),
+                    name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
                 )
                 de.add_attrs(source=None, dest=dict_dst[key].get_attrs())
@@ -245,7 +193,7 @@ class DSync:
 
                 de = DiffElement(
                     obj_type=dict_dst[key].get_type(),
-                    name=str(dict_dst[key]),
+                    name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
                 )
 
@@ -266,11 +214,16 @@ class DSync:
                 #     f"{dict_src[i].get_type()} {dict_dst[i]} | following the path for {dict_src[i].childs}"
                 # )
 
-                for child in dict_src[key].childs:
+                for child_type, child_attr in dict_src[key].__children__.items():
+
                     childs = self.diff_objects(
-                        session=session,
-                        source=getattr(dict_src[key], child),
-                        dest=getattr(dict_dst[key], child),
+                        source=source_root.get_by_keys(
+                            getattr(dict_src[key], child_attr), child_type
+                        ),
+                        dest=self.get_by_keys(
+                            getattr(dict_dst[key], child_attr), child_type
+                        ),
+                        source_root=source_root,
                     )
 
                     for c in childs:
@@ -285,36 +238,20 @@ class DSync:
 
     def create_object(self, object_type, keys, params, session=None):
         self._crud_change(
-            action="create",
-            keys=keys,
-            object_type=object_type,
-            params=params,
-            session=session,
+            action="create", keys=keys, object_type=object_type, params=params
         )
 
     def update_object(self, object_type, keys, params, session=None):
         self._crud_change(
-            action="update",
-            object_type=object_type,
-            keys=keys,
-            params=params,
-            session=session,
+            action="update", object_type=object_type, keys=keys, params=params,
         )
 
     def delete_object(self, object_type, keys, params, session=None):
         self._crud_change(
-            action="delete",
-            object_type=object_type,
-            keys=keys,
-            params=params,
-            session=session,
+            action="delete", object_type=object_type, keys=keys, params=params
         )
 
     def _crud_change(self, action, object_type, keys, params, session=None):
-        local_session = False
-        if not session:
-            session = self.start_session()
-            local_session = True
 
         if not hasattr(self, object_type):
             raise Exception("Unable to find this object type")
@@ -333,26 +270,73 @@ class DSync:
             )
             logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
 
-        if local_session:
-            session.commit()
-
         return item
 
+    # ----------------------------------------------------------------------------
     def default_create(self, object_type, keys, params, session):
         """ """
         obj = getattr(self, object_type)
         item = obj(**keys, **params)
-        session.add(item)
+        self.add(item)
         return item
 
     def default_update(self, object_type, keys, params, session):
-        obj = getattr(self, object_type)
-        item = session.query(obj).filter_by(**keys).first()
-        item.update(**params)
-        return item
+        raise NotImplementedError
+        # obj = getattr(self, object_type)
+
+        # item = session.query(obj).filter_by(**keys).first()
+        # item.update(**params)
+        # return item
 
     def default_delete(self, object_type, keys, params, session):
         obj = getattr(self, object_type)
-        item = session.query(obj).filter_by(**keys).first()
-        session.delete(item)
+        item = obj(**keys, **params)
+        self.delete(item)
         return item
+
+    # ------------------------------------------------------------------------------
+
+    def get(self, obj_type, keys=[]):
+
+        uid = "__".join(keys)
+
+        if uid in self.__datas__[obj_type]:
+            return self.__datas__[obj_type][uid]
+
+        return None
+
+    def get_all(self, obj):
+
+        if isinstance(obj, str):
+            modelname = obj
+        else:
+            modelname = obj.get_type()
+
+        if not modelname in self.__datas__:
+            return []
+
+        return self.__datas__[modelname].values()
+
+    def get_by_keys(self, keys, obj_type):
+
+        return [value for uid, value in self.__datas__[obj_type].items() if uid in keys]
+
+    def add(self, obj):
+
+        modelname = obj.get_type()
+        uid = obj.get_unique_id()
+
+        if uid in self.__datas__[modelname]:
+            raise Exception(f"Object {uid} already present")
+
+        self.__datas__[modelname][uid] = obj
+
+    def delete(self, obj):
+
+        modelname = obj.get_type()
+        uid = obj.get_unique_id()
+
+        if uid not in self.__datas__[modelname]:
+            raise Exception(f"Object {uid} not present")
+
+        del self.__datas__[modelname][uid]

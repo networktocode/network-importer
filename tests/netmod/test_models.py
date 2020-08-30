@@ -11,7 +11,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from sqlalchemy import Column, ForeignKey, Integer, String, DateTime, Table, ForeignKeyConstraint
+from sqlalchemy import (
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    DateTime,
+    Table,
+    ForeignKeyConstraint,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 
@@ -20,7 +28,7 @@ Base = declarative_base()
 from netmod.models import BaseNetMod
 
 
-class Person(Base, BaseNetMod): 
+class Person(Base, BaseNetMod):
 
     __tablename__ = "person"
 
@@ -33,6 +41,7 @@ class Person(Base, BaseNetMod):
     age = Column(Integer)
     size = Column(Integer)
 
+
 def test_basenetmod_get_keys():
 
     person = Person(first="john", last="doe", middle="bob", age=99, size=120)
@@ -42,6 +51,7 @@ def test_basenetmod_get_keys():
     assert len(keys.keys()) == 3
     assert keys["first"] == "john"
 
+
 def test_basenetmod_get_attrs():
 
     person = Person(first="john", last="doe", middle="bob", age=99, size=120)
@@ -50,5 +60,3 @@ def test_basenetmod_get_attrs():
     assert isinstance(attrs, dict)
     assert len(attrs.keys()) == 2
     assert attrs["age"] == 99
-
-
