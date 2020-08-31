@@ -118,6 +118,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
     if apply:
+        pdb.set_trace()
         nb.sync(ni)
 
     elif check:

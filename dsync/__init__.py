@@ -12,11 +12,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+import pdb
 from os import path
 from collections import defaultdict
-
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
 
 from .diff import Diff, DiffElement
 from .utils import intersection
@@ -40,15 +38,38 @@ class DSyncMixin:
 
     @classmethod
     def get_type(cls):
+        """Return the type AKA modelname of the object or the class
+
+        Returns:
+            str: modelname of the class, used in to store all objects
+        """
         return cls.__modelname__
 
     def get_keys(self):
+        """Get all primary keys for this object.
+
+        Returns:
+            dict: dictionnary containing all primary keys for this device, defined in __identifier__ 
+        """
         return {key: getattr(self, key) for key in self.__identifier__}
 
     def get_attrs(self):
+        """Get all the attributes or parameters for this object.
+
+        The list of parameters to return is defined by the __attributes__ list.
+
+        Returns:
+            dict: Dictionnary of attributes for this object
+        """
         return {key: getattr(self, key) for key in self.__attributes__}
 
     def get_unique_id(self):
+        """Returned the unique Id of an object. 
+        By default the unique Id is build based on all the primary keys.
+
+        Returns:
+            str: Unique ID for this object
+        """
         return "__".join([getattr(self, key) for key in self.__identifier__])
 
     def get_shortname(self):
@@ -119,13 +140,12 @@ class DSync:
                 object_type=element.type, keys=element.keys, params=element.source_attrs
             )
         elif element.source_attrs != element.dest_attrs:
-
             self.update_object(
                 object_type=element.type, keys=element.keys, params=element.source_attrs
             )
 
         for child in element.get_childs():
-            self.sync_element(child, session)
+            self.sync_element(child)
 
     def diff(self, source):
         """
@@ -154,7 +174,6 @@ class DSync:
             return False
 
         diffs = []
-        import pdb
 
         if isinstance(source, list):
 
@@ -236,22 +255,22 @@ class DSync:
 
         return diffs
 
-    def create_object(self, object_type, keys, params, session=None):
+    def create_object(self, object_type, keys, params):
         self._crud_change(
             action="create", keys=keys, object_type=object_type, params=params
         )
 
-    def update_object(self, object_type, keys, params, session=None):
+    def update_object(self, object_type, keys, params):
         self._crud_change(
             action="update", object_type=object_type, keys=keys, params=params,
         )
 
-    def delete_object(self, object_type, keys, params, session=None):
+    def delete_object(self, object_type, keys, params):
         self._crud_change(
             action="delete", object_type=object_type, keys=keys, params=params
         )
 
-    def _crud_change(self, action, object_type, keys, params, session=None):
+    def _crud_change(self, action, object_type, keys, params):
 
         if not hasattr(self, object_type):
             raise Exception("Unable to find this object type")
@@ -260,27 +279,25 @@ class DSync:
         #   update_interface or create_device etc ...
         # If not apply the default one
         if hasattr(self, f"{action}_{object_type}"):
-            item = getattr(self, f"{action}_{object_type}")(
-                keys=keys, params=params, session=session
-            )
+            item = getattr(self, f"{action}_{object_type}")(keys=keys, params=params)
             logger.debug(f"{action}d {object_type} - {params}")
         else:
             item = getattr(self, f"default_{action}")(
-                object_type=object_type, keys=keys, params=params, session=session
+                object_type=object_type, keys=keys, params=params
             )
             logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
 
         return item
 
     # ----------------------------------------------------------------------------
-    def default_create(self, object_type, keys, params, session):
+    def default_create(self, object_type, keys, params):
         """ """
         obj = getattr(self, object_type)
         item = obj(**keys, **params)
         self.add(item)
         return item
 
-    def default_update(self, object_type, keys, params, session):
+    def default_update(self, object_type, keys, params):
         raise NotImplementedError
         # obj = getattr(self, object_type)
 
@@ -288,7 +305,7 @@ class DSync:
         # item.update(**params)
         # return item
 
-    def default_delete(self, object_type, keys, params, session):
+    def default_delete(self, object_type, keys, params):
         obj = getattr(self, object_type)
         item = obj(**keys, **params)
         self.delete(item)
@@ -296,12 +313,17 @@ class DSync:
 
     # ------------------------------------------------------------------------------
 
-    def get(self, obj_type, keys=[]):
+    def get(self, obj, keys=[]):
+
+        if isinstance(obj, str):
+            modelname = obj
+        else:
+            modelname = obj.get_type()
 
         uid = "__".join(keys)
 
-        if uid in self.__datas__[obj_type]:
-            return self.__datas__[obj_type][uid]
+        if uid in self.__datas__[modelname]:
+            return self.__datas__[modelname][uid]
 
         return None
 

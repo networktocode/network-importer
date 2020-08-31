@@ -111,10 +111,10 @@ class DiffElement:
         Add an item
         """
 
-        if source:
+        if source != None:
             self.source_attrs = source
 
-        if dest:
+        if dest != None:
             self.dest_attrs = dest
 
     def get_attrs_keys(self):
@@ -125,11 +125,11 @@ class DiffElement:
         if both are defined, return the intersection of both
         """
 
-        if not self.source_attrs and not self.dest_attrs:
+        if self.source_attrs is None and self.dest_attrs is None:
             return None
-        elif not self.source_attrs and self.dest_attrs:
+        elif self.source_attrs is None and self.dest_attrs:
             return self.dest_attrs.keys()
-        elif self.source_attrs and not self.dest_attrs:
+        elif self.source_attrs and self.dest_attrs is None:
             return self.source_attrs.keys()
         else:
             return intersection(self.dest_attrs.keys(), self.source_attrs.keys())
@@ -184,16 +184,16 @@ class DiffElement:
 
         # if self.missing_remote and self.missing_local:
         #     print(f"{margin}{self.type}: {self.name} MISSING BOTH")
-        if not self.source_attrs:
+        if self.source_attrs is None:
             print(f"{margin}{self.type}: {self.name} MISSING in SOURCE")
-        elif not self.dest_attrs:
+        elif self.dest_attrs is None:
             print(f"{margin}{self.type}: {self.name} MISSING in DEST")
         else:
             print(f"{margin}{self.type}: {self.name}")
             # Currently we assume that source and dest have the same attrs,
             # need to account for that
             for attr in self.get_attrs_keys():
-                if self.source_attrs[attr] != self.dest_attrs[attr]:
+                if self.source_attrs.get(attr, None) != self.dest_attrs.get(attr, None):
                     print(
                         f"{margin}  {attr}   S({self.source_attrs[attr]})   D({self.dest_attrs[attr]})"
                     )

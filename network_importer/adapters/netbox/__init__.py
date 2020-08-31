@@ -33,14 +33,8 @@ class NetBoxAdapter(DSync):
     interface = NetboxInterface
     ip_address = NetboxIPAddress
     # cable = NetboxCable
-
-    # site = Site
-    # device = Device
-    # interface = Interface
-    # ip_address = IPAddress
-    # cable = Cable
-    # vlan = Vlan
-    # prefix = Prefix
+    # vlan = NetboxVlan
+    # prefix = NetboxPrefix
 
     top_level = ["device"]
 
@@ -77,7 +71,14 @@ class NetBoxAdapter(DSync):
         #         )
 
     def import_netbox_device(self, filters):
+        """Import all devices from Netbox for a given filters. 
 
+        Args:
+            filters (dict): Pynetbox filter to apply when querying the list of devices to Netbox
+        
+        Returns:
+            list: List of device names
+        """
         nb_devs = self.nb.dcim.devices.filter(**filters)
         logger.debug(f"{source} | Found {len(nb_devs)} devices in netbox")
         device_names = []
@@ -116,6 +117,11 @@ class NetBoxAdapter(DSync):
         return device_names
 
     def import_netbox_interface(self, device):
+        """Import all interfaces & Ips from Netbox for a given device. 
+
+        Args:
+            device (NetboxDevice): DSync object representing the device
+        """
 
         # Import Interfaces
         intfs = self.nb.dcim.interfaces.filter(device=device.name)
@@ -150,56 +156,65 @@ class NetBoxAdapter(DSync):
             f"{source} | Found {len(intfs)} interfaces & {len(ips)} ip addresses in netbox for {device.name}"
         )
 
-    def import_netbox_cable(self, device_names):
-        sites = session.query(self.site).all()
-        for site in sites:
-            cables = self.nb.dcim.cables.filter(site=site.name)
+    # def import_netbox_cable(self, device_names):
+    #     # sites = session.query(self.site).all()
+    #     for site in sites:
+    #         cables = self.nb.dcim.cables.filter(site=site.name)
 
-            for cable in cables:
-                if (
-                    cable.termination_a_type != "dcim.interface"
-                    or cable.termination_b_type != "dcim.interface"
-                ):
-                    continue
+    #         for cable in cables:
+    #             if (
+    #                 cable.termination_a_type != "dcim.interface"
+    #                 or cable.termination_b_type != "dcim.interface"
+    #             ):
+    #                 continue
 
-                if cable.termination_a.device.name not in device_names:
-                    print(
-                        f"{source} | Skipping cable {cable.id} because {cable.termination_a.device.name} is not in the list of devices"
-                    )
-                    continue
+    #             if cable.termination_a.device.name not in device_names:
+    #                 print(
+    #                     f"{source} | Skipping cable {cable.id} because {cable.termination_a.device.name} is not in the list of devices"
+    #                 )
+    #                 continue
 
-                elif cable.termination_b.device.name not in device_names:
-                    print(
-                        f"{source} | Skipping cable {cable.id} because {cable.termination_b.device.name} is not in the list of devices"
-                    )
-                    continue
+    #             elif cable.termination_b.device.name not in device_names:
+    #                 print(
+    #                     f"{source} | Skipping cable {cable.id} because {cable.termination_b.device.name} is not in the list of devices"
+    #                 )
+    #                 continue
 
-                session.add(
-                    self.cable(
-                        device_a_name=cable.termination_a.device.name,
-                        interface_a_name=cable.termination_a.name,
-                        device_z_name=cable.termination_b.device.name,
-                        interface_z_name=cable.termination_b.name,
-                        remote_id=cable.id,
-                    )
-                )
+    #             session.add(
+    #                 self.cable(
+    #                     device_a_name=cable.termination_a.device.name,
+    #                     interface_a_name=cable.termination_a.name,
+    #                     device_z_name=cable.termination_b.device.name,
+    #                     interface_z_name=cable.termination_b.name,
+    #                     remote_id=cable.id,
+    #                 )
+    #             )
 
-            nbr_cables = session.query(self.cable).count()
-            logger.debug(
-                f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
-            )
+    #         nbr_cables = session.query(self.cable).count()
+    #         logger.debug(
+    #             f"{source} | Found {nbr_cables} cables in netbox for {site.name}"
+    #         )
 
     # -----------------------------------------------------
     # Interface
     # -----------------------------------------------------
-    def create_interface(self, keys, params, session=None):
+    def create_interface(self, keys, params):
+        """Create an interface object in Netbox.
 
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to update
+            params (dict): Dictionnary of attributes/parameters of the object to update
+
+        Returns:
+            NetboxInterface: DSync object newly created
+        """
         nb_params = {}
         nb_params.update(keys)
         nb_params.update(params)
 
         # import pdb;pdb.set_trace()
-        device = session.query(self.device).filter_by(name=keys["device_name"]).first()
+        device = self.get(self.device, keys=[keys["device_name"]])
+
         nb_params["device"] = device.remote_id
         del nb_params["device_name"]
 
@@ -212,17 +227,22 @@ class NetBoxAdapter(DSync):
         logger.info(f"Created interface {intf.name} ({intf.id}) in NetBox")
 
         # Create the object in the local DB
-        item = self.default_create(
-            object_type="interface", keys=keys, params=params, session=session
-        )
+        item = self.default_create(object_type="interface", keys=keys, params=params)
         item.remote_id = intf.id
 
         return item
 
-    def update_interface(self, keys, params, session=None):
+    def update_interface(self, keys, params):
+        """Update an interface object in Netbox.
 
-        item = session.query(self.interface).filter_by(**keys).first()
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to update
+            params (dict): Dictionnary of attributes/parameters of the object to update
 
+        Returns:
+            NetboxInterface: DSync object
+        """
+        item = self.get(self.interface, list(keys.values()))
         attrs = item.get_attrs()
         if attrs == params:
             return item
@@ -238,70 +258,26 @@ class NetBoxAdapter(DSync):
 
         return item
 
-    def delete_interface(self, keys, params, session=None):
+    def delete_interface(self, keys, params):
 
-        item = session.query(self.interface).filter_by(**keys).first()
+        item = self.get(self.interface, list(keys.values()))
 
         intf = self.nb.dcim.interfaces.get(item.remote_id)
         intf.delete()
 
-        item = self.default_delete(
-            object_type="interface", keys=keys, params=params, session=session
-        )
+        item = self.default_delete(object_type="interface", keys=keys, params=params)
 
         return item
-
-    # -----------------------------------------------------
-    # Cable
-    # -----------------------------------------------------
-    def create_cable(self, keys, params, session=None):
-
-        interface_a = (
-            session.query(self.interface)
-            .filter_by(
-                name=keys["interface_a_name"], device_name=keys["device_a_name"],
-            )
-            .first()
-        )
-        interface_z = (
-            session.query(self.interface)
-            .filter_by(
-                name=keys["interface_z_name"], device_name=keys["device_z_name"],
-            )
-            .first()
-        )
-
-        cable = self.nb.dcim.cables.create(
-            termination_a_type="dcim.interface",
-            termination_b_type="dcim.interface",
-            termination_a_id=interface_a.remote_id,
-            termination_b_id=interface_z.remote_id,
-        )
-
-        # Create the object in the local DB
-        item = self.default_create(
-            object_type="cable", keys=keys, params=params, session=session
-        )
-        item.remote_id = cable.id
-
-        return item
-
-    def delete_cable(self, keys, params, session=None):
-        pass
 
     # -----------------------------------------------------
     # IP Address
     # -----------------------------------------------------
-    def create_ip_address(self, keys, params, session=None):
+    def create_ip_address(self, keys, params):
 
         interface = None
         if "interface_name" in params and "device_name" in params:
-            interface = (
-                session.query(self.interface)
-                .filter_by(
-                    name=params["interface_name"], device_name=params["device_name"],
-                )
-                .first()
+            interface = self.get(
+                self.interface, keys=[params["device_name"], params["interface_name"]]
             )
 
         if interface:
@@ -311,50 +287,84 @@ class NetBoxAdapter(DSync):
         else:
             ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"])
 
-        item = self.default_create(
-            object_type="ip_address", keys=keys, params=params, session=session
-        )
+        item = self.default_create(object_type="ip_address", keys=keys, params=params)
         item.remote_id = ip_address.id
 
         return item
 
-    def delete_ip_address(self, keys, params, session=None):
+    def delete_ip_address(self, keys, params):
 
-        item = session.query(self.ip_address).filter_by(**keys).first()
+        item = self.get(self.ip_address, list(keys.values()))
 
         ip = self.nb.ipam.ip_addresses.get(item.remote_id)
         ip.delete()
 
-        item = self.default_delete(
-            object_type="ip_address", keys=keys, params=params, session=session
-        )
+        item = self.default_delete(object_type="ip_address", keys=keys, params=params)
 
         return item
 
-    # -----------------------------------------------------
-    # Prefix
-    # -----------------------------------------------------
-    def create_prefix(self, keys, params, session=None):
+    # # -----------------------------------------------------
+    # # Prefix
+    # # -----------------------------------------------------
+    # def create_prefix(self, keys, params, session=None):
 
-        site = session.query(self.site).filter_by(name=keys["site_name"]).first()
+    #     site = session.query(self.site).filter_by(name=keys["site_name"]).first()
 
-        status = "active"
-        if params["prefix_type"] == "AGGREGATE":
-            status = "container"
+    #     status = "active"
+    #     if params["prefix_type"] == "AGGREGATE":
+    #         status = "container"
 
-        prefix = self.nb.ipam.prefixes.create(
-            prefix=keys["prefix"], site=site.remote_id, status=status
-        )
+    #     prefix = self.nb.ipam.prefixes.create(
+    #         prefix=keys["prefix"], site=site.remote_id, status=status
+    #     )
 
-        item = self.default_create(
-            object_type="prefix", keys=keys, params=params, session=session
-        )
-        item.remote_id = prefix.id
+    #     item = self.default_create(
+    #         object_type="prefix", keys=keys, params=params, session=session
+    #     )
+    #     item.remote_id = prefix.id
 
     # def update_prefix(self, keys, params, session=None):
     #     pass
 
     # def delete_prefix(self, keys, params, session=None):
+    #     pass
+
+    # # -----------------------------------------------------
+    # # Cable
+    # # -----------------------------------------------------
+    # def create_cable(self, keys, params, session=None):
+
+    #     interface_a = (
+    #         session.query(self.interface)
+    #         .filter_by(
+    #             name=keys["interface_a_name"], device_name=keys["device_a_name"],
+    #         )
+    #         .first()
+    #     )
+    #     interface_z = (
+    #         session.query(self.interface)
+    #         .filter_by(
+    #             name=keys["interface_z_name"], device_name=keys["device_z_name"],
+    #         )
+    #         .first()
+    #     )
+
+    #     cable = self.nb.dcim.cables.create(
+    #         termination_a_type="dcim.interface",
+    #         termination_b_type="dcim.interface",
+    #         termination_a_id=interface_a.remote_id,
+    #         termination_b_id=interface_z.remote_id,
+    #     )
+
+    #     # Create the object in the local DB
+    #     item = self.default_create(
+    #         object_type="cable", keys=keys, params=params, session=session
+    #     )
+    #     item.remote_id = cable.id
+
+    #     return item
+
+    # def delete_cable(self, keys, params, session=None):
     #     pass
 
     # -----------------------------------------------------
