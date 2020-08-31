@@ -25,6 +25,11 @@ from dsync import DSync
 from .models import *
 
 import network_importer.config as config
+from network_importer.utils import (
+    is_interface_lag,
+    is_interface_physical,
+    expand_vlans_list,
+)
 
 logger = logging.getLogger("network-importer")
 
@@ -35,11 +40,11 @@ class NetworkImporter(DSync):
     device = Device
     interface = Interface
     ip_address = IPAddress
-    # cable = Cable
+    cable = Cable
     # vlan = Vlan
     prefix = Prefix
 
-    top_level = ["device"]
+    top_level = ["site", "device", "cable"]
 
     nb = None
 
@@ -95,18 +100,14 @@ class NetworkImporter(DSync):
         self.bf.set_network(NETWORK_NAME)
         self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
-        # self.bf.set_snapshot(SNAPSHOT_NAME)
-
         # Import Devices
         devices = self.get_all(self.device)
-        # import pdb; pdb.set_trace()
 
         for device in devices:
             self.import_batfish_device(device=device)
 
-        # devices = session.query(self.device).all()
-        # logger.debug(f"Found {len(devices)} devices in Batfish")
-        # self.import_batfish_cable(session)
+        # Import Cable
+        self.import_batfish_cable()
 
     def import_batfish_device(self, device):
         """Import all devices from Batfish
@@ -114,72 +115,137 @@ class NetworkImporter(DSync):
         Args:
             device
         """
-        # TODO > FIX > Temporarily disabled
         intfs = self.bf.q.interfaceProperties(nodes=device.name).answer().frame()
         for _, intf in intfs.iterrows():
             self.import_batfish_interface(device=device, intf=intf)
 
         # logger.debug(f"Add device {device.name} with {len(intfs)} interfaces from Batfish")
-
         # self.import_batfish_aggregate(device=device, session=session)
 
     def import_batfish_interface(self, device, intf):
+        """Import an interface for a given device from Batfish Data, including IP addresses and prefixes.
+
+        Args:
+            device (Device): Device object 
+            intf (dict): Batfish interface object in Dict format
+        """
 
         interface = self.interface(
             name=intf["Interface"].interface,
             device_name=device.name,
-            description=intf["Description"],
+            description=intf["Description"] or "",
+            mtu=intf["MTU"],
+            switchport_mode=intf["Switchport_Mode"],
         )
+
+        is_physical = is_interface_physical(interface.name)
+        is_lag = is_interface_lag(interface.name)
+
+        if is_lag:
+            interface.is_lag = True
+            interface.is_virtual = False
+        elif is_physical == False:  # pylint: disable=C0121
+            interface.is_virtual = True
+        else:
+            interface.is_virtual = False
+
+        # if is_physical and interface.speed:
+        # interface.speed = int(bf.Speed)
+
+        if interface.switchport_mode == "FEX_FABRIC":
+            interface.switchport_mode = "NONE"
+
+        if config.main["import_intf_status"]:
+            interface.active = intf["Active"]
+        elif not config.main["import_intf_status"]:
+            interface.active = None
+
+        if (
+            interface.is_lag is None
+            and interface.lag_members is None
+            and len(list(intf["Channel_Group_Members"])) != 0
+        ):
+            interface.lag_members = list(intf["Channel_Group_Members"])
+            interface.is_lag = True
+            interface.is_virtual = False
+        elif interface.is_lag is None:
+            interface.is_lag = False
+
+        if interface.mode is None and interface.switchport_mode:
+            if intf["Encapsulation_VLAN"]:
+                interface.mode = "L3_SUB_VLAN"
+                interface.allowed_vlans = [intf["Encapsulation_VLAN"]]
+            else:
+                interface.mode = interface.switchport_mode
+
+        if interface.mode == "TRUNK":
+            interface.allowed_vlans = expand_vlans_list(intf["Allowed_VLANs"])
+            if intf["Native_VLAN"]:
+                interface.access_vlan = intf["Native_VLAN"]
+
+        elif interface.mode == "ACCESS" and intf["Access_VLAN"]:
+            interface.access_vlan = intf["Access_VLAN"]
+
+        if (
+            interface.is_lag is False
+            and interface.is_lag_member is None
+            and intf["Channel_Group"]
+        ):
+            interface.parent = intf["Channel_Group"]
+            interface.is_lag_member = True
+            interface.is_virtual = False
+
         self.add(interface)
         device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
+            self.import_batfish_ip_address(device, interface, prefix)
 
-            ip_address = self.ip_address(
-                address=prefix,
-                device_name=device.name,
-                interface_name=intf["Interface"].interface,
-            )
+    def import_batfish_ip_address(self, device, interface, address):
+        """Import IP address for a given interface from Batfish.
 
-            self.add(ip_address)
-            interface.add_child(ip_address)
+        Args:
+            device (Device): Device object
+            interface (Interface): Interface object 
+            address (str): IP address in string format
+        """
 
-            # ip = session.query(self.ip_address).filter_by(
-            #         address=prefix,
-            #         device_name=device.name,
-            #         interface_name=intf["Interface"].interface
-            #     ).first()
+        ip_address = self.ip_address(
+            address=address, device_name=device.name, interface_name=interface.name,
+        )
 
-            # if not ip:
-            #     session.add(
-            #         self.ip_address(
+        self.add(ip_address)
+        interface.add_child(ip_address)
 
-            #         )
-            #     )
-            # else:
-            #     logger.warning(f"IP {prefix} {device.name} already present")
+        self.add_prefix_from_ip(ip_address=ip_address, site_name=device.site_name)
 
-            # self.add_prefix_from_ip(ip=prefix, site=device.site, session=session)
+    def add_prefix_from_ip(self, ip_address, site_name=None):
+        """Try to extract a prefix from an IP address and save it locally.
 
-    def add_prefix_from_ip(self, ip, site, session):
+        Args:
+            ip_address (IPAddress): DSync IPAddress object
+            site_name (str, optional): Name of the site the prefix is part of. Defaults to None.
 
-        prefix = ipaddress.ip_network(ip, strict=False)
+        Returns:
+            bool: False if a prefix can't be extracted from this IP address
+        """
+
+        prefix = ipaddress.ip_network(ip_address.address, strict=False)
 
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = (
-            session.query(self.prefix).filter_by(prefix=str(prefix), site=site).first()
-        )
+        prefix_obj = self.get(self.prefix, keys=[site_name, str(prefix)])
 
         if not prefix_obj:
-            session.add(self.prefix(prefix=str(prefix), site=site))
+            prefix_obj = self.prefix(prefix=str(prefix), site_name=site_name)
+            self.add(prefix_obj)
             logger.debug(f"Added Prefix {prefix} from batfish")
 
-    def import_batfish_ip_address(self):
-        pass
+        return True
 
-    def import_batfish_cable(self, session):
+    def import_batfish_cable(self):
+        """Import cables from Batfish using layer3Edges tables."""
 
         p2p_links = self.bf.q.layer3Edges().answer()
         existing_cables = []
@@ -191,36 +257,36 @@ class NetworkImporter(DSync):
                 device_z_name=link.Remote_Interface.hostname,
                 interface_z_name=re.sub(r"\.\d+$", "", link.Remote_Interface.interface),
             )
-            uid = cable.unique_id()
+            uid = cable.get_unique_id()
 
             if uid not in existing_cables:
-                session.add(cable)
+                self.add(cable)
                 existing_cables.append(uid)
 
-        nbr_cables = session.query(self.cable).count()
+        nbr_cables = len(self.get_all(self.cable))
         logger.debug(f"Found {nbr_cables} cables in Batfish")
 
-    def import_batfish_aggregate(self, device, session):
+    # def import_batfish_aggregate(self, device, session):
 
-        aggregates = (
-            self.bf.q.routes(protocols="aggregate", nodes=device.name).answer().frame()
-        )
+    #     aggregates = (
+    #         self.bf.q.routes(protocols="aggregate", nodes=device.name).answer().frame()
+    #     )
 
-        for item in aggregates.itertuples():
+    #     for item in aggregates.itertuples():
 
-            prefix_obj = (
-                session.query(self.prefix)
-                .filter_by(prefix=str(item.Network), site=device.site)
-                .first()
-            )
+    #         prefix_obj = (
+    #             session.query(self.prefix)
+    #             .filter_by(prefix=str(item.Network), site=device.site)
+    #             .first()
+    #         )
 
-            if not prefix_obj:
-                session.add(
-                    self.prefix(
-                        prefix=str(item.Network),
-                        site=device.site,
-                        prefix_type="AGGREGATE",
-                    )
-                )
+    #         if not prefix_obj:
+    #             session.add(
+    #                 self.prefix(
+    #                     prefix=str(item.Network),
+    #                     site=device.site,
+    #                     prefix_type="AGGREGATE",
+    #                 )
+    #             )
 
-                logger.debug(f"Added Aggregate prefix {item.Network}")
+    #             logger.debug(f"Added Aggregate prefix {item.Network}")

@@ -81,7 +81,10 @@ class Interface(BaseModel, DSyncMixin):
     switchport_mode: Optional[str]
     active: Optional[bool]
     is_virtual: Optional[bool]
-    # is_lag_member = Column(Boolean, nullable=True)  #
+    is_lag: Optional[bool]
+    is_lag_member: Optional[bool]
+
+    lag_members: Optional[List[str]]
     parent: Optional[str]
 
     # access_vlan = Column(Integer, nullable=True)
@@ -104,57 +107,62 @@ class IPAddress(BaseModel, DSyncMixin):
     device_name: Optional[str]
 
 
-# class Cable(BaseModel, DSyncMixin):
-#     """ """
+class Prefix(BaseModel, DSyncMixin):
+    """
+    """
 
-#     __tablename__ = "cable"
+    __modelname__ = "prefix"
+    __identifier__ = ["site_name", "prefix"]
+    __attributes__ = ["prefix_type"]
 
-#     __modelname__ = "cable"
-#     __identifier__ = ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name" ]
-#     __attributes__ = []
-#     __children_types__ = []
+    prefix: str
+    site_name: Optional[str]
 
-#     device_a_name: str # Column(DEVICE_NAME_DEF, primary_key=True)
-#     interface_a_name: str # Column(INTF_NAME_DEF, primary_key=True)
-#     device_z_name: str # Column(DEVICE_NAME_DEF, primary_key=True)
-#     interface_z_name: str # Column(INTF_NAME_DEF, primary_key=True)
+    vlan_id: Optional[int]
+    prefix_type: Optional[str]
 
-#     # __table_args__ = (
-#     #     ForeignKeyConstraint(
-#     #         ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name"],
-#     #         [
-#     #             "interface.device_name",
-#     #             "interface.name",
-#     #             "interface.device_name",
-#     #             "interface.name",
-#     #         ],
-#     #     ),
-#     # )
+    # vlan = relationship("Vlan", back_populates="prefixes")
 
-#     def __init__(self, *args, **kwargs):
-#         """ Ensure the """
-#         new_kwargs = copy.deepcopy(kwargs)
-#         devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
-#         if sorted(devices) != devices:
-#             new_kwargs["device_a_name"] = kwargs["device_z_name"]
-#             new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
-#             new_kwargs["device_z_name"] = kwargs["device_a_name"]
-#             new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
 
-#         super().__init__(*args, **new_kwargs)
+class Cable(BaseModel, DSyncMixin):
+    """ """
 
-#     def unique_id(self):
-#         return "_".join(
-#             sorted(
-#                 [
-#                     f"{self.device_a_name}:{self.interface_a_name}",
-#                     f"{self.device_z_name}:{self.interface_z_name}",
-#                 ]
-#             )
-#         )
+    __modelname__ = "cable"
+    __identifier__ = [
+        "device_a_name",
+        "interface_a_name",
+        "device_z_name",
+        "interface_z_name",
+    ]
+    __attributes__ = []
+    __children_types__ = []
 
-#     def __repr__(self):
-#         return str(self.unique_id())
+    device_a_name: str
+    interface_a_name: str
+    device_z_name: str
+    interface_z_name: str
+
+    def __init__(self, *args, **kwargs):
+        """ Ensure the """
+        new_kwargs = copy.deepcopy(kwargs)
+        devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
+        if sorted(devices) != devices:
+            new_kwargs["device_a_name"] = kwargs["device_z_name"]
+            new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
+            new_kwargs["device_z_name"] = kwargs["device_a_name"]
+            new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
+
+        super().__init__(*args, **new_kwargs)
+
+    def get_unique_id(self):
+        return "__".join(
+            sorted(
+                [
+                    f"{self.device_a_name}:{self.interface_a_name}",
+                    f"{self.device_z_name}:{self.interface_z_name}",
+                ]
+            )
+        )
 
 
 # class Vlan(BaseModel, DSyncMixin):
@@ -178,20 +186,3 @@ class IPAddress(BaseModel, DSyncMixin):
 #     # interfaces_tagged = relationship("Interface",
 #     #                 secondary=interface_vlans_allowed,
 #     #                 back_populates="allowed_vlans")
-
-
-class Prefix(BaseModel, DSyncMixin):
-    """
-    """
-
-    __modelname__ = "prefix"
-    __identifier__ = ["site_name", "prefix"]
-    __attributes__ = ["prefix_type"]
-
-    prefix: str
-    site_name: Optional[str]
-
-    vlan_id: Optional[int]
-    prefix_type: Optional[str]
-
-    # vlan = relationship("Vlan", back_populates="prefixes")
