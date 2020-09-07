@@ -65,34 +65,34 @@ class NetBoxAPIAdapter(BaseAdapter):
                 self.add(site)
             else:
                 site = sites[host.data["site"]]
-            
+
             device = self.device(name=hostname, site_name=host.data["site"], remote_id=host.data["device_id"])
             self.add(device)
 
         # Import Prefix and Vlan per site
-        sites = self.get_all(self.site)
-        for site in sites:
+        for site in self.get_all(self.site):
             self.import_netbox_prefix(site)
             self.import_netbox_vlan(site)
 
         # Import interfaces and IP addresses for each devices
         devices = self.get_all(self.device)
         for device in devices:
+            site = sites[device.site_name]
             device_names.append(device.name)
-            self.import_netbox_device(device=device)
+            self.import_netbox_device(site=site, device=device)
 
         # Import Cabling
-        for site in sites:
-            self.import_netbox_cable(site, device_names=device_names)
+        for site in self.get_all(self.site):
+            self.import_netbox_cable(site=site, device_names=device_names)
 
-    def import_netbox_device(self, device):
+    def import_netbox_device(self, site, device):
         """Import all interfaces and IP address from Netbox for a given device.
 
         Args:
             device (DSyncModel): Device to import
         """
-        self.import_netbox_interface(device=device)
-        self.import_netbox_ip_address(device=device)
+        self.import_netbox_interface(site=site, device=device)
+        self.import_netbox_ip_address(site=site, device=device)
 
     def import_netbox_prefix(self, site):
         """Import all prefixes from NetBox for a given site.
@@ -122,13 +122,11 @@ class NetBoxAPIAdapter(BaseAdapter):
         vlans = self.nb.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
-
             vlan = self.vlan(vid=nb_vlan.vid, site_name=site.name, name=nb_vlan.name, remote_id=nb_vlan.id,)
-
             self.add(vlan)
             site.add_child(vlan)
 
-    def import_netbox_interface(self, device):
+    def import_netbox_interface(self, site, device):
         """Import all interfaces & Ips from Netbox for a given device. 
 
         Args:
@@ -195,17 +193,22 @@ class NetBoxAPIAdapter(BaseAdapter):
                 interface.speed = 100000000000
 
             if intf.tagged_vlans:
-                interface.allowed_vlans = [v.vid for v in intf.tagged_vlans]
+                for vid in [v.vid for v in intf.tagged_vlans]:
+                    vlan, new = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
+                    interface.allowed_vlans.append(vlan.get_unique_id())
 
             if intf.untagged_vlan:
-                interface.access_vlan = intf.untagged_vlan.vid
+                vlan, new = self.get_or_create_vlan(
+                    vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
+                )
+                interface.access_vlan = vlan.get_unique_id()
 
             self.add(interface)
             device.add_child(interface)
 
         logger.debug(f"{self.source} | Found {len(intfs)} interfaces for {device.name}")
 
-    def import_netbox_ip_address(self, device):
+    def import_netbox_ip_address(self, site, device):
 
         ips = self.nb.ipam.ip_addresses.filter(device=device.name)
         for ip in ips:
@@ -274,9 +277,13 @@ class NetBoxAPIAdapter(BaseAdapter):
             dict: Netbox parameters
         """
 
+        def convert_vlan_to_nid(vlan_uid):
+            vlan = self.get(self.vlan, keys=[vlan_uid])
+            return vlan.remote_id
+
         nb_params = {}
 
-        # Identify the id if the device this interface is attached to
+        # Identify the id of the device this interface is attached to
         device = self.get(self.device, keys=[keys["device_name"]])
         nb_params["device"] = device.remote_id
         nb_params["name"] = keys["name"]
@@ -302,29 +309,16 @@ class NetBoxAPIAdapter(BaseAdapter):
         # if is None:
         #     intf_properties["enabled"] = intf.active
 
-        # if config.main["import_vlans"] != "no":
-        #     if intf.local.mode in ["TRUNK", "ACCESS"] and intf.local.access_vlan:
-        #         intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
-        #             intf.local.access_vlan
-        #         )
-        #     elif (
-        #         intf.local.mode in ["TRUNK", "ACCESS"]
-        #         and not intf.local.access_vlan
-        #     ):
-        #         intf_properties["untagged_vlan"] = None
+        if config.main["import_vlans"] != "no":
+            if "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and params["access_vlan"]:
+                nb_params["untagged_vlan"] = convert_vlan_to_nid(params["access_vlan"])
+            elif "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and not params["access_vlan"]:
+                nb_params["untagged_vlan"] = None
 
-        #     if (
-        #         intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
-        #         and intf.local.allowed_vlans
-        #     ):
-        #         intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
-        #             intf.local.allowed_vlans
-        #         )
-        #     elif (
-        #         intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
-        #         and not intf.local.allowed_vlans
-        #     ):
-        #         intf_properties["tagged_vlans"] = []
+            if "mode" in params and params["mode"] in ["TRUNK", "L3_SUB_VLAN"] and params["allowed_vlans"]:
+                nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in params["allowed_vlans"]]
+            elif "mode" in params and params["mode"] in ["TRUNK", "L3_SUB_VLAN"] and not params["allowed_vlans"]:
+                nb_params["tagged_vlans"] = []
 
         if "is_lag_member" in params and params["is_lag_member"]:
             # TODO add checks to ensure the parent interface is present and has a remote id
@@ -481,6 +475,20 @@ class NetBoxAPIAdapter(BaseAdapter):
     # -----------------------------------------------------
     def create_vlan(self, keys, params):
 
-        logger.debug(f"TODO, implement create_vlan to add Vlan {keys} in NetBox")
+        site = self.get(self.site, keys=[keys["site_name"]])
+
+        if "name" in params and params["name"]:
+            vlan_name = params["name"]
+        else:
+            vlan_name = f"vlan-{keys['vid']}"
+
+        try:
+            vlan = self.nb.ipam.vlans.create(vid=keys["vid"], name=vlan_name, site=site.remote_id)
+        except pynetbox.core.query.RequestError:
+            logger.warning(f"Unable to create Vlan {keys} in {self.source}")
+            return False
+
         item = self.default_create(object_type="vlan", keys=keys, params=params)
+        item.remote_id = vlan.id
+
         return item

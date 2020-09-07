@@ -81,9 +81,6 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     filters = {}
     build_filter_params(config.main["inventory_filter"].split((",")), filters)
 
-    print(filters)
-    # filters["limit"] = 100
-
     ni = NetworkImporter()
 
     if update_configs:

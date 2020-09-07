@@ -97,198 +97,198 @@ class NetworkImporter:
 
         self.check_mode = check_mode
 
-    def get_dev(self, dev_name):
-        """
-        Return the NI object for a given device_name
+    # def get_dev(self, dev_name):
+    #     """
+    #     Return the NI object for a given device_name
 
-        Args:
-          dev_name: Name of the device
+    #     Args:
+    #       dev_name: Name of the device
 
-        Returns:
-          NetworkImporterDevice
-        """
+    #     Returns:
+    #       NetworkImporterDevice
+    #     """
 
-        if dev_name not in self.devs.inventory.hosts.keys():
-            return False
+    #     if dev_name not in self.devs.inventory.hosts.keys():
+    #         return False
 
-        return self.devs.inventory.hosts[dev_name].data["obj"]
+    #     return self.devs.inventory.hosts[dev_name].data["obj"]
 
-    @timeit
-    def build_inventory(self, limit=None):
-        """
-        Build the inventory for the Network Importer in Nornir format
-        # 1/ Devices already exist in Netbox
-        #   Case A : configuration are provided
-        #   Case B : configuration are not provided but primary IP is defined
-        #
-        # 2/ Devices are not in Netbox (Not Supported Yet)
-        #   Everything is coming from inventory file
-        #                 Mandatory: hostname, platform, username, password
+    # @timeit
+    # def build_inventory(self, limit=None):
+    #     """
+    #     Build the inventory for the Network Importer in Nornir format
+    #     # 1/ Devices already exist in Netbox
+    #     #   Case A : configuration are provided
+    #     #   Case B : configuration are not provided but primary IP is defined
+    #     #
+    #     # 2/ Devices are not in Netbox (Not Supported Yet)
+    #     #   Everything is coming from inventory file
+    #     #                 Mandatory: hostname, platform, username, password
 
-        Args:
-          limit: (Default value = None)
+    #     Args:
+    #       limit: (Default value = None)
 
-        Returns:
+    #     Returns:
 
-        """
+    #     """
 
-        params = {}
+    #     params = {}
 
-        # ------------------------------------------------------------------------
-        # Extract additional query filters if defined and convert string to dict
-        #  Filters can be defined at the configuration level or in CLI or both
-        # ------------------------------------------------------------------------
+    #     # ------------------------------------------------------------------------
+    #     # Extract additional query filters if defined and convert string to dict
+    #     #  Filters can be defined at the configuration level or in CLI or both
+    #     # ------------------------------------------------------------------------
 
-        if "inventory_filter" in config.main.keys():
-            csparams = config.main["inventory_filter"].split(",")
-            for csp in csparams:
-                if "=" not in csp:
-                    continue
+    #     if "inventory_filter" in config.main.keys():
+    #         csparams = config.main["inventory_filter"].split(",")
+    #         for csp in csparams:
+    #             if "=" not in csp:
+    #                 continue
 
-                key, value = csp.split("=", 1)
-                params[key] = value
+    #             key, value = csp.split("=", 1)
+    #             params[key] = value
 
-        if limit:
-            if "=" not in limit:
-                params["name"] = limit
+    #     if limit:
+    #         if "=" not in limit:
+    #             params["name"] = limit
 
-            else:
-                csparams = limit.split(",")
-                for csp in csparams:
-                    if "=" not in csp:
-                        continue
-                    key, value = csp.split("=", 1)
-                    params[key] = value
+    #         else:
+    #             csparams = limit.split(",")
+    #             for csp in csparams:
+    #                 if "=" not in csp:
+    #                     continue
+    #                 key, value = csp.split("=", 1)
+    #                 params[key] = value
 
-        if config.main["inventory_source"] == "netbox":
-            self.devs = InitNornir(
-                core={"num_workers": config.main["nbr_workers"]},
-                logging={"enabled": False},
-                inventory={
-                    "plugin": "network_importer.inventory.NBInventory",
-                    "options": {
-                        "nb_url": config.netbox["address"],
-                        "nb_token": config.netbox["token"],
-                        "filter_parameters": params,
-                        "ssl_verify": config.netbox["request_ssl_verify"],
-                        "username": config.network["login"],
-                        "password": config.network["password"],
-                        "enable": config.network["enable"],
-                        "supported_platforms": config.netbox["supported_platforms"],
-                    },
-                },
-            )
+    #     if config.main["inventory_source"] == "netbox":
+    #         self.devs = InitNornir(
+    #             core={"num_workers": config.main["nbr_workers"]},
+    #             logging={"enabled": False},
+    #             inventory={
+    #                 "plugin": "network_importer.inventory.NBInventory",
+    #                 "options": {
+    #                     "nb_url": config.netbox["address"],
+    #                     "nb_token": config.netbox["token"],
+    #                     "filter_parameters": params,
+    #                     "ssl_verify": config.netbox["request_ssl_verify"],
+    #                     "username": config.network["login"],
+    #                     "password": config.network["password"],
+    #                     "enable": config.network["enable"],
+    #                     "supported_platforms": config.netbox["supported_platforms"],
+    #                 },
+    #             },
+    #         )
 
-        ## Second option in there but not really supported right now
-        elif config.main["inventory_source"] == "configs" and "configs_directory" in config.main.keys():
+    #     ## Second option in there but not really supported right now
+    #     elif config.main["inventory_source"] == "configs" and "configs_directory" in config.main.keys():
 
-            ## TODO check if bf session has already been created, otherwise need to create it
+    #         ## TODO check if bf session has already been created, otherwise need to create it
 
-            self.devs = InitNornir(
-                core={"num_workers": config.main["nbr_workers"]},
-                logging={"enabled": False},
-                inventory={
-                    "plugin": "network_importer.inventory.NornirInventoryFromBatfish",
-                    "options": {"devices": self.bf.q.nodeProperties().answer().frame()},
-                },
-            )
+    #         self.devs = InitNornir(
+    #             core={"num_workers": config.main["nbr_workers"]},
+    #             logging={"enabled": False},
+    #             inventory={
+    #                 "plugin": "network_importer.inventory.NornirInventoryFromBatfish",
+    #                 "options": {"devices": self.bf.q.nodeProperties().answer().frame()},
+    #             },
+    #         )
 
-        else:
-            logger.critical(f"Unable to find an inventory please check the config file and the documentation")
-            sys.exit(1)
+    #     else:
+    #         logger.critical(f"Unable to find an inventory please check the config file and the documentation")
+    #         sys.exit(1)
 
-        return True
+    #     return True
 
-    @timeit
-    def init(self, limit=None):
-        """
-        Initilize NetworkImporter Object
-            Check if NB is reachable
-            Create inventory
-            Create all NetworkImporterDevice object
-            Create all sites
+    # @timeit
+    # def init(self, limit=None):
+    #     """
+    #     Initilize NetworkImporter Object
+    #         Check if NB is reachable
+    #         Create inventory
+    #         Create all NetworkImporterDevice object
+    #         Create all sites
 
-        inputs:
-            limit: filter the inventory to limit the execution to a subset of devices
+    #     inputs:
+    #         limit: filter the inventory to limit the execution to a subset of devices
 
-        Args:
-          limit: (Default value = None)
+    #     Args:
+    #       limit: (Default value = None)
 
-        Returns:
+    #     Returns:
 
-        """
+    #     """
 
-        patch_http_connection_pool(maxsize=100)
+    #     patch_http_connection_pool(maxsize=100)
 
-        self.check_nb_params()
-        self.init_bf_session()
+    #     self.check_nb_params()
+    #     self.init_bf_session()
 
-        if not self.devs:
-            self.build_inventory(limit=limit)
+    #     if not self.devs:
+    #         self.build_inventory(limit=limit)
 
-        # --------------------------------------------------------
-        # Creating required directories on local filesystem
-        # --------------------------------------------------------
-        if (
-            not self.check_mode
-            and not os.path.exists(config.main["hostvars_directory"])
-            and config.main["generate_hostvars"]
-        ):
-            os.makedirs(config.main["hostvars_directory"])
-            logger.debug(f"Directory {config.main['hostvars_directory']} was missing, created it")
+    #     # --------------------------------------------------------
+    #     # Creating required directories on local filesystem
+    #     # --------------------------------------------------------
+    #     if (
+    #         not self.check_mode
+    #         and not os.path.exists(config.main["hostvars_directory"])
+    #         and config.main["generate_hostvars"]
+    #     ):
+    #         os.makedirs(config.main["hostvars_directory"])
+    #         logger.debug(f"Directory {config.main['hostvars_directory']} was missing, created it")
 
-        if not os.path.isdir(config.main["data_directory"]):
-            os.mkdir(config.main["data_directory"])
+    #     if not os.path.isdir(config.main["data_directory"]):
+    #         os.mkdir(config.main["data_directory"])
 
-        # --------------------------------------------------------
-        # Initialize Devices
-        #  - Create NID object
-        #  - Pull cache information from Netbox
-        # --------------------------------------------------------
-        results = self.devs.run(task=initialize_devices, bfs=self.bf)
+    #     # --------------------------------------------------------
+    #     # Initialize Devices
+    #     #  - Create NID object
+    #     #  - Pull cache information from Netbox
+    #     # --------------------------------------------------------
+    #     results = self.devs.run(task=initialize_devices, bfs=self.bf)
 
-        for dev_name, items in results.items():
-            if items[0].failed:
-                logger.warning(f"{dev_name} | Something went wrong while trying to initialize the device .. ")
-                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
-                continue
+    #     for dev_name, items in results.items():
+    #         if items[0].failed:
+    #             logger.warning(f"{dev_name} | Something went wrong while trying to initialize the device .. ")
+    #             self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+    #             continue
 
-        # --------------------------------------------------------
-        # Initialize sites information
-        #   Site information are pulled with devices
-        #   TODO consider refactoring sites into a Nornir Inventory
-        # Get all cables based on remote information
-        # --------------------------------------------------------
-        for dev in self.devs.inventory.hosts.values():
+    #     # --------------------------------------------------------
+    #     # Initialize sites information
+    #     #   Site information are pulled with devices
+    #     #   TODO consider refactoring sites into a Nornir Inventory
+    #     # Get all cables based on remote information
+    #     # --------------------------------------------------------
+    #     for dev in self.devs.inventory.hosts.values():
 
-            if not dev.data["obj"].exist_remote:
-                continue
+    #         if not dev.data["obj"].exist_remote:
+    #             continue
 
-            site_slug = dev.data["obj"].remote.site.slug
+    #         site_slug = dev.data["obj"].remote.site.slug
 
-            ## Check if site and vlans information are already in cache
-            if site_slug not in self.sites.keys():
-                site = NetworkImporterSite(name=site_slug, nb=self.nb)
-                self.sites[site.name] = site
-                dev.data["obj"].site = site
-                logger.debug(f"Created site {site.name}")
+    #         ## Check if site and vlans information are already in cache
+    #         if site_slug not in self.sites.keys():
+    #             site = NetworkImporterSite(name=site_slug, nb=self.nb)
+    #             self.sites[site.name] = site
+    #             dev.data["obj"].site = site
+    #             logger.debug(f"Created site {site.name}")
 
-            else:
-                dev.data["obj"].site = self.sites[site_slug]
+    #         else:
+    #             dev.data["obj"].site = self.sites[site_slug]
 
-            ## Get all remote cables and update cables inventory
-            if config.main["import_cabling"]:
-                remote_cables = dev.data["obj"].get_remote_cables()
+    #         ## Get all remote cables and update cables inventory
+    #         if config.main["import_cabling"]:
+    #             remote_cables = dev.data["obj"].get_remote_cables()
 
-                for cable_id, cable in remote_cables.items():
-                    if cable_id not in self.cables:
-                        self.cables[cable_id] = NetworkImporterCable(id=cable_id)
-                        self.cables[cable_id].remote = cable
+    #             for cable_id, cable in remote_cables.items():
+    #                 if cable_id not in self.cables:
+    #                     self.cables[cable_id] = NetworkImporterCable(id=cable_id)
+    #                     self.cables[cable_id].remote = cable
 
-                    elif cable_id in self.cables and not self.cables[cable_id].remote:
-                        self.cables[cable_id].remote = cable
+    #                 elif cable_id in self.cables and not self.cables[cable_id].remote:
+    #                     self.cables[cable_id].remote = cable
 
-        return True
+    #     return True
 
     @timeit
     def import_devices_from_configs(self):
@@ -503,32 +503,32 @@ class NetworkImporter:
             reason = self.devs.inventory.hosts[host].data.get("not_reachable_reason", "reason not defined")
             logger.warning(f"{host} device is not reachable, {reason}")
 
-    @timeit
-    def init_bf_session(self):
-        """
-        Initialize Batfish
-        """
+    # @timeit
+    # def init_bf_session(self):
+    #     """
+    #     Initialize Batfish
+    #     """
 
-        CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
-        NETWORK_NAME = config.batfish["network_name"]
-        SNAPSHOT_NAME = config.batfish["snapshot_name"]
-        SNAPSHOT_PATH = config.main["configs_directory"]
+    #     CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
+    #     NETWORK_NAME = config.batfish["network_name"]
+    #     SNAPSHOT_NAME = config.batfish["snapshot_name"]
+    #     SNAPSHOT_PATH = config.main["configs_directory"]
 
-        bf_params = dict(
-            host=config.batfish["address"],
-            port_v1=config.batfish["port_v1"],
-            port_v2=config.batfish["port_v2"],
-            ssl=config.batfish["use_ssl"],
-        )
-        if config.batfish["api_key"]:
-            bf_params["api_key"] = config.batfish["api_key"]
+    #     bf_params = dict(
+    #         host=config.batfish["address"],
+    #         port_v1=config.batfish["port_v1"],
+    #         port_v2=config.batfish["port_v2"],
+    #         ssl=config.batfish["use_ssl"],
+    #     )
+    #     if config.batfish["api_key"]:
+    #         bf_params["api_key"] = config.batfish["api_key"]
 
-        self.bf = Session.get("bf", **bf_params)
-        self.bf.verify = False
-        self.bf.set_network(NETWORK_NAME)
-        self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
+    #     self.bf = Session.get("bf", **bf_params)
+    #     self.bf.verify = False
+    #     self.bf.set_network(NETWORK_NAME)
+    #     self.bf.init_snapshot(SNAPSHOT_PATH, name=SNAPSHOT_NAME, overwrite=True)
 
-        return True
+    #     return True
 
     # def diff_local_remote(self):
     #     """

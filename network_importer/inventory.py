@@ -36,6 +36,7 @@ import network_importer.config as config
 
 BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False}
 
+
 class NetboxInventory(Inventory):
     """
     Netbox Inventory Class
@@ -171,7 +172,6 @@ class NetboxInventory(Inventory):
 
         # Pass the data back to the parent class
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
-
 
 
 ### -----------------------------------------------------------------

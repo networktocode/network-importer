@@ -41,7 +41,7 @@ from network_importer.tasks import (
     # collect_vlans_info,
     # collect_lldp_neighbors,
     # device_update_remote,
-    # check_if_reachable,
+    check_if_reachable,
     # update_device_status,
 )
 
@@ -61,9 +61,9 @@ __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 logger = logging.getLogger("network-importer")
 
-class NetworkImporter:
 
-    def __init__(self, check_mode=False, nornir=None): 
+class NetworkImporter:
+    def __init__(self, check_mode=False, nornir=None):
 
         self.nornir = nornir
         self.check_mode = check_mode
@@ -179,10 +179,61 @@ class NetworkImporter:
         return True
 
     def sync(self):
-
         self.sot.sync(self.network)
-        diff = nb.diff(ni)
-        diff.print_detailed()
 
     def diff(self):
         return self.sot.diff(self.network)
+
+    @timeit
+    def update_configurations(self):
+        """
+        Pull the latest configurations from all devices that are reachable
+        Automatically cleanup the directory after to remove all configurations that have not been updated
+        """
+
+        logger.info("Updating configuration from devices .. ")
+
+        if not os.path.isdir(config.main["configs_directory"]):
+            os.mkdir(config.main["configs_directory"])
+            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
+
+        configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
+
+        if not os.path.isdir(configs_dir_lvl2):
+            os.mkdir(configs_dir_lvl2)
+            logger.debug(f"Configs directory created at {configs_dir_lvl2}")
+
+        # Save the hostnames associated with all existing configurations before we start the update process
+        hostname_existing_configs = [f.split(".txt")[0] for f in os.listdir(configs_dir_lvl2) if f.endswith(".txt")]
+
+        # ----------------------------------------------------
+        # Do a pre-check to ensure that all devices are reachable
+        # ----------------------------------------------------
+        self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
+        self.warning_devices_not_reachable()
+
+        results = self.devs.filter(filter_func=reachable_devs).run(
+            task=update_configuration, configs_directory=configs_dir_lvl2, on_failed=True,
+        )
+
+        # ----------------------------------------------------
+        # Process the results and identify which configs has not been updated
+        # based on the list we captured previously
+        # ----------------------------------------------------
+        for dev_name, item in results.items():
+
+            if not item[0].failed and dev_name in hostname_existing_configs:
+                hostname_existing_configs.remove(dev_name)
+
+            elif item[0].failed:
+                logger.warning(f"{dev_name} | Something went wrong while trying to update the configuration ")
+                self.nornir.inventory.hosts[dev_name].data["status"] = "fail-other"
+                continue
+
+        if len(hostname_existing_configs) > 0:
+            logger.info(f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated")
+
+            for f in hostname_existing_configs:
+                os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
+
+        return True

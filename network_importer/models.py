@@ -26,14 +26,15 @@ class Site(DSyncModel):
     __identifier__ = ["name"]
     __shortname__ = []
     __attributes__ = []
-    __children__ = {"device": "devices", "prefix": "prefixes"}
+    __children__ = {"vlan": "vlans", "prefix": "prefixes"}
 
     name: str
-    devices: List = list()
-    prefixes: List = list()
 
-    def __repr__(self):
-        return str(self.name)
+    prefixes: List = list()
+    vlans: List[str] = list()
+
+    # def __repr__(self):
+    #     return str(self.name)
 
 
 class Device(DSyncModel):
@@ -69,9 +70,12 @@ class Interface(DSyncModel):
         "is_lag",
         "is_lag_member",
         "parent",
+        "mode",
         "switchport_mode",
+        "allowed_vlans",
+        "access_vlan",
     ]
-    __children__ = {"ip_address": "ips", "vlan": "allowed_vlans"}
+    __children__ = {"ip_address": "ips"}
 
     name: str
     device_name: str
@@ -91,7 +95,7 @@ class Interface(DSyncModel):
     allowed_vlans: List[str] = list()
     access_vlan: Optional[str]
 
-    ips: List = list()
+    ips: List[str] = list()
 
 
 class IPAddress(DSyncModel):
@@ -118,7 +122,7 @@ class Prefix(DSyncModel):
     prefix: str
     site_name: Optional[str]
 
-    vlan_id: Optional[int]
+    vlan: Optional[str]
     prefix_type: Optional[str]
 
     # vlan = relationship("Vlan", back_populates="prefixes")
@@ -163,12 +167,14 @@ class Vlan(DSyncModel):
     """ """
 
     __modelname__ = "vlan"
-    __identifier__ = ["site", "vid"]
-    __attributes__ = ["name"]
+    __identifier__ = ["site_name", "vid"]
+    __attributes__ = ["name", "associated_devices"]
 
     vid: int
-    name: Optional[str]
     site_name: str
+    name: Optional[str]
+
+    associated_devices: List[str] = list()
 
 
 # class Optic(BaseModel):
