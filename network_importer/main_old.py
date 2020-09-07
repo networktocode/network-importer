@@ -530,39 +530,39 @@ class NetworkImporter:
 
         return True
 
-    def diff_local_remote(self):
-        """
-        Check if a device is in sync between the local and the remote system and print the status
-        """
+    # def diff_local_remote(self):
+    #     """
+    #     Check if a device is in sync between the local and the remote system and print the status
+    #     """
 
-        for dev_name in self.devs.inventory.hosts.keys():
-            self.get_dev(dev_name).print_sync_status()
+    #     for dev_name in self.devs.inventory.hosts.keys():
+    #         self.get_dev(dev_name).print_sync_status()
 
-    def print_diffs(self):
-        """ """
+    # def print_diffs(self):
+    #     """ """
 
-        for site in self.sites.values():
-            diff = site.diff()
-            if diff.has_diffs():
-                diff.print_detailed()
+    #     for site in self.sites.values():
+    #         diff = site.diff()
+    #         if diff.has_diffs():
+    #             diff.print_detailed()
 
-        for host in self.devs.inventory.hosts.keys():
-            dev = self.get_dev(host)
+    #     for host in self.devs.inventory.hosts.keys():
+    #         dev = self.get_dev(host)
 
-            if not self.devs.inventory.hosts[host].data["has_config"]:
-                continue
+    #         if not self.devs.inventory.hosts[host].data["has_config"]:
+    #             continue
 
-            diff = dev.diff()
-            if diff.has_diffs():
-                diff.print_detailed()
+    #         diff = dev.diff()
+    #         if diff.has_diffs():
+    #             diff.print_detailed()
 
-        for cable in self.cables.values():
-            if not cable.is_valid:
-                continue
+    #     for cable in self.cables.values():
+    #         if not cable.is_valid:
+    #             continue
 
-            diff = cable.diff()
-            if diff.has_diffs():
-                diff.print_detailed()
+    #         diff = cable.diff()
+    #         if diff.has_diffs():
+    #             diff.print_detailed()
 
     # @timeit
     # def update_remote(self):

@@ -24,7 +24,6 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
-from network_importer.adapters.netbox_api import NetBoxAPIAdapter
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -72,49 +71,38 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    # if config.logs["level"] == "debug":
-    #     logger.setLevel(logging.DEBUG)
-    # elif config.logs["level"] == "warning":
-    #     logger.setLevel(logging.WARNING)
-    # else:
-    #     logger.setLevel(logging.INFO)
-
-    logger.setLevel(logging.DEBUG)
+    if config.logs["level"] == "debug":
+        logger.setLevel(logging.DEBUG)
+    elif config.logs["level"] == "warning":
+        logger.setLevel(logging.WARNING)
+    else:
+        logger.setLevel(logging.INFO)
 
     filters = {}
     build_filter_params(config.main["inventory_filter"].split((",")), filters)
 
-    # print(filters)
+    print(filters)
     # filters["limit"] = 100
 
-    logger.info(f"Import NetBox Model")
-    nb = NetBoxAPIAdapter()
-    nb.init(url=config.netbox["address"], token=config.netbox["token"], filters=filters)
-
-    logger.info(f"Import NI Model")
     ni = NetworkImporter()
-    ni.init(url=config.netbox["address"], token=config.netbox["token"], filters=filters)
 
-    # TODO add code to set config.main["hostvars_directory"] based on options.output
-    # TODO add code to set config.main["configs_directory"] based on options.configs
+    if update_configs:
+        ni.build_inventory(limit=limit)
+        ni.update_configurations()
+        if not check and not apply:
+            sys.exit(0)
 
-    # if update_configs:
-    #     ni.build_inventory(limit=limit)
-    #     ni.update_configurations()
-    #     if not check and not apply:
-    #         sys.exit(0)
-
-    # ni.init(limit=limit)
+    ni.init(limit=limit)
 
     # # ------------------------------------------------------------------------------------
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
     if apply:
         # pdb.set_trace()
-        nb.sync(ni)
+        ni.sync()
 
     elif check:
-        diff = nb.diff(ni)
+        diff = ni.diff()
         diff.print_detailed()
         pdb.set_trace()
 

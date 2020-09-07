@@ -1,5 +1,5 @@
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,8 +20,6 @@ import pynetbox
 
 from nornir.core.deserializer.inventory import Inventory, HostsDict
 import network_importer.config as config
-from network_importer.model import NetworkImporterDevice
-
 
 ### ------------------------------------------------------------
 ### Network Importer Base Dict for device data
@@ -36,40 +34,9 @@ from network_importer.model import NetworkImporterDevice
 ###   has_config: Indicate if the configuration is present and has been properly imported in Batfish
 ### ------------------------------------------------------------
 
-BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False, "obj": None}
+BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False}
 
-### ------------------------------------------------------------
-### Inventory Classes
-### ------------------------------------------------------------
-class NornirInventoryFromBatfish(Inventory):
-    """Construct a inventory object for Nornir based on the a list NodesProperties from Batfish"""
-
-    def __init__(self, devices, **kwargs: Any) -> None:
-        """
-
-
-        Args:
-          devices:
-          **kwargs: Any:
-
-        Returns:
-
-        """
-
-        hosts = {}
-        for dev in devices.itertuples():
-
-            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
-            host["hostname"] = dev.Hostname
-            # host["data"]["vendor"] = str(dev.Vendor_Family).lower()
-            host["data"]["type"] = str(dev.Device_Type).lower()
-
-            hosts[dev.Hostname] = host
-
-        super().__init__(hosts=hosts, groups={}, defaults={}, **kwargs)
-
-
-class NBInventory(Inventory):
+class NetboxInventory(Inventory):
     """
     Netbox Inventory Class
     """
@@ -172,6 +139,8 @@ class NBInventory(Inventory):
             host["data"]["asset_tag"] = dev.asset_tag
             host["data"]["custom_fields"] = dev.custom_fields
             host["data"]["site"] = dev.site.slug
+            host["data"]["site_id"] = dev.site.id
+            host["data"]["device_id"] = dev.id
             host["data"]["role"] = dev.device_role.slug
             host["data"]["model"] = dev.device_type.slug
 
@@ -192,10 +161,6 @@ class NBInventory(Inventory):
             if dev.device_role.slug not in groups.keys():
                 groups[dev.device_role.slug] = {}
 
-            host["data"]["obj"] = NetworkImporterDevice(
-                dev.name, platform=host["platform"], role=host["data"]["role"], vendor=host["data"]["vendor"],
-            )
-
             if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
                 host["data"]["is_reachable"] = True
 
@@ -208,65 +173,19 @@ class NBInventory(Inventory):
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
 
 
-class StaticInventory(Inventory):
-    """
-    Static Inventory Class
-    """
-
-    def __init__(self, hosts: List[Dict], **kwargs: Any,) -> None:
-        """
-        Static Inventory for NetworkImporter
-        Takes a list of hosts as input and return a NetworkImporter Inventory
-
-        hosts = [
-            {
-                "name": "device1",
-                "platform": "eos",
-                "ip_address": "10.10.10.1"
-            }
-        ]
-
-        """
-
-        hosts = {}
-        groups = {"global": {}}
-
-        for host_ in hosts:
-
-            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
-            host["data"]["is_reachable"] = True
-
-            host["hostname"] = host_["ip_address"]
-            host["platform"] = host_["platform"]
-            host["groups"] = ["global"]
-
-            host["data"]["obj"] = NetworkImporterDevice(host_["name"], platform=host["platform"],)
-
-            hosts[host_["name"]] = host
-
-        # Pull the login and password from the NI config object if available
-        if "login" in config.network and config.network["login"]:
-            groups["global"]["username"] = config.network["login"]
-
-        if "password" in config.network and config.network["password"]:
-            groups["global"]["password"] = config.network["password"]
-
-        # Pass the data back to the parent class
-        super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
-
 
 ### -----------------------------------------------------------------
 ### Inventory Filter functions
 ### -----------------------------------------------------------------
 def valid_devs(host):
     """
-
+    Inventory Filter for Nornir, return True or False if a device is valid
 
     Args:
-      host:
+      host(Host): Nornir Host
 
     Returns:
-
+        bool: True if the device has a config, False otherwise.
     """
     if host.data["has_config"]:
         return True
@@ -276,13 +195,13 @@ def valid_devs(host):
 
 def non_valid_devs(host):
     """
-
+    Inventory Filter for Nornir, return True or False if a device is not valid
 
     Args:
-      host:
+      host(Host): Nornir Host
 
     Returns:
-
+        bool: True if the device do not have a config, False otherwise.
     """
     if host.data["has_config"]:
         return False
@@ -292,13 +211,13 @@ def non_valid_devs(host):
 
 def reachable_devs(host):
     """
-
+    Inventory Filter for Nornir, return True if the device is reachable 
 
     Args:
-      host:
+      host(Host): Nornir Host
 
     Returns:
-
+        bool: True if the device is reachable, False otherwise.
     """
     if host.data["is_reachable"]:
         return True
@@ -308,13 +227,13 @@ def reachable_devs(host):
 
 def non_reachable_devs(host):
     """
-
+    Inventory Filter for Nornir, return True if the device is not reachable.
 
     Args:
-      host:
+      host(Host): Nornir Host
 
     Returns:
-
+        bool: True if the device is not reachable, False otherwise.
     """
     if host.data["is_reachable"]:
         return False
@@ -324,13 +243,13 @@ def non_reachable_devs(host):
 
 def valid_and_reachable_devs(host):
     """
-
+    Inventory Filter for Nornir, return True if the device is reachable and has a config.
 
     Args:
-      host:
+      host(Host): Nornir Host
 
     Returns:
-
+        bool: True if the device is reachable and has a config, False otherwise.
     """
     if host.data["is_reachable"] and host.data["has_config"]:
         return True

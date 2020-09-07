@@ -14,9 +14,9 @@ limitations under the License.
 import logging
 import pynetbox
 from itertools import count
-from dsync import DSync
+from network_importer.adapters.base import BaseAdapter
 from dsync.exceptions import ObjectAlreadyExist
-from .models import (
+from network_importer.adapters.netbox_api.models import (
     NetboxSite,
     NetboxDevice,
     NetboxInterface,
@@ -33,7 +33,7 @@ logger = logging.getLogger("network-importer")
 source = "NetBox"
 
 
-class NetBoxAPIAdapter(DSync):
+class NetBoxAPIAdapter(BaseAdapter):
 
     site = NetboxSite
     device = NetboxDevice
@@ -46,72 +46,60 @@ class NetBoxAPIAdapter(DSync):
     top_level = ["site", "device", "cable"]
 
     nb = None
-
     source = "NetBox"
 
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.nb = None
+    def init(self):
 
-    def init(self, url, token, filters=None):
+        self.nb = pynetbox.api(
+            url=config.netbox["address"], token=config.netbox["token"], ssl_verify=config.netbox["request_ssl_verify"],
+        )
 
-        self.nb = pynetbox.api(url=url, token=token, ssl_verify=False,)
+        sites = {}
+        device_names = []
 
-        devices_list = self.import_netbox_device(filters)
+        # Create all devices and site object from Nornir Inventory
+        for hostname, host in self.nornir.inventory.hosts.items():
+            if host.data["site"] not in sites.keys():
+                site = self.site(name=host.data["site"], remote_id=host.data["site_id"])
+                sites[host.data["site"]] = site
+                self.add(site)
+            else:
+                site = sites[host.data["site"]]
+            
+            device = self.device(name=hostname, site_name=host.data["site"], remote_id=host.data["device_id"])
+            self.add(device)
 
         # Import Prefix and Vlan per site
         sites = self.get_all(self.site)
         for site in sites:
             self.import_netbox_prefix(site)
             self.import_netbox_vlan(site)
-            self.import_netbox_cable(site, device_names=devices_list)
 
-    def import_netbox_device(self, filters):
-        """Import all devices from Netbox for a given filters. 
+        # Import interfaces and IP addresses for each devices
+        devices = self.get_all(self.device)
+        for device in devices:
+            device_names.append(device.name)
+            self.import_netbox_device(device=device)
+
+        # Import Cabling
+        for site in sites:
+            self.import_netbox_cable(site, device_names=device_names)
+
+    def import_netbox_device(self, device):
+        """Import all interfaces and IP address from Netbox for a given device.
 
         Args:
-            filters (dict): Pynetbox filter to apply when querying the list of devices to Netbox
-        
-        Returns:
-            list: List of device names
+            device (DSyncModel): Device to import
         """
-        nb_devs = self.nb.dcim.devices.filter(**filters)
-        logger.debug(f"{source} | Found {len(nb_devs)} devices in netbox")
-        device_names = []
-
-        # -------------------------------------------------------------
-        # Import Devices
-        # -------------------------------------------------------------
-        for device in nb_devs:
-
-            if device.name in device_names:
-                continue
-
-            site = self.get("site", [device.site.slug])
-
-            if not site:
-                site = self.site(name=device.site.slug, remote_id=device.site.id)
-                self.add(site)
-
-            device = self.device(name=device.name, site_name=site.name, remote_id=device.id)
-            self.add(device)
-
-            # Store all devices name in a list to speed up later verification
-            device_names.append(device.name)
-
-        # -------------------------------------------------------------
-        # Import Interface & IPs
-        # -------------------------------------------------------------
-        devices = self.get_all(self.device)
-        logger.debug(f"{source} | Found {len(devices)} devices in memory")
-
-        for dev in devices:
-            self.import_netbox_interface(device=dev)
-            self.import_netbox_ip_address(device=dev)
-
-        return device_names
+        self.import_netbox_interface(device=device)
+        self.import_netbox_ip_address(device=device)
 
     def import_netbox_prefix(self, site):
+        """Import all prefixes from NetBox for a given site.
+
+        Args:
+            site (NetboxSite): Site to import prefix for
+        """
 
         prefixes = self.nb.ipam.prefixes.filter(site=site.name, status="active")
 
@@ -126,7 +114,11 @@ class NetBoxAPIAdapter(DSync):
             site.add_child(prefix)
 
     def import_netbox_vlan(self, site):
+        """Import all vlans from NetBox for a given site
 
+        Args:
+            site (NetboxSite): Site to import vlan for
+        """
         vlans = self.nb.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
