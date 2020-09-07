@@ -33,9 +33,7 @@ def test_nb_inventory_all(requests_mock):
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
-    requests_mock.get(
-        "http://mock/api/dcim/devices/?exclude=config_context", json=data1
-    )
+    requests_mock.get("http://mock/api/dcim/devices/?exclude=config_context", json=data1)
 
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
@@ -65,9 +63,7 @@ def test_nb_inventory_filtered(requests_mock):
 
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
-    requests_mock.get(
-        "http://mock/api/dcim/devices/?name=el-paso&exclude=config_context", json=data1
-    )
+    requests_mock.get("http://mock/api/dcim/devices/?name=el-paso&exclude=config_context", json=data1)
 
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
@@ -163,9 +159,7 @@ def test_nb_inventory_supported_platforms(requests_mock):
     assert "dallas" in inv.hosts.keys()
 
     inv = NBInventory(  # nosec
-        nb_url="http://mock",  # nosec
-        nb_token="12349askdnfanasdf",  # nosec
-        supported_platforms=["ios"],  # nosec
+        nb_url="http://mock", nb_token="12349askdnfanasdf", supported_platforms=["ios"],  # nosec  # nosec  # nosec
     )  # nosec
 
     assert len(inv.hosts.keys()) == 1

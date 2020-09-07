@@ -127,9 +127,7 @@ def initialize_devices(task: Task, bfs=None) -> Result:
     """
 
     pynb = pynetbox.api(
-        config.netbox["address"],
-        token=config.netbox["token"],
-        ssl_verify=config.netbox["request_ssl_verify"],
+        config.netbox["address"], token=config.netbox["token"], ssl_verify=config.netbox["request_ssl_verify"],
     )
 
     # TODO add check to ensure device is present
@@ -147,15 +145,11 @@ def initialize_devices(task: Task, bfs=None) -> Result:
 
     if bfs:
         try:
-            task.host.data["obj"].bf = (
-                bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
-            )
+            task.host.data["obj"].bf = bfs.q.nodeProperties(nodes=task.host.name).answer().frame().loc[0, :]
             task.host.data["has_config"] = True
 
         except:
-            logger.warning(
-                f"{task.host.name} | Unable to find Batfish data  ... SKIPPING"
-            )
+            logger.warning(f"{task.host.name} | Unable to find Batfish data  ... SKIPPING")
 
     return Result(host=task.host, result=True)
 
@@ -197,17 +191,10 @@ def device_save_hostvars(task: Task) -> Result:
     # Save device hostvars in file
     if not os.path.exists(f"{config.main['hostvars_directory']}/{task.host.name}"):
         os.makedirs(f"{config.main['hostvars_directory']}/{task.host.name}")
-        logger.debug(
-            f"Directory {config.main['hostvars_directory']}/{task.host.name} was missing, created it"
-        )
+        logger.debug(f"Directory {config.main['hostvars_directory']}/{task.host.name} was missing, created it")
 
-    with open(
-        f"{config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml",
-        "w",
-    ) as out_file:
-        out_file.write(
-            yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False)
-        )
+    with open(f"{config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml", "w",) as out_file:
+        out_file.write(yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False))
         logger.debug(
             f"{task.host.name} - Host variables saved in {config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml"
         )
@@ -268,13 +255,10 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
 
     if task.host.platform in ["cisco_ios", "cisco_nxos"]:
         try:
-            results = task.run(
-                task=netmiko_send_command, command_string="show vlan", use_genie=True
-            )
+            results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
         except:
             logger.debug(
-                "An exception occured while pulling the vlans information",
-                exc_info=True,
+                "An exception occured while pulling the vlans information", exc_info=True,
             )
             return Result(host=task.host, failed=True)
 
@@ -314,9 +298,7 @@ def collect_vlans_info(task: Task, update_cache=True, use_cache=False) -> Result
     return Result(host=task.host, result=vlans)
 
 
-def update_configuration(  # pylint: disable=C0330
-    task: Task, configs_directory, config_extension="txt"
-) -> Result:
+def update_configuration(task: Task, configs_directory, config_extension="txt") -> Result:  # pylint: disable=C0330
     """
     Collect running configurations on all devices
 
@@ -345,9 +327,7 @@ def update_configuration(  # pylint: disable=C0330
     try:
         results = task.run(task=napalm_get, getters=["config"], retrieve="running")
     except:
-        logger.debug(
-            "An exception occured while pulling the configuration", exc_info=True
-        )
+        logger.debug("An exception occured while pulling the configuration", exc_info=True)
         return Result(host=task.host, failed=True)
 
     if results.failed:
@@ -395,9 +375,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
     neighbors = {}
 
     if task.host.platform in config.main["excluded_platforms_cabling"]:
-        logger.debug(
-            f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling"
-        )
+        logger.debug(f"{task.host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
         return Result(host=task.host, result={})
 
     if config.main["import_cabling"] == "lldp":
@@ -410,11 +388,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
 
     elif config.main["import_cabling"] == "cdp":
         try:
-            results = task.run(
-                task=netmiko_send_command,
-                command_string="show cdp neighbors detail",
-                use_textfsm=True,
-            )
+            results = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_textfsm=True,)
 
             neighbors = {"lldp_neighbors": defaultdict(list)}
 
@@ -427,9 +401,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
             logger.warning(f"{task.host.name} | No CDP information returned")
         else:
             for neighbor in results[0].result:
-                neighbor_hostname = neighbor.get("destination_host") or neighbor.get(
-                    "dest_host"
-                )
+                neighbor_hostname = neighbor.get("destination_host") or neighbor.get("dest_host")
                 neighbor_port = neighbor["remote_port"]
 
                 neighbors["lldp_neighbors"][neighbor["local_port"]].append(
@@ -442,9 +414,7 @@ def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Re
     return Result(host=task.host, result=neighbors)
 
 
-def collect_transceivers_info(  # pylint: disable=R0911
-    task: Task, update_cache=True, use_cache=False
-) -> Result:
+def collect_transceivers_info(task: Task, update_cache=True, use_cache=False) -> Result:  # pylint: disable=R0911
     """
     Collect transceiver informaton on all devices
 
@@ -481,28 +451,18 @@ def collect_transceivers_info(  # pylint: disable=R0911
     if task.host.platform == "ios":
 
         try:
-            results = task.run(
-                task=netmiko_send_command,
-                command_string="show inventory",
-                use_textfsm=True,
-            )
+            results = task.run(task=netmiko_send_command, command_string="show inventory", use_textfsm=True,)
         except:
-            logger.debug(
-                "An exception occured while pulling the inventory", exc_info=True
-            )
+            logger.debug("An exception occured while pulling the inventory", exc_info=True)
             return Result(host=task.host, failed=True)
 
         inventory = results[0].result
 
         cmd = "show interface transceiver"
         try:
-            results = task.run(
-                task=netmiko_send_command, command_string=cmd, use_textfsm=True,
-            )
+            results = task.run(task=netmiko_send_command, command_string=cmd, use_textfsm=True,)
         except:
-            logger.debug(
-                "An exception occured while pulling the transceiver info", exc_info=True
-            )
+            logger.debug("An exception occured while pulling the transceiver info", exc_info=True)
             return Result(host=task.host, failed=True)
 
         transceivers = results[0].result
@@ -514,9 +474,7 @@ def collect_transceivers_info(  # pylint: disable=R0911
             return Result(host=task.host, result=transceivers_inventory)
 
         transceiver_names = [t["iface"] for t in transceivers]
-        full_transceiver_names = [
-            canonical_interface_name(t) for t in transceiver_names
-        ]
+        full_transceiver_names = [canonical_interface_name(t) for t in transceiver_names]
 
         # Check if the optic is in the inventory by matching on the interface name
         # Normalize the name of the interface before returning it
@@ -538,13 +496,9 @@ def collect_transceivers_info(  # pylint: disable=R0911
     elif task.host.platform == "nxos":
         cmd = "show interface transceiver"
         try:
-            results = task.run(
-                task=netmiko_send_command, command_string=cmd, use_textfsm=True
-            )
+            results = task.run(task=netmiko_send_command, command_string=cmd, use_textfsm=True)
         except:
-            logger.debug(
-                "An exception occured while pulling the transceiver info", exc_info=True
-            )
+            logger.debug("An exception occured while pulling the transceiver info", exc_info=True)
             return Result(host=task.host, failed=True)
 
         transceivers = results[0].result
@@ -575,17 +529,13 @@ def collect_transceivers_info(  # pylint: disable=R0911
                 xcvr["type"] = data["mediaType"]["state"]
                 xcvr["part_number"] = data["mediaType"]["state"]
             except:
-                logger.warning(
-                    f"Unable to extract the transceiver information for {name} : {sys.exc_info()[0]}"
-                )
+                logger.warning(f"Unable to extract the transceiver information for {name} : {sys.exc_info()[0]}")
                 continue
 
             transceivers_inventory.append(xcvr)
 
     else:
-        logger.debug(
-            f"{task.host.name} | collect_transceiver_info not supported yet for {task.host.platform}"
-        )
+        logger.debug(f"{task.host.name} | collect_transceiver_info not supported yet for {task.host.platform}")
 
     if update_cache and transceivers_inventory:
         save_data_to_file(task.host.name, cache_name, transceivers_inventory)
@@ -612,21 +562,16 @@ def check_if_reachable(task: Task) -> Result:
         results = task.run(task=tcp_ping, ports=[port_to_check])
     except:
         logger.debug(
-            "An exception occured while running the reachability test (tcp_ping)",
-            exc_info=True,
+            "An exception occured while running the reachability test (tcp_ping)", exc_info=True,
         )
         return Result(host=task.host, failed=True)
 
     is_reachable = results[0].result[port_to_check]
 
     if not is_reachable:
-        logger.debug(
-            f"{task.host.name} | device is not reachable on port {port_to_check}"
-        )
+        logger.debug(f"{task.host.name} | device is not reachable on port {port_to_check}")
         task.host.data["is_reachable"] = False
-        task.host.data[
-            "not_reachable_reason"
-        ] = f"device not reachable on port {port_to_check}"
+        task.host.data["not_reachable_reason"] = f"device not reachable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reachable)
@@ -668,9 +613,7 @@ def update_device_status(task: Task) -> Result:
     if new_status not in (None, prev_status):
 
         task.host.data["obj"].remote.update(data={"status": new_status})
-        logger.info(
-            f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}"
-        )
+        logger.info(f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}")
         return Result(host=task.host, result=True)
 
     logger.debug(f"{task.host.name} | no status update required")

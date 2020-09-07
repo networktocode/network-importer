@@ -116,31 +116,16 @@ class NBInventory(Inventory):
 
         # fetch devices from netbox
         if filter_parameters:
-            nb_devices: List[
-                pynetbox.modules.dcim.Devices
-            ] = nb_session.dcim.devices.filter(**filter_parameters)
+            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.filter(**filter_parameters)
         else:
-            nb_devices: List[
-                pynetbox.modules.dcim.Devices
-            ] = nb_session.dcim.devices.all()
+            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
 
         # fetch all platforms from Netbox and build mapping:   platform:  napalm_driver
         platforms = nb_session.dcim.platforms.all()
-        platforms_mapping = {
-            platform.slug: platform.napalm_driver
-            for platform in platforms
-            if platform.napalm_driver
-        }
+        platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
 
         hosts = {}
-        groups = {
-            "global": {
-                "connection_options": {
-                    "netmiko": {"extras": {}},
-                    "napalm": {"extras": {}},
-                }
-            }
-        }
+        groups = {"global": {"connection_options": {"netmiko": {"extras": {}}, "napalm": {"extras": {}},}}}
 
         # Pull the login and password from the NI config object if available
         if username:
@@ -149,12 +134,8 @@ class NBInventory(Inventory):
         if password:
             groups["global"]["password"] = password
             if enable:
-                groups["global"]["connection_options"]["netmiko"]["extras"] = {
-                    "secret": password
-                }
-                groups["global"]["connection_options"]["napalm"]["extras"] = {
-                    "optional_args": {"secret": password}
-                }
+                groups["global"]["connection_options"]["netmiko"]["extras"] = {"secret": password}
+                groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
 
         for dev in nb_devices:
 
@@ -184,9 +165,7 @@ class NBInventory(Inventory):
                 host["hostname"] = dev.primary_ip.address.split("/")[0]
             else:
                 host["data"]["is_reachable"] = False
-                host["data"][
-                    "not_reachable_reason"
-                ] = f"primary ip not defined in Netbox"
+                host["data"]["not_reachable_reason"] = f"primary ip not defined in Netbox"
 
             host["data"]["serial"] = dev.serial
             host["data"]["vendor"] = dev.device_type.manufacturer.slug
@@ -198,9 +177,7 @@ class NBInventory(Inventory):
 
             # Attempt to add 'platform' based of value in 'slug'
             if dev.platform and dev.platform.slug in platforms_mapping:
-                host["connection_options"] = {
-                    "napalm": {"platform": platforms_mapping[dev.platform.slug]}
-                }
+                host["connection_options"] = {"napalm": {"platform": platforms_mapping[dev.platform.slug]}}
 
             if dev.platform:
                 host["platform"] = dev.platform.slug
@@ -216,18 +193,10 @@ class NBInventory(Inventory):
                 groups[dev.device_role.slug] = {}
 
             host["data"]["obj"] = NetworkImporterDevice(
-                dev.name,
-                platform=host["platform"],
-                role=host["data"]["role"],
-                vendor=host["data"]["vendor"],
+                dev.name, platform=host["platform"], role=host["data"]["role"], vendor=host["data"]["vendor"],
             )
 
-            if (
-                "hostname" in host
-                and host["hostname"]
-                and "platform" in host
-                and host["platform"]
-            ):
+            if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
                 host["data"]["is_reachable"] = True
 
             # Assign temporary dict to outer dict
@@ -271,9 +240,7 @@ class StaticInventory(Inventory):
             host["platform"] = host_["platform"]
             host["groups"] = ["global"]
 
-            host["data"]["obj"] = NetworkImporterDevice(
-                host_["name"], platform=host["platform"],
-            )
+            host["data"]["obj"] = NetworkImporterDevice(host_["name"], platform=host["platform"],)
 
             hosts[host_["name"]] = host
 

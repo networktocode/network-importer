@@ -93,9 +93,7 @@ class NetBoxAPIAdapter(DSync):
                 site = self.site(name=device.site.slug, remote_id=device.site.id)
                 self.add(site)
 
-            device = self.device(
-                name=device.name, site_name=site.name, remote_id=device.id
-            )
+            device = self.device(name=device.name, site_name=site.name, remote_id=device.id)
             self.add(device)
 
             # Store all devices name in a list to speed up later verification
@@ -121,10 +119,7 @@ class NetBoxAPIAdapter(DSync):
             prefix_type = None
 
             prefix = self.prefix(
-                prefix=nb_prefix.prefix,
-                site_name=site.name,
-                prefix_type=prefix_type,
-                remote_id=nb_prefix.id,
+                prefix=nb_prefix.prefix, site_name=site.name, prefix_type=prefix_type, remote_id=nb_prefix.id,
             )
 
             self.add(prefix)
@@ -136,12 +131,7 @@ class NetBoxAPIAdapter(DSync):
 
         for nb_vlan in vlans:
 
-            vlan = self.vlan(
-                vid=nb_vlan.vid,
-                site_name=site.name,
-                name=nb_vlan.name,
-                remote_id=nb_vlan.id,
-            )
+            vlan = self.vlan(vid=nb_vlan.vid, site_name=site.name, name=nb_vlan.name, remote_id=nb_vlan.id,)
 
             self.add(vlan)
             site.add_child(vlan)
@@ -184,9 +174,7 @@ class NetBoxAPIAdapter(DSync):
                 interface.is_lag_member = True
                 interface.is_lag = False
                 interface.is_virtual = False
-                parent_interface_uid = self.interface(
-                    name=intf.lag.name, device_name=device.name
-                ).get_unique_id()
+                parent_interface_uid = self.interface(name=intf.lag.name, device_name=device.name).get_unique_id()
                 interface.parent = parent_interface_uid
 
             # identify Interface Mode
@@ -231,10 +219,7 @@ class NetBoxAPIAdapter(DSync):
         for ip in ips:
 
             ip_address = self.ip_address(
-                address=ip.address,
-                device_name=device.name,
-                interface_name=ip.interface.name,
-                remote_id=ip.id,
+                address=ip.address, device_name=device.name, interface_name=ip.interface.name, remote_id=ip.id,
             )
 
             self.add(ip_address)
@@ -249,10 +234,7 @@ class NetBoxAPIAdapter(DSync):
 
         nbr_cables = 0
         for nb_cable in cables:
-            if (
-                nb_cable.termination_a_type != "dcim.interface"
-                or nb_cable.termination_b_type != "dcim.interface"
-            ):
+            if nb_cable.termination_a_type != "dcim.interface" or nb_cable.termination_b_type != "dcim.interface":
                 continue
 
             if nb_cable.termination_a.device.name not in device_names:
@@ -283,9 +265,7 @@ class NetBoxAPIAdapter(DSync):
 
             nbr_cables += 1
 
-        logger.debug(
-            f"{self.source} | Found {nbr_cables} cables in netbox for {site.name}"
-        )
+        logger.debug(f"{self.source} | Found {nbr_cables} cables in netbox for {site.name}")
 
     # -----------------------------------------------------
     # Interface
@@ -356,9 +336,7 @@ class NetBoxAPIAdapter(DSync):
 
         if "is_lag_member" in params and params["is_lag_member"]:
             # TODO add checks to ensure the parent interface is present and has a remote id
-            parent_interface = self.get(
-                self.interface, keys=[device.name, nb_params["parent"]]
-            )
+            parent_interface = self.get(self.interface, keys=[device.name, nb_params["parent"]])
             nb_params["lag"] = parent_interface.remote_id
 
         elif "is_lag_member" in params and not params["is_lag_member"]:
@@ -407,9 +385,7 @@ class NetBoxAPIAdapter(DSync):
 
         intf = self.nb.dcim.interfaces.get(item.remote_id)
         intf.update(data=nb_params)
-        logger.debug(
-            f"Updated Interface {item.device_name} {item.name} ({item.remote_id}) in NetBox"
-        )
+        logger.debug(f"Updated Interface {item.device_name} {item.name} ({item.remote_id}) in NetBox")
         print(nb_params)
 
         for key, value in params.items():
@@ -443,14 +419,10 @@ class NetBoxAPIAdapter(DSync):
 
         interface = None
         if "interface_name" in params and "device_name" in params:
-            interface = self.get(
-                self.interface, keys=[params["device_name"], params["interface_name"]]
-            )
+            interface = self.get(self.interface, keys=[params["device_name"], params["interface_name"]])
 
         if interface:
-            ip_address = self.nb.ipam.ip_addresses.create(
-                address=keys["address"], interface=interface.remote_id
-            )
+            ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"], interface=interface.remote_id)
         else:
             ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"])
 
@@ -480,9 +452,7 @@ class NetBoxAPIAdapter(DSync):
         site = self.get(self.site, keys=[keys["site_name"]])
         status = "active"
 
-        prefix = self.nb.ipam.prefixes.create(
-            prefix=keys["prefix"], site=site.remote_id, status=status
-        )
+        prefix = self.nb.ipam.prefixes.create(prefix=keys["prefix"], site=site.remote_id, status=status)
         logger.debug(f"Created Prefix {prefix.prefix} ({prefix.id}) in NetBox")
 
         item = self.default_create(object_type="prefix", keys=keys, params=params)
@@ -494,12 +464,8 @@ class NetBoxAPIAdapter(DSync):
     # -----------------------------------------------------
     def create_cable(self, keys, params):
 
-        interface_a = self.get(
-            self.interface, keys=[keys["device_a_name"], keys["interface_a_name"]]
-        )
-        interface_z = self.get(
-            self.interface, keys=[keys["device_z_name"], keys["interface_z_name"]]
-        )
+        interface_a = self.get(self.interface, keys=[keys["device_a_name"], keys["interface_a_name"]])
+        interface_z = self.get(self.interface, keys=[keys["device_z_name"], keys["interface_z_name"]])
 
         try:
             cable = self.nb.dcim.cables.create(

@@ -217,6 +217,4 @@ def test_ip_on_interface():
         intf_name="GigabitEthernet0/0", ip=NetworkImporterIP(address="10.0.0.1/30"),
     )
     assert test_device.interfaces["GigabitEthernet0/0"].ip_on_interface("10.0.0.1/30")
-    assert not test_device.interfaces["GigabitEthernet0/0"].ip_on_interface(
-        "10.1.1.3/24"
-    )
+    assert not test_device.interfaces["GigabitEthernet0/0"].ip_on_interface("10.1.1.3/24")

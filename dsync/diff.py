@@ -194,8 +194,6 @@ class DiffElement:
             # need to account for that
             for attr in self.get_attrs_keys():
                 if self.source_attrs.get(attr, None) != self.dest_attrs.get(attr, None):
-                    print(
-                        f"{margin}  {attr}   S({self.source_attrs[attr]})   D({self.dest_attrs[attr]})"
-                    )
+                    print(f"{margin}  {attr}   S({self.source_attrs[attr]})   D({self.dest_attrs[attr]})")
 
         self.childs.print_detailed(indent + 2)

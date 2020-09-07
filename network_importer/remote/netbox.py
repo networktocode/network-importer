@@ -451,8 +451,7 @@ class NetboxCable(Cable):
         if interface:
             self.remote = interface.cable
             self.add_device(
-                interface.connected_endpoint.device.name,
-                interface.connected_endpoint.name,
+                interface.connected_endpoint.device.name, interface.connected_endpoint.name,
             )
             self.add_device(interface.device.name, interface.name)
 

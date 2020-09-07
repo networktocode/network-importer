@@ -120,14 +120,10 @@ class TimeTracker:
 
         if not os.path.exists(config.logs["performance_log_directory"]):
             os.makedirs(config.logs["performance_log_directory"])
-            logger.debug(
-                f"Directory {config.logs['performance_log_directory']} was missing, created it"
-            )
+            logger.debug(f"Directory {config.logs['performance_log_directory']} was missing, created it")
 
         perflog_filename = strftime("%Y-%m-%d_%H-%M-%S.log")
-        perflog_file_path = (
-            config.logs["performance_log_directory"] + "/" + perflog_filename
-        )
+        perflog_file_path = config.logs["performance_log_directory"] + "/" + perflog_filename
 
         with open(perflog_file_path, "w") as file_:
 

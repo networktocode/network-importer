@@ -14,9 +14,7 @@ FIXTURE_27 = "fixtures/netbox_27"
 
 def test_netbox27_vlan_no_tag():
 
-    data = yaml.safe_load(
-        open(f"{HERE}/{FIXTURE_26}/interface_connected_interface.json")
-    )
+    data = yaml.safe_load(open(f"{HERE}/{FIXTURE_26}/interface_connected_interface.json"))
     rem = pynetbox.core.response.Record(data, "http://mock", 1)
 
     cable = NetboxCable()

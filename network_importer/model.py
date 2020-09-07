@@ -209,14 +209,8 @@ class NetworkImporterDevice:
         # --------------------------------------------
 
         intfs_lags = [intf for intf in self.interfaces.values() if intf.is_lag]
-        intfs_lag_members = [
-            intf for intf in self.interfaces.values() if intf.is_lag_member
-        ]
-        intfs_regs = [
-            intf
-            for intf in self.interfaces.values()
-            if not intf.is_lag_member and not intf.is_lag
-        ]
+        intfs_lag_members = [intf for intf in self.interfaces.values() if intf.is_lag_member]
+        intfs_regs = [intf for intf in self.interfaces.values() if not intf.is_lag_member and not intf.is_lag]
 
         sorted_intfs_create_update = intfs_regs + intfs_lags + intfs_lag_members
 
@@ -230,12 +224,8 @@ class NetworkImporterDevice:
         sorted_intfs_delete = intfs_regs + intfs_lag_members + intfs_lags
 
         for intf in sorted_intfs_delete:
-            if self.remote.primary_ip and intf.ip_on_interface(
-                self.remote.primary_ip.address
-            ):
-                logger.warning(
-                    f"{self.name} | Will not delete {intf.name}, currently primary mgmt interface",
-                )
+            if self.remote.primary_ip and intf.ip_on_interface(self.remote.primary_ip.address):
+                logger.warning(f"{self.name} | Will not delete {intf.name}, currently primary mgmt interface",)
 
             if (
                 not intf.exist_local()
@@ -285,26 +275,13 @@ class NetworkImporterDevice:
 
             if config.main["import_vlans"] != "no":
                 if intf.local.mode in ["TRUNK", "ACCESS"] and intf.local.access_vlan:
-                    intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(
-                        intf.local.access_vlan
-                    )
-                elif (
-                    intf.local.mode in ["TRUNK", "ACCESS"]
-                    and not intf.local.access_vlan
-                ):
+                    intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(intf.local.access_vlan)
+                elif intf.local.mode in ["TRUNK", "ACCESS"] and not intf.local.access_vlan:
                     intf_properties["untagged_vlan"] = None
 
-                if (
-                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
-                    and intf.local.allowed_vlans
-                ):
-                    intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(
-                        intf.local.allowed_vlans
-                    )
-                elif (
-                    intf.local.mode in ["TRUNK", "L3_SUB_VLAN"]
-                    and not intf.local.allowed_vlans
-                ):
+                if intf.local.mode in ["TRUNK", "L3_SUB_VLAN"] and intf.local.allowed_vlans:
+                    intf_properties["tagged_vlans"] = self.site.convert_vids_to_nids(intf.local.allowed_vlans)
+                elif intf.local.mode in ["TRUNK", "L3_SUB_VLAN"] and not intf.local.allowed_vlans:
                     intf_properties["tagged_vlans"] = []
 
             if intf.local.is_lag_member:
@@ -314,20 +291,14 @@ class NetworkImporterDevice:
                             f"{self.name} | Interface {intf.name} is a member of lag {intf.local.parent}, but {intf.local.parent} do not exist remotely"
                         )
                     else:
-                        intf_properties["lag"] = self.interfaces[
-                            intf.local.parent
-                        ].remote.remote.id
+                        intf_properties["lag"] = self.interfaces[intf.local.parent].remote.remote.id
 
                 else:
                     logger.warning(
                         f"{self.name} | Interface {intf.local.name} is a member of lag {intf.local.parent}, but {intf.local.parent} is not in the list"
                     )
 
-            elif (
-                not intf.local.is_lag_member
-                and intf.remote
-                and intf.remote.is_lag_member
-            ):
+            elif not intf.local.is_lag_member and intf.remote and intf.remote.is_lag_member:
                 intf_properties["lag"] = None
 
             if intf.exist_local() and not intf.exist_remote():
@@ -342,25 +313,16 @@ class NetworkImporterDevice:
                         f"{self.name} | Something went wrong while trying to create interface {intf.name} in netbox",
                         exc_info=True,
                     )
-                    logger.debug(
-                        f"{self.name} | {intf.name}: properties {intf_properties}"
-                    )
+                    logger.debug(f"{self.name} | {intf.name}: properties {intf_properties}")
                     return False
 
                 intf.add_remote(remote)
                 logger.debug(f"{self.name} | Interface {intf.name} created in Netbox")
                 changelog_create(
-                    "interface",
-                    f"{self.name}::{intf.name}",
-                    remote.id,
-                    params=intf_properties,
+                    "interface", f"{self.name}::{intf.name}", remote.id, params=intf_properties,
                 )
 
-            elif (
-                intf.exist_local()
-                and intf.exist_remote()
-                and intf.diff().nbr_diffs() != 0
-            ):
+            elif intf.exist_local() and intf.exist_remote() and intf.diff().nbr_diffs() != 0:
                 diff = intf.diff()
                 try:
                     intf_updated = intf.remote.remote.update(data=intf_properties)
@@ -369,14 +331,10 @@ class NetworkImporterDevice:
                         f"{self.name} | Something went wrong while trying to update the interface {intf.name} in netbox",
                         exc_info=True,
                     )
-                    logger.debug(
-                        f"{self.name} | {intf.name}: properties {intf_properties}"
-                    )
+                    logger.debug(f"{self.name} | {intf.name}: properties {intf_properties}")
                     return False
 
-                logger.debug(
-                    f"{self.name} | Interface {intf.name} updated in Netbox: {intf_properties}"
-                )
+                logger.debug(f"{self.name} | Interface {intf.name} updated in Netbox: {intf_properties}")
                 changelog_update(
                     "interface",
                     f"{self.name}::{intf.name}",
@@ -391,9 +349,7 @@ class NetworkImporterDevice:
         for ip in intf.ips.values():
             if ip.exist_local() and not ip.exist_remote():
                 try:
-                    ip_address = self.nb.ipam.ip_addresses.create(
-                        address=ip.address, interface=intf.remote.remote.id
-                    )
+                    ip_address = self.nb.ipam.ip_addresses.create(address=ip.address, interface=intf.remote.remote.id)
                 except:
                     logger.warning(
                         f"{self.name} | Something went wrong while trying to create the IP {ip.address} (intf:{intf.remote.remote.id}) in netbox",
@@ -405,22 +361,14 @@ class NetworkImporterDevice:
                 ip.add_remote(ip_address)
                 logger.debug(f"{self.name} | IP {ip.address} created in Netbox")
                 changelog_create(
-                    "ipaddress",
-                    ip.address,
-                    ip_address.id,
-                    params={"interface": intf.name, "device": self.name},
+                    "ipaddress", ip.address, ip_address.id, params={"interface": intf.name, "device": self.name},
                 )
 
             # TODO need to implement IP update
             # If IP address isn't on the device, delete it from netbox, unless it's the primary IP
             elif not ip.exist_local() and ip.exist_remote():
-                if (
-                    self.remote.primary_ip
-                    and ip.remote.address == self.remote.primary_ip.address
-                ):
-                    logger.warning(
-                        f"{self.name} | Unable to delete IP {ip.address}, currently primary IP"
-                    )
+                if self.remote.primary_ip and ip.remote.address == self.remote.primary_ip.address:
+                    logger.warning(f"{self.name} | Unable to delete IP {ip.address}, currently primary IP")
                 else:
                     ip.delete_remote()
                     logger.debug(f"{self.name} | IP {ip.address} deleted in Netbox")
@@ -455,11 +403,7 @@ class NetworkImporterDevice:
                     ),
                 )
 
-            elif (
-                intf.optic.exist_local()
-                and intf.optic.exist_remote()
-                and intf.optic.diff().has_diffs()
-            ):
+            elif intf.optic.exist_local() and intf.optic.exist_remote() and intf.optic.diff().has_diffs():
 
                 intf.optic.remote.remote.update(
                     data=dict(
@@ -489,9 +433,7 @@ class NetworkImporterDevice:
 
             elif not intf.optic.exist_local() and intf.optic.exist_remote():
                 intf.optic.delete_remote()
-                logger.debug(
-                    f"{self.name} | Optic {intf.optic.remote.serial} deleted in Netbox"
-                )
+                logger.debug(f"{self.name} | Optic {intf.optic.remote.serial} deleted in Netbox")
 
     def check_data_consistency(self):
         """
@@ -501,11 +443,7 @@ class NetworkImporterDevice:
 
         for intf in self.interfaces.values():
             if intf.exist_local() and intf.local.allowed_vlans:
-                intf.local.allowed_vlans = [
-                    vlan
-                    for vlan in intf.local.allowed_vlans
-                    if vlan in self.site.vlans.keys()
-                ]
+                intf.local.allowed_vlans = [vlan for vlan in intf.local.allowed_vlans if vlan in self.site.vlans.keys()]
 
     def import_local_prefix(self):
         for intf_name, intf_values in self.interfaces.items():
@@ -514,13 +452,9 @@ class NetworkImporterDevice:
                     continue
                 # Check the interface to vlan mapping, extract the list of vlan associated with this interface
                 #  only 1 vlan supported for now
-                all_local_intf_vlan_mapping = self.local_interface_vlans_mapping[
-                    intf_name
-                ]
+                all_local_intf_vlan_mapping = self.local_interface_vlans_mapping[intf_name]
                 valid_local_intf_vlan_mapping = [
-                    vlan
-                    for vlan in all_local_intf_vlan_mapping
-                    if vlan in self.site.vlans.keys()
+                    vlan for vlan in all_local_intf_vlan_mapping if vlan in self.site.vlans.keys()
                 ]
 
                 vlan = None
@@ -573,9 +507,7 @@ class NetworkImporterDevice:
         # check if optic can be matched to an existing inventory items
         #  For Optic in netbox, NI is assigning the interface name to the description and a tags name "optic"
         if intf_name not in self.interfaces.keys():
-            self.interfaces[intf_name] = NetworkImporterInterface(
-                name=intf_name, device_name=self.name
-            )
+            self.interfaces[intf_name] = NetworkImporterInterface(name=intf_name, device_name=self.name)
 
         if not self.interfaces[intf_name].optic:
             self.interfaces[intf_name].optic = NetworkImporterOptic(optic.serial)
@@ -594,14 +526,10 @@ class NetworkImporterDevice:
         """
 
         if intf_name not in self.interfaces.keys():
-            self.interfaces[intf_name] = NetworkImporterInterface(
-                name=intf_name, device_name=self.name
-            )
+            self.interfaces[intf_name] = NetworkImporterInterface(name=intf_name, device_name=self.name)
 
         if not ip.address in self.interfaces[intf_name].ips.keys():
-            self.interfaces[intf_name].ips[ip.address] = NetworkImporterIP(
-                address=ip.address
-            )
+            self.interfaces[intf_name].ips[ip.address] = NetworkImporterIP(address=ip.address)
 
         if not self.interfaces[intf_name].ips[ip.address].exist_local():
             self.interfaces[intf_name].ips[ip.address].add_local(ip)
@@ -627,9 +555,7 @@ class NetworkImporterDevice:
                 if cable.unique_id not in cables.keys():
                     cables[cable.unique_id] = cable
                 else:
-                    logger.debug(
-                        f"{self.name} | Cable {cable.unique_id} is present more than once on this device"
-                    )
+                    logger.debug(f"{self.name} | Cable {cable.unique_id} is present more than once on this device")
 
         return cables
 
@@ -710,9 +636,7 @@ class NetworkImporterDevice:
 
         items = self.nb.dcim.inventory_items.filter(device=self.name)
 
-        logger.debug(
-            f"{self.name} - _get_remote_inventory_list(), found {len(items)} inventory items"
-        )
+        logger.debug(f"{self.name} - _get_remote_inventory_list(), found {len(items)} inventory items")
 
         # --------------------------------------------------
         # Capture Optics
@@ -729,9 +653,7 @@ class NetworkImporterDevice:
 
             intf_name = item.description
             if intf_name not in self.interfaces.keys():
-                self.interfaces[intf_name] = NetworkImporterInterface(
-                    name=intf_name, device_name=self.name
-                )
+                self.interfaces[intf_name] = NetworkImporterInterface(name=intf_name, device_name=self.name)
 
             if not self.interfaces[intf_name].optic:
                 self.interfaces[intf_name].optic = NetworkImporterOptic()
@@ -820,11 +742,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         elif self.local.description is None:
             self.local.description = ""
 
-        if (
-            self.local.is_lag is None
-            and self.local.lag_members is None
-            and len(list(bf.Channel_Group_Members)) != 0
-        ):
+        if self.local.is_lag is None and self.local.lag_members is None and len(list(bf.Channel_Group_Members)) != 0:
             self.local.lag_members = list(bf.Channel_Group_Members)
             self.local.is_lag = True
             self.local.is_virtual = False
@@ -846,11 +764,7 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         elif self.local.mode == "ACCESS" and bf.Access_VLAN:
             self.local.access_vlan = bf.Access_VLAN
 
-        if (
-            self.local.is_lag is False
-            and self.local.is_lag_member is None
-            and bf.Channel_Group
-        ):
+        if self.local.is_lag is False and self.local.is_lag_member is None and bf.Channel_Group:
             self.local.parent = bf.Channel_Group
             self.local.is_lag_member = True
             self.local.is_virtual = False
@@ -969,18 +883,11 @@ class NetworkImporterSite:
         """
         for vlan in self.vlans.values():
             if vlan.exist_local() and not vlan.exist_remote():
-                remote = self.nb.ipam.vlans.create(
-                    vid=vlan.local.vid, name=vlan.local.name, site=self.remote.id
-                )
-                logger.debug(
-                    f"Site {self.name}, created vlan {vlan.local.vid} ({remote.id}) in netbox"
-                )
+                remote = self.nb.ipam.vlans.create(vid=vlan.local.vid, name=vlan.local.name, site=self.remote.id)
+                logger.debug(f"Site {self.name}, created vlan {vlan.local.vid} ({remote.id}) in netbox")
                 vlan.add_remote(remote)
                 changelog_create(
-                    "vlan",
-                    vlan.local.vid,
-                    remote.id,
-                    params=dict(name=vlan.local.name, site=self.remote.id),
+                    "vlan", vlan.local.vid, remote.id, params=dict(name=vlan.local.name, site=self.remote.id),
                 )
 
             elif vlan.exist_local() and vlan.exist_remote():
@@ -1005,29 +912,20 @@ class NetworkImporterSite:
             if prefix.exist_local() and not prefix.exist_remote():
 
                 remote = self.nb.ipam.prefixes.create(**params)
-                logger.debug(
-                    f"Site {self.name}, created prefix {prefix.local.prefix} ({remote.id}) in NetBox"
-                )
+                logger.debug(f"Site {self.name}, created prefix {prefix.local.prefix} ({remote.id}) in NetBox")
                 prefix.add_remote(remote)
                 changelog_create(
                     "prefix", prefix.local.prefix, remote.id, params=params,
                 )
 
-            elif (
-                prefix.exist_local()
-                and prefix.exist_remote()
-                and not prefix.is_remote_up_to_date()
-            ):
+            elif prefix.exist_local() and prefix.exist_remote() and not prefix.is_remote_up_to_date():
                 prefix.remote.remote.update(data=params)
                 logger.debug(
                     f"Site {self.name}, updated prefix {prefix.local.prefix} ({prefix.remote.remote.id}) in NetBox ({params})"
                 )
                 prefix.update_remote(prefix.remote.remote)
                 changelog_update(
-                    "prefix",
-                    prefix.local.prefix,
-                    prefix.remote.remote.id,
-                    params=params,
+                    "prefix", prefix.local.prefix, prefix.remote.remote.id, params=params,
                 )
 
     def add_vlan(self, vlan: Vlan, device=None):
@@ -1086,18 +984,10 @@ class NetworkImporterSite:
 
         if not self.prefixes[prefix_str].exist_local():
             self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
-            logger.debug(
-                f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)"
-            )
-        elif (
-            self.prefixes[prefix_str].exist_local()
-            and not self.prefixes[prefix_str].local.vlan
-            and vlan
-        ):
+            logger.debug(f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)")
+        elif self.prefixes[prefix_str].exist_local() and not self.prefixes[prefix_str].local.vlan and vlan:
             self.prefixes[prefix_str].add_local(Prefix(prefix=prefix_str, vlan_id=vlan))
-            logger.debug(
-                f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)"
-            )
+            logger.debug(f"Site {self.name} | Prefix {prefix_str} - VLAN={vlan} added (local)")
 
     def convert_vids_to_nids(self, vids):
         """
@@ -1151,9 +1041,7 @@ class NetworkImporterSite:
 
         vlans = self.nb.ipam.vlans.filter(site=self.name)
 
-        logger.debug(
-            f"{self.name} - _get_remote_vlans_list(), found {len(vlans)} vlans"
-        )
+        logger.debug(f"{self.name} - _get_remote_vlans_list(), found {len(vlans)} vlans")
 
         for vlan in vlans:
             vid = vlan.vid
@@ -1175,9 +1063,7 @@ class NetworkImporterSite:
 
         prefixes = self.nb.ipam.prefixes.filter(site=self.name)
 
-        logger.debug(
-            f"{self.name} - _get_remote_prefixes_list(), found {len(prefixes)} prefixes"
-        )
+        logger.debug(f"{self.name} - _get_remote_prefixes_list(), found {len(prefixes)} prefixes")
 
         for prefix in prefixes:
 
@@ -1186,9 +1072,7 @@ class NetworkImporterSite:
                 if prefix.vlan and prefix.vlan.vid in self.vlans.keys():
                     associated_vlan = self.vlans[prefix.vlan.vid]
 
-                self.prefixes[prefix.prefix] = NetworkImporterPrefix(
-                    prefix=prefix.prefix, vlan=associated_vlan
-                )
+                self.prefixes[prefix.prefix] = NetworkImporterPrefix(prefix=prefix.prefix, vlan=associated_vlan)
 
             if not self.prefixes[prefix.prefix].exist_remote():
                 self.prefixes[prefix.prefix].add_remote(prefix)
@@ -1254,9 +1138,7 @@ class NetworkImporterVlan(NetworkImporterObjBase):
             if missing_devices_on_remote:
                 tags = tags + [f"device={dev}" for dev in missing_devices_on_remote]
 
-            self.remote.remote.update(
-                data=dict(name=self.local.name, vid=self.local.vid, tags=tags)
-            )
+            self.remote.remote.update(data=dict(name=self.local.name, vid=self.local.vid, tags=tags))
             return True
 
         return False
@@ -1415,9 +1297,7 @@ class NetworkImporterCable(NetworkImporterObjBase):
         elif "z" not in self.interfaces.keys():
             side = "z"
         else:
-            raise Exception(
-                f"NetworkImporterCable {self.id}, Maximum number of interfaces already reached"
-            )
+            raise Exception(f"NetworkImporterCable {self.id}, Maximum number of interfaces already reached")
 
         self.interfaces[side] = intf
 
@@ -1440,15 +1320,10 @@ class NetworkImporterCable(NetworkImporterObjBase):
 
             if "a" not in self.interfaces or "z" not in self.interfaces:
 
-                logger.warning(
-                    f"Unable to create cable {self.id} in Netbox, both interfaces are not present"
-                )
+                logger.warning(f"Unable to create cable {self.id} in Netbox, both interfaces are not present")
                 return False
 
-            if (
-                not self.interfaces["a"].remote.remote
-                or not self.interfaces["z"].remote.remote
-            ):
+            if not self.interfaces["a"].remote.remote or not self.interfaces["z"].remote.remote:
 
                 logger.warning(
                     f"Unable to create cable {self.id} in Netbox, both interfaces do not have a remote object"

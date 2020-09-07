@@ -161,11 +161,7 @@ class NetworkImporter(DSync):
         elif not config.main["import_intf_status"]:
             interface.active = None
 
-        if (
-            interface.is_lag is None
-            and interface.lag_members is None
-            and len(list(intf["Channel_Group_Members"])) != 0
-        ):
+        if interface.is_lag is None and interface.lag_members is None and len(list(intf["Channel_Group_Members"])) != 0:
             interface.lag_members = list(intf["Channel_Group_Members"])
             interface.is_lag = True
             interface.is_virtual = False
@@ -187,11 +183,7 @@ class NetworkImporter(DSync):
         elif interface.mode == "ACCESS" and intf["Access_VLAN"]:
             interface.access_vlan = intf["Access_VLAN"]
 
-        if (
-            interface.is_lag is False
-            and interface.is_lag_member is None
-            and intf["Channel_Group"]
-        ):
+        if interface.is_lag is False and interface.is_lag_member is None and intf["Channel_Group"]:
             interface.parent = intf["Channel_Group"]
             interface.is_lag_member = True
             interface.is_virtual = False
@@ -211,12 +203,8 @@ class NetworkImporter(DSync):
             address (str): IP address in string format
         """
 
-        ip_address = self.ip_address(
-            address=address, device_name=device.name, interface_name=interface.name,
-        )
-        logger.debug(
-            f"{self.source} | Import {ip_address.address} for {device.name}::{interface.name}"
-        )
+        ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
+        logger.debug(f"{self.source} | Import {ip_address.address} for {device.name}::{interface.name}")
         self.add(ip_address)
         interface.add_child(ip_address)
 

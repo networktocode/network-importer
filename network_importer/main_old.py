@@ -180,10 +180,7 @@ class NetworkImporter:
             )
 
         ## Second option in there but not really supported right now
-        elif (
-            config.main["inventory_source"] == "configs"
-            and "configs_directory" in config.main.keys()
-        ):
+        elif config.main["inventory_source"] == "configs" and "configs_directory" in config.main.keys():
 
             ## TODO check if bf session has already been created, otherwise need to create it
 
@@ -197,9 +194,7 @@ class NetworkImporter:
             )
 
         else:
-            logger.critical(
-                f"Unable to find an inventory please check the config file and the documentation"
-            )
+            logger.critical(f"Unable to find an inventory please check the config file and the documentation")
             sys.exit(1)
 
         return True
@@ -240,9 +235,7 @@ class NetworkImporter:
             and config.main["generate_hostvars"]
         ):
             os.makedirs(config.main["hostvars_directory"])
-            logger.debug(
-                f"Directory {config.main['hostvars_directory']} was missing, created it"
-            )
+            logger.debug(f"Directory {config.main['hostvars_directory']} was missing, created it")
 
         if not os.path.isdir(config.main["data_directory"]):
             os.mkdir(config.main["data_directory"])
@@ -256,9 +249,7 @@ class NetworkImporter:
 
         for dev_name, items in results.items():
             if items[0].failed:
-                logger.warning(
-                    f"{dev_name} | Something went wrong while trying to initialize the device .. "
-                )
+                logger.warning(f"{dev_name} | Something went wrong while trying to initialize the device .. ")
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
@@ -320,8 +311,7 @@ class NetworkImporter:
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
-                        device=dev.name,
+                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
                     )
 
                     # Save interface to vlan mapping for later use
@@ -355,8 +345,7 @@ class NetworkImporter:
                 bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
                 for vlan in bf_vlans.frame().itertuples():
                     dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID),
-                        device=dev.name,
+                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
                     )
 
             if config.main["generate_hostvars"]:
@@ -365,9 +354,7 @@ class NetworkImporter:
                 if len(resp["nodes"].keys()) == 0:
                     logger.warning(f"{dev.name} | Unable to find hostvars ... ")
                 elif len(resp["nodes"].keys()) != 1:
-                    logger.warning(
-                        f"{dev.name} | Unable to extract hostvars, more than 1 device returned ... "
-                    )
+                    logger.warning(f"{dev.name} | Unable to extract hostvars, more than 1 device returned ... ")
                 else:
                     dev.hostvars = list(resp["nodes"].values())[0]
                     del dev.hostvars["Interfaces"]
@@ -379,9 +366,7 @@ class NetworkImporter:
         """ """
 
         if not config.main["data_use_cache"]:
-            self.devs.filter(filter_func=valid_and_reachable_devs).run(
-                task=check_if_reachable, on_failed=True
-            )
+            self.devs.filter(filter_func=valid_and_reachable_devs).run(task=check_if_reachable, on_failed=True)
 
             self.warning_devices_not_reachable()
 
@@ -435,14 +420,10 @@ class NetworkImporter:
         try:
             self.nb.dcim.devices.get(name="notpresent")
         except requests.exceptions.ConnectionError:
-            logger.critical(
-                f"Unable to connect to the netbox server ({config.netbox['address']})"
-            )
+            logger.critical(f"Unable to connect to the netbox server ({config.netbox['address']})")
             sys.exit(1)
         except pynetbox.core.query.RequestError as e:
-            logger.critical(
-                f"Unable to complete a query to the netbox server ({config.netbox['address']})"
-            )
+            logger.critical(f"Unable to complete a query to the netbox server ({config.netbox['address']})")
             print(e)
             sys.exit(1)
         except requests.exceptions.RequestException as e:
@@ -465,9 +446,7 @@ class NetworkImporter:
 
         if not os.path.isdir(config.main["configs_directory"]):
             os.mkdir(config.main["configs_directory"])
-            logger.debug(
-                f"Configs directory created at {config.main['configs_directory']}"
-            )
+            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
 
         configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
 
@@ -476,24 +455,16 @@ class NetworkImporter:
             logger.debug(f"Configs directory created at {configs_dir_lvl2}")
 
         # Save the hostnames associated with all existing configurations before we start the update process
-        hostname_existing_configs = [
-            f.split(".txt")[0]
-            for f in os.listdir(configs_dir_lvl2)
-            if f.endswith(".txt")
-        ]
+        hostname_existing_configs = [f.split(".txt")[0] for f in os.listdir(configs_dir_lvl2) if f.endswith(".txt")]
 
         # ----------------------------------------------------
         # Do a pre-check to ensure that all devices are reachable
         # ----------------------------------------------------
-        self.devs.filter(filter_func=reachable_devs).run(
-            task=check_if_reachable, on_failed=True
-        )
+        self.devs.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
         self.warning_devices_not_reachable()
 
         results = self.devs.filter(filter_func=reachable_devs).run(
-            task=update_configuration,
-            configs_directory=configs_dir_lvl2,
-            on_failed=True,
+            task=update_configuration, configs_directory=configs_dir_lvl2, on_failed=True,
         )
 
         # ----------------------------------------------------
@@ -506,16 +477,12 @@ class NetworkImporter:
                 hostname_existing_configs.remove(dev_name)
 
             elif item[0].failed:
-                logger.warning(
-                    f"{dev_name} | Something went wrong while trying to update the configuration "
-                )
+                logger.warning(f"{dev_name} | Something went wrong while trying to update the configuration ")
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
         if len(hostname_existing_configs) > 0:
-            logger.info(
-                f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated"
-            )
+            logger.info(f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated")
 
             for f in hostname_existing_configs:
                 os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
@@ -532,12 +499,8 @@ class NetworkImporter:
 
         """
 
-        for host in self.devs.filter(
-            filter_func=lambda h: h.data["is_reachable"] is False
-        ).inventory.hosts:
-            reason = self.devs.inventory.hosts[host].data.get(
-                "not_reachable_reason", "reason not defined"
-            )
+        for host in self.devs.filter(filter_func=lambda h: h.data["is_reachable"] is False).inventory.hosts:
+            reason = self.devs.inventory.hosts[host].data.get("not_reachable_reason", "reason not defined")
             logger.warning(f"{host} device is not reachable, {reason}")
 
     @timeit
@@ -685,36 +648,25 @@ class NetworkImporter:
 
         for dev_name, items in results.items():
             if items[0].failed:
-                logger.warning(
-                    f"{dev_name} | Something went wrong while trying to pull the lldp information"
-                )
+                logger.warning(f"{dev_name} | Something went wrong while trying to pull the lldp information")
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
-            if (
-                not isinstance(items[0].result, dict)
-                or "lldp_neighbors" not in items[0].result
-            ):
+            if not isinstance(items[0].result, dict) or "lldp_neighbors" not in items[0].result:
                 logger.warning(f"{dev_name} | No lldp information returned ")
                 continue
 
             for interface, neighbors in items[0].result["lldp_neighbors"].items():
 
                 if len(neighbors) > 1:
-                    logger.warning(
-                        f"{dev_name} | More than 1 neighbor found on interface {interface}, SKIPPING"
-                    )
+                    logger.warning(f"{dev_name} | More than 1 neighbor found on interface {interface}, SKIPPING")
                     continue
                 elif len(neighbors) == 1:
 
                     clean_name = neighbors[0]["hostname"].split(".")[0]
 
                     self.__add_cable_local(
-                        dev_a=dev_name,
-                        intf_a=interface,
-                        dev_z=clean_name,
-                        intf_z=neighbors[0]["port"],
-                        source="lldp",
+                        dev_a=dev_name, intf_a=interface, dev_z=clean_name, intf_z=neighbors[0]["port"], source="lldp",
                     )
 
         return True
@@ -741,9 +693,7 @@ class NetworkImporter:
                 dev_name, intf_name = cable.get_device_intf(side)
 
                 if dev_name not in self.devs.inventory.hosts.keys():
-                    logger.debug(
-                        f"CABLE: {dev_name} not present in devices list ({side} side)"
-                    )
+                    logger.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
                     cable.is_valid = False
                     cable.error = "missing-device"
                     continue
@@ -751,9 +701,7 @@ class NetworkImporter:
                 dev = self.get_dev(dev_name)
 
                 if intf_name not in dev.interfaces.keys():
-                    logger.warning(
-                        f"CABLE: {dev_name}:{intf_name} not present in interfaces list"
-                    )
+                    logger.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
                     cable.is_valid = False
                     cable.error = "missing-interface"
                     continue
@@ -772,19 +720,12 @@ class NetworkImporter:
                 if side == "z":
                     remote_side = "a"
 
-                remote_device_expected, remote_intf_expected = cable.get_device_intf(
-                    remote_side
-                )
+                remote_device_expected, remote_intf_expected = cable.get_device_intf(remote_side)
 
-                if (
-                    not dev.interfaces[intf_name].remote
-                    or not dev.interfaces[intf_name].remote.remote
-                ):
+                if not dev.interfaces[intf_name].remote or not dev.interfaces[intf_name].remote.remote:
                     continue
 
-                cable_type = dev.interfaces[
-                    intf_name
-                ].remote.remote.connected_endpoint_type
+                cable_type = dev.interfaces[intf_name].remote.remote.connected_endpoint_type
 
                 # Check if the interface is already connected
                 # Check if it's already connected to the right device
@@ -802,12 +743,8 @@ class NetworkImporter:
                     continue
 
                 elif cable_type == "dcim.interface":
-                    remote_host_reported = dev.interfaces[
-                        intf_name
-                    ].remote.remote.connected_endpoint.device.name
-                    remote_int_reported = dev.interfaces[
-                        intf_name
-                    ].remote.remote.connected_endpoint.name
+                    remote_host_reported = dev.interfaces[intf_name].remote.remote.connected_endpoint.device.name
+                    remote_int_reported = dev.interfaces[intf_name].remote.remote.connected_endpoint.name
 
                     if remote_host_reported != remote_device_expected:
                         logger.warning(
@@ -817,10 +754,7 @@ class NetworkImporter:
                         cable.error = "wrong-peer-device"
                         continue
 
-                    elif (
-                        remote_host_reported == remote_device_expected
-                        and remote_intf_expected != remote_int_reported
-                    ):
+                    elif remote_host_reported == remote_device_expected and remote_intf_expected != remote_int_reported:
                         logger.warning(
                             f"CABLE:  {dev_name}:{intf_name} is already connected but to a different interface ({remote_int_reported} vs {remote_intf_expected})"
                         )
@@ -901,19 +835,12 @@ class NetworkImporter:
         for dev_name, items in results.items():
 
             if items[0].failed:
-                logger.warning(
-                    f"{dev_name} | Something went wrong while trying to pull the vlan information"
-                )
+                logger.warning(f"{dev_name} | Something went wrong while trying to pull the vlan information")
                 self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
                 continue
 
             for vlan in items[0].result:
-                if (
-                    vlan["id"]
-                    not in self.devs.inventory.hosts[dev_name]
-                    .data["obj"]
-                    .site.vlans.keys()
-                ):
+                if vlan["id"] not in self.devs.inventory.hosts[dev_name].data["obj"].site.vlans.keys():
 
                     self.devs.inventory.hosts[dev_name].data["obj"].site.add_vlan(
                         vlan=Vlan(name=vlan["name"], vid=vlan["id"]), device=dev_name,
@@ -967,9 +894,7 @@ class NetworkImporter:
         """ """
 
         self.nb = pynetbox.api(
-            url=config.netbox["address"],
-            token=config.netbox["token"],
-            ssl_verify=config.netbox["request_ssl_verify"],
+            url=config.netbox["address"], token=config.netbox["token"], ssl_verify=config.netbox["request_ssl_verify"],
         )
         return True
 

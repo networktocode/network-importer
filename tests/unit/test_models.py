@@ -72,9 +72,7 @@ def test_ip_address(session):
     assert ip1.interface == intf1
     assert intf1.ips == [ip1]
 
-    ip2 = IPAddress(
-        address="10.10.10.2/32", interface_name="intf1", device_name="device1"
-    )
+    ip2 = IPAddress(address="10.10.10.2/32", interface_name="intf1", device_name="device1")
     session.add(ip2)
     session.commit()
     assert ip2.interface == intf1

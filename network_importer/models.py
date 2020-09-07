@@ -155,12 +155,7 @@ class Cable(DSyncModel):
 
     def get_unique_id(self):
         return "__".join(
-            sorted(
-                [
-                    f"{self.device_a_name}:{self.interface_a_name}",
-                    f"{self.device_z_name}:{self.interface_z_name}",
-                ]
-            )
+            sorted([f"{self.device_a_name}:{self.interface_a_name}", f"{self.device_z_name}:{self.interface_z_name}",])
         )
 
 

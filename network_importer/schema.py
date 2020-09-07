@@ -22,24 +22,14 @@ config_schema = dict(
             properties=dict(
                 import_ips=dict(type="boolean", default=True),
                 import_prefixes=dict(type="boolean", default=False),
-                import_cabling=dict(
-                    type=["string", "boolean"],
-                    enum=["lldp", "cdp", "config", False],
-                    default="lldp",
-                ),
+                import_cabling=dict(type=["string", "boolean"], enum=["lldp", "cdp", "config", False], default="lldp",),
                 import_transceivers=dict(type="boolean", default=False),
                 import_intf_status=dict(type="boolean", default=True),
-                import_vlans=dict(
-                    type=["string", "boolean"],
-                    enum=["cli", "config", True, False],
-                    default="config",
-                ),
+                import_vlans=dict(type=["string", "boolean"], enum=["cli", "config", True, False], default="config",),
                 generate_hostvars=dict(type="boolean", default=False),
                 hostvars_directory=dict(type="string", default="host_vars"),
                 nbr_workers=dict(type="integer", default=25),
-                inventory_source=dict(
-                    type="string", enum=["netbox", "configs"], default="netbox"
-                ),
+                inventory_source=dict(type="string", enum=["netbox", "configs"], default="netbox"),
                 inventory_filter=dict(type="string"),
                 configs_directory=dict(type="string", default="configs"),
                 data_directory=dict(type="string", default="data"),
@@ -47,9 +37,7 @@ config_schema = dict(
                 data_use_cache=dict(type="boolean", default=False),
                 backend_type=dict(type="string", enum=["netbox"], default="netbox"),
                 backend_version=dict(type="string", default="default"),
-                excluded_platforms_cabling=dict(
-                    type="array", items=dict(type="string"), default=[]
-                ),
+                excluded_platforms_cabling=dict(type="array", items=dict(type="string"), default=[]),
             ),
             default={},
         ),
@@ -71,9 +59,7 @@ config_schema = dict(
             properties=dict(
                 address=dict(type="string", default="http://localhost"),
                 token=dict(type=["string", "null"]),
-                supported_platforms=dict(
-                    type="array", items=dict(type="string"), default=[]
-                ),
+                supported_platforms=dict(type="array", items=dict(type="string"), default=[]),
                 status_update=dict(type="boolean", default=False),
                 status_on_pass=dict(type="number", min=0, default=1),
                 status_on_fail=dict(type="number", min=0, default=4),
@@ -95,18 +81,12 @@ config_schema = dict(
         logs=dict(
             type="object",
             properties=dict(
-                level=dict(
-                    type="string", enum=["debug", "info", "warning"], default="info"
-                ),
+                level=dict(type="string", enum=["debug", "info", "warning"], default="info"),
                 directory=dict(type="string", default="logs"),
                 performance_log=dict(type="boolean", default=True),
-                performance_log_directory=dict(
-                    type="string", default="performance_logs"
-                ),
+                performance_log_directory=dict(type="string", default="performance_logs"),
                 change_log=dict(type="boolean", default=True),
-                change_log_format=dict(
-                    type="string", enum=["jsonlines", "text"], default="text"
-                ),
+                change_log_format=dict(type="string", enum=["jsonlines", "text"], default="text"),
                 change_log_filename=dict(type="string", default="changelog"),
             ),
             default={},

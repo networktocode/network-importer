@@ -149,17 +149,11 @@ class DSync:
             return False
 
         if element.source_attrs == None:
-            self.delete_object(
-                object_type=element.type, keys=element.keys, params=element.dest_attrs
-            )
+            self.delete_object(object_type=element.type, keys=element.keys, params=element.dest_attrs)
         elif element.dest_attrs == None:
-            self.create_object(
-                object_type=element.type, keys=element.keys, params=element.source_attrs
-            )
+            self.create_object(object_type=element.type, keys=element.keys, params=element.source_attrs)
         elif element.source_attrs != element.dest_attrs:
-            self.update_object(
-                object_type=element.type, keys=element.keys, params=element.source_attrs
-            )
+            self.update_object(object_type=element.type, keys=element.keys, params=element.source_attrs)
 
         for child in element.get_childs():
             self.sync_element(child)
@@ -174,9 +168,7 @@ class DSync:
         for obj in intersection(self.top_level, source.top_level):
 
             diff_elements = self.diff_objects(
-                source=list(source.get_all(obj)),
-                dest=list(self.get_all(obj)),
-                source_root=source,
+                source=list(source.get_all(obj)), dest=list(self.get_all(obj)), source_root=source,
             )
 
             for element in diff_elements:
@@ -253,12 +245,8 @@ class DSync:
                 for child_type, child_attr in dict_src[key].__children__.items():
 
                     childs = self.diff_objects(
-                        source=source_root.get_by_keys(
-                            getattr(dict_src[key], child_attr), child_type
-                        ),
-                        dest=self.get_by_keys(
-                            getattr(dict_dst[key], child_attr), child_type
-                        ),
+                        source=source_root.get_by_keys(getattr(dict_src[key], child_attr), child_type),
+                        dest=self.get_by_keys(getattr(dict_dst[key], child_attr), child_type),
                         source_root=source_root,
                     )
 
@@ -273,9 +261,7 @@ class DSync:
         return diffs
 
     def create_object(self, object_type, keys, params):
-        self._crud_change(
-            action="create", keys=keys, object_type=object_type, params=params
-        )
+        self._crud_change(action="create", keys=keys, object_type=object_type, params=params)
 
     def update_object(self, object_type, keys, params):
         self._crud_change(
@@ -283,9 +269,7 @@ class DSync:
         )
 
     def delete_object(self, object_type, keys, params):
-        self._crud_change(
-            action="delete", object_type=object_type, keys=keys, params=params
-        )
+        self._crud_change(action="delete", object_type=object_type, keys=keys, params=params)
 
     def _crud_change(self, action, object_type, keys, params):
         """Dispatcher function to Create, Update or Delete an object.
@@ -320,14 +304,10 @@ class DSync:
 
         try:
             if hasattr(self, f"{action}_{object_type}"):
-                item = getattr(self, f"{action}_{object_type}")(
-                    keys=keys, params=params
-                )
+                item = getattr(self, f"{action}_{object_type}")(keys=keys, params=params)
                 logger.debug(f"{action}d {object_type} - {params}")
             else:
-                item = getattr(self, f"default_{action}")(
-                    object_type=object_type, keys=keys, params=params
-                )
+                item = getattr(self, f"default_{action}")(object_type=object_type, keys=keys, params=params)
                 logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
             return item
         except ObjectCrudException:
@@ -454,9 +434,7 @@ class DSync:
         else:
             modelname = obj.get_type()
 
-        return [
-            value for uid, value in self.__datas__[modelname].items() if uid in keys
-        ]
+        return [value for uid, value in self.__datas__[modelname].items() if uid in keys]
 
     def add(self, obj):
         """Add a DSyncModel object in the store

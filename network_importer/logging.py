@@ -27,9 +27,7 @@ def changelog_create(obj_type, obj_name, obj_id, params):
     Returns:
 
     """
-    changelog = ChangelogCreate(
-        obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
-    )
+    changelog = ChangelogCreate(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params)
     changelog.save()
 
 
@@ -46,9 +44,7 @@ def changelog_update(obj_type, obj_name, obj_id, params):
 
 
     """
-    changelog = ChangelogUpdate(
-        obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params
-    )
+    changelog = ChangelogUpdate(obj_type=obj_type, obj_id=obj_id, obj_name=obj_name, params=params)
     changelog.save()
 
 
@@ -122,11 +118,7 @@ class Changelog:
             "timestamp": int(time() * 1000),
             "time": strftime("%Y-%m-%d %H:%M:%S"),
             "action": self.log_type,  # pylint: disable=no-member
-            "object": {
-                "id": self.obj_id,
-                "name": self.obj_name,
-                "type": self.obj_type,
-            },
+            "object": {"id": self.obj_id, "name": self.obj_name, "type": self.obj_type,},
             "params": self.params,
         }
 

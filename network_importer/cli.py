@@ -50,18 +50,12 @@ logger = logging.getLogger("network-importer")
 @click.option("--diff", is_flag=True, help="Show the diff for all objects")
 @click.option("--apply", is_flag=True, help="Save changes in Backend")
 @click.option(
-    "--check",
-    is_flag=True,
-    help="Display what are the differences but do not save them",
+    "--check", is_flag=True, help="Display what are the differences but do not save them",
 )
 @click.option(
-    "--debug",
-    is_flag=True,
-    help="Keep the script in interactive mode once finished for troubleshooting",
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting",
 )
-@click.option(
-    "--update-configs", is_flag=True, help="Pull the latest configs from the devices"
-)
+@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
     config.load_config(config_file)
     perf.init()
@@ -76,9 +70,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
     logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
 
-    logging.basicConfig(
-        stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # if config.logs["level"] == "debug":
     #     logger.setLevel(logging.DEBUG)

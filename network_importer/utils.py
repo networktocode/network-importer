@@ -196,9 +196,7 @@ def expand_vlans_list(vlans: str) -> list:
         try:
             clean_vlans_list.append(int(vlan_))
         except ValueError as exc:
-            logger.debug(
-                f"expand_vlans_list() Unable to convert {vlan_} as integer .. skipping"
-            )
+            logger.debug(f"expand_vlans_list() Unable to convert {vlan_} as integer .. skipping")
 
     return sorted(clean_vlans_list)
 

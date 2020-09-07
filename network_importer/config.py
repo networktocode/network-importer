@@ -162,9 +162,7 @@ def load_config(config_file_name=None, config_data=None):
     config_errors = sorted(v.iter_errors(config), key=str)
 
     if len(config_errors) != 0:
-        print(
-            f"Found {len(config_errors)} error(s) in the configuration file ({config_file_name})"
-        )
+        print(f"Found {len(config_errors)} error(s) in the configuration file ({config_file_name})")
         for error in config_errors:
             print(f"  {error.message} in {'/'.join(error.absolute_path)}")
         sys.exit(1)
