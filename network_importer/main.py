@@ -41,10 +41,12 @@ class NetworkImporter(DSync):
     interface = Interface
     ip_address = IPAddress
     cable = Cable
-    # vlan = Vlan
+    vlan = Vlan
     prefix = Prefix
 
     top_level = ["site", "device", "cable"]
+
+    source = "Network"
 
     nb = None
 
@@ -54,6 +56,8 @@ class NetworkImporter(DSync):
 
         self.import_netbox_device(filters=filters)
         self.import_batfish()
+
+        self.import_cabling()
 
     def import_netbox_device(self, filters):
 
@@ -106,9 +110,6 @@ class NetworkImporter(DSync):
         for device in devices:
             self.import_batfish_device(device=device)
 
-        # Import Cable
-        self.import_batfish_cable()
-
     def import_batfish_device(self, device):
         """Import all devices from Batfish
 
@@ -133,7 +134,7 @@ class NetworkImporter(DSync):
         interface = self.interface(
             name=intf["Interface"].interface,
             device_name=device.name,
-            description=intf["Description"] or "",
+            description=intf["Description"] or None,
             mtu=intf["MTU"],
             switchport_mode=intf["Switchport_Mode"],
         )
@@ -213,7 +214,9 @@ class NetworkImporter(DSync):
         ip_address = self.ip_address(
             address=address, device_name=device.name, interface_name=interface.name,
         )
-
+        logger.debug(
+            f"{self.source} | Import {ip_address.address} for {device.name}::{interface.name}"
+        )
         self.add(ip_address)
         interface.add_child(ip_address)
 
@@ -241,6 +244,20 @@ class NetworkImporter(DSync):
             prefix_obj = self.prefix(prefix=str(prefix), site_name=site_name)
             self.add(prefix_obj)
             logger.debug(f"Added Prefix {prefix} from batfish")
+
+        return True
+
+    def import_cabling(self):
+
+        if config.main["import_cabling"] in ["no", False]:
+            return False
+
+        if config.main["import_cabling"] in ["config", True]:
+            self.import_batfish_cable()
+
+        if config.main["import_cabling"] in ["lldp", "cdp", True]:
+            pass
+            # self.import_cabling_from_cmds()
 
         return True
 

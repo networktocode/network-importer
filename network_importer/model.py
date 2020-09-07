@@ -244,28 +244,28 @@ class NetworkImporterDevice:
             ):
                 intf.delete_remote()
 
-    def diff(self):
-        """Calculate the diff between the local object and the remote system"""
-        diff = NetworkImporterDiff("device", self.name)
+    # def diff(self):
+    #     """Calculate the diff between the local object and the remote system"""
+    #     diff = NetworkImporterDiff("device", self.name)
 
-        for intf in self.interfaces.values():
-            diff.add_child(intf.diff())
+    #     for intf in self.interfaces.values():
+    #         diff.add_child(intf.diff())
 
-        return diff
+    #     return diff
 
-    def print_sync_status(self):
-        """
-        Check of the device is in sync between local and remote and print the status
-        """
+    # def print_sync_status(self):
+    #     """
+    #     Check of the device is in sync between local and remote and print the status
+    #     """
 
-        diff = self.diff()
+    #     diff = self.diff()
 
-        if diff.has_diffs():
-            logger.info(f"{self.name} | NOT up to date on the remote system")
-        else:
-            logger.info(f"{self.name} | up to date on the remote system")
+    #     if diff.has_diffs():
+    #         logger.info(f"{self.name} | NOT up to date on the remote system")
+    #     else:
+    #         logger.info(f"{self.name} | up to date on the remote system")
 
-        return True
+    #     return True
 
     def update_interface_remote(self, intf):
         """
@@ -533,29 +533,29 @@ class NetworkImporterDevice:
 
                 self.site.add_prefix_from_ip(ip=ip.local.address, vlan=vlan)
 
-    def add_batfish_interface(self, intf_name, bf):
-        """
-        Add an interface to the device and try to match it with an existing interface in netbox
+    # def add_batfish_interface(self, intf_name, bf):
+    #     """
+    #     Add an interface to the device and try to match it with an existing interface in netbox
 
-        Input: NetworkImporterInterface
-        Output: Boolean
+    #     Input: NetworkImporterInterface
+    #     Output: Boolean
 
-        Args:
-          intf_name:
-          bf:
+    #     Args:
+    #       intf_name:
+    #       bf:
 
-        Returns:
+    #     Returns:
 
-        """
+    #     """
 
-        if intf_name not in self.interfaces.keys():
-            self.interfaces[intf_name] = NetworkImporterInterface(
-                name=intf_name, device_name=self.name
-            )
+    #     if intf_name not in self.interfaces.keys():
+    #         self.interfaces[intf_name] = NetworkImporterInterface(
+    #             name=intf_name, device_name=self.name
+    #         )
 
-        self.interfaces[intf_name].add_batfish_interface(bf)
+    #     self.interfaces[intf_name].add_batfish_interface(bf)
 
-        return True
+    #     return True
 
     def add_optic(self, intf_name, optic):
         """
@@ -644,63 +644,63 @@ class NetworkImporterDevice:
 
         return True
 
-    def _get_remote_interfaces_list(self):
-        """Query Netbox for the remote interfaces and keep them in cache"""
+    # def _get_remote_interfaces_list(self):
+    #     """Query Netbox for the remote interfaces and keep them in cache"""
 
-        if not self.nb:
-            return False
+    #     if not self.nb:
+    #         return False
 
-        intfs = self.nb.dcim.interfaces.filter(device=self.name)
+    #     intfs = self.nb.dcim.interfaces.filter(device=self.name)
 
-        logger.debug(
-            f"{self.name} - _get_remote_interfaces_list(), found {len(intfs)} interfaces"
-        )
+    #     logger.debug(
+    #         f"{self.name} - _get_remote_interfaces_list(), found {len(intfs)} interfaces"
+    #     )
 
-        for intf in intfs:
+    #     for intf in intfs:
 
-            if intf.name not in self.interfaces.keys():
-                self.interfaces[intf.name] = NetworkImporterInterface(
-                    name=intf.name, device_name=self.name
-                )
+    #         if intf.name not in self.interfaces.keys():
+    #             self.interfaces[intf.name] = NetworkImporterInterface(
+    #                 name=intf.name, device_name=self.name
+    #             )
 
-            if not self.interfaces[intf.name].exist_remote():
-                self.interfaces[intf.name].add_remote(intf)
-            else:
-                self.interfaces[intf.name].update_remote(intf)
+    #         if not self.interfaces[intf.name].exist_remote():
+    #             self.interfaces[intf.name].add_remote(intf)
+    #         else:
+    #             self.interfaces[intf.name].update_remote(intf)
 
-        return True
+    #     return True
 
-    def _get_remote_ips_list(self):
-        """Query Netbox for all IPs associated with this device and keep them in cache"""
+    # def _get_remote_ips_list(self):
+    #     """Query Netbox for all IPs associated with this device and keep them in cache"""
 
-        ips = self.nb.ipam.ip_addresses.filter(device=self.name)
+    #     ips = self.nb.ipam.ip_addresses.filter(device=self.name)
 
-        logger.debug(f"{self.name} - _get_remote_ips_list(), found {len(ips)} ips")
+    #     logger.debug(f"{self.name} - _get_remote_ips_list(), found {len(ips)} ips")
 
-        for ip in ips:
-            if not ip.interface:
-                logger.warning(
-                    f"{self.name} - {ip.address} is not associated with an interface .. skipping"
-                )
-                continue
+    #     for ip in ips:
+    #         if not ip.interface:
+    #             logger.warning(
+    #                 f"{self.name} - {ip.address} is not associated with an interface .. skipping"
+    #             )
+    #             continue
 
-            intf_name = ip.interface.name
-            if ip.interface.name not in self.interfaces.keys():
-                self.interfaces[intf_name] = NetworkImporterInterface(
-                    name=intf_name, device_name=self.name
-                )
+    #         intf_name = ip.interface.name
+    #         if ip.interface.name not in self.interfaces.keys():
+    #             self.interfaces[intf_name] = NetworkImporterInterface(
+    #                 name=intf_name, device_name=self.name
+    #             )
 
-            if ip.address not in self.interfaces[intf_name].ips.keys():
-                self.interfaces[intf_name].ips[ip.address] = NetworkImporterIP(
-                    address=ip.address
-                )
+    #         if ip.address not in self.interfaces[intf_name].ips.keys():
+    #             self.interfaces[intf_name].ips[ip.address] = NetworkImporterIP(
+    #                 address=ip.address
+    #             )
 
-            if not self.interfaces[intf_name].ips[ip.address].exist_remote():
-                self.interfaces[intf_name].ips[ip.address].add_remote(ip)
-            else:
-                self.interfaces[intf_name].ips[ip.address].update_remote(ip)
+    #         if not self.interfaces[intf_name].ips[ip.address].exist_remote():
+    #             self.interfaces[intf_name].ips[ip.address].add_remote(ip)
+    #         else:
+    #             self.interfaces[intf_name].ips[ip.address].update_remote(ip)
 
-        return True
+    #     return True
 
     def _get_remote_inventory_list(self):
         """
@@ -855,52 +855,51 @@ class NetworkImporterInterface(NetworkImporterObjBase):
             self.local.is_lag_member = True
             self.local.is_virtual = False
 
-    def add_ip(self, ip):
-        """
-        Add new IP address to the interface
+    # def add_ip(self, ip):
+    #     """
+    #     Add new IP address to the interface
 
-        Args:
-          ip:
+    #     Args:
+    #       ip:
 
-        Returns:
+    #     Returns:
 
-        """
-        if ip.address in self.ips.keys():
-            return True
+    #     """
+    #     if ip.address in self.ips.keys():
+    #         return True
 
-        self.ips[ip.address] = ip
+    #     self.ips[ip.address] = ip
 
-        logger.debug(f"Intf {self.name}, added ip {ip.address}")
-        return True
+    #     logger.debug(f"Intf {self.name}, added ip {ip.address}")
+    #     return True
 
-    def add_remote(self, remote):
-        """
+    # def add_remote(self, remote):
+    #     """
 
+    #     Args:
+    #       remote:
 
-        Args:
-          remote:
+    #     Returns:
 
-        Returns:
+    #     """
+    #     intf_driver = get_driver("interface")
+    #     self.remote = intf_driver()
+    #     self.remote.add(remote)
 
-        """
-        intf_driver = get_driver("interface")
-        self.remote = intf_driver()
-        self.remote.add(remote)
+    #     return True
 
-        return True
+    # def diff(self):
+    #     """ """
 
-    def diff(self):
-        """ """
+    #     diff = super().diff()
 
-        diff = super().diff()
+    #     for ip in self.ips.values():
+    #         diff.add_child(ip.diff())
 
-        for ip in self.ips.values():
-            diff.add_child(ip.diff())
+    #     if self.optic:
+    #         diff.add_child(self.optic.diff())
 
-        if self.optic:
-            diff.add_child(self.optic.diff())
-
-        return diff
+    #     return diff
 
     def ip_on_interface(self, ip_addr):
         """Examine IP to determine if it exists on this interface
@@ -1198,18 +1197,18 @@ class NetworkImporterSite:
 
         return True
 
-    def diff(self):
-        """ """
+    # def diff(self):
+    #     """ """
 
-        diff = NetworkImporterDiff("site", self.name)
+    #     diff = NetworkImporterDiff("site", self.name)
 
-        for vlan in self.vlans.values():
-            diff.add_child(vlan.diff())
+    #     for vlan in self.vlans.values():
+    #         diff.add_child(vlan.diff())
 
-        for prefix in self.prefixes.values():
-            diff.add_child(prefix.diff())
+    #     for prefix in self.prefixes.values():
+    #         diff.add_child(prefix.diff())
 
-        return diff
+    #     return diff
 
 
 class NetworkImporterVlan(NetworkImporterObjBase):

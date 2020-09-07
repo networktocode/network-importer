@@ -12,7 +12,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from typing import Optional
-from network_importer.models import Site, Device, Interface, IPAddress  # , Cable
+from network_importer.models import (
+    Site,
+    Device,
+    Interface,
+    IPAddress,
+    Cable,
+    Prefix,
+    Vlan,
+)
 
 
 class NetboxSite(Site):
@@ -31,7 +39,15 @@ class NetboxIPAddress(IPAddress):
     remote_id: Optional[int]
 
 
-# class NetboxCable(Cable):
-#     remote_id = Column(Integer, nullable=True)
-#     termination_a_id = Column(Integer, nullable=True)
-#     termination_z_id = Column(Integer, nullable=True)
+class NetboxPrefix(Prefix):
+    remote_id: Optional[int]
+
+
+class NetboxVlan(Vlan):
+    remote_id: Optional[int]
+
+
+class NetboxCable(Cable):
+    remote_id: Optional[int]
+    termination_a_id: Optional[int]
+    termination_z_id: Optional[int]

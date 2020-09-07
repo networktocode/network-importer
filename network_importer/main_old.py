@@ -601,75 +601,75 @@ class NetworkImporter:
             if diff.has_diffs():
                 diff.print_detailed()
 
-    @timeit
-    def update_remote(self):
-        """
-        Update all objects on the remote system
-          - 1/ Update the site and the vlans (serial)
-          - 2/ Update all devices in parallel
-          - 3/ Update all cables (serial)
-        """
+    # @timeit
+    # def update_remote(self):
+    #     """
+    #     Update all objects on the remote system
+    #       - 1/ Update the site and the vlans (serial)
+    #       - 2/ Update all devices in parallel
+    #       - 3/ Update all cables (serial)
+    #     """
 
-        # Site (serial)
-        for site in self.sites.values():
-            site.update_remote()
+    #     # Site (serial)
+    #     for site in self.sites.values():
+    #         site.update_remote()
 
-        # Devices (parallel)
-        results = self.devs.filter(filter_func=valid_devs).run(
-            task=device_update_remote
-        )
+    #     # Devices (parallel)
+    #     results = self.devs.filter(filter_func=valid_devs).run(
+    #         task=device_update_remote
+    #     )
 
-        for dev_name, items in results.items():
-            if items[0].failed:
-                logger.warning(
-                    f"{dev_name} | Something went wrong while trying to update the device in the remote system"
-                )
+    #     for dev_name, items in results.items():
+    #         if items[0].failed:
+    #             logger.warning(
+    #                 f"{dev_name} | Something went wrong while trying to update the device in the remote system"
+    #             )
 
-                self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
-                continue
+    #             self.devs.inventory.hosts[dev_name].data["status"] = "fail-other"
+    #             continue
 
-        # Cables (serial)
-        for cable in self.cables.values():
-            cable.update_remote(self.nb)
+    #     # Cables (serial)
+    #     for cable in self.cables.values():
+    #         cable.update_remote(self.nb)
 
-        return True
+    #     return True
 
     # --------------------------------------------------------------------------
     # Cabling
     # --------------------------------------------------------------------------
 
-    def import_cabling(self):
+    # def import_cabling(self):
 
-        if config.main["import_cabling"] in ["no", False]:
-            return False
+    #     if config.main["import_cabling"] in ["no", False]:
+    #         return False
 
-        if config.main["import_cabling"] in ["config", True]:
-            self.import_cabling_from_configs()
+    #     if config.main["import_cabling"] in ["config", True]:
+    #         self.import_cabling_from_configs()
 
-        if config.main["import_cabling"] in ["lldp", "cdp", True]:
-            self.import_cabling_from_cmds()
+    #     if config.main["import_cabling"] in ["lldp", "cdp", True]:
+    #         self.import_cabling_from_cmds()
 
-        return True
+    #     return True
 
-    @timeit
-    def import_cabling_from_configs(self):
-        """
-        Import cabling information from Batfish layer3Edges
-        """
+    # @timeit
+    # def import_cabling_from_configs(self):
+    #     """
+    #     Import cabling information from Batfish layer3Edges
+    #     """
 
-        p2p_links = self.bf.q.layer3Edges().answer()
+    #     p2p_links = self.bf.q.layer3Edges().answer()
 
-        for link in p2p_links.frame().itertuples():
+    #     for link in p2p_links.frame().itertuples():
 
-            self.__add_cable_local(
-                dev_a=link.Interface.hostname,
-                intf_a=re.sub(r"\.\d+$", "", link.Interface.interface),
-                dev_z=link.Remote_Interface.hostname,
-                intf_z=re.sub(r"\.\d+$", "", link.Remote_Interface.interface),
-                source="config",
-            )
+    #         self.__add_cable_local(
+    #             dev_a=link.Interface.hostname,
+    #             intf_a=re.sub(r"\.\d+$", "", link.Interface.interface),
+    #             dev_z=link.Remote_Interface.hostname,
+    #             intf_z=re.sub(r"\.\d+$", "", link.Remote_Interface.interface),
+    #             source="config",
+    #         )
 
-        return True
+    #     return True
 
     @timeit
     def import_cabling_from_cmds(self):
@@ -830,11 +830,11 @@ class NetworkImporter:
 
         return True
 
-    def update_cabling_remote(self):
+    # def update_cabling_remote(self):
 
-        for cable in self.cables.values():
+    #     for cable in self.cables.values():
 
-            cable.update_remote(self.nb)
+    #         cable.update_remote(self.nb)
 
     # --------------------------------------------------------------------------
     # Transceivers

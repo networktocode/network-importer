@@ -24,7 +24,7 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
-from network_importer.adapters.netbox import NetBoxAdapter
+from network_importer.adapters.netbox_api import NetBoxAPIAdapter
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
@@ -96,7 +96,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # filters["limit"] = 100
 
     logger.info(f"Import NetBox Model")
-    nb = NetBoxAdapter()
+    nb = NetBoxAPIAdapter()
     nb.init(url=config.netbox["address"], token=config.netbox["token"], filters=filters)
 
     logger.info(f"Import NI Model")
@@ -118,7 +118,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
     if apply:
-        pdb.set_trace()
+        # pdb.set_trace()
         nb.sync(ni)
 
     elif check:

@@ -14,12 +14,11 @@ limitations under the License.
 import copy
 from collections import defaultdict
 from typing import Set, Dict, List, Optional
-from pydantic import BaseModel
 
-from dsync import DSyncMixin
+from dsync import DSyncModel
 
 
-class Site(BaseModel, DSyncMixin):
+class Site(DSyncModel):
     """
     """
 
@@ -37,7 +36,7 @@ class Site(BaseModel, DSyncMixin):
         return str(self.name)
 
 
-class Device(BaseModel, DSyncMixin):
+class Device(DSyncModel):
     """
     """
 
@@ -50,26 +49,29 @@ class Device(BaseModel, DSyncMixin):
     site_name: str
     interfaces: List = list()
 
-
-# interface_vlans_allowed = Table('interface_vlans_allowed', Base.metadata,
-#     Column('vlan_id', Integer, ForeignKey('vlan.vid')),
-#     Column('site_name', SITE_NAME_DEF, ForeignKey('vlan.site_name')),
-#     Column('interface_name', INTF_NAME_DEF, ForeignKey('interface.name')),
-#     Column('device_name', DEVICE_NAME_DEF, ForeignKey('interface.device_name')),
-# )
+    platform: Optional[str]
+    model: Optional[str]
+    role: Optional[str]
+    vendor: Optional[str]
 
 
-class Interface(BaseModel, DSyncMixin):
+class Interface(DSyncModel):
     """
     """
-
-    __tablename__ = "interface"
 
     __modelname__ = "interface"
     __identifier__ = ["device_name", "name"]
     __shortname__ = ["name"]
-    __attributes__ = ["description", "mtu", "switchport_mode"]
-    __children__ = {"ip_address": "ips"}
+    __attributes__ = [
+        "description",
+        "mtu",
+        "is_virtual",
+        "is_lag",
+        "is_lag_member",
+        "parent",
+        "switchport_mode",
+    ]
+    __children__ = {"ip_address": "ips", "vlan": "allowed_vlans"}
 
     name: str
     device_name: str
@@ -77,24 +79,22 @@ class Interface(BaseModel, DSyncMixin):
     description: Optional[str]
     mtu: Optional[int]
     speed: Optional[int]
-    mode: Optional[str]
-    switchport_mode: Optional[str]
+    mode: Optional[str]  # TRUNK, ACCESS, L3, NONE
+    switchport_mode: Optional[str] = "NONE"
     active: Optional[bool]
     is_virtual: Optional[bool]
     is_lag: Optional[bool]
     is_lag_member: Optional[bool]
-
-    lag_members: Optional[List[str]]
     parent: Optional[str]
 
-    # access_vlan = Column(Integer, nullable=True)
-    # allowed_vlans = relationship("Vlan",
-    #                 secondary=interface_vlans_allowed)
+    lag_members: List[str] = list()
+    allowed_vlans: List[str] = list()
+    access_vlan: Optional[str]
 
     ips: List = list()
 
 
-class IPAddress(BaseModel, DSyncMixin):
+class IPAddress(DSyncModel):
     """
     """
 
@@ -107,7 +107,7 @@ class IPAddress(BaseModel, DSyncMixin):
     device_name: Optional[str]
 
 
-class Prefix(BaseModel, DSyncMixin):
+class Prefix(DSyncModel):
     """
     """
 
@@ -124,7 +124,7 @@ class Prefix(BaseModel, DSyncMixin):
     # vlan = relationship("Vlan", back_populates="prefixes")
 
 
-class Cable(BaseModel, DSyncMixin):
+class Cable(DSyncModel):
     """ """
 
     __modelname__ = "cable"
@@ -135,7 +135,6 @@ class Cable(BaseModel, DSyncMixin):
         "interface_z_name",
     ]
     __attributes__ = []
-    __children_types__ = []
 
     device_a_name: str
     interface_a_name: str
@@ -165,24 +164,42 @@ class Cable(BaseModel, DSyncMixin):
         )
 
 
-# class Vlan(BaseModel, DSyncMixin):
-#     """ """
+class Vlan(DSyncModel):
+    """ """
 
-#     __tablename__ = "vlan"
+    __modelname__ = "vlan"
+    __identifier__ = ["site", "vid"]
+    __attributes__ = ["name"]
+
+    vid: int
+    name: Optional[str]
+    site_name: str
 
 
-#     __modelname__ = "vlan"
-#     __identifier__ = ["site", "vid"]
-#     __attributes__ = ["name"]
-#     __children_types__ = []
+# class Optic(BaseModel):
+#     """
+#     Base Class for an optic
+#     """
 
+#     def __init__(
+#         self,
+#         name: str = None,
+#         optic_type: str = None,
+#         intf: str = None,
+#         serial: str = None,
+#     ):
+#         """
 
-#     vid: int
-#     site: Site
-#     name: str
+#         Args:
+#           name:  (Default value = None)
+#           optic_type:  (Default value = None)
+#           intf:  (Default value = None)
+#           serial:  (Default value = None)
 
-#     # remote_id = Column(Integer, nullable=True)
+#         Returns:
 
-#     # interfaces_tagged = relationship("Interface",
-#     #                 secondary=interface_vlans_allowed,
-#     #                 back_populates="allowed_vlans")
+#         """
+#         self.optic_type = optic_type
+#         self.intf = intf
+#         self.serial = serial
+#         self.name = name

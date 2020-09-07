@@ -14,15 +14,17 @@ limitations under the License.
 import logging
 import pdb
 from os import path
+from pydantic import BaseModel
 from collections import defaultdict
 
 from .diff import Diff, DiffElement
 from .utils import intersection
+from .exceptions import ObjectCrudException, ObjectAlreadyExist
 
 logger = logging.getLogger(__name__)
 
 
-class DSyncMixin:
+class DSyncModel(BaseModel):
 
     __modelname__ = None
     __identifier__ = []
@@ -79,7 +81,19 @@ class DSyncMixin:
         else:
             return self.get_unique_id()
 
-    def add_child(self, child, child_type=None):
+    def add_child(self, child):
+        """Add a child to an object.
+
+        The child will be automatically saved/store by its unique id 
+        The name of the target attribute is defined in __children__ per object type
+
+        Args:
+            child (DSyncModel): Valid  DSyncModel object
+
+        Raises:
+            Exception: Invalid Child type, if the type is not part of __children__
+            Exception: Invalid attribute name if the name of the attribute defined in __children__ for this type do not exist
+        """
 
         child_type = child.get_type()
 
@@ -96,8 +110,6 @@ class DSyncMixin:
         childs = getattr(self, attr_name)
         childs.append(child.get_unique_id())
 
-        return True
-
 
 class DSync:
 
@@ -110,9 +122,6 @@ class DSync:
 
     def init(self):
         raise NotImplementedError
-
-    def clean(self):
-        pass
 
     def sync(self, source):
         """Syncronize the current DSync object with the source
@@ -127,6 +136,14 @@ class DSync:
             self.sync_element(child)
 
     def sync_element(self, element: DiffElement):
+        """Synronize a given object or element defined in a DiffElement
+
+        Args:
+            element (DiffElement): 
+
+        Returns:
+            Bool: Return False if there is nothing to sync
+        """
 
         if not element.has_diffs():
             return False
@@ -271,6 +288,28 @@ class DSync:
         )
 
     def _crud_change(self, action, object_type, keys, params):
+        """Dispatcher function to Create, Update or Delete an object.
+
+        Based on the type of the action and the type of the object, 
+        we'll first try to execute a function named after the object type and the action 
+            "{action}_{object_type}"   update_interface or delete_device ...
+        if such function is not available, the default function will be executed instead
+            default_create, default_update or default_delete
+
+        The goal is to all each DSync class to insert its own logic per object type when we manipulate these objects
+
+        Args:
+            action (str): type of action, must be create, update or delete
+            object_type (DSyncModel): class of the object
+            keys (dict): Dictionnary containings the primary attributes of an object and their value
+            params (dict): Dictionnary containings the attributes of an object and their value
+
+        Raises:
+            Exception: Object type do not exist in this class
+
+        Returns:
+            DSyncModel: object created/updated/deleted
+        """
 
         if not hasattr(self, object_type):
             raise Exception("Unable to find this object type")
@@ -278,42 +317,95 @@ class DSync:
         # Check if a specific crud function is available
         #   update_interface or create_device etc ...
         # If not apply the default one
-        if hasattr(self, f"{action}_{object_type}"):
-            item = getattr(self, f"{action}_{object_type}")(keys=keys, params=params)
-            logger.debug(f"{action}d {object_type} - {params}")
-        else:
-            item = getattr(self, f"default_{action}")(
-                object_type=object_type, keys=keys, params=params
-            )
-            logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
 
-        return item
+        try:
+            if hasattr(self, f"{action}_{object_type}"):
+                item = getattr(self, f"{action}_{object_type}")(
+                    keys=keys, params=params
+                )
+                logger.debug(f"{action}d {object_type} - {params}")
+            else:
+                item = getattr(self, f"default_{action}")(
+                    object_type=object_type, keys=keys, params=params
+                )
+                logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
+            return item
+        except ObjectCrudException:
+            return False
 
     # ----------------------------------------------------------------------------
     def default_create(self, object_type, keys, params):
-        """ """
+        """Default function to create a new object in the local storage.
+
+        This function will be called if a most specific function of type create_<object_type> is not defined
+
+        Args:
+            object_type (DSyncModel): class of the object
+            keys (dict): Dictionnary containings the primary attributes of an object and their value
+            params (dict): Dictionnary containings the attributes of an object and their value
+
+        Returns:
+            DSyncModel: Return the newly created object
+        """
         obj = getattr(self, object_type)
         item = obj(**keys, **params)
         self.add(item)
         return item
 
     def default_update(self, object_type, keys, params):
-        raise NotImplementedError
-        # obj = getattr(self, object_type)
+        """Update an object locally based on it's primary keys and attributes
 
-        # item = session.query(obj).filter_by(**keys).first()
-        # item.update(**params)
-        # return item
+        This function will be called if a most specific function of type update_<object_type> is not defined
+
+        Args:
+            object_type (DSyncModel): class of the object
+            keys (dict): Dictionnary containings the primary attributes of an object and their value
+            params (dict): Dictionnary containings the attributes of an object and their value
+
+        Returns:
+            DSyncModel: Return the object after update
+        """
+        obj = getattr(self, object_type)
+
+        uid = obj(**keys).get_unique_id()
+        item = self.get(obj=obj, keys=[uid])
+
+        for attr, value in params.items():
+            setattr(item, attr, value)
+
+        return item
 
     def default_delete(self, object_type, keys, params):
+        """Delete an object locally based on it's primary keys and attributes
+
+        This function will be called if a most specific function of type delete_<object_type> is not defined
+
+        Args:
+            object_type (DSyncModel): class of the object
+            keys (dict): Dictionnary containings the primary attributes of an object and their value
+            params (dict): Dictionnary containings the attributes of an object and their value
+
+        Returns:
+            DSyncModel: Return the object that has been deleted
+        """
         obj = getattr(self, object_type)
         item = obj(**keys, **params)
         self.delete(item)
         return item
 
     # ------------------------------------------------------------------------------
+    # Object Storage Management
+    # ------------------------------------------------------------------------------
+    def get(self, obj, keys):
+        """Get one object from the data store based on it's unique id or a list of it's unique attribute
 
-    def get(self, obj, keys=[]):
+        Args:
+            obj (DSyncModel, str): DSyncModel class or object or string that define the type of the objects to retrieve
+            keys (list[str]): List of attributes.
+
+        Returns:
+            DSyncModel, None
+        """
 
         if isinstance(obj, str):
             modelname = obj
@@ -328,6 +420,14 @@ class DSync:
         return None
 
     def get_all(self, obj):
+        """Get all objects of a given type
+
+        Args:
+            obj (DSyncModel, str): DSyncModel class or object or string that define the type of the objects to retrieve
+
+        Returns:
+            ValuesList[DSyncModel]: List of Object
+        """
 
         if isinstance(obj, str):
             modelname = obj
@@ -339,21 +439,52 @@ class DSync:
 
         return self.__datas__[modelname].values()
 
-    def get_by_keys(self, keys, obj_type):
+    def get_by_keys(self, keys, obj):
+        """Get multiple objects from the store by their unique IDs/Keys and type
 
-        return [value for uid, value in self.__datas__[obj_type].items() if uid in keys]
+        Args:
+            keys (list[str]): List of unique id / key identifying object in the database.
+            obj (DSyncModel, str): DSyncModel class or object or string that define the type of the objects to retrieve
+
+        Returns:
+            list[DSyncModel]: List of Object
+        """
+        if isinstance(obj, str):
+            modelname = obj
+        else:
+            modelname = obj.get_type()
+
+        return [
+            value for uid, value in self.__datas__[modelname].items() if uid in keys
+        ]
 
     def add(self, obj):
+        """Add a DSyncModel object in the store
+
+        Args:
+            obj (DSyncModel): Object ot store
+
+        Raises:
+            Exception: Object is already present
+        """
 
         modelname = obj.get_type()
         uid = obj.get_unique_id()
 
         if uid in self.__datas__[modelname]:
-            raise Exception(f"Object {uid} already present")
+            raise ObjectAlreadyExist(f"Object {uid} already present")
 
         self.__datas__[modelname][uid] = obj
 
     def delete(self, obj):
+        """Delete an Object from the store
+
+        Args:
+            obj (DSyncModel): object to delete
+
+        Raises:
+            Exception: Object not present
+        """
 
         modelname = obj.get_type()
         uid = obj.get_unique_id()
