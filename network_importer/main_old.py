@@ -296,57 +296,57 @@ class NetworkImporter:
 
         for host in self.devs.inventory.hosts.values():
 
-            if not host.data["has_config"]:
-                continue
+            # if not host.data["has_config"]:
+            #     continue
 
-            dev = host.data["obj"]
+            # dev = host.data["obj"]
 
-            logger.info(f"{dev.name} | Importing data from configurations .. ")
+            # logger.info(f"{dev.name} | Importing data from configurations .. ")
 
-            bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
+            # bf_ints = self.bf.q.interfaceProperties(nodes=dev.name).answer()
 
-            interface_vlans_mapping = defaultdict(list)
+            # interface_vlans_mapping = defaultdict(list)
 
-            if config.main["import_vlans"] == "config":
-                bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
-                for vlan in bf_vlans.frame().itertuples():
-                    dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
-                    )
+            # if config.main["import_vlans"] == "config":
+            #     bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
+            #     for vlan in bf_vlans.frame().itertuples():
+            #         dev.site.add_vlan(
+            #             vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
+            #         )
 
-                    # Save interface to vlan mapping for later use
-                    for intf in vlan.Interfaces:
-                        if intf.hostname != dev.name.lower():
-                            continue
-                        interface_vlans_mapping[intf.interface].append(vlan.VLAN_ID)
+            #         # Save interface to vlan mapping for later use
+            #         for intf in vlan.Interfaces:
+            #             if intf.hostname != dev.name.lower():
+            #                 continue
+            #             interface_vlans_mapping[intf.interface].append(vlan.VLAN_ID)
 
-            for bf_intf in bf_ints.frame().itertuples():
-                found_intf = False
+            # for bf_intf in bf_ints.frame().itertuples():
+            #     found_intf = False
 
-                intf_name = bf_intf.Interface.interface
-                dev.add_batfish_interface(intf_name, bf_intf)
+            #     intf_name = bf_intf.Interface.interface
+            #     dev.add_batfish_interface(intf_name, bf_intf)
 
-                for prfx in bf_intf.All_Prefixes:
-                    if config.main["import_ips"]:
-                        dev.add_ip(intf_name, IPAddress(address=prfx))
+            #     for prfx in bf_intf.All_Prefixes:
+            #         if config.main["import_ips"]:
+            #             dev.add_ip(intf_name, IPAddress(address=prfx))
 
-                    if config.main["import_prefixes"]:
-                        vlan = None
-                        if len(interface_vlans_mapping[intf_name]) == 1:
-                            vlan = interface_vlans_mapping[intf_name][0]
-                        elif len(interface_vlans_mapping[intf_name]) >= 1:
-                            logger.warning(
-                                f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({interface_vlans_mapping[intf_name]})"
-                            )
+            #         if config.main["import_prefixes"]:
+            #             vlan = None
+            #             if len(interface_vlans_mapping[intf_name]) == 1:
+            #                 vlan = interface_vlans_mapping[intf_name][0]
+            #             elif len(interface_vlans_mapping[intf_name]) >= 1:
+            #                 logger.warning(
+            #                     f"{dev.name} | More than 1 vlan associated with interface {intf_name} ({interface_vlans_mapping[intf_name]})"
+            #                 )
 
-                        dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)
+            #             dev.site.add_prefix_from_ip(ip=prfx, vlan=vlan)
 
-            if config.main["import_vlans"] == "config":
-                bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
-                for vlan in bf_vlans.frame().itertuples():
-                    dev.site.add_vlan(
-                        vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
-                    )
+            # if config.main["import_vlans"] == "config":
+            #     bf_vlans = self.bf.q.switchedVlanProperties(nodes=dev.name).answer()
+            #     for vlan in bf_vlans.frame().itertuples():
+            #         dev.site.add_vlan(
+            #             vlan=Vlan(name=f"vlan-{vlan.VLAN_ID}", vid=vlan.VLAN_ID), device=dev.name,
+            #         )
 
             if config.main["generate_hostvars"]:
 

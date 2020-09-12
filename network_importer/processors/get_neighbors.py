@@ -1,17 +1,12 @@
-import os
 import pdb
 import logging
-from pathlib import Path
 
 from typing import Dict
-import hashlib
 
-from nornir.core import Nornir
 from nornir.core.inventory import Host
 from nornir.core.task import AggregatedResult, MultiResult, Result, Task
 
 from network_importer.processors import BaseProcessor
-import network_importer.config as config
 
 logger = logging.getLogger("network-importer")
 

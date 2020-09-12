@@ -13,17 +13,9 @@ limitations under the License.
 """
 
 import logging
-import sys
 import os
-import re
 import warnings
 import importlib
-from collections import defaultdict
-import ipaddress
-import requests
-import pynetbox
-
-from jinja2 import Template, Environment, FileSystemLoader
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -39,16 +31,7 @@ from network_importer.processors.get_config import GetConfig
 from network_importer.processors.get_neighbors import GetNeighbors
 from network_importer.drivers import dispatcher
 
-from network_importer.tasks import (
-    # initialize_devices,
-    update_configuration,
-    # collect_transceivers_info,
-    # collect_vlans_info,
-    # collect_lldp_neighbors,
-    # device_update_remote,
-    check_if_reachable,
-    # update_device_status,
-)
+from network_importer.tasks import check_if_reachable
 
 from network_importer.inventory import (
     valid_devs,
@@ -58,8 +41,6 @@ from network_importer.inventory import (
     valid_and_reachable_devs,
 )
 
-from network_importer.adapters.netbox_api import NetBoxAPIAdapter
-from network_importer.adapters.network_importer import NetworkImporterAdapter
 from network_importer.performance import timeit
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"

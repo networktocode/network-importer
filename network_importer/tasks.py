@@ -1,5 +1,5 @@
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,16 +12,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-import sys
 import logging
 import os
 import hashlib
-import copy
 import json
 from pathlib import Path
-from collections import defaultdict
 import yaml
-import pynetbox
 
 from nornir.core.task import Result, Task
 from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napalm_get

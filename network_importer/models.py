@@ -12,9 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import copy
-from collections import defaultdict
-from optparse import Option
-from typing import Set, Dict, List, Optional
+from typing import List, Optional
 
 from dsync import DSyncModel
 
