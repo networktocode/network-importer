@@ -51,6 +51,8 @@ class NetboxInventory(Inventory):
         username: Optional[str] = None,
         password: Optional[str] = None,
         enable: Optional[bool] = True,
+        use_primary_ip: Optional[bool] = True,
+        fqdn: Optional[str] = None,
         supported_platforms: Optional[List[str]] = [],
         filter_parameters: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
@@ -68,6 +70,9 @@ class NetboxInventory(Inventory):
           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
           username: Optional[str]
           password: Optional[str]
+          enable: Optional[bool] = True,
+          use_primary_ip: Optional[bool] = True,
+          fqdn: Optional[str] = None,
           supported_platforms: Optional[List[str]]
           **kwargs: Any:
 
@@ -129,11 +134,15 @@ class NetboxInventory(Inventory):
                     continue
 
             # Add value for IP address
-            if dev.primary_ip:
+            if use_primary_ip and dev.primary_ip:
                 host["hostname"] = dev.primary_ip.address.split("/")[0]
-            else:
+            elif use_primary_ip and not dev.primary_ip:
                 host["data"]["is_reachable"] = False
                 host["data"]["not_reachable_reason"] = f"primary ip not defined in Netbox"
+            elif not use_primary_ip and fqdn:
+                host["hostname"] = f"{dev.name}.{fqdn}"
+            elif not use_primary_ip:
+                host["hostname"] = dev.name
 
             host["data"]["serial"] = dev.serial
             host["data"]["vendor"] = dev.device_type.manufacturer.slug
