@@ -31,6 +31,11 @@ from network_importer.utils import (
     expand_vlans_list,
 )
 
+
+from network_importer.inventory import reachable_devs
+from network_importer.drivers import dispatcher
+from network_importer.processors.get_neighbors import GetNeighbors
+
 logger = logging.getLogger("network-importer")
 
 
@@ -278,8 +283,9 @@ class NetworkImporterAdapter(BaseAdapter):
             self.import_batfish_cable()
 
         if config.main["import_cabling"] in ["lldp", "cdp", True]:
-            pass
-            # self.import_cabling_from_cmds()
+            self.import_cabling_from_cmds()
+
+        self.validate_cabling()
 
         return True
 
@@ -302,6 +308,7 @@ class NetworkImporterAdapter(BaseAdapter):
                 interface_a_name=re.sub(r"\.\d+$", "", link.Interface.interface),
                 device_z_name=link.Remote_Interface.hostname,
                 interface_z_name=re.sub(r"\.\d+$", "", link.Remote_Interface.interface),
+                source="batfish",
             )
             uid = cable.get_unique_id()
 
@@ -312,27 +319,131 @@ class NetworkImporterAdapter(BaseAdapter):
         nbr_cables = len(self.get_all(self.cable))
         logger.debug(f"Found {nbr_cables} cables in Batfish")
 
-    # def import_batfish_aggregate(self, device, session):
+    # @timeit
+    def import_cabling_from_cmds(self):
 
-    #     aggregates = (
-    #         self.bf.q.routes(protocols="aggregate", nodes=device.name).answer().frame()
-    #     )
+        logger.info("Collecting cabling information from devices .. ")
 
-    #     for item in aggregates.itertuples():
+        results = (
+            self.nornir.filter(filter_func=reachable_devs)
+            .with_processors([GetNeighbors()])
+            .run(task=dispatcher, method="get_neighbors", on_failed=True,)
+        )
 
-    #         prefix_obj = (
-    #             session.query(self.prefix)
-    #             .filter_by(prefix=str(item.Network), site=device.site)
-    #             .first()
-    #         )
+        nbr_cables = 0
+        for dev_name, items in results.items():
+            if items[0].failed:
+                continue
 
-    #         if not prefix_obj:
-    #             session.add(
-    #                 self.prefix(
-    #                     prefix=str(item.Network),
-    #                     site=device.site,
-    #                     prefix_type="AGGREGATE",
-    #                 )
-    #             )
+            if not isinstance(items[0].result, dict) or "neighbors" not in items[0].result:
+                logger.debug(f"{dev_name} | No neighbors information returned SKIPPING ")
+                continue
 
-    #             logger.debug(f"Added Aggregate prefix {item.Network}")
+            for interface, neighbors in items[0].result["neighbors"].items():
+                cable = self.cable(
+                    device_a_name=dev_name,
+                    interface_a_name=interface,
+                    device_z_name=neighbors[0]["hostname"],
+                    interface_z_name=neighbors[0]["port"],
+                    source="cli",
+                )
+                nbr_cables += 1
+                self.get_or_add(cable)
+
+        logger.debug(f"Found {nbr_cables} cables from Cli")
+
+        return True
+
+    # @timeit
+    def validate_cabling(self):
+        """
+        Check if all cables are valid
+            Check if both devices are present in the device list
+                For now only process cables with both devices present
+            Check if both interfaces are present as well and are not virtual
+            Check that both interfaces are not already connected to a different device/interface
+
+        When a cable is not valid, update the flag valid on the object itself
+        Non valid cables will be ignored later on for update/creation
+        """
+        cables = self.get_all(self.cable)
+        for cable in cables:
+
+            for side in ["a", "z"]:
+
+                dev_name, intf_name = cable.get_device_intf(side)
+
+                dev = self.get(self.device, keys=[dev_name])
+
+                if not dev:
+                    logger.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
+                    cable.is_valid = False
+                    cable.error = "missing-device"
+                    continue
+
+                intf = self.get(self.interface, keys=[dev_name, intf_name])
+
+                if not intf_name:
+                    logger.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
+                    cable.is_valid = False
+                    cable.error = "missing-interface"
+                    continue
+
+                if intf.is_virtual:
+                    logger.debug(
+                        f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
+                    )
+                    cable.is_valid = False
+                    cable.error = "virtual-interface"
+                    continue
+
+                if not cable.is_valid:
+                    self.delete(cable)
+
+                # remote_side = "z"
+                # if side == "z":
+                #     remote_side = "a"
+
+                # remote_device_expected, remote_intf_expected = cable.get_device_intf(remote_side)
+
+                # remote_dev = self.get(self.device, keys=[remote_device_expected])
+
+                # if not dev.interfaces[intf_name].remote or not dev.interfaces[intf_name].remote.remote:
+                #     continue
+
+                # cable_type = dev.interfaces[intf_name].remote.remote.connected_endpoint_type
+
+                # # Check if the interface is already connected
+                # # Check if it's already connected to the right device
+                # if not cable_type:
+                #     # Interface is currently not connected in netbox
+                #     continue
+
+                # elif cable_type != "dcim.interface":
+
+                #     logger.debug(
+                #         f"CABLE: {dev_name}:{intf_name} is already connected but to a different type of interface  ({cable_type})"
+                #     )
+                #     cable.is_valid = False
+                #     cable.error = "wrong-cable-type"
+                #     continue
+
+                # elif cable_type == "dcim.interface":
+                #     remote_host_reported = dev.interfaces[intf_name].remote.remote.connected_endpoint.device.name
+                #     remote_int_reported = dev.interfaces[intf_name].remote.remote.connected_endpoint.name
+
+                #     if remote_host_reported != remote_device_expected:
+                #         logger.warning(
+                #             f"CABLE: {dev_name}:{intf_name} is already connected but to a different device ({remote_host_reported} vs {remote_device_expected})"
+                #         )
+                #         cable.is_valid = False
+                #         cable.error = "wrong-peer-device"
+                #         continue
+
+                #     elif remote_host_reported == remote_device_expected and remote_intf_expected != remote_int_reported:
+                #         logger.warning(
+                #             f"CABLE:  {dev_name}:{intf_name} is already connected but to a different interface ({remote_int_reported} vs {remote_intf_expected})"
+                #         )
+                #         cable.is_valid = False
+                #         cable.error = "interface-already-connected"
+                #         continue

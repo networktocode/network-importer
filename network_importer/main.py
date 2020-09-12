@@ -17,6 +17,7 @@ import sys
 import os
 import re
 import warnings
+import importlib
 from collections import defaultdict
 import ipaddress
 import requests
@@ -34,6 +35,10 @@ with warnings.catch_warnings():
 import network_importer.config as config
 
 from network_importer.utils import sort_by_digits, patch_http_connection_pool
+from network_importer.processors.get_config import GetConfig
+from network_importer.processors.get_neighbors import GetNeighbors
+from network_importer.drivers import dispatcher
+
 from network_importer.tasks import (
     # initialize_devices,
     update_configuration,
@@ -118,6 +123,8 @@ class NetworkImporter:
                     "username": config.network["login"],
                     "password": config.network["password"],
                     "enable": config.network["enable"],
+                    "use_primary_ip": config.main["use_primary_ip"],
+                    "fqdn": config.main["fqdn"],
                     "supported_platforms": config.netbox["supported_platforms"],
                 },
             },
@@ -169,11 +176,17 @@ class NetworkImporter:
         # --------------------------------------------------------
 
         logger.info(f"Import SOT Model")
-        self.sot = NetBoxAPIAdapter(nornir=self.nornir)
+        sot_path = config.main["sot_adapter"].split(".")
+        sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
+        self.sot = sot_adapter(nornir=self.nornir)
         self.sot.init()
 
         logger.info(f"Import Network Model")
-        self.network = NetworkImporterAdapter(nornir=self.nornir)
+        network_adapter_path = config.main["network_adapter"].split(".")
+        network_adapter = getattr(
+            importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
+        )
+        self.network = network_adapter(nornir=self.nornir)
         self.network.init()
 
         return True
@@ -193,47 +206,22 @@ class NetworkImporter:
 
         logger.info("Updating configuration from devices .. ")
 
-        if not os.path.isdir(config.main["configs_directory"]):
-            os.mkdir(config.main["configs_directory"])
-            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
-
-        configs_dir_lvl2 = config.main["configs_directory"] + "/configs"
-
-        if not os.path.isdir(configs_dir_lvl2):
-            os.mkdir(configs_dir_lvl2)
-            logger.debug(f"Configs directory created at {configs_dir_lvl2}")
-
-        # Save the hostnames associated with all existing configurations before we start the update process
-        hostname_existing_configs = [f.split(".txt")[0] for f in os.listdir(configs_dir_lvl2) if f.endswith(".txt")]
-
         # ----------------------------------------------------
         # Do a pre-check to ensure that all devices are reachable
         # ----------------------------------------------------
         self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
         self.warning_devices_not_reachable()
 
-        results = self.devs.filter(filter_func=reachable_devs).run(
-            task=update_configuration, configs_directory=configs_dir_lvl2, on_failed=True,
+        results = (
+            self.nornir.filter(filter_func=reachable_devs)
+            .with_processors([GetConfig()])
+            .run(task=dispatcher, method="get_config", on_failed=True,)
         )
 
-        # ----------------------------------------------------
-        # Process the results and identify which configs has not been updated
-        # based on the list we captured previously
-        # ----------------------------------------------------
-        for dev_name, item in results.items():
-
-            if not item[0].failed and dev_name in hostname_existing_configs:
-                hostname_existing_configs.remove(dev_name)
-
-            elif item[0].failed:
-                logger.warning(f"{dev_name} | Something went wrong while trying to update the configuration ")
-                self.nornir.inventory.hosts[dev_name].data["status"] = "fail-other"
-                continue
-
-        if len(hostname_existing_configs) > 0:
-            logger.info(f"Will delete {len(hostname_existing_configs)} config(s) that have not been updated")
-
-            for f in hostname_existing_configs:
-                os.remove(os.path.join(configs_dir_lvl2, f"{f}.txt"))
-
         return True
+
+    def warning_devices_not_reachable(self):
+        """Generate warning logs for each unreachable device."""
+        for host in self.nornir.filter(filter_func=lambda h: h.data["is_reachable"] is False).inventory.hosts:
+            reason = self.nornir.inventory.hosts[host].data.get("not_reachable_reason", "reason not defined")
+            logger.warning(f"{host} device is not reachable, {reason}")

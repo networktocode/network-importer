@@ -13,6 +13,7 @@ limitations under the License.
 """
 import copy
 from collections import defaultdict
+from optparse import Option
 from typing import Set, Dict, List, Optional
 
 from dsync import DSyncModel
@@ -145,6 +146,10 @@ class Cable(DSyncModel):
     device_z_name: str
     interface_z_name: str
 
+    source: Optional[str]
+    is_valid: bool = True
+    error: Optional[str]
+
     def __init__(self, *args, **kwargs):
         """ Ensure the """
         new_kwargs = copy.deepcopy(kwargs)
@@ -161,6 +166,15 @@ class Cable(DSyncModel):
         return "__".join(
             sorted([f"{self.device_a_name}:{self.interface_a_name}", f"{self.device_z_name}:{self.interface_z_name}",])
         )
+
+    def get_device_intf(self, side):
+
+        if side.lower() == "a":
+            return self.device_a_name, self.interface_a_name
+        elif side.lower() == "z":
+            return self.device_z_name, self.interface_z_name
+        else:
+            raise ValueError("side must be either 'a' or 'z'")
 
 
 class Vlan(DSyncModel):

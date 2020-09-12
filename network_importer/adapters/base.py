@@ -22,3 +22,23 @@ class BaseAdapter(DSync):
             site.add_child(vlan)
 
         return vlan, True
+
+    def get_or_add(self, obj):
+        """Add a new object or retrieve it if it already exists
+
+        Args:
+            obj (DSyncModel): DSyncModel oject
+
+        Returns:
+            DSyncModel: DSyncObject retrieved from the datastore
+            Bool: True if the object was created
+        """
+        modelname = obj.get_type()
+        uid = obj.get_unique_id()
+
+        if uid in self.__datas__[modelname]:
+            return self.__datas__[modelname][uid], False
+
+        self.add(obj)
+
+        return obj, True

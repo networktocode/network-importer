@@ -1,5 +1,5 @@
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ config_schema = dict(
                 hostvars_directory=dict(type="string", default="host_vars"),
                 nbr_workers=dict(type="integer", default=25),
                 inventory_source=dict(type="string", enum=["netbox", "configs"], default="netbox"),
-                inventory_filter=dict(type="string"),
+                inventory_filter=dict(type="string", default=""),
                 configs_directory=dict(type="string", default="configs"),
                 data_directory=dict(type="string", default="data"),
                 data_update_cache=dict(type="boolean", default=True),
@@ -38,6 +38,13 @@ config_schema = dict(
                 backend_type=dict(type="string", enum=["netbox"], default="netbox"),
                 backend_version=dict(type="string", default="default"),
                 excluded_platforms_cabling=dict(type="array", items=dict(type="string"), default=[]),
+                # xxx
+                fqdn=dict(type=["string", "null"], default=None),
+                use_primary_ip=dict(type="boolean", default=True),
+                network_adapter=dict(
+                    type="string", default="network_importer.adapters.network_importer.NetworkImporterAdapter"
+                ),
+                sot_adapter=dict(type="string", default="network_importer.adapters.netbox_api.NetBoxAPIAdapter"),
             ),
             default={},
         ),
