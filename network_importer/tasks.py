@@ -15,12 +15,10 @@ limitations under the License.
 import logging
 import os
 import json
-from pathlib import Path
 import yaml
 
 from nornir.core.task import Result, Task
-from nornir.plugins.tasks.networking import netmiko_send_command, tcp_ping, napalm_get
-from napalm.base.helpers import canonical_interface_name
+from nornir.plugins.tasks.networking import tcp_ping
 
 import network_importer.config as config
 
@@ -47,7 +45,7 @@ def get_data_from_file(host, filename):
     """Get data from a JSON file for a given host.
 
     Args:
-      host (str): Name of the host 
+      host (str): Name of the host
       filename (str): Name of the file to get data from
 
     Returns:
