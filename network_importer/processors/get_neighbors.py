@@ -1,11 +1,14 @@
+from collections import defaultdict
 import pdb
 import logging
 
-from typing import Dict
+from typing import Dict, List, Optional
 
 from nornir.core.inventory import Host
 from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+from pydantic import BaseModel
 
+import network_importer.config as config
 from network_importer.processors import BaseProcessor
 
 logger = logging.getLogger("network-importer")
@@ -15,6 +18,15 @@ logger = logging.getLogger("network-importer")
 # if host.platform in config.main["excluded_platforms_cabling"]:
 #     logger.debug(f"{host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
 #     return
+
+
+class Neighbor(BaseModel):
+    hostname: str
+    port: str
+
+
+class Neighbors(BaseModel):
+    neighbors: Dict[str, List[Neighbor]] = defaultdict(list)
 
 
 class GetNeighbors(BaseProcessor):
@@ -65,7 +77,10 @@ class GetNeighbors(BaseProcessor):
 
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):
-        return neighbor_name.split(".")[0]
+        if config.main["fqdn"] and config.main["fqdn"] in neighbor_name:
+            return neighbor_name.replace(f".{config.main['fqdn']}", "")
+
+        return neighbor_name
 
 
 # def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Result:

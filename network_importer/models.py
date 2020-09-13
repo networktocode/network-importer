@@ -64,7 +64,7 @@ class Interface(DSyncModel):
     __shortname__ = ["name"]
     __attributes__ = [
         "description",
-        "mtu",
+        # "mtu",
         "is_virtual",
         "is_lag",
         "is_lag_member",
@@ -150,6 +150,12 @@ class Cable(DSyncModel):
 
     def __init__(self, *args, **kwargs):
         """ Ensure the """
+
+        if "device_a_name" not in kwargs or "device_z_name" not in kwargs:
+            raise ValueError("device_a_name and device_z_name are mandatory")
+        if not kwargs["device_a_name"] or not kwargs["device_z_name"]:
+            raise ValueError("device_a_name and device_z_name are mandatory and must not be None")
+
         new_kwargs = copy.deepcopy(kwargs)
         devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
         if sorted(devices) != devices:

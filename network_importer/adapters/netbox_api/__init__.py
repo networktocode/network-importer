@@ -12,8 +12,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
+import pdb
+import warnings
 import pynetbox
-from itertools import count
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 from network_importer.adapters.base import BaseAdapter
 from dsync.exceptions import ObjectAlreadyExist
 from network_importer.adapters.netbox_api.models import (
@@ -322,7 +329,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         if "is_lag_member" in params and params["is_lag_member"]:
             # TODO add checks to ensure the parent interface is present and has a remote id
-            parent_interface = self.get(self.interface, keys=[device.name, nb_params["parent"]])
+            parent_interface = self.get(self.interface, keys=[params["parent"]])
             nb_params["lag"] = parent_interface.remote_id
 
         elif "is_lag_member" in params and not params["is_lag_member"]:
@@ -390,7 +397,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             NetboxInterface: DSync object
         """
 
-        item = self.get(self.interface, list(keys.values()))
+        item = self.get(self.interface, keys=[keys["device_name"], keys["name"]])
         intf = self.nb.dcim.interfaces.get(item.remote_id)
         intf.delete()
 

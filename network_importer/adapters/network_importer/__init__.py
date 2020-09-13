@@ -12,8 +12,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import re
+import warnings
 import ipaddress
+import requests
+import pynetbox
 
+from collections import defaultdict
 import logging
 from pybatfish.client.session import Session
 from network_importer.adapters.base import BaseAdapter
@@ -202,7 +206,7 @@ class NetworkImporterAdapter(BaseAdapter):
             interface.access_vlan = vlan.get_unique_id()
 
         if interface.is_lag is False and interface.is_lag_member is None and intf["Channel_Group"]:
-            interface.parent = intf["Channel_Group"]
+            interface.parent = self.interface(name=intf["Channel_Group"], device_name=device.name).get_unique_id()
             interface.is_lag_member = True
             interface.is_virtual = False
 
@@ -314,9 +318,11 @@ class NetworkImporterAdapter(BaseAdapter):
         nbr_cables = len(self.get_all(self.cable))
         logger.debug(f"Found {nbr_cables} cables in Batfish")
 
-    # @timeit
     def import_cabling_from_cmds(self):
+        """Import cabling information from the CLI, either using LDLP or CDP based on the configuration.
 
+        If the FQDN is defined, and the hostname of a neighbor include the FQDN, remove it.
+        """
         logger.info("Collecting cabling information from devices .. ")
 
         results = (
@@ -330,11 +336,11 @@ class NetworkImporterAdapter(BaseAdapter):
             if items[0].failed:
                 continue
 
-            if not isinstance(items[0].result, dict) or "neighbors" not in items[0].result:
+            if not isinstance(items[1][0].result, dict) or "neighbors" not in items[1][0].result:
                 logger.debug(f"{dev_name} | No neighbors information returned SKIPPING ")
                 continue
 
-            for interface, neighbors in items[0].result["neighbors"].items():
+            for interface, neighbors in items[1][0].result["neighbors"].items():
                 cable = self.cable(
                     device_a_name=dev_name,
                     interface_a_name=interface,
@@ -343,13 +349,11 @@ class NetworkImporterAdapter(BaseAdapter):
                     source="cli",
                 )
                 nbr_cables += 1
+                logger.debug(f"{dev_name} | Added cable {cable.get_unique_id()}")
                 self.get_or_add(cable)
 
         logger.debug(f"Found {nbr_cables} cables from Cli")
 
-        return True
-
-    # @timeit
     def validate_cabling(self):
         """
         Check if all cables are valid
@@ -362,7 +366,7 @@ class NetworkImporterAdapter(BaseAdapter):
         Non valid cables will be ignored later on for update/creation
         """
         cables = self.get_all(self.cable)
-        for cable in cables:
+        for cable in list(cables):
 
             for side in ["a", "z"]:
 
@@ -372,28 +376,22 @@ class NetworkImporterAdapter(BaseAdapter):
 
                 if not dev:
                     logger.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
-                    cable.is_valid = False
-                    cable.error = "missing-device"
+                    self.delete(cable)
                     continue
 
                 intf = self.get(self.interface, keys=[dev_name, intf_name])
 
-                if not intf_name:
+                if not intf:
                     logger.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
-                    cable.is_valid = False
-                    cable.error = "missing-interface"
+                    self.delete(cable)
                     continue
 
                 if intf.is_virtual:
                     logger.debug(
                         f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
                     )
-                    cable.is_valid = False
-                    cable.error = "virtual-interface"
-                    continue
-
-                if not cable.is_valid:
                     self.delete(cable)
+                    continue
 
                 # remote_side = "z"
                 # if side == "z":
