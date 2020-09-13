@@ -1,6 +1,6 @@
 
 DOCKER_IMAGE = networktocode/network-importer
-DOCKER_VER = 0.5.0
+DOCKER_VER = 2.0.0-dev
 
 format:
 	black .
