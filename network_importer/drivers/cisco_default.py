@@ -1,6 +1,4 @@
-import pdb
 import logging
-from collections import defaultdict
 
 from nornir.plugins.tasks.networking import netmiko_send_command
 from nornir.core.task import Result, Task
@@ -11,9 +9,7 @@ from network_importer.drivers.default import NetworkImporterDriver as DefaultNet
 from network_importer.processors.get_neighbors import Neighbors, Neighbor
 from network_importer.utils import is_interface_lag
 
-from napalm.base.helpers import canonical_interface_name
-
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 def convert_genie_lldp_details(device_name, data):
@@ -41,17 +37,17 @@ def convert_genie_lldp_details(device_name, data):
 
             # nei_intf_name_long = canonical_interface_name(nei_intf_name)
             if is_interface_lag(nei_intf_name):
-                logger.debug(
+                LOGGER.debug(
                     f"{device_name} | Neighbors, {nei_intf_name} is connected to {intf_name} but is not a valid interface (lag), SKIPPING  "
                 )
                 continue
 
             if "neighbors" not in intf_data["port_id"][nei_intf_name]:
-                logger.debug(f"{device_name} | No neighbor found for {nei_intf_name} connected to {intf_name}")
+                LOGGER.debug(f"{device_name} | No neighbor found for {nei_intf_name} connected to {intf_name}")
                 continue
 
             if len(intf_data["port_id"][nei_intf_name]["neighbors"]) > 1:
-                logger.warning(
+                LOGGER.warning(
                     f"{device_name} | More than 1 neighbor found for {nei_intf_name} connected to {intf_name}, SKIPPING"
                 )
                 continue
@@ -68,7 +64,7 @@ def convert_genie_lldp_details(device_name, data):
 class NetworkImporterDriver(DefaultNetworkImporterDriver):
     @staticmethod
     def get_config(task: Task) -> Result:
-        """Get the latest configuration from the device using Netmiko 
+        """Get the latest configuration from the device using Netmiko.
 
         Args:
             task (Task): Nornir Task
@@ -77,11 +73,11 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             Result: Nornir Result object with a dict as a result containing the running configuration
                 { "config: <running configuration> }
         """
-        logger.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
+        LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
 
         try:
             result = task.run(task=netmiko_send_command, command_string="show run")
-        except NornirSubTaskError as e:
+        except NornirSubTaskError as exc:
 
             # if isinstance(e.exception, SomeException):
             #     # handle exception
@@ -89,7 +85,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             #     # handle exception
             # else:
             # raise e  # I don't know how to handle this
-            logger.debug(f"An exception occured while pulling the configuration ({e.exception})")
+            LOGGER.debug(f"An exception occured while pulling the configuration ({exc})")
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
@@ -100,7 +96,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
-        logger.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
+        LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
 
         if config.main["import_cabling"] == "lldp":
             command = "show lldp neighbors detail"
@@ -114,7 +110,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         try:
             result = task.run(task=netmiko_send_command, command_string="show lldp neighbors detail", use_genie=True)
         except NornirSubTaskError as e:
-            logger.debug(f"An exception occured while pulling {cmd_type} data")
+            LOGGER.debug(f"An exception occured while pulling {cmd_type} data")
             return Result(host=task.host, failed=True)
 
         if result[0].failed:

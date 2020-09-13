@@ -1,18 +1,16 @@
 import os
-import pdb
 import logging
 from pathlib import Path
 
-from typing import Dict
 import hashlib
 
 from nornir.core.inventory import Host
-from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+from nornir.core.task import AggregatedResult, MultiResult, Task
 
 import network_importer.config as config
 from network_importer.processors import BaseProcessor
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 class GetConfig(BaseProcessor):
@@ -38,13 +36,13 @@ class GetConfig(BaseProcessor):
 
         if not os.path.isdir(config.main["configs_directory"]):
             os.mkdir(config.main["configs_directory"])
-            logger.debug(f"Configs directory created at {config.main['configs_directory']}")
+            LOGGER.debug(f"Configs directory created at {config.main['configs_directory']}")
 
         self.config_dir = config.main["configs_directory"] + "/configs"
 
         if not os.path.isdir(self.config_dir):
             os.mkdir(self.config_dir)
-            logger.debug(f"Configs directory created at {self.config_dir}")
+            LOGGER.debug(f"Configs directory created at {self.config_dir}")
 
         # Save the hostnames associated with all existing configurations before we start the update process
         self.existing_config_hostnames = [
@@ -57,7 +55,7 @@ class GetConfig(BaseProcessor):
         """
 
         if len(self.existing_config_hostnames) > 0:
-            logger.info(f"Will delete {len(self.existing_config_hostnames)} config(s) that have not been updated")
+            LOGGER.info(f"Will delete {len(self.existing_config_hostnames)} config(s) that have not been updated")
 
             for f in self.existing_config_hostnames:
                 os.remove(os.path.join(self.config_dir, f"{f}.{self.config_extension}"))
@@ -84,14 +82,14 @@ class GetConfig(BaseProcessor):
             return
 
         if result[0].failed:
-            logger.warning(f"{task.host.name} | Something went wrong while trying to update the configuration ")
+            LOGGER.warning(f"{task.host.name} | Something went wrong while trying to update the configuration ")
             host.data["status"] = "fail-other"
             return
 
         config = result[0].result.get("config", None)
 
         if not config:
-            logger.warning(f"{task.host.name} | No configuration return ")
+            LOGGER.warning(f"{task.host.name} | No configuration return ")
             host.data["status"] = "fail-other"
             return
 
@@ -106,7 +104,7 @@ class GetConfig(BaseProcessor):
         changed = False
 
         if host.name in self.previous_md5 and self.previous_md5[host.name] == self.current_md5[host.name]:
-            logger.debug(f"{task.host.name} | Latest config file already present ... ")
+            LOGGER.debug(f"{task.host.name} | Latest config file already present ... ")
         else:
-            logger.info(f"{task.host.name} | Configuration file updated ")
+            LOGGER.info(f"{task.host.name} | Configuration file updated ")
             changed = True

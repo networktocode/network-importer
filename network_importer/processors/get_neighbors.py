@@ -1,22 +1,21 @@
 from collections import defaultdict
-import pdb
 import logging
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from nornir.core.inventory import Host
-from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+from nornir.core.task import MultiResult, Task
 from pydantic import BaseModel
 
 import network_importer.config as config
 from network_importer.processors import BaseProcessor
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 # TODO Create a Filter based on that
 # if host.platform in config.main["excluded_platforms_cabling"]:
-#     logger.debug(f"{host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
+#     LOGGER.debug(f"{host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
 #     return
 
 
@@ -54,12 +53,12 @@ class GetNeighbors(BaseProcessor):
             return
 
         if result[0].failed:
-            logger.warning(f"{host.name} | Something went wrong while trying to pull the neighbor information")
+            LOGGER.warning(f"{host.name} | Something went wrong while trying to pull the neighbor information")
             host.data["status"] = "fail-other"
             return
 
         if not isinstance(result[0].result, dict) or "neighbors" not in result[0].result:
-            logger.warning(f"{host.name} | No neighbor information returned ")
+            LOGGER.warning(f"{host.name} | No neighbor information returned ")
             result[0].failed = True
             return
 
@@ -69,7 +68,7 @@ class GetNeighbors(BaseProcessor):
             neighbors = result[0].result["neighbors"][interface]
 
             if len(neighbors) > 1:
-                logger.warning(f"{host.name} | More than 1 neighbor found on interface {interface}, SKIPPING")
+                LOGGER.warning(f"{host.name} | More than 1 neighbor found on interface {interface}, SKIPPING")
                 del result[0].result["neighbors"][interface]
 
             # Clean up hostname to remove full FQDN
@@ -109,7 +108,7 @@ class GetNeighbors(BaseProcessor):
 #             results = task.run(task=napalm_get, getters=["lldp_neighbors"])
 #             neighbors = results[0].result
 #         except:
-#             logger.debug("An exception occured while pulling lldp_data", exc_info=True)
+#             LOGGER.debug("An exception occured while pulling lldp_data", exc_info=True)
 #             return Result(host=task.host, failed=True)
 
 #     elif config.main["import_cabling"] == "cdp":
@@ -119,12 +118,12 @@ class GetNeighbors(BaseProcessor):
 #             neighbors = {"lldp_neighbors": defaultdict(list)}
 
 #         except:
-#             logger.debug("An exception occured while pulling cdp_data", exc_info=True)
+#             LOGGER.debug("An exception occured while pulling cdp_data", exc_info=True)
 #             return Result(host=task.host, failed=True)
 
 #         # Convert CDP details output to Napalm LLDP format
 #         if not isinstance(results[0].result, list):
-#             logger.warning(f"{task.host.name} | No CDP information returned")
+#             LOGGER.warning(f"{task.host.name} | No CDP information returned")
 #         else:
 #             for neighbor in results[0].result:
 #                 neighbor_hostname = neighbor.get("destination_host") or neighbor.get("dest_host")

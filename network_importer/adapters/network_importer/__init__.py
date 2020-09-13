@@ -14,14 +14,15 @@ limitations under the License.
 import re
 import warnings
 import ipaddress
+import logging
+from collections import defaultdict
+
 import requests
 import pynetbox
 
-from collections import defaultdict
-import logging
 from pybatfish.client.session import Session
 from network_importer.adapters.base import BaseAdapter
-from network_importer.models import *
+from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 
 import network_importer.config as config
 from network_importer.utils import (
@@ -35,7 +36,7 @@ from network_importer.inventory import reachable_devs
 from network_importer.drivers import dispatcher
 from network_importer.processors.get_neighbors import GetNeighbors
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporterAdapter(BaseAdapter):
@@ -141,7 +142,7 @@ class NetworkImporterAdapter(BaseAdapter):
         """Import an interface for a given device from Batfish Data, including IP addresses and prefixes.
 
         Args:
-            device (Device): Device object 
+            device (Device): Device object
             intf (dict): Batfish interface object in Dict format
         """
 
@@ -221,14 +222,14 @@ class NetworkImporterAdapter(BaseAdapter):
 
         Args:
             device (Device): Device object
-            interface (Interface): Interface object 
+            interface (Interface): Interface object
             address (str): IP address in string format
         """
 
         ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
 
         if config.main["import_ips"]:
-            logger.debug(f"{self.source} | Import {ip_address.address} for {device.name}::{interface.name}")
+            LOGGER.debug(f"{self.source} | Import {ip_address.address} for {device.name}::{interface.name}")
             self.add(ip_address)
             interface.add_child(ip_address)
 
@@ -237,7 +238,7 @@ class NetworkImporterAdapter(BaseAdapter):
             if len(interface_vlans) == 1:
                 vlan = interface_vlans[0]
             elif len(interface_vlans) >= 1:
-                logger.warning(
+                LOGGER.warning(
                     f"{device.name} | More than 1 vlan associated with interface {interface.name} ({interface_vlans})"
                 )
 
@@ -265,11 +266,11 @@ class NetworkImporterAdapter(BaseAdapter):
         if not prefix_obj:
             prefix_obj = self.prefix(prefix=str(prefix), site_name=site_name, vlan=vlan)
             self.add(prefix_obj)
-            logger.debug(f"Added Prefix {prefix} from batfish")
+            LOGGER.debug(f"Added Prefix {prefix} from batfish")
 
         if prefix_obj and vlan and not prefix_obj.vlan:
             prefix_obj.vlan = vlan
-            logger.debug(f"Updated Prefix {prefix} with vlan {vlan}")
+            LOGGER.debug(f"Updated Prefix {prefix} with vlan {vlan}")
 
         return True
 
@@ -316,14 +317,14 @@ class NetworkImporterAdapter(BaseAdapter):
                 existing_cables.append(uid)
 
         nbr_cables = len(self.get_all(self.cable))
-        logger.debug(f"Found {nbr_cables} cables in Batfish")
+        LOGGER.debug(f"Found {nbr_cables} cables in Batfish")
 
     def import_cabling_from_cmds(self):
         """Import cabling information from the CLI, either using LDLP or CDP based on the configuration.
 
         If the FQDN is defined, and the hostname of a neighbor include the FQDN, remove it.
         """
-        logger.info("Collecting cabling information from devices .. ")
+        LOGGER.info("Collecting cabling information from devices .. ")
 
         results = (
             self.nornir.filter(filter_func=reachable_devs)
@@ -337,7 +338,7 @@ class NetworkImporterAdapter(BaseAdapter):
                 continue
 
             if not isinstance(items[1][0].result, dict) or "neighbors" not in items[1][0].result:
-                logger.debug(f"{dev_name} | No neighbors information returned SKIPPING ")
+                LOGGER.debug(f"{dev_name} | No neighbors information returned SKIPPING ")
                 continue
 
             for interface, neighbors in items[1][0].result["neighbors"].items():
@@ -349,10 +350,10 @@ class NetworkImporterAdapter(BaseAdapter):
                     source="cli",
                 )
                 nbr_cables += 1
-                logger.debug(f"{dev_name} | Added cable {cable.get_unique_id()}")
+                LOGGER.debug(f"{dev_name} | Added cable {cable.get_unique_id()}")
                 self.get_or_add(cable)
 
-        logger.debug(f"Found {nbr_cables} cables from Cli")
+        LOGGER.debug(f"Found {nbr_cables} cables from Cli")
 
     def validate_cabling(self):
         """
@@ -375,19 +376,19 @@ class NetworkImporterAdapter(BaseAdapter):
                 dev = self.get(self.device, keys=[dev_name])
 
                 if not dev:
-                    logger.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
+                    LOGGER.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
                     self.delete(cable)
                     continue
 
                 intf = self.get(self.interface, keys=[dev_name, intf_name])
 
                 if not intf:
-                    logger.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
+                    LOGGER.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
                     self.delete(cable)
                     continue
 
                 if intf.is_virtual:
-                    logger.debug(
+                    LOGGER.debug(
                         f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
                     )
                     self.delete(cable)
@@ -414,7 +415,7 @@ class NetworkImporterAdapter(BaseAdapter):
 
                 # elif cable_type != "dcim.interface":
 
-                #     logger.debug(
+                #     LOGGER.debug(
                 #         f"CABLE: {dev_name}:{intf_name} is already connected but to a different type of interface  ({cable_type})"
                 #     )
                 #     cable.is_valid = False
@@ -426,7 +427,7 @@ class NetworkImporterAdapter(BaseAdapter):
                 #     remote_int_reported = dev.interfaces[intf_name].remote.remote.connected_endpoint.name
 
                 #     if remote_host_reported != remote_device_expected:
-                #         logger.warning(
+                #         LOGGER.warning(
                 #             f"CABLE: {dev_name}:{intf_name} is already connected but to a different device ({remote_host_reported} vs {remote_device_expected})"
                 #         )
                 #         cable.is_valid = False
@@ -434,7 +435,7 @@ class NetworkImporterAdapter(BaseAdapter):
                 #         continue
 
                 #     elif remote_host_reported == remote_device_expected and remote_intf_expected != remote_int_reported:
-                #         logger.warning(
+                #         LOGGER.warning(
                 #             f"CABLE:  {dev_name}:{intf_name} is already connected but to a different interface ({remote_int_reported} vs {remote_intf_expected})"
                 #         )
                 #         cable.is_valid = False
