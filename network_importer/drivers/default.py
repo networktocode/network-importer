@@ -12,14 +12,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import pdb
-from collections import defaultdict
 from nornir.plugins.tasks.networking import napalm_get, netmiko_send_command
-from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+from nornir.core.task import Result, Task
+from nornir.core.exceptions import NornirSubTaskError
 
 import network_importer.config as config
+from network_importer.drivers.converters import convert_cisco_genie_neighbors_details
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporterDriver:
@@ -34,12 +34,12 @@ class NetworkImporterDriver:
             Result: Nornir Result object with a dict as a result containing the running configuration
                 { "config: <running configuration> }
         """
-        logger.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
+        LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
 
         try:
             result = task.run(task=napalm_get, getters=["config"], retrieve="running")
         except:
-            logger.debug("An exception occured while pulling the configuration", exc_info=True)
+            LOGGER.debug("An exception occured while pulling the configuration", exc_info=True)
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
@@ -50,14 +50,14 @@ class NetworkImporterDriver:
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
-        logger.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
+        LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
 
         if config.main["import_cabling"] == "lldp":
 
             try:
                 result = task.run(task=napalm_get, getters=["lldp_neighbors"])
             except:
-                logger.debug("An exception occured while pulling lldp_data", exc_info=True)
+                LOGGER.debug("An exception occured while pulling lldp_data", exc_info=True)
                 return Result(host=task.host, failed=True)
 
             if result[0].failed:
@@ -67,24 +67,19 @@ class NetworkImporterDriver:
             return Result(host=task.host, result={"neighbors": neighbors})
 
         elif config.main["import_cabling"] == "cdp":
+
             try:
-                results = task.run(
-                    task=netmiko_send_command, command_string="show cdp neighbors detail", use_textfsm=True,
-                )
-            except:
-                logger.debug("An exception occured while pulling cdp_data", exc_info=True)
+                result = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_genie=True)
+            except NornirSubTaskError:
+                LOGGER.debug(f"An exception occured while pulling CDP data")
                 return Result(host=task.host, failed=True)
 
-            neighbors = defaultdict(list)
+            if result[0].failed:
+                return result
 
-            # Convert CDP details output to Napalm LLDP format
-            if not isinstance(results[0].result, list):
-                logger.warning(f"{task.host.name} | No CDP information returned")
-            else:
-                for neighbor in results[0].result:
-                    neighbor_hostname = neighbor.get("destination_host") or neighbor.get("dest_host")
-                    neighbor_port = neighbor["remote_port"]
+            results = convert_cisco_genie_neighbors_details(device_name=task.host.name, data=result[0].result)
+            return Result(host=task.host, result=results.dict())
 
-                    neighbors[neighbor["local_port"]].append(dict(hostname=neighbor_hostname, port=neighbor_port,))
-
-            return Result(host=task.host, result={"neighbors": neighbors})
+    @staticmethod
+    def get_vlans(task: Task) -> Result:
+        LOGGER.warning(f"{task.host.name} | Get Vlans not implemented in the default driver.")

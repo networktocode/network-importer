@@ -35,6 +35,7 @@ from network_importer.utils import (
 from network_importer.inventory import reachable_devs
 from network_importer.drivers import dispatcher
 from network_importer.processors.get_neighbors import GetNeighbors
+from network_importer.processors.get_vlans import GetVlans
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -76,7 +77,10 @@ class NetworkImporterAdapter(BaseAdapter):
             self.add(device)
 
         self.import_batfish()
+        self.import_vlans()
         self.import_cabling()
+
+        self.check_data_consistency()
 
     def import_batfish(self):
 
@@ -109,8 +113,7 @@ class NetworkImporterAdapter(BaseAdapter):
         """Import all devices from Batfish
 
         Args:
-            site
-            device
+            device (Device) Device object
         """
 
         site = self.get(self.site, keys=[device.site_name])
@@ -119,9 +122,11 @@ class NetworkImporterAdapter(BaseAdapter):
         if config.main["import_vlans"] == "config":
             bf_vlans = self.bf.q.switchedVlanProperties(nodes=device.name).answer()
             for bf_vlan in bf_vlans.frame().itertuples():
-                vlan = self.vlan(name=f"vlan-{bf_vlan.VLAN_ID}", vid=bf_vlan.VLAN_ID, site_name=site.name)
-                self.add(vlan)
-                site.add_child(vlan)
+                vlan, created = self.get_or_add(
+                    self.vlan(name=f"vlan-{bf_vlan.VLAN_ID}", vid=bf_vlan.VLAN_ID, site_name=site.name)
+                )
+                if created:
+                    site.add_child(vlan)
 
                 # Save interface to vlan mapping for later use
                 for intf in bf_vlan.Interfaces:
@@ -186,7 +191,9 @@ class NetworkImporterAdapter(BaseAdapter):
         if interface.mode is None and interface.switchport_mode:
             if intf["Encapsulation_VLAN"]:
                 interface.mode = "L3_SUB_VLAN"
-                vlan, new = self.get_or_create_vlan(self.vlan(vid=intf["Encapsulation_VLAN"], site_name=site.name))
+                vlan = self.vlan(vid=intf["Encapsulation_VLAN"], site_name=site.name)
+                if config.main["import_vlans"] in ["config", True]:
+                    vlan, _ = self.get_or_create_vlan(vlan)
                 interface.allowed_vlans = [vlan.get_unique_id()]
             else:
                 interface.mode = interface.switchport_mode
@@ -195,15 +202,21 @@ class NetworkImporterAdapter(BaseAdapter):
 
             vids = expand_vlans_list(intf["Allowed_VLANs"])
             for vid in vids:
-                vlan, new = self.get_or_create_vlan(self.vlan(vid=vid, site_name=site.name))
+                vlan = self.vlan(vid=vid, site_name=site.name)
+                if config.main["import_vlans"] in ["config", True]:
+                    vlan, _ = self.get_or_create_vlan(vlan)
                 interface.allowed_vlans.append(vlan.get_unique_id())
 
             if intf["Native_VLAN"]:
-                native_vlan, new = self.get_or_create_vlan(self.vlan(vid=intf["Native_VLAN"], site_name=site.name))
+                native_vlan = self.vlan(vid=intf["Native_VLAN"], site_name=site.name)
+                if config.main["import_vlans"] in ["config", True]:
+                    native_vlan, _ = self.get_or_create_vlan(native_vlan)
                 interface.access_vlan = native_vlan.get_unique_id()
 
         elif interface.mode == "ACCESS" and intf["Access_VLAN"]:
-            vlan, new = self.get_or_create_vlan(self.vlan(vid=intf["Access_VLAN"], site_name=site.name))
+            vlan = self.vlan(vid=intf["Access_VLAN"], site_name=site.name)
+            if config.main["import_vlans"] in ["config", True]:
+                vlan, _ = self.get_or_create_vlan(vlan)
             interface.access_vlan = vlan.get_unique_id()
 
         if interface.is_lag is False and interface.is_lag_member is None and intf["Channel_Group"]:
@@ -289,6 +302,36 @@ class NetworkImporterAdapter(BaseAdapter):
 
         return True
 
+    def import_vlans(self):
+
+        if config.main["import_vlans"] not in ["cli", True]:
+            return
+
+        LOGGER.info("Collecting cabling information from devices .. ")
+
+        results = (
+            self.nornir.filter(filter_func=reachable_devs)
+            .with_processors([GetVlans()])
+            .run(task=dispatcher, method="get_vlans")
+        )
+
+        for dev_name, items in results.items():
+            if items[0].failed:
+                continue
+
+            if not isinstance(items[1].result, dict) or "vlans" not in items[1].result:
+                LOGGER.debug(f"{dev_name} | No vlan information returned SKIPPING ")
+                continue
+
+            device = self.get(self.device, keys=[dev_name])
+            site = self.get(self.site, keys=[device.site_name])
+
+            for vlan in items[1].result["vlans"]:
+                new_vlan, created = self.get_or_add(self.vlan(vid=vlan["vid"], name=vlan["name"], site_name=site.name))
+
+                if created:
+                    site.add_child(new_vlan)
+
     def import_batfish_cable(self):
         """Import cables from Batfish using layer3Edges tables."""
 
@@ -355,6 +398,24 @@ class NetworkImporterAdapter(BaseAdapter):
 
         LOGGER.debug(f"Found {nbr_cables} cables from Cli")
 
+    def check_data_consistency(self):
+        """
+        Ensure the vlans configured for each interface exist in the system
+        On some vendors, it's possible to have a list larger than what is really available
+        """
+
+        vlan_uids = list(self.__datas__[self.vlan.get_type()].keys())
+        interfaces = self.get_all(self.interface)
+
+        import pdb
+
+        for intf in interfaces:
+            if intf.name == "GigabitEthernet5/1":
+                pdb.set_trace()
+
+            if intf.allowed_vlans:
+                intf.allowed_vlans = [vlan for vlan in intf.allowed_vlans if vlan in vlan_uids]
+
     def validate_cabling(self):
         """
         Check if all cables are valid
@@ -366,33 +427,41 @@ class NetworkImporterAdapter(BaseAdapter):
         When a cable is not valid, update the flag valid on the object itself
         Non valid cables will be ignored later on for update/creation
         """
+
+        def is_cable_side_valid(cable, side):
+            """Check if the given side of a cable (a or z) is valid.
+            Check if both the device and the interface are present in internal store
+            """
+            dev_name, intf_name = cable.get_device_intf(side)
+
+            dev = self.get(self.device, keys=[dev_name])
+
+            if not dev:
+                LOGGER.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
+                self.delete(cable)
+                return False
+
+            intf = self.get(self.interface, keys=[dev_name, intf_name])
+
+            if not intf:
+                LOGGER.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
+                self.delete(cable)
+                return False
+
+            if intf.is_virtual:
+                LOGGER.debug(
+                    f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
+                )
+                self.delete(cable)
+                return False
+
         cables = self.get_all(self.cable)
         for cable in list(cables):
 
             for side in ["a", "z"]:
 
-                dev_name, intf_name = cable.get_device_intf(side)
-
-                dev = self.get(self.device, keys=[dev_name])
-
-                if not dev:
-                    LOGGER.debug(f"CABLE: {dev_name} not present in devices list ({side} side)")
-                    self.delete(cable)
-                    continue
-
-                intf = self.get(self.interface, keys=[dev_name, intf_name])
-
-                if not intf:
-                    LOGGER.warning(f"CABLE: {dev_name}:{intf_name} not present in interfaces list")
-                    self.delete(cable)
-                    continue
-
-                if intf.is_virtual:
-                    LOGGER.debug(
-                        f"CABLE: {dev_name}:{intf_name} is a virtual interface, can't be used for cabling SKIPPING ({side} side)"
-                    )
-                    self.delete(cable)
-                    continue
+                if not is_cable_side_valid(cable, side):
+                    break
 
                 # remote_side = "z"
                 # if side == "z":

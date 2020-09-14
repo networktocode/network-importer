@@ -17,6 +17,12 @@ import logging
 import sys
 import pdb
 import click
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import network_importer.config as config
 from network_importer.utils import build_filter_params

@@ -18,13 +18,16 @@ from nornir.core.task import AggregatedResult, MultiResult, Result, Task
 
 import network_importer.config as config
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 # TODO Need to move this table in to the config file
 DRIVERS_MAPPING = {
-    # "juniper_junos": "network_importer.drivers.juniper_junos",
+    "cisco_nxos": "network_importer.drivers.cisco_default",
+    "cisco_ios": "network_importer.drivers.cisco_default",
     "cisco_xr": "network_importer.drivers.cisco_default",
     "default": "network_importer.drivers.default",
+    "juniper_junos": "network_importer.drivers.juniper_junos",
+    "arista_eos": "network_importer.drivers.arista_eos",
 }
 
 
@@ -37,26 +40,26 @@ def dispatcher(task: Task, method: str) -> Result:
         Result: Nornir Task result
     """
 
-    logger.debug(f"Executing dispatcher for {task.host.name} ({task.host.platform})")
+    LOGGER.debug(f"Executing dispatcher for {task.host.name} ({task.host.platform})")
 
     # Get the platform specific driver, if not available, get the default driver
     driver = DRIVERS_MAPPING.get(task.host.platform, DRIVERS_MAPPING.get("default"))
-    logger.debug(f"Found driver {driver}")
+    LOGGER.debug(f"Found driver {driver}")
 
     if not driver:
-        logger.warning(f"{task.host.name} | Unable to find the driver for {method} for platform : {task.host.platform}")
+        LOGGER.warning(f"{task.host.name} | Unable to find the driver for {method} for platform : {task.host.platform}")
         return Result(host=task.host, failed=True)
 
     driver_class = getattr(importlib.import_module(driver), "NetworkImporterDriver")
 
     if not driver_class:
-        logger.error(f"{task.host.name} | Unable to locate the class {driver}")
+        LOGGER.error(f"{task.host.name} | Unable to locate the class {driver}")
         return Result(host=task.host, failed=True)
 
     try:
         driver_task = getattr(driver_class, method)
     except AttributeError:
-        logger.error(f"{task.host.name} | Unable to locate the method {method} for {driver}")
+        LOGGER.error(f"{task.host.name} | Unable to locate the method {method} for {driver}")
         return Result(host=task.host, failed=True)
 
     result = task.run(task=driver_task)

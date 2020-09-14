@@ -14,12 +14,13 @@ limitations under the License.
 import logging
 import pdb
 import warnings
-import pynetbox
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+import pynetbox
 
 from dsync.exceptions import ObjectAlreadyExist
 from network_importer.adapters.base import BaseAdapter
@@ -132,7 +133,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             site.add_child(vlan)
 
     def import_netbox_interface(self, site, device):
-        """Import all interfaces & Ips from Netbox for a given device. 
+        """Import all interfaces & Ips from Netbox for a given device.
 
         Args:
             device (NetboxDevice): DSync object representing the device
@@ -208,8 +209,9 @@ class NetBoxAPIAdapter(BaseAdapter):
                 )
                 interface.access_vlan = vlan.get_unique_id()
 
-            self.add(interface)
-            device.add_child(interface)
+            new_intf, created = self.get_or_add(interface)
+            if created:
+                device.add_child(new_intf)
 
         LOGGER.debug(f"{self.source} | Found {len(intfs)} interfaces for {device.name}")
 
@@ -222,7 +224,7 @@ class NetBoxAPIAdapter(BaseAdapter):
                 address=ip.address, device_name=device.name, interface_name=ip.interface.name, remote_id=ip.id,
             )
 
-            self.add(ip_address)
+            self.get_or_add(ip_address)
             interface = self.get(self.interface, keys=[device.name, ip.interface.name])
             interface.add_child(ip_address)
 

@@ -50,7 +50,7 @@ class GetConfig(BaseProcessor):
         ]
 
     def task_completed(self, task: Task, result: AggregatedResult) -> None:
-        """At the end, remove all configs files that have not been updated 
+        """At the end, remove all configs files that have not been updated
         to ensure that we are loading just the right config files in Batfish
         """
 
@@ -86,9 +86,9 @@ class GetConfig(BaseProcessor):
             host.data["status"] = "fail-other"
             return
 
-        config = result[0].result.get("config", None)
+        conf = result[0].result.get("config", None)
 
-        if not config:
+        if not conf:
             LOGGER.warning(f"{task.host.name} | No configuration return ")
             host.data["status"] = "fail-other"
             return
@@ -98,9 +98,9 @@ class GetConfig(BaseProcessor):
 
         # Save configuration to to file and verify the new MD5
         with open(self.config_filename[host.name], "w") as config_:
-            config_.write(config)
+            config_.write(conf)
 
-        self.current_md5[host.name] = hashlib.md5(config.encode("utf-8")).hexdigest()
+        self.current_md5[host.name] = hashlib.md5(conf.encode("utf-8")).hexdigest()
         changed = False
 
         if host.name in self.previous_md5 and self.previous_md5[host.name] == self.current_md5[host.name]:

@@ -6,93 +6,38 @@ from nornir.core.exceptions import NornirSubTaskError
 
 import network_importer.config as config
 from network_importer.drivers.default import NetworkImporterDriver as DefaultNetworkImporterDriver
-from network_importer.processors.get_neighbors import Neighbors, Neighbor
-from network_importer.utils import is_interface_lag
+from network_importer.drivers.converters import convert_cisco_genie_neighbors_details, convert_cisco_genie_vlans
 
 LOGGER = logging.getLogger("network-importer")
 
 
-def convert_genie_lldp_details(device_name, data):
-    """Convert the data returned by Genie for show lldp neighbors detail to Neighbors()
-
-    Args:
-        device_name (str): the name of the device where the data was collected
-        data (Dict): the parsed data returned by Genie
-
-    Returns:
-        Neighbors: List of neighbors in a Pydantic model
-    """
-
-    results = Neighbors()
-
-    if "interfaces" not in data:
-        return results
-
-    for intf_name, intf_data in data["interfaces"].items():
-        if "port_id" not in intf_data.keys():
-            continue
-
-        # intf_name = canonical_interface_name(intf_name)
-        for nei_intf_name in list(intf_data["port_id"].keys()):
-
-            # nei_intf_name_long = canonical_interface_name(nei_intf_name)
-            if is_interface_lag(nei_intf_name):
-                LOGGER.debug(
-                    f"{device_name} | Neighbors, {nei_intf_name} is connected to {intf_name} but is not a valid interface (lag), SKIPPING  "
-                )
-                continue
-
-            if "neighbors" not in intf_data["port_id"][nei_intf_name]:
-                LOGGER.debug(f"{device_name} | No neighbor found for {nei_intf_name} connected to {intf_name}")
-                continue
-
-            if len(intf_data["port_id"][nei_intf_name]["neighbors"]) > 1:
-                LOGGER.warning(
-                    f"{device_name} | More than 1 neighbor found for {nei_intf_name} connected to {intf_name}, SKIPPING"
-                )
-                continue
-
-            neighbor = Neighbor(
-                hostname=list(intf_data["port_id"][nei_intf_name]["neighbors"].keys())[0], port=nei_intf_name
-            )
-
-            results.neighbors[intf_name].append(neighbor)
-
-    return results
-
-
 class NetworkImporterDriver(DefaultNetworkImporterDriver):
-    @staticmethod
-    def get_config(task: Task) -> Result:
-        """Get the latest configuration from the device using Netmiko.
+    """Collection of Nornir Tasks specific to Cisco devices."""
 
-        Args:
-            task (Task): Nornir Task
+    # @staticmethod
+    # def get_config(task: Task) -> Result:
+    #     """Get the latest configuration from the device using Netmiko.
 
-        Returns:
-            Result: Nornir Result object with a dict as a result containing the running configuration
-                { "config: <running configuration> }
-        """
-        LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
+    #     Args:
+    #         task (Task): Nornir Task
 
-        try:
-            result = task.run(task=netmiko_send_command, command_string="show run")
-        except NornirSubTaskError as exc:
+    #     Returns:
+    #         Result: Nornir Result object with a dict as a result containing the running configuration
+    #             { "config: <running configuration> }
+    #     """
+    #     LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
 
-            # if isinstance(e.exception, SomeException):
-            #     # handle exception
-            # elif isinstance(e.exception, SomeOtherException):
-            #     # handle exception
-            # else:
-            # raise e  # I don't know how to handle this
-            LOGGER.debug(f"An exception occured while pulling the configuration ({exc})")
-            return Result(host=task.host, failed=True)
+    #     try:
+    #         result = task.run(task=netmiko_send_command, command_string="show run")
+    #     except NornirSubTaskError as exc:
+    #         LOGGER.debug(f"An exception occured while pulling the configuration ({exc})")
+    #         return Result(host=task.host, failed=True)
 
-        if result[0].failed:
-            return result
+    #     if result[0].failed:
+    #         return result
 
-        running_config = result[0].result
-        return Result(host=task.host, result={"config": running_config})
+    #     running_config = result[0].result
+    #     return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
@@ -108,13 +53,32 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             return Result(host=task.host, failed=True)
 
         try:
-            result = task.run(task=netmiko_send_command, command_string="show lldp neighbors detail", use_genie=True)
-        except NornirSubTaskError as e:
-            LOGGER.debug(f"An exception occured while pulling {cmd_type} data")
+            result = task.run(task=netmiko_send_command, command_string=command, use_genie=True)
+        except NornirSubTaskError:
+            LOGGER.debug(f"An exception occured while pulling {cmd_type} data", exc_info=True)
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
             return result
 
-        results = convert_genie_lldp_details(device_name=task.host.name, data=result[0].result)
+        results = convert_cisco_genie_neighbors_details(device_name=task.host.name, data=result[0].result)
+        return Result(host=task.host, result=results.dict())
+
+    @staticmethod
+    def get_vlans(task: Task) -> Result:
+        LOGGER.debug(f"Executing get_vlans for {task.host.name} ({task.host.platform})")
+
+        try:
+            results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
+        except NornirSubTaskError:
+            LOGGER.debug(
+                "An exception occured while pulling the vlans information", exc_info=True,
+            )
+            return Result(host=task.host, failed=True)
+
+        if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
+            LOGGER.warning(f"{task.host.name} | No vlans information returned")
+            return Result(host=task.host, result=False)
+
+        results = convert_cisco_genie_vlans(device_name=task.host.name, data=results[0].result)
         return Result(host=task.host, result=results.dict())

@@ -14,7 +14,6 @@ limitations under the License.
 import logging
 import sys
 import re
-import pynetbox
 import os
 import warnings
 import importlib
@@ -26,6 +25,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
     from nornir.core.filter import F
+
+import pynetbox
 
 import network_importer.config as config
 
