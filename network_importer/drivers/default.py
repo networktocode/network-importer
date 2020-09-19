@@ -25,7 +25,7 @@ LOGGER = logging.getLogger("network-importer")
 class NetworkImporterDriver:
     @staticmethod
     def get_config(task: Task) -> Result:
-        """Get the latest configuration from the device. 
+        """Get the latest configuration from the device.
 
         Args:
             task (Task): Nornir Task
@@ -34,7 +34,7 @@ class NetworkImporterDriver:
             Result: Nornir Result object with a dict as a result containing the running configuration
                 { "config: <running configuration> }
         """
-        LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
+        LOGGER.debug("Executing get_config for %s (%s)", task.host.name, task.host.platform)
 
         try:
             result = task.run(task=napalm_get, getters=["config"], retrieve="running")
@@ -50,7 +50,7 @@ class NetworkImporterDriver:
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
-        LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
+        LOGGER.debug("Executing get_neighbor for %s (%s)", task.host.name, task.host.platform)
 
         if config.SETTINGS.main.import_cabling == "lldp":
 
@@ -66,12 +66,12 @@ class NetworkImporterDriver:
             neighbors = result[0].result.get("lldp_neighbors", {})
             return Result(host=task.host, result={"neighbors": neighbors})
 
-        elif config.SETTINGS.main.import_cabling == "cdp":
+        if config.SETTINGS.main.import_cabling == "cdp":
 
             try:
                 result = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_genie=True)
             except NornirSubTaskError:
-                LOGGER.debug(f"An exception occured while pulling CDP data")
+                LOGGER.debug("An exception occured while pulling CDP data")
                 return Result(host=task.host, failed=True)
 
             if result[0].failed:
@@ -82,4 +82,4 @@ class NetworkImporterDriver:
 
     @staticmethod
     def get_vlans(task: Task) -> Result:
-        LOGGER.warning(f"{task.host.name} | Get Vlans not implemented in the default driver.")
+        LOGGER.warning("%s | Get Vlans not implemented in the default driver.", task.host.name)

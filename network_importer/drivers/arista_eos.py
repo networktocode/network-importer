@@ -21,7 +21,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         results = eos_device.run_commands(["show vlan"])
 
         if not isinstance(results[0], dict) or not "vlans" in results[0]:
-            LOGGER.warning(f"{task.host.name} | No vlans information returned")
+            LOGGER.warning("%s | No vlans information returned", task.host.name)
             return Result(host=task.host, result=False)
 
         for vid, data in results[0]["vlans"].items():

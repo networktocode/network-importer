@@ -33,17 +33,17 @@ def convert_cisco_genie_neighbors_details(device_name, data):
             # nei_intf_name_long = canonical_interface_name(nei_intf_name)
             if is_interface_lag(nei_intf_name):
                 LOGGER.debug(
-                    f"{device_name} | Neighbors, {nei_intf_name} is connected to {intf_name} but is not a valid interface (lag), SKIPPING  "
+                    "%s | Neighbors, %s is connected to %s but is not a valid interface (lag), SKIPPING", device_name, nei_intf_name, intf_name
                 )
                 continue
 
             if "neighbors" not in intf_data["port_id"][nei_intf_name]:
-                LOGGER.debug(f"{device_name} | No neighbor found for {nei_intf_name} connected to {intf_name}")
+                LOGGER.debug("%s | No neighbor found for %s connected to %s", device_name, nei_intf_name, intf_name)
                 continue
 
             if len(intf_data["port_id"][nei_intf_name]["neighbors"]) > 1:
                 LOGGER.warning(
-                    f"{device_name} | More than 1 neighbor found for {nei_intf_name} connected to {intf_name}, SKIPPING"
+                    "%s | More than 1 neighbor found for %s connected to %s, SKIPPING", device_name, nei_intf_name, intf_name
                 )
                 continue
 
@@ -65,12 +65,13 @@ def convert_cisco_genie_vlans(device_name, data):
 
     for vid, vlan_data in data["vlans"].items():
         if not vlan_data.get("name", None):
-            LOGGER.warning(f"{device_name} | Unknown VLAN data, VLAN {vid}")
+            LOGGER.warning("%s | Unknown VLAN data, VLAN %s", device_name, vid)
             continue
-        elif vlan_data.get("state", None) == "unsupport":
-            LOGGER.warning(f"{device_name} | Unsupported VLAN found, VLAN {vid}")
+
+        if vlan_data.get("state", None) == "unsupport":
+            LOGGER.warning("%s | Unsupported VLAN found, VLAN %s", device_name, vid)
             continue
-        else:
-            results.vlans.append(Vlan(name=vlan_data["name"], vid=int(vlan_data["vlan_id"])))
+
+        results.vlans.append(Vlan(name=vlan_data["name"], vid=int(vlan_data["vlan_id"])))
 
     return results

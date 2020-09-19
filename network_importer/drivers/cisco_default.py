@@ -41,7 +41,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
-        LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
+        LOGGER.debug("Executing get_neighbor for %s (%s)", task.host.name, task.host.platform)
 
         if config.SETTINGS.main.import_cabling == "lldp":
             command = "show lldp neighbors detail"
@@ -55,7 +55,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         try:
             result = task.run(task=netmiko_send_command, command_string=command, use_genie=True)
         except NornirSubTaskError:
-            LOGGER.debug(f"An exception occured while pulling {cmd_type} data", exc_info=True)
+            LOGGER.debug("An exception occured while pulling %s data", cmd_type, exc_info=True)
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
@@ -66,7 +66,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
     @staticmethod
     def get_vlans(task: Task) -> Result:
-        LOGGER.debug(f"Executing get_vlans for {task.host.name} ({task.host.platform})")
+        LOGGER.debug("Executing get_vlans for %s (%s)", task.host.name, task.host.platform)
 
         try:
             results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
@@ -77,7 +77,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             return Result(host=task.host, failed=True)
 
         if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
-            LOGGER.warning(f"{task.host.name} | No vlans information returned")
+            LOGGER.warning("%s | No vlans information returned", task.host.name)
             return Result(host=task.host, result=False)
 
         results = convert_cisco_genie_vlans(device_name=task.host.name, data=results[0].result)

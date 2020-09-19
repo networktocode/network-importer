@@ -13,10 +13,10 @@ limitations under the License.
 """
 import logging
 import importlib
-from nornir.core.exceptions import NornirSubTaskError
-from nornir.core.task import AggregatedResult, MultiResult, Result, Task
+# from nornir.core.exceptions import NornirSubTaskError
+from nornir.core.task import Result, Task
 
-import network_importer.config as config
+# import network_importer.config as config
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -32,7 +32,7 @@ DRIVERS_MAPPING = {
 
 
 def dispatcher(task: Task, method: str) -> Result:
-    """Helper Task to retrieve a given Nornir task for a given platform 
+    """Helper Task to retrieve a given Nornir task for a given platform
     Args:
         task (Nornir Task):  Nornir Task object
         task (Nornir Task):  Nornir Task object
@@ -40,26 +40,26 @@ def dispatcher(task: Task, method: str) -> Result:
         Result: Nornir Task result
     """
 
-    LOGGER.debug(f"Executing dispatcher for {task.host.name} ({task.host.platform})")
+    LOGGER.debug("Executing dispatcher for %s (%s)",task.host.name, task.host.platform)
 
     # Get the platform specific driver, if not available, get the default driver
     driver = DRIVERS_MAPPING.get(task.host.platform, DRIVERS_MAPPING.get("default"))
-    LOGGER.debug(f"Found driver {driver}")
+    LOGGER.debug("Found driver %s", driver)
 
     if not driver:
-        LOGGER.warning(f"{task.host.name} | Unable to find the driver for {method} for platform : {task.host.platform}")
+        LOGGER.warning("%s | Unable to find the driver for %s for platform : %s", task.host.name, method, task.host.platform)
         return Result(host=task.host, failed=True)
 
     driver_class = getattr(importlib.import_module(driver), "NetworkImporterDriver")
 
     if not driver_class:
-        LOGGER.error(f"{task.host.name} | Unable to locate the class {driver}")
+        LOGGER.error("%s | Unable to locate the class %s", task.host.name, driver)
         return Result(host=task.host, failed=True)
 
     try:
         driver_task = getattr(driver_class, method)
     except AttributeError:
-        LOGGER.error(f"{task.host.name} | Unable to locate the method {method} for {driver}")
+        LOGGER.error("%s | Unable to locate the method %s for %s", task.host.name, method, driver)
         return Result(host=task.host, failed=True)
 
     result = task.run(task=driver_task)
