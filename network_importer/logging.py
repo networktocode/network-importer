@@ -100,12 +100,12 @@ class Changelog:
           Bool: True is the changelog was properly saved, False if not
         """
 
-        if not config.logs["change_log"]:
+        if not config.SETTINGS.logs.change_log:
             return False
 
-        if config.logs["change_log_format"] == "jsonlines":
+        if config.SETTINGS.logs.change_log_format == "jsonlines":
             self.print_jsonlines()
-        elif config.logs["change_log_format"] == "text":
+        elif config.SETTINGS.logs.change_log_format == "text":
             self.print_text()
 
         return True
@@ -122,7 +122,7 @@ class Changelog:
             "params": self.params,
         }
 
-        with open(config.logs["change_log_filename"] + ".jsonl", "a") as file_:
+        with open(config.SETTINGS.logs.change_log_filename + ".jsonl", "a") as file_:
             file_.write(json.dumps(jcl) + "\n")
 
     def print_text(self):
@@ -139,7 +139,7 @@ class Changelog:
             params=self.params,
         )
 
-        with open(config.logs["change_log_filename"] + ".log", "a") as file_:
+        with open(config.SETTINGS.logs.change_log_filename + ".log", "a") as file_:
             file_.write(log + "\n")
 
 

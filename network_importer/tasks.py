@@ -34,7 +34,7 @@ def save_data_to_file(host, filename, content):
       content (dict or list): Content to save in the file
     """
 
-    directory = config.main["data_directory"]
+    directory = config.SETTINGS.main.data_directory
     filepath = f"{directory}/{host}/{filename}.json"
 
     with open(filepath, "w") as file_:
@@ -52,7 +52,7 @@ def get_data_from_file(host, filename):
         bool, dict or list, depending on the content of the file
     """
 
-    directory = config.main["data_directory"]
+    directory = config.SETTINGS.main.data_directory
     filepath = f"{directory}/{host}/{filename}.json"
 
     if not os.path.exists(filepath):
@@ -76,7 +76,7 @@ def check_data_dir(host):
       host (str): Name of the host
     """
 
-    directory = config.main["data_directory"]
+    directory = config.SETTINGS.main.data_directory
     host_dir = f"{directory}/{host}"
 
     if not os.path.isdir(host_dir):
@@ -98,14 +98,14 @@ def device_save_hostvars(task: Task) -> Result:
         return Result(host=task.host)
 
     # Save device hostvars in file
-    if not os.path.exists(f"{config.main['hostvars_directory']}/{task.host.name}"):
-        os.makedirs(f"{config.main['hostvars_directory']}/{task.host.name}")
-        logger.debug(f"Directory {config.main['hostvars_directory']}/{task.host.name} was missing, created it")
+    if not os.path.exists(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}"):
+        os.makedirs(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}")
+        logger.debug(f"Directory {config.SETTINGS.main.hostvars_directory}/{task.host.name} was missing, created it")
 
-    with open(f"{config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml", "w",) as out_file:
+    with open(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml", "w",) as out_file:
         out_file.write(yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False))
         logger.debug(
-            f"{task.host.name} - Host variables saved in {config.main['hostvars_directory']}/{task.host.name}/network_importer.yaml"
+            f"{task.host.name} - Host variables saved in {config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml"
         )
 
     return Result(host=task.host)
@@ -176,7 +176,7 @@ def check_if_reachable(task: Task) -> Result:
 
 #     """
 
-#     if not config.netbox["status_update"]:
+#     if not config.SETTINGS.netbox.status_update:
 #         logger.debug(f"{task.host.name} | status_update disabled skipping")
 #         return Result(host=task.host, result=False)
 
@@ -188,13 +188,13 @@ def check_if_reachable(task: Task) -> Result:
 #     prev_status = task.host.data["obj"].remote.status.value
 
 #     if task.host.data["status"] == "fail-ip":
-#         new_status = config.netbox["status_on_unreachable"]
+#         new_status = config.SETTINGS.netbox.status_on_unreachable
 
 #     elif "fail" in task.host.data["status"]:
-#         new_status = config.netbox["status_on_fail"]
+#         new_status = config.SETTINGS.netbox.status_on_fail
 
 #     else:
-#         new_status = config.netbox["status_on_pass"]
+#         new_status = config.SETTINGS.netbox.status_on_pass
 
 #     if new_status not in (None, prev_status):
 

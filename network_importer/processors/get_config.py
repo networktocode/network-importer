@@ -26,7 +26,7 @@ class GetConfig(BaseProcessor):
         self.existing_config_hostnames = None
 
     def task_started(self, task: Task) -> None:
-        """Before Update all the config file, 
+        """Before Update all the config file:
             - ensure that the configs directory exist
             - check what config files are already present
 
@@ -34,11 +34,11 @@ class GetConfig(BaseProcessor):
             task (Task): Nornir Task
         """
 
-        if not os.path.isdir(config.main["configs_directory"]):
-            os.mkdir(config.main["configs_directory"])
-            LOGGER.debug(f"Configs directory created at {config.main['configs_directory']}")
+        if not os.path.isdir(config.SETTINGS.main.configs_directory):
+            os.mkdir(config.SETTINGS.main.configs_directory)
+            LOGGER.debug(f"Configs directory created at {config.SETTINGS.main.configs_directory}")
 
-        self.config_dir = config.main["configs_directory"] + "/configs"
+        self.config_dir = config.SETTINGS.main.configs_directory + "/configs"
 
         if not os.path.isdir(self.config_dir):
             os.mkdir(self.config_dir)
@@ -55,7 +55,7 @@ class GetConfig(BaseProcessor):
         """
 
         if len(self.existing_config_hostnames) > 0:
-            LOGGER.info(f"Will delete {len(self.existing_config_hostnames)} config(s) that have not been updated")
+            LOGGER.info("Will delete %s config(s) that have not been updated", len(self.existing_config_hostnames))
 
             for f in self.existing_config_hostnames:
                 os.remove(os.path.join(self.config_dir, f"{f}.{self.config_extension}"))
@@ -82,14 +82,14 @@ class GetConfig(BaseProcessor):
             return
 
         if result[0].failed:
-            LOGGER.warning(f"{task.host.name} | Something went wrong while trying to update the configuration ")
+            LOGGER.warning("%s | Something went wrong while trying to update the configuration ", task.host.name)
             host.data["status"] = "fail-other"
             return
 
         conf = result[0].result.get("config", None)
 
         if not conf:
-            LOGGER.warning(f"{task.host.name} | No configuration return ")
+            LOGGER.warning("%s | No configuration return ", task.host.name)
             host.data["status"] = "fail-other"
             return
 
@@ -104,7 +104,7 @@ class GetConfig(BaseProcessor):
         changed = False
 
         if host.name in self.previous_md5 and self.previous_md5[host.name] == self.current_md5[host.name]:
-            LOGGER.debug(f"{task.host.name} | Latest config file already present ... ")
+            LOGGER.debug("%s | Latest config file already present ...", task.host.name)
         else:
-            LOGGER.info(f"{task.host.name} | Configuration file updated ")
+            LOGGER.info("%s | Configuration file updated", task.host.name)
             changed = True

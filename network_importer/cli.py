@@ -62,7 +62,7 @@ logger = logging.getLogger("network-importer")
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
-    config.load_config(config_file)
+    config.load(config_file)
     perf.init()
 
     # ------------------------------------------------------------
@@ -71,21 +71,21 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
 
-    # if config.logs["level"] != "debug":
-    logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
-    logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
+    if config.SETTINGS.logs.level != "debug":
+        logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
+        logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
 
     logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    if config.logs["level"] == "debug":
+    if config.SETTINGS.logs.level == "debug":
         logger.setLevel(logging.DEBUG)
-    elif config.logs["level"] == "warning":
+    elif config.SETTINGS.logs.level == "warning":
         logger.setLevel(logging.WARNING)
     else:
         logger.setLevel(logging.INFO)
 
     filters = {}
-    build_filter_params(config.main["inventory_filter"].split((",")), filters)
+    build_filter_params(config.SETTINGS.main.inventory_filter.split((",")), filters)
 
     ni = NetworkImporter()
 
@@ -109,11 +109,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         diff.print_detailed()
         pdb.set_trace()
 
-    # if config.logs["performance_log"]:
+    # if config.SETTINGS.logs.performance_log:
     #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
     #     perf.TIME_TRACKER.print_all()
 
-    # if config.netbox["status_update"] and apply:
+    # if config.SETTINGS.netbox.status_update and apply:
     #     ni.update_devices_status()
 
     # if diff:

@@ -273,7 +273,7 @@ class NetworkImporterDevice:
             intf_driver = get_driver("interface")
             intf_properties = intf_driver.get_properties(intf.local)
 
-            if config.main["import_vlans"] != "no":
+            if config.SETTINGS.main.import_vlans != "no":
                 if intf.local.mode in ["TRUNK", "ACCESS"] and intf.local.access_vlan:
                     intf_properties["untagged_vlan"] = self.site.convert_vid_to_nid(intf.local.access_vlan)
                 elif intf.local.mode in ["TRUNK", "ACCESS"] and not intf.local.access_vlan:
@@ -732,9 +732,9 @@ class NetworkImporterInterface(NetworkImporterObjBase):
         if self.local.switchport_mode == "FEX_FABRIC":
             self.local.switchport_mode = "NONE"
 
-        if self.local.active is None and config.main["import_intf_status"]:
+        if self.local.active is None and config.SETTINGS.main.import_intf_status:
             self.local.active = bf.Active
-        elif not config.main["import_intf_status"]:
+        elif not config.SETTINGS.main.import_intf_status:
             self.local.active = None
 
         if self.local.description is None and bf.Description:
@@ -871,10 +871,10 @@ class NetworkImporterSite:
 
         logger.info(f"Site {self.name}, Updating remote (Netbox) ... ")
 
-        if config.main["import_vlans"] != "no":
+        if config.SETTINGS.main.import_vlans != "no":
             self.update_vlan_remote()
 
-        if config.main["import_prefixes"]:
+        if config.SETTINGS.main.import_prefixes:
             self.update_prefix_remote()
 
     def update_vlan_remote(self):
@@ -1036,7 +1036,7 @@ class NetworkImporterSite:
     def _get_remote_vlans_list(self):
         """Query Netbox for all Vlans associated with this site and keep them in cache"""
 
-        if config.main["import_vlans"] == "no":
+        if config.SETTINGS.main.import_vlans == "no":
             return False
 
         vlans = self.nb.ipam.vlans.filter(site=self.name)
@@ -1058,7 +1058,7 @@ class NetworkImporterSite:
     def _get_remote_prefixes_list(self):
         """Query Netbox for all prefixes associated with this site and keep them in cache"""
 
-        if not config.main["import_prefixes"]:
+        if not config.SETTINGS.main.import_prefixes:
             return False
 
         prefixes = self.nb.ipam.prefixes.filter(site=self.name)

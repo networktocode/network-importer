@@ -25,7 +25,7 @@ class Diff:
 
     def add(self, group: str, element):
         """
-        Save a new DiffElement per group, 
+        Save a new DiffElement per group.
         if an element with the same name already exist it will be replaced
 
         Args:
@@ -73,7 +73,7 @@ class Diff:
 
 
 class DiffElement:
-    """ 
+    """
     DiffElement object, designed to represent an item/object
     """
 
@@ -111,10 +111,10 @@ class DiffElement:
         Add an item
         """
 
-        if source != None:
+        if source is not None:
             self.source_attrs = source
 
-        if dest != None:
+        if dest is not None:
             self.dest_attrs = dest
 
     def get_attrs_keys(self):
@@ -127,12 +127,14 @@ class DiffElement:
 
         if self.source_attrs is None and self.dest_attrs is None:
             return None
-        elif self.source_attrs is None and self.dest_attrs:
+
+        if self.source_attrs is None and self.dest_attrs:
             return self.dest_attrs.keys()
-        elif self.source_attrs and self.dest_attrs is None:
+
+        if self.source_attrs and self.dest_attrs is None:
             return self.source_attrs.keys()
-        else:
-            return intersection(self.dest_attrs.keys(), self.source_attrs.keys())
+
+        return intersection(self.dest_attrs.keys(), self.source_attrs.keys())
 
     def add_child(self, element):
         """
@@ -161,7 +163,7 @@ class DiffElement:
 
         status = False
 
-        if not (self.source_attrs == self.dest_attrs):
+        if not self.source_attrs == self.dest_attrs:
             status = True
 
         if not include_childs:
@@ -175,7 +177,7 @@ class DiffElement:
     def print_detailed(self, indent: int = 0):
         """
         Print status on screen for current object and all childs
-        
+
         Args:
           indent: Default value = 0
         """

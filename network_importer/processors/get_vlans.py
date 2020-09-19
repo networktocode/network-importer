@@ -1,13 +1,12 @@
-from collections import defaultdict
 import logging
-
+from collections import defaultdict
 from typing import Dict, List
 
-from nornir.core.inventory import Host
-from nornir.core.task import MultiResult, Task
-from pydantic import BaseModel
+# from nornir.core.inventory import Host
+# from nornir.core.task import MultiResult, Task
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
-import network_importer.config as config
+# import network_importer.config as config
 from network_importer.processors import BaseProcessor
 
 LOGGER = logging.getLogger("network-importer")

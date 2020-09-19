@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from typing import Optional
-from network_importer.models import (
+from network_importer.models import (  # pylint: disable=import-error
     Site,
     Device,
     Interface,

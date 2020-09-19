@@ -43,10 +43,10 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
     def get_neighbors(task: Task) -> Result:
         LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
 
-        if config.main["import_cabling"] == "lldp":
+        if config.SETTINGS.main.import_cabling == "lldp":
             command = "show lldp neighbors detail"
             cmd_type = "LLDP"
-        elif config.main["import_cabling"] == "cdp":
+        elif config.SETTINGS.main.import_cabling == "cdp":
             command = "show cdp neighbors detail"
             cmd_type = "CDP"
         else:

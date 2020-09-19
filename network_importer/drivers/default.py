@@ -52,7 +52,7 @@ class NetworkImporterDriver:
     def get_neighbors(task: Task) -> Result:
         LOGGER.debug(f"Executing get_neighbor for {task.host.name} ({task.host.platform})")
 
-        if config.main["import_cabling"] == "lldp":
+        if config.SETTINGS.main.import_cabling == "lldp":
 
             try:
                 result = task.run(task=napalm_get, getters=["lldp_neighbors"])
@@ -66,7 +66,7 @@ class NetworkImporterDriver:
             neighbors = result[0].result.get("lldp_neighbors", {})
             return Result(host=task.host, result={"neighbors": neighbors})
 
-        elif config.main["import_cabling"] == "cdp":
+        elif config.SETTINGS.main.import_cabling == "cdp":
 
             try:
                 result = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_genie=True)

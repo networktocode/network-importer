@@ -23,6 +23,7 @@ def intersection(lst1, lst2):
 class OrderedDefaultDict(OrderedDict):
     def __init__(self, dict_type):
         self.factory = dict_type
+        super().__init__()
 
     def __missing__(self, key):
         self[key] = value = self.factory()

@@ -12,19 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import pdb
 import warnings
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import pynetbox
 
-from dsync.exceptions import ObjectAlreadyExist
-from network_importer.adapters.base import BaseAdapter
-from network_importer.adapters.netbox_api.models import (
+import network_importer.config as config  # pylint: disable=import-error
+from network_importer.adapters.base import BaseAdapter  # pylint: disable=import-error
+from network_importer.adapters.netbox_api.models import (  # pylint: disable=import-error
     NetboxSite,
     NetboxDevice,
     NetboxInterface,
@@ -34,7 +28,12 @@ from network_importer.adapters.netbox_api.models import (
     NetboxVlan,
 )
 
-import network_importer.config as config
+from dsync.exceptions import ObjectAlreadyExist
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -51,13 +50,15 @@ class NetBoxAPIAdapter(BaseAdapter):
 
     top_level = ["site", "device", "cable"]
 
-    nb = None
+    netbox = None
     source = "NetBox"
 
     def init(self):
 
-        self.nb = pynetbox.api(
-            url=config.netbox["address"], token=config.netbox["token"], ssl_verify=config.netbox["request_ssl_verify"],
+        self.netbox = pynetbox.api(
+            url=config.SETTINGS.netbox.address,
+            token=config.SETTINGS.netbox.token,
+            ssl_verify=config.SETTINGS.netbox.request_ssl_verify,
         )
 
         sites = {}
@@ -107,7 +108,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             site (NetboxSite): Site to import prefix for
         """
 
-        prefixes = self.nb.ipam.prefixes.filter(site=site.name, status="active")
+        prefixes = self.netbox.ipam.prefixes.filter(site=site.name, status="active")
 
         for nb_prefix in prefixes:
             prefix_type = None
@@ -125,7 +126,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         Args:
             site (NetboxSite): Site to import vlan for
         """
-        vlans = self.nb.ipam.vlans.filter(site=site.name)
+        vlans = self.netbox.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
             vlan = self.vlan(vid=nb_vlan.vid, site_name=site.name, name=nb_vlan.name, remote_id=nb_vlan.id,)
@@ -140,7 +141,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         """
 
         # Import Interfaces
-        intfs = self.nb.dcim.interfaces.filter(device=device.name)
+        intfs = self.netbox.dcim.interfaces.filter(device=device.name)
         for intf in intfs:
 
             interface = self.interface(
@@ -152,7 +153,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             )
 
             # Define status if it's enabled in the config file
-            if config.main["import_intf_status"]:
+            if config.SETTINGS.main.import_intf_status:
                 interface.active = intf.enabled
 
             # Identify if the interface is physical or virtual and if it's part of a Lag
@@ -213,26 +214,29 @@ class NetBoxAPIAdapter(BaseAdapter):
             if created:
                 device.add_child(new_intf)
 
-        LOGGER.debug(f"{self.source} | Found {len(intfs)} interfaces for {device.name}")
+        LOGGER.debug("%s | Found %s interfaces for %s", self.source, len(intfs), device.name)
 
-    def import_netbox_ip_address(self, site, device):
+    def import_netbox_ip_address(self, site, device):  # pylint: disable=unused-argument
 
-        ips = self.nb.ipam.ip_addresses.filter(device=device.name)
-        for ip in ips:
+        ips = self.netbox.ipam.ip_addresses.filter(device=device.name)
+        for ipaddr in ips:
 
             ip_address = self.ip_address(
-                address=ip.address, device_name=device.name, interface_name=ip.interface.name, remote_id=ip.id,
+                address=ipaddr.address,
+                device_name=device.name,
+                interface_name=ipaddr.interface.name,
+                remote_id=ipaddr.id,
             )
 
             self.get_or_add(ip_address)
-            interface = self.get(self.interface, keys=[device.name, ip.interface.name])
+            interface = self.get(self.interface, keys=[device.name, ipaddr.interface.name])
             interface.add_child(ip_address)
 
-        LOGGER.debug(f"{self.source} | Found {len(ips)} ip addresses for {device.name}")
+        LOGGER.debug("%s | Found %s ip addresses for %s", self.source, len(ips), device.name)
 
     def import_netbox_cable(self, site, device_names):
 
-        cables = self.nb.dcim.cables.filter(site=site.name)
+        cables = self.netbox.dcim.cables.filter(site=site.name)
 
         nbr_cables = 0
         for nb_cable in cables:
@@ -241,13 +245,19 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             if nb_cable.termination_a.device.name not in device_names:
                 LOGGER.debug(
-                    f"{self.source} | Skipping cable {nb_cable.id} because {nb_cable.termination_a.device.name} is not in the list of devices"
+                    "%s | Skipping cable %s because %s is not in the list of devices",
+                    self.source,
+                    nb_cable.id,
+                    nb_cable.termination_a.device.name,
                 )
                 continue
 
-            elif nb_cable.termination_b.device.name not in device_names:
+            if nb_cable.termination_b.device.name not in device_names:
                 LOGGER.debug(
-                    f"{self.source} | Skipping cable {nb_cable.id} because {nb_cable.termination_b.device.name} is not in the list of devices"
+                    "%s | Skipping cable %s because %s is not in the list of devices",
+                    self.source,
+                    nb_cable.id,
+                    nb_cable.termination_b.device.name,
                 )
                 continue
 
@@ -267,7 +277,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             nbr_cables += 1
 
-        LOGGER.debug(f"{self.source} | Found {nbr_cables} cables in netbox for {site.name}")
+        LOGGER.debug("%s | Found %s cables in netbox for %s", self.source, nbr_cables, site.name)
 
     # -----------------------------------------------------
     # Interface
@@ -316,7 +326,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         # if is None:
         #     intf_properties["enabled"] = intf.active
 
-        if config.main["import_vlans"] != "no":
+        if config.SETTINGS.main.import_vlans != "no":
             if "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and params["access_vlan"]:
                 nb_params["untagged_vlan"] = convert_vlan_to_nid(params["access_vlan"])
             elif "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and not params["access_vlan"]:
@@ -350,8 +360,8 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         nb_params = self.interface_translate_params(keys, params)
 
-        intf = self.nb.dcim.interfaces.create(**nb_params)
-        LOGGER.debug(f"Created interface {intf.name} ({intf.id}) in NetBox")
+        intf = self.netbox.dcim.interfaces.create(**nb_params)
+        LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
 
         # Create the object in the local DB
         item = self.default_create(object_type="interface", keys=keys, params=params)
@@ -376,9 +386,9 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         nb_params = self.interface_translate_params(keys, params)
 
-        intf = self.nb.dcim.interfaces.get(item.remote_id)
+        intf = self.netbox.dcim.interfaces.get(item.remote_id)
         intf.update(data=nb_params)
-        LOGGER.debug(f"Updated Interface {item.device_name} {item.name} ({item.remote_id}) in NetBox")
+        LOGGER.debug("Updated Interface %s %s (%s) in NetBox", item.device_name, item.name, item.remote_id)
         print(nb_params)
 
         for key, value in params.items():
@@ -398,7 +408,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         """
 
         item = self.get(self.interface, keys=[keys["device_name"], keys["name"]])
-        intf = self.nb.dcim.interfaces.get(item.remote_id)
+        intf = self.netbox.dcim.interfaces.get(item.remote_id)
         intf.delete()
 
         item = self.default_delete(object_type="interface", keys=keys, params=params)
@@ -415,11 +425,11 @@ class NetBoxAPIAdapter(BaseAdapter):
             interface = self.get(self.interface, keys=[params["device_name"], params["interface_name"]])
 
         if interface:
-            ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"], interface=interface.remote_id)
+            ip_address = self.netbox.ipam.ip_addresses.create(address=keys["address"], interface=interface.remote_id)
         else:
-            ip_address = self.nb.ipam.ip_addresses.create(address=keys["address"])
+            ip_address = self.netbox.ipam.ip_addresses.create(address=keys["address"])
 
-        LOGGER.debug(f"Created IP {ip_address.address} ({ip_address.id}) in NetBox")
+        LOGGER.debug("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
 
         item = self.default_create(object_type="ip_address", keys=keys, params=params)
         item.remote_id = ip_address.id
@@ -430,8 +440,8 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         item = self.get(self.ip_address, list(keys.values()))
 
-        ip = self.nb.ipam.ip_addresses.get(item.remote_id)
-        ip.delete()
+        ipaddr = self.netbox.ipam.ip_addresses.get(item.remote_id)
+        ipaddr.delete()
 
         item = self.default_delete(object_type="ip_address", keys=keys, params=params)
 
@@ -445,13 +455,14 @@ class NetBoxAPIAdapter(BaseAdapter):
         site = self.get(self.site, keys=[keys["site_name"]])
         status = "active"
 
-        prefix = self.nb.ipam.prefixes.create(prefix=keys["prefix"], site=site.remote_id, status=status)
-        LOGGER.debug(f"Created Prefix {prefix.prefix} ({prefix.id}) in NetBox")
+        prefix = self.netbox.ipam.prefixes.create(prefix=keys["prefix"], site=site.remote_id, status=status)
+        LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
 
         item = self.default_create(object_type="prefix", keys=keys, params=params)
         item.remote_id = prefix.id
         return item
 
+    # def delete_prefix()
     # -----------------------------------------------------
     # Cable
     # -----------------------------------------------------
@@ -461,18 +472,18 @@ class NetBoxAPIAdapter(BaseAdapter):
         interface_z = self.get(self.interface, keys=[keys["device_z_name"], keys["interface_z_name"]])
 
         try:
-            cable = self.nb.dcim.cables.create(
+            cable = self.netbox.dcim.cables.create(
                 termination_a_type="dcim.interface",
                 termination_b_type="dcim.interface",
                 termination_a_id=interface_a.remote_id,
                 termination_b_id=interface_z.remote_id,
             )
         except pynetbox.core.query.RequestError:
-            LOGGER.warning(f"Unable to create Cable {keys} in {self.source}")
+            LOGGER.warning("Unable to create Cable %s in %s", keys, self.source)
             return False
 
         item = self.default_create(object_type="cable", keys=keys, params=params)
-        LOGGER.debug(f"Created Cable {item.get_unique_id()} ({cable.id}) in NetBox")
+        LOGGER.debug("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
 
         item.remote_id = cable.id
         return item
@@ -490,9 +501,9 @@ class NetBoxAPIAdapter(BaseAdapter):
             vlan_name = f"vlan-{keys['vid']}"
 
         try:
-            vlan = self.nb.ipam.vlans.create(vid=keys["vid"], name=vlan_name, site=site.remote_id)
+            vlan = self.netbox.ipam.vlans.create(vid=keys["vid"], name=vlan_name, site=site.remote_id)
         except pynetbox.core.query.RequestError:
-            LOGGER.warning(f"Unable to create Vlan {keys} in {self.source}")
+            LOGGER.warning("Unable to create Vlan %s in %s", keys, self.source)
             return False
 
         item = self.default_create(object_type="vlan", keys=keys, params=params)

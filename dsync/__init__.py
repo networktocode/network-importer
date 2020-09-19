@@ -14,8 +14,9 @@ limitations under the License.
 import logging
 import pdb
 from os import path
-from pydantic import BaseModel
 from collections import defaultdict
+
+from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 from .diff import Diff, DiffElement
 from .utils import intersection
@@ -51,7 +52,7 @@ class DSyncModel(BaseModel):
         """Get all primary keys for this object.
 
         Returns:
-            dict: dictionnary containing all primary keys for this device, defined in __identifier__ 
+            dict: dictionnary containing all primary keys for this device, defined in __identifier__
         """
         return {key: getattr(self, key) for key in self.__identifier__}
 
@@ -66,7 +67,7 @@ class DSyncModel(BaseModel):
         return {key: getattr(self, key) for key in self.__attributes__}
 
     def get_unique_id(self):
-        """Returned the unique Id of an object. 
+        """Returned the unique Id of an object.
         By default the unique Id is build based on all the primary keys.
 
         Returns:
@@ -78,13 +79,13 @@ class DSyncModel(BaseModel):
 
         if self.__shortname__:
             return "__".join([str(getattr(self, key)) for key in self.__shortname__])
-        else:
-            return self.get_unique_id()
+
+        return self.get_unique_id()
 
     def add_child(self, child):
         """Add a child to an object.
 
-        The child will be automatically saved/store by its unique id 
+        The child will be automatically saved/store by its unique id
         The name of the target attribute is defined in __children__ per object type
 
         Args:
@@ -139,7 +140,7 @@ class DSync:
         """Synronize a given object or element defined in a DiffElement
 
         Args:
-            element (DiffElement): 
+            element (DiffElement):
 
         Returns:
             Bool: Return False if there is nothing to sync
@@ -148,9 +149,9 @@ class DSync:
         if not element.has_diffs():
             return False
 
-        if element.source_attrs == None:
+        if element.source_attrs is None:
             self.delete_object(object_type=element.type, keys=element.keys, params=element.dest_attrs)
-        elif element.dest_attrs == None:
+        elif element.dest_attrs is None:
             self.create_object(object_type=element.type, keys=element.keys, params=element.source_attrs)
         elif element.source_attrs != element.dest_attrs:
             self.update_object(object_type=element.type, keys=element.keys, params=element.source_attrs)
@@ -178,8 +179,8 @@ class DSync:
 
     def diff_objects(self, source, dest, source_root):
         """ """
-        if type(source) != type(dest):
-            logger.warning(f"Attribute {source} are of different types")
+        if type(source) != type(dest):  # pylint: disable=unidiomatic-typecheck
+            logger.warning("Attribute %s are of different types", source)
             return False
 
         diffs = []
@@ -198,34 +199,34 @@ class DSync:
             missing_src = list(set(dict_dst.keys()) - set(same_keys))
 
             for key in missing_dst:
-                de = DiffElement(
+                delm = DiffElement(
                     obj_type=dict_src[key].get_type(),
                     name=dict_src[key].get_shortname(),
                     keys=dict_src[key].get_keys(),
                 )
-                de.add_attrs(source=dict_src[key].get_attrs(), dest=None)
-                diffs.append(de)
+                delm.add_attrs(source=dict_src[key].get_attrs(), dest=None)
+                diffs.append(delm)
                 # TODO Continue the tree here
 
             for key in missing_src:
-                de = DiffElement(
+                delm = DiffElement(
                     obj_type=dict_dst[key].get_type(),
                     name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
                 )
-                de.add_attrs(source=None, dest=dict_dst[key].get_attrs())
-                diffs.append(de)
+                delm.add_attrs(source=None, dest=dict_dst[key].get_attrs())
+                diffs.append(delm)
                 # TODO Continue the tree here
 
             for key in same_keys:
 
-                de = DiffElement(
+                delm = DiffElement(
                     obj_type=dict_dst[key].get_type(),
                     name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
                 )
 
-                de.add_attrs(
+                delm.add_attrs(
                     source=dict_src[key].get_attrs(), dest=dict_dst[key].get_attrs(),
                 )
 
@@ -250,13 +251,13 @@ class DSync:
                         source_root=source_root,
                     )
 
-                    for c in childs:
-                        de.add_child(c)
+                    for child in childs:
+                        delm.add_child(child)
 
-                diffs.append(de)
+                diffs.append(delm)
 
         else:
-            logger.warning(f"Type {type(source)} is not supported for now")
+            logger.warning("Type %s is not supported for now", type(source))
 
         return diffs
 
@@ -274,8 +275,8 @@ class DSync:
     def _crud_change(self, action, object_type, keys, params):
         """Dispatcher function to Create, Update or Delete an object.
 
-        Based on the type of the action and the type of the object, 
-        we'll first try to execute a function named after the object type and the action 
+        Based on the type of the action and the type of the object,
+        we'll first try to execute a function named after the object type and the action
             "{action}_{object_type}"   update_interface or delete_device ...
         if such function is not available, the default function will be executed instead
             default_create, default_update or default_delete
@@ -305,10 +306,10 @@ class DSync:
         try:
             if hasattr(self, f"{action}_{object_type}"):
                 item = getattr(self, f"{action}_{object_type}")(keys=keys, params=params)
-                logger.debug(f"{action}d {object_type} - {params}")
+                logger.debug("%sd %s - %s", action, object_type, params)
             else:
                 item = getattr(self, f"default_{action}")(object_type=object_type, keys=keys, params=params)
-                logger.debug(f"{action}d {object_type} = {keys} - {params} (default)")
+                logger.debug("%sd %s = %s - %s (default)", action, object_type, keys, params)
             return item
         except ObjectCrudException:
             return False

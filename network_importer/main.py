@@ -73,8 +73,8 @@ class NetworkImporter:
         #  Filters can be defined at the configuration level or in CLI or both
         # ------------------------------------------------------------------------
 
-        if "inventory_filter" in config.main.keys():
-            csparams = config.main["inventory_filter"].split(",")
+        if config.SETTINGS.main.inventory_filter:
+            csparams = config.SETTINGS.main.inventory_filter.split(",")
             for csp in csparams:
                 if "=" not in csp:
                     continue
@@ -96,21 +96,21 @@ class NetworkImporter:
 
         # TODO Cleanup config file and allow user define inventory
         self.nornir = InitNornir(
-            core={"num_workers": config.main["nbr_workers"]},
+            core={"num_workers": config.SETTINGS.main.nbr_workers},
             logging={"enabled": False},
             inventory={
                 "plugin": "network_importer.inventory.NetboxInventory",
                 "options": {
-                    "nb_url": config.netbox["address"],
-                    "nb_token": config.netbox["token"],
+                    "nb_url": config.SETTINGS.netbox.address,
+                    "nb_token": config.SETTINGS.netbox.token,
                     "filter_parameters": params,
-                    "ssl_verify": config.netbox["request_ssl_verify"],
-                    "username": config.network["login"],
-                    "password": config.network["password"],
-                    "enable": config.network["enable"],
-                    "use_primary_ip": config.main["use_primary_ip"],
-                    "fqdn": config.main["fqdn"],
-                    "supported_platforms": config.netbox["supported_platforms"],
+                    "ssl_verify": config.SETTINGS.netbox.request_ssl_verify,
+                    "username": config.SETTINGS.network.login,
+                    "password": config.SETTINGS.network.password,
+                    "enable": config.SETTINGS.network.enable,
+                    "use_primary_ip": config.SETTINGS.main.use_primary_ip,
+                    "fqdn": config.SETTINGS.main.fqdn,
+                    "supported_platforms": config.SETTINGS.netbox.supported_platforms,
                 },
             },
         )
@@ -146,14 +146,14 @@ class NetworkImporter:
         # --------------------------------------------------------
         if (
             not self.check_mode
-            and not os.path.exists(config.main["hostvars_directory"])
-            and config.main["generate_hostvars"]
+            and not os.path.exists(config.SETTINGS.main.hostvars_directory)
+            and config.SETTINGS.main.generate_hostvars
         ):
-            os.makedirs(config.main["hostvars_directory"])
-            logger.debug(f"Directory {config.main['hostvars_directory']} was missing, created it")
+            os.makedirs(config.SETTINGS.main.hostvars_directory)
+            logger.debug(f"Directory {config.SETTINGS.main.hostvars_directory} was missing, created it")
 
-        if not os.path.isdir(config.main["data_directory"]):
-            os.mkdir(config.main["data_directory"])
+        if not os.path.isdir(config.SETTINGS.main.data_directory):
+            os.mkdir(config.SETTINGS.main.data_directory)
 
         # --------------------------------------------------------
         # Initialize Object
@@ -161,13 +161,13 @@ class NetworkImporter:
         # --------------------------------------------------------
 
         logger.info(f"Import SOT Model")
-        sot_path = config.main["sot_adapter"].split(".")
+        sot_path = config.SETTINGS.main.sot_adapter.split(".")
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
         self.sot = sot_adapter(nornir=self.nornir)
         self.sot.init()
 
         logger.info(f"Import Network Model")
-        network_adapter_path = config.main["network_adapter"].split(".")
+        network_adapter_path = config.SETTINGS.main.network_adapter.split(".")
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
