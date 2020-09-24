@@ -135,6 +135,31 @@ def is_interface_lag(name):
     return None
 
 
+def is_mac_address(data):
+    """Evaluate if a given string is a mac address.
+
+  Args:
+      data (str): string to evaluate
+  
+  Returns:
+    bool: True if the string provided is a mac address, false otherwise
+  """
+    mac_address_chars = r"^[0-9a-fA-F\.\-\:]+$"
+    hex_chars = r"[0-9a-fA-F]"
+
+    if not isinstance(data, str):
+        raise TypeError("data should be of type string")
+
+    if not re.match(mac_address_chars, data):
+        return False
+
+    hex_data = re.findall(hex_chars, data)
+    if len(hex_data) is 12:
+        return True
+
+    return False
+
+
 def jinja_filter_toyaml_list(value) -> str:
     """
     JinjaFilter to return a dict as a Nice Yaml

@@ -15,7 +15,7 @@ limitations under the License.
 
 from os import path
 import yaml
-from network_importer.inventory import NBInventory
+from network_importer.inventory import NetboxInventory
 
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "config/fixtures/NBInventory"
@@ -38,7 +38,7 @@ def test_nb_inventory_all(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+    inv = NetboxInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
     assert len(inv.hosts.keys()) == 6
     assert "austin" in inv.hosts.keys()
@@ -68,7 +68,7 @@ def test_nb_inventory_filtered(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv_filtered = NBInventory(  # nosec
+    inv_filtered = NetboxInventory(  # nosec
         nb_url="http://mock",  # nosec
         nb_token="12349askdnfanasdf",  # nosec
         filter_parameters={"name": "el-paso"},  # nosec
@@ -96,7 +96,7 @@ def test_nb_inventory_exclude(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NBInventory(  # nosec
+    inv = NetboxInventory(  # nosec
         nb_url="http://mock",  # nosec
         nb_token="12349askdnfanasdf",  # nosec
         filter_parameters={"exclude": "platform"},  # nosec
@@ -122,7 +122,7 @@ def test_nb_inventory_virtual_chassis(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NBInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+    inv = NetboxInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
 
     assert len(inv.hosts.keys()) == 2
     assert "test_dev1_2" not in inv.hosts.keys()
@@ -148,7 +148,7 @@ def test_nb_inventory_supported_platforms(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NBInventory(  # nosec
+    inv = NetboxInventory(  # nosec
         nb_url="http://mock",  # nosec
         nb_token="12349askdnfanasdf",  # nosec
         supported_platforms=["ios", "nxos"],  # nosec
@@ -158,7 +158,7 @@ def test_nb_inventory_supported_platforms(requests_mock):
     assert "austin" in inv.hosts.keys()
     assert "dallas" in inv.hosts.keys()
 
-    inv = NBInventory(  # nosec
+    inv = NetboxInventory(  # nosec
         nb_url="http://mock", nb_token="12349askdnfanasdf", supported_platforms=["ios"],  # nosec  # nosec  # nosec
     )  # nosec
 
