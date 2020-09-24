@@ -5,9 +5,5 @@ python:
 before_install:
   - make build
 
-# install:
-#   - pip install -r requirements-develop.txt
-#   - python setup.py develop
-
 script: 
   - make tests # run tests
