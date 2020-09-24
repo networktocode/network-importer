@@ -175,10 +175,11 @@ class Cable(DSyncModel):
 
         if side.lower() == "a":
             return self.device_a_name, self.interface_a_name
-        elif side.lower() == "z":
+
+        if side.lower() == "z":
             return self.device_z_name, self.interface_z_name
-        else:
-            raise ValueError("side must be either 'a' or 'z'")
+
+        raise ValueError("side must be either 'a' or 'z'")
 
 
 class Vlan(DSyncModel):

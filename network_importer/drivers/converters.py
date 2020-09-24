@@ -33,7 +33,10 @@ def convert_cisco_genie_neighbors_details(device_name, data):
             # nei_intf_name_long = canonical_interface_name(nei_intf_name)
             if is_interface_lag(nei_intf_name):
                 LOGGER.debug(
-                    "%s | Neighbors, %s is connected to %s but is not a valid interface (lag), SKIPPING", device_name, nei_intf_name, intf_name
+                    "%s | Neighbors, %s is connected to %s but is not a valid interface (lag), SKIPPING",
+                    device_name,
+                    nei_intf_name,
+                    intf_name,
                 )
                 continue
 
@@ -43,7 +46,10 @@ def convert_cisco_genie_neighbors_details(device_name, data):
 
             if len(intf_data["port_id"][nei_intf_name]["neighbors"]) > 1:
                 LOGGER.warning(
-                    "%s | More than 1 neighbor found for %s connected to %s, SKIPPING", device_name, nei_intf_name, intf_name
+                    "%s | More than 1 neighbor found for %s connected to %s, SKIPPING",
+                    device_name,
+                    nei_intf_name,
+                    intf_name,
                 )
                 continue
 

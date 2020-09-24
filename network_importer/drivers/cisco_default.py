@@ -14,30 +14,30 @@ LOGGER = logging.getLogger("network-importer")
 class NetworkImporterDriver(DefaultNetworkImporterDriver):
     """Collection of Nornir Tasks specific to Cisco devices."""
 
-    # @staticmethod
-    # def get_config(task: Task) -> Result:
-    #     """Get the latest configuration from the device using Netmiko.
+    @staticmethod
+    def get_config(task: Task) -> Result:
+        """Get the latest configuration from the device using Netmiko.
 
-    #     Args:
-    #         task (Task): Nornir Task
+        Args:
+            task (Task): Nornir Task
 
-    #     Returns:
-    #         Result: Nornir Result object with a dict as a result containing the running configuration
-    #             { "config: <running configuration> }
-    #     """
-    #     LOGGER.debug(f"Executing get_config for {task.host.name} ({task.host.platform})")
+        Returns:
+            Result: Nornir Result object with a dict as a result containing the running configuration
+                { "config: <running configuration> }
+        """
+        LOGGER.debug("Executing get_config for %s (%s)", task.host.name, task.host.platform)
 
-    #     try:
-    #         result = task.run(task=netmiko_send_command, command_string="show run")
-    #     except NornirSubTaskError as exc:
-    #         LOGGER.debug(f"An exception occured while pulling the configuration ({exc})")
-    #         return Result(host=task.host, failed=True)
+        try:
+            result = task.run(task=netmiko_send_command, command_string="show run")
+        except NornirSubTaskError as exc:
+            LOGGER.debug("An exception occured while pulling the configuration", exec_info=True)
+            return Result(host=task.host, failed=True)
 
-    #     if result[0].failed:
-    #         return result
+        if result[0].failed:
+            return result
 
-    #     running_config = result[0].result
-    #     return Result(host=task.host, result={"config": running_config})
+        running_config = result[0].result
+        return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:

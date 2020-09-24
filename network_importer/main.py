@@ -12,44 +12,33 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import sys
-import re
 import os
 import warnings
 import importlib
-import requests
+
+import network_importer.config as config
+from network_importer.utils import patch_http_connection_pool
+from network_importer.processors.get_config import GetConfig
+from network_importer.drivers import dispatcher
+from network_importer.tasks import check_if_reachable
+from network_importer.performance import timeit
+from network_importer.inventory import (
+    # valid_devs,
+    # non_valid_devs,
+    reachable_devs,
+    # non_reachable_devs,
+    # valid_and_reachable_devs,
+)
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
-    from nornir.core.filter import F
-
-import pynetbox
-
-import network_importer.config as config
-
-from network_importer.utils import sort_by_digits, patch_http_connection_pool
-from network_importer.processors.get_config import GetConfig
-from network_importer.processors.get_neighbors import GetNeighbors
-from network_importer.drivers import dispatcher
-
-from network_importer.tasks import check_if_reachable
-
-from network_importer.inventory import (
-    valid_devs,
-    non_valid_devs,
-    reachable_devs,
-    non_reachable_devs,
-    valid_and_reachable_devs,
-)
-
-from network_importer.performance import timeit
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporter:
@@ -72,7 +61,6 @@ class NetworkImporter:
         # Extract additional query filters if defined and convert string to dict
         #  Filters can be defined at the configuration level or in CLI or both
         # ------------------------------------------------------------------------
-
         if config.SETTINGS.main.inventory_filter:
             csparams = config.SETTINGS.main.inventory_filter.split(",")
             for csp in csparams:
@@ -150,7 +138,7 @@ class NetworkImporter:
             and config.SETTINGS.main.generate_hostvars
         ):
             os.makedirs(config.SETTINGS.main.hostvars_directory)
-            logger.debug(f"Directory {config.SETTINGS.main.hostvars_directory} was missing, created it")
+            LOGGER.debug("Directory %s was missing, created it", config.SETTINGS.main.hostvars_directory)
 
         if not os.path.isdir(config.SETTINGS.main.data_directory):
             os.mkdir(config.SETTINGS.main.data_directory)
@@ -160,13 +148,13 @@ class NetworkImporter:
         # TODO allow user defined class
         # --------------------------------------------------------
 
-        logger.info(f"Import SOT Model")
+        LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.main.sot_adapter.split(".")
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
         self.sot = sot_adapter(nornir=self.nornir)
         self.sot.init()
 
-        logger.info(f"Import Network Model")
+        LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.main.network_adapter.split(".")
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
@@ -189,7 +177,7 @@ class NetworkImporter:
         Automatically cleanup the directory after to remove all configurations that have not been updated
         """
 
-        logger.info("Updating configuration from devices .. ")
+        LOGGER.info("Updating configuration from devices .. ")
 
         # ----------------------------------------------------
         # Do a pre-check to ensure that all devices are reachable
@@ -209,4 +197,4 @@ class NetworkImporter:
         """Generate warning logs for each unreachable device."""
         for host in self.nornir.filter(filter_func=lambda h: h.data["is_reachable"] is False).inventory.hosts:
             reason = self.nornir.inventory.hosts[host].data.get("not_reachable_reason", "reason not defined")
-            logger.warning(f"{host} device is not reachable, {reason}")
+            LOGGER.warning("%s device is not reachable, %s", host, reason)

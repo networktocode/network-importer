@@ -16,13 +16,17 @@ limitations under the License.
 import logging
 import sys
 import pdb
-import click
 import warnings
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
+import click
+import urllib3
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+urllib3.disable_warnings()
+
+# warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+# with warnings.catch_warnings():
+#     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import network_importer.config as config
 from network_importer.utils import build_filter_params
@@ -62,7 +66,8 @@ logger = logging.getLogger("network-importer")
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
-    config.load(config_file)
+
+    config.load(config_file_name=config_file)
     perf.init()
 
     # ------------------------------------------------------------

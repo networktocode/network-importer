@@ -19,7 +19,8 @@ from typing import Any, Dict, List, Optional, Union
 import pynetbox
 
 from nornir.core.deserializer.inventory import Inventory, HostsDict
-import network_importer.config as config
+
+# import network_importer.config as config
 
 ### ------------------------------------------------------------
 ### Network Importer Base Dict for device data
@@ -42,7 +43,7 @@ class NetboxInventory(Inventory):
     Netbox Inventory Class
     """
 
-    # pylint: disable=C0330,W0102
+    # pylint: disable=dangerous-default-value
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -138,7 +139,7 @@ class NetboxInventory(Inventory):
                 host["hostname"] = dev.primary_ip.address.split("/")[0]
             elif use_primary_ip and not dev.primary_ip:
                 host["data"]["is_reachable"] = False
-                host["data"]["not_reachable_reason"] = f"primary ip not defined in Netbox"
+                host["data"]["not_reachable_reason"] = "primary ip not defined in Netbox"
             elif not use_primary_ip and fqdn:
                 host["hostname"] = f"{dev.name}.{fqdn}"
             elif not use_primary_ip:
@@ -220,7 +221,7 @@ def non_valid_devs(host):
 
 def reachable_devs(host):
     """
-    Inventory Filter for Nornir, return True if the device is reachable 
+    Inventory Filter for Nornir, return True if the device is reachable
 
     Args:
       host(Host): Nornir Host

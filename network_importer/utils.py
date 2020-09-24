@@ -17,7 +17,7 @@ import logging
 from urllib3 import connectionpool, poolmanager
 import yaml
 
-logger = logging.getLogger("network-importer")  # pylint: disable=C0103
+LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def patch_http_connection_pool(**constructor_kwargs):
@@ -31,27 +31,15 @@ def patch_http_connection_pool(**constructor_kwargs):
 
     Args:
       **constructor_kwargs:
-
-    Returns:
-
     """
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
         """ """
 
         def __init__(self, *args, **kwargs):
-            """
-
-
-            Args:
-              *args:
-              **kwargs:
-
-            Returns:
-
-            """
+            """ """
             kwargs.update(constructor_kwargs)
-            super(MyHTTPConnectionPool, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
     poolmanager.pool_classes_by_scheme["http"] = MyHTTPConnectionPool
 
@@ -61,7 +49,7 @@ def sort_by_digits(if_name: str) -> tuple:
     Extract all digits from a string and return them as tuple
 
     Args:
-      if_name:
+      if_name (str): name of an interface
 
     Returns:
       tuple of all digits in the string
@@ -199,7 +187,7 @@ def expand_vlans_list(vlans: str) -> list:
         try:
             clean_vlans_list.append(int(vlan_))
         except ValueError as exc:
-            logger.debug(f"expand_vlans_list() Unable to convert {vlan_} as integer .. skipping")
+            LOGGER.debug("expand_vlans_list() Unable to convert %s as integer .. skipping", vlan_)
 
     return sorted(clean_vlans_list)
 
@@ -208,9 +196,11 @@ def build_filter_params(filter_params, params):
     """
     Update parms dict() with filter args in required format
     for pynetbox
+
     Args:
       filter_parmas: split string from cli or config
       parms: dict() object to hold params
+
     Returns:
     """
     for param_value in filter_params:

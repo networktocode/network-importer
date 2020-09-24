@@ -13,6 +13,7 @@ limitations under the License.
 """
 import logging
 import importlib
+
 # from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.task import Result, Task
 
@@ -40,14 +41,16 @@ def dispatcher(task: Task, method: str) -> Result:
         Result: Nornir Task result
     """
 
-    LOGGER.debug("Executing dispatcher for %s (%s)",task.host.name, task.host.platform)
+    LOGGER.debug("Executing dispatcher for %s (%s)", task.host.name, task.host.platform)
 
     # Get the platform specific driver, if not available, get the default driver
     driver = DRIVERS_MAPPING.get(task.host.platform, DRIVERS_MAPPING.get("default"))
     LOGGER.debug("Found driver %s", driver)
 
     if not driver:
-        LOGGER.warning("%s | Unable to find the driver for %s for platform : %s", task.host.name, method, task.host.platform)
+        LOGGER.warning(
+            "%s | Unable to find the driver for %s for platform : %s", task.host.name, method, task.host.platform
+        )
         return Result(host=task.host, failed=True)
 
     driver_class = getattr(importlib.import_module(driver), "NetworkImporterDriver")

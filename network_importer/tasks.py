@@ -22,11 +22,11 @@ from nornir.plugins.tasks.networking import tcp_ping
 
 import network_importer.config as config
 
-logger = logging.getLogger("network-importer")  # pylint: disable=C0103
+LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def save_data_to_file(host, filename, content):
-    """Save content to a file in JSON format for a given host. 
+    """Save content to a file in JSON format for a given host.
 
     Args:
       host (str): Name of the host
@@ -56,14 +56,14 @@ def get_data_from_file(host, filename):
     filepath = f"{directory}/{host}/{filename}.json"
 
     if not os.path.exists(filepath):
-        logger.debug(f"{host} | cache not available for {filename} ")
+        LOGGER.debug("%s | cache not available for %s", host, filename)
         return False
 
     try:
         with open(filepath) as file_:
             data = json.load(file_)
     except:
-        logger.warning(f"{host} | Unable to load the cache for {filename} ")
+        LOGGER.warning("%s | Unable to load the cache for %s", host, filename)
         return False
 
     return data
@@ -100,12 +100,15 @@ def device_save_hostvars(task: Task) -> Result:
     # Save device hostvars in file
     if not os.path.exists(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}"):
         os.makedirs(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}")
-        logger.debug(f"Directory {config.SETTINGS.main.hostvars_directory}/{task.host.name} was missing, created it")
+        LOGGER.debug("Directory %s/%s was missing, created it", config.SETTINGS.main.hostvars_directory, task.host.name)
 
     with open(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml", "w",) as out_file:
         out_file.write(yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False))
-        logger.debug(
-            f"{task.host.name} - Host variables saved in {config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml"
+        LOGGER.debug(
+            "%s - Host variables saved in %s/%s/network_importer.yaml",
+            task.host.name,
+            config.SETTINGS.main.hostvars_directory,
+            task.host.name,
         )
 
     return Result(host=task.host)
@@ -140,14 +143,13 @@ def check_if_reachable(task: Task) -> Result:
 
     Returns:
       Result:
-
     """
 
     port_to_check = 22
     try:
         results = task.run(task=tcp_ping, ports=[port_to_check])
     except:
-        logger.debug(
+        LOGGER.debug(
             "An exception occured while running the reachability test (tcp_ping)", exc_info=True,
         )
         return Result(host=task.host, failed=True)
@@ -155,53 +157,9 @@ def check_if_reachable(task: Task) -> Result:
     is_reachable = results[0].result[port_to_check]
 
     if not is_reachable:
-        logger.debug(f"{task.host.name} | device is not reachable on port {port_to_check}")
+        LOGGER.debug("%s | device is not reachable on port %s", task.host.name, port_to_check)
         task.host.data["is_reachable"] = False
         task.host.data["not_reachable_reason"] = f"device not reachable on port {port_to_check}"
         task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reachable)
-
-
-# def update_device_status(task: Task) -> Result:
-#     """
-
-#     Update the status of the device on the remote system
-
-#     Args:
-#       task: Nornir Task
-
-#     Returns:
-#       Result:
-
-#     """
-
-#     if not config.SETTINGS.netbox.status_update:
-#         logger.debug(f"{task.host.name} | status_update disabled skipping")
-#         return Result(host=task.host, result=False)
-
-#     if not task.host.data["obj"].remote:
-#         logger.debug(f"{task.host.name} | remote not present skipping")
-#         return Result(host=task.host, result=False)
-
-#     new_status = None
-#     prev_status = task.host.data["obj"].remote.status.value
-
-#     if task.host.data["status"] == "fail-ip":
-#         new_status = config.SETTINGS.netbox.status_on_unreachable
-
-#     elif "fail" in task.host.data["status"]:
-#         new_status = config.SETTINGS.netbox.status_on_fail
-
-#     else:
-#         new_status = config.SETTINGS.netbox.status_on_pass
-
-#     if new_status not in (None, prev_status):
-
-#         task.host.data["obj"].remote.update(data={"status": new_status})
-#         logger.info(f"{task.host.name} | Updated status on netbox {prev_status} > {new_status}")
-#         return Result(host=task.host, result=True)
-
-#     logger.debug(f"{task.host.name} | no status update required")
-
-#     return Result(host=task.host, result=False)

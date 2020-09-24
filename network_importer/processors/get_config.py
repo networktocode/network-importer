@@ -36,13 +36,13 @@ class GetConfig(BaseProcessor):
 
         if not os.path.isdir(config.SETTINGS.main.configs_directory):
             os.mkdir(config.SETTINGS.main.configs_directory)
-            LOGGER.debug(f"Configs directory created at {config.SETTINGS.main.configs_directory}")
+            LOGGER.debug("Configs directory created at %s", config.SETTINGS.main.configs_directory)
 
         self.config_dir = config.SETTINGS.main.configs_directory + "/configs"
 
         if not os.path.isdir(self.config_dir):
             os.mkdir(self.config_dir)
-            LOGGER.debug(f"Configs directory created at {self.config_dir}")
+            LOGGER.debug("Configs directory created at %s", self.config_dir)
 
         # Save the hostnames associated with all existing configurations before we start the update process
         self.existing_config_hostnames = [
@@ -57,8 +57,8 @@ class GetConfig(BaseProcessor):
         if len(self.existing_config_hostnames) > 0:
             LOGGER.info("Will delete %s config(s) that have not been updated", len(self.existing_config_hostnames))
 
-            for f in self.existing_config_hostnames:
-                os.remove(os.path.join(self.config_dir, f"{f}.{self.config_extension}"))
+            for hostname in self.existing_config_hostnames:
+                os.remove(os.path.join(self.config_dir, f"{hostname}.{self.config_extension}"))
 
     def subtask_instance_started(self, task: Task, host: Host) -> None:
         """Before getting the new configuration, check if a configuration already exist and calculate it's md5

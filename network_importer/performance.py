@@ -19,7 +19,7 @@ from time import strftime, time
 import network_importer.config as config
 
 TIME_TRACKER = None
-logger = logging.getLogger("network-importer")  # pylint: disable=C0103
+LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def init():
@@ -120,7 +120,7 @@ class TimeTracker:
 
         if not os.path.exists(config.SETTINGS.logs.performance_log_directory):
             os.makedirs(config.SETTINGS.logs.performance_log_directory)
-            logger.debug(f"Directory {config.SETTINGS.logs.performance_log_directory} was missing, created it")
+            LOGGER.debug("Directory %s was missing, created it", config.SETTINGS.logs.performance_log_directory)
 
         perflog_filename = strftime("%Y-%m-%d_%H-%M-%S.log")
         perflog_file_path = config.SETTINGS.logs.performance_log_directory + "/" + perflog_filename
