@@ -9,6 +9,7 @@ from pydantic import BaseModel  # pylint: disable=no-name-in-module
 
 import network_importer.config as config
 from network_importer.processors import BaseProcessor
+from network_importer.utils import is_mac_address
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -69,6 +70,11 @@ class GetNeighbors(BaseProcessor):
             if len(neighbors) > 1:
                 LOGGER.warning("%s | More than 1 neighbor found on interface %s, SKIPPING", host.name, interface)
                 del result[0].result["neighbors"][interface]
+                continue
+
+            if is_mac_address(neighbors[0]["hostname"]):
+                del result[0].result["neighbors"][interface]
+                continue
 
             # Clean up hostname to remove full FQDN
             result[0].result["neighbors"][interface][0]["hostname"] = self.clean_neighbor_name(neighbors[0]["hostname"])
@@ -77,62 +83,3 @@ class GetNeighbors(BaseProcessor):
     def clean_neighbor_name(cls, neighbor_name):
         if config.SETTINGS.main.fqdn and config.SETTINGS.main.fqdn in neighbor_name:
             return neighbor_name.replace(f".{config.SETTINGS.main.fqdn}", "")
-
-        return neighbor_name
-
-
-# def collect_lldp_neighbors(task: Task, update_cache=True, use_cache=False) -> Result:
-#     """
-#     Collect LLDP neighbor information on all devices
-
-#     Args:
-#       task: Task:
-#       update_cache: (Default value = True)
-#       use_cache: (Default value = False)
-
-#     """
-
-#     cache_name = "lldp_neighbors"
-
-#     check_data_dir(task.host.name)
-
-#     if use_cache:
-#         data = get_data_from_file(task.host.name, cache_name)
-#         return Result(host=task.host, result=data)
-
-#     neighbors = {}
-
-#     if config.SETTINGS.main.import_cabling == "lldp":
-#         try:
-#             results = task.run(task=napalm_get, getters=["lldp_neighbors"])
-#             neighbors = results[0].result
-#         except:
-#             LOGGER.debug("An exception occured while pulling lldp_data", exc_info=True)
-#             return Result(host=task.host, failed=True)
-
-#     elif config.SETTINGS.main.import_cabling == "cdp":
-#         try:
-#             results = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_textfsm=True,)
-
-#             neighbors = {"lldp_neighbors": defaultdict(list)}
-
-#         except:
-#             LOGGER.debug("An exception occured while pulling cdp_data", exc_info=True)
-#             return Result(host=task.host, failed=True)
-
-#         # Convert CDP details output to Napalm LLDP format
-#         if not isinstance(results[0].result, list):
-#             LOGGER.warning(f"{task.host.name} | No CDP information returned")
-#         else:
-#             for neighbor in results[0].result:
-#                 neighbor_hostname = neighbor.get("destination_host") or neighbor.get("dest_host")
-#                 neighbor_port = neighbor["remote_port"]
-
-#                 neighbors["lldp_neighbors"][neighbor["local_port"]].append(
-#                     dict(hostname=neighbor_hostname, port=neighbor_port,)
-#                 )
-
-#     if update_cache:
-#         save_data_to_file(task.host.name, cache_name, neighbors)
-
-#     return Result(host=task.host, result=neighbors)

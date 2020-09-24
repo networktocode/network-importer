@@ -17,6 +17,7 @@ from network_importer.utils import (
     sort_by_digits,
     is_interface_physical,
     is_interface_lag,
+    is_mac_address,
 )
 
 
@@ -89,3 +90,12 @@ def test_is_interface_lag():
     assert is_interface_lag("Loopback1") == None
     assert is_interface_lag("Vlan108") == None
     assert is_interface_lag("Management0/0") == None
+
+
+def test_is_mac_address():
+    # pylint: disable=C0121
+    assert is_mac_address("f8:f2:1e:89:3c:61") == True
+    assert is_mac_address("F8f2.1e89.3c61") == True
+    assert is_mac_address("F8f2.1e89.3c") == False
+    assert is_mac_address("F8f2.1e89.3c66.67") == False
+    assert is_mac_address("not a mac address") == False
