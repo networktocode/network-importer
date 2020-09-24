@@ -117,6 +117,7 @@ class DSync:
     # Add mapping to object here
 
     top_level = []
+    source = "undefined"
 
     def __init__(self):
         self.__datas__ = defaultdict(dict)
@@ -203,6 +204,8 @@ class DSync:
                     obj_type=dict_src[key].get_type(),
                     name=dict_src[key].get_shortname(),
                     keys=dict_src[key].get_keys(),
+                    source_name=source_root.source,
+                    dest_name=self.source,
                 )
                 delm.add_attrs(source=dict_src[key].get_attrs(), dest=None)
                 diffs.append(delm)
@@ -213,6 +216,8 @@ class DSync:
                     obj_type=dict_dst[key].get_type(),
                     name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
+                    source_name=source_root.source,
+                    dest_name=self.source,
                 )
                 delm.add_attrs(source=None, dest=dict_dst[key].get_attrs())
                 diffs.append(delm)
@@ -224,6 +229,8 @@ class DSync:
                     obj_type=dict_dst[key].get_type(),
                     name=dict_dst[key].get_shortname(),
                     keys=dict_dst[key].get_keys(),
+                    source_name=source_root.source,
+                    dest_name=self.source,
                 )
 
                 delm.add_attrs(

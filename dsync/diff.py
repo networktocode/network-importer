@@ -77,7 +77,7 @@ class DiffElement:
     DiffElement object, designed to represent an item/object
     """
 
-    def __init__(self, obj_type: str, name: str, keys: dict):
+    def __init__(self, obj_type: str, name: str, keys: dict, source_name: str, dest_name: str):
         """ """
         if not isinstance(obj_type, str):
             raise ValueError(f"obj_type must be a string (not {type(obj_type)})")
@@ -88,7 +88,9 @@ class DiffElement:
         self.type = obj_type
         self.name = name
         self.keys = keys
+        self.source_name = source_name
         self.source_attrs = None
+        self.dest_name = dest_name
         self.dest_attrs = None
         self.childs = Diff()
 
@@ -184,18 +186,21 @@ class DiffElement:
 
         margin = " " * indent
 
+        sname = self.source_name.title()
+        dname = self.dest_name.title()
+
         # if self.missing_remote and self.missing_local:
         #     print(f"{margin}{self.type}: {self.name} MISSING BOTH")
         if self.source_attrs is None:
-            print(f"{margin}{self.type}: {self.name} MISSING in SOURCE")
+            print(f"{margin}{self.type}: {self.name} MISSING in {sname}")
         elif self.dest_attrs is None:
-            print(f"{margin}{self.type}: {self.name} MISSING in DEST")
+            print(f"{margin}{self.type}: {self.name} MISSING in {dname}")
         else:
             print(f"{margin}{self.type}: {self.name}")
             # Currently we assume that source and dest have the same attrs,
             # need to account for that
             for attr in self.get_attrs_keys():
                 if self.source_attrs.get(attr, None) != self.dest_attrs.get(attr, None):
-                    print(f"{margin}  {attr}   S({self.source_attrs[attr]})   D({self.dest_attrs[attr]})")
+                    print(f"{margin}  {attr}   {sname}({self.source_attrs[attr]})   {dname}({self.dest_attrs[attr]})")
 
         self.childs.print_detailed(indent + 2)
