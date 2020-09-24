@@ -16,12 +16,10 @@ limitations under the License.
 import os
 import sys
 from pathlib import Path
-import toml
+from typing import List, Optional, Union
 
 import toml
-from pathlib import Path
-from typing import Set, Dict, List, Optional, Union
-from pydantic import BaseModel, BaseSettings, ValidationError
+from pydantic import BaseSettings, ValidationError
 
 SETTINGS = None
 
@@ -155,6 +153,7 @@ def load(config_file_name="network_importer.toml", config_data=None):
 
     if config_data:
         SETTINGS = Settings(**config_data)
+        return
 
     if os.path.exists(config_file_name):
         config_string = Path(config_file_name).read_text()
@@ -162,6 +161,7 @@ def load(config_file_name="network_importer.toml", config_data=None):
 
         try:
             SETTINGS = Settings(**config_tmp)
+            return
         except ValidationError as e:
             print(f"Configuration not valid, found {len(e.errors())} error(s)")
             for error in e.errors():
