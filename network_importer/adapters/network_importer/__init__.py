@@ -47,8 +47,6 @@ class NetworkImporterAdapter(BaseAdapter):
 
     top_level = ["site", "device", "cable"]
 
-    source = "Network"
-
     bfi = None
 
     def init(self):
@@ -426,7 +424,7 @@ class NetworkImporterAdapter(BaseAdapter):
         """
 
         def is_cable_side_valid(cable, side):
-            """Check if the given side of a cable (a or z) is valid.
+            """Check if the given side of a cable (a or z) is valid or not
             Check if both the device and the interface are present in internal store
             """
             dev_name, intf_name = cable.get_device_intf(side)
@@ -434,16 +432,24 @@ class NetworkImporterAdapter(BaseAdapter):
             dev = self.get(self.device, keys=[dev_name])
 
             if not dev:
-                LOGGER.debug("CABLE: %s not present in devices list (%s side)", dev_name, side)
-                self.delete(cable)
-                return False
+                return True
 
             intf = self.get(self.interface, keys=[dev_name, intf_name])
 
             if not intf:
-                LOGGER.warning("CABLE: %s:%s not present in interfaces list", dev_name, intf_name)
-                self.delete(cable)
-                return False
+                return True
+
+            # if not dev:
+            #     LOGGER.debug("CABLE: %s not present in devices list (%s side)", dev_name, side)
+            #     self.delete(cable)
+            #     return False
+
+            # intf = self.get(self.interface, keys=[dev_name, intf_name])
+
+            # if not intf:
+            #     LOGGER.warning("CABLE: %s:%s not present in interfaces list", dev_name, intf_name)
+            #     self.delete(cable)
+            #     return False
 
             if intf.is_virtual:
                 LOGGER.debug(
@@ -454,6 +460,8 @@ class NetworkImporterAdapter(BaseAdapter):
                 )
                 self.delete(cable)
                 return False
+
+            return True
 
         cables = self.get_all(self.cable)
         for cable in list(cables):

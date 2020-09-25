@@ -133,86 +133,101 @@ class NetBoxAPIAdapter(BaseAdapter):
             self.add(vlan)
             site.add_child(vlan)
 
+    def convert_interface_from_netbox(self, device, intf, site=None):
+        """[summary]
+
+        Args:
+            site (NetBoxSite): [description]
+            device (NetBoxDevice): [description]
+            intf (pynetbox interface object): [description]
+        """
+
+        interface = self.interface(
+            name=intf.name,
+            device_name=device.name,
+            remote_id=intf.id,
+            description=intf.description or None,
+            mtu=intf.mtu,
+        )
+
+        # Define status if it's enabled in the config file
+        if config.SETTINGS.main.import_intf_status:
+            interface.active = intf.enabled
+
+        # Identify if the interface is physical or virtual and if it's part of a Lag
+        if intf.type and intf.type.value == "lag":
+            interface.is_lag = True
+            interface.is_virtual = False
+        elif intf.type and intf.type.value == "virtual":
+            interface.is_virtual = True
+            interface.is_lag = False
+        else:
+            interface.is_lag = False
+            interface.is_virtual = False
+
+        if intf.lag:
+            interface.is_lag_member = True
+            interface.is_lag = False
+            interface.is_virtual = False
+            parent_interface_uid = self.interface(name=intf.lag.name, device_name=device.name).get_unique_id()
+            interface.parent = parent_interface_uid
+
+        # identify Interface Mode
+        if intf.mode and intf.mode.value == "access":
+            interface.switchport_mode = "ACCESS"
+            interface.mode = interface.switchport_mode
+        elif intf.mode and intf.mode.value == "tagged":
+            interface.switchport_mode = "TRUNK"
+            interface.mode = interface.switchport_mode
+        else:
+            interface.switchport_mode = "NONE"
+            interface.mode = "NONE"
+
+        # Identify Interface Speed based on the type
+        if intf.type and intf.type.value == 800:
+            interface.speed = 1000000000
+        elif intf.type and intf.type.value == 1100:
+            interface.speed = 1000000000
+        elif intf.type and intf.type.value == 1200:
+            interface.speed = 10000000000
+        elif intf.type and intf.type.value == 1350:
+            interface.speed = 25000000000
+        elif intf.type and intf.type.value == 1400:
+            interface.speed = 40000000000
+        elif intf.type and intf.type.value == 1600:
+            interface.speed = 100000000000
+
+        if site and intf.tagged_vlans:
+            for vid in [v.vid for v in intf.tagged_vlans]:
+                vlan, new = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
+                interface.allowed_vlans.append(vlan.get_unique_id())
+
+        if site and intf.untagged_vlan:
+            vlan, new = self.get_or_create_vlan(
+                vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
+            )
+            interface.access_vlan = vlan.get_unique_id()
+
+        if intf.connected_endpoint_type:
+            interface.connected_endpoint_type = intf.connected_endpoint_type
+
+        new_intf, created = self.get_or_add(interface)
+        if created:
+            device.add_child(new_intf)
+
+        return new_intf
+
     def import_netbox_interface(self, site, device):
         """Import all interfaces & Ips from Netbox for a given device.
 
         Args:
+            site (NetboxSite): DSync object representing a site
             device (NetboxDevice): DSync object representing the device
         """
 
-        # Import Interfaces
         intfs = self.netbox.dcim.interfaces.filter(device=device.name)
         for intf in intfs:
-
-            interface = self.interface(
-                name=intf.name,
-                device_name=device.name,
-                remote_id=intf.id,
-                description=intf.description or None,
-                mtu=intf.mtu,
-            )
-
-            # Define status if it's enabled in the config file
-            if config.SETTINGS.main.import_intf_status:
-                interface.active = intf.enabled
-
-            # Identify if the interface is physical or virtual and if it's part of a Lag
-            if intf.type and intf.type.value == "lag":
-                interface.is_lag = True
-                interface.is_virtual = False
-            elif intf.type and intf.type.value == "virtual":
-                interface.is_virtual = True
-                interface.is_lag = False
-            else:
-                interface.is_lag = False
-                interface.is_virtual = False
-
-            if intf.lag:
-                interface.is_lag_member = True
-                interface.is_lag = False
-                interface.is_virtual = False
-                parent_interface_uid = self.interface(name=intf.lag.name, device_name=device.name).get_unique_id()
-                interface.parent = parent_interface_uid
-
-            # identify Interface Mode
-            if intf.mode and intf.mode.value == "access":
-                interface.switchport_mode = "ACCESS"
-                interface.mode = interface.switchport_mode
-            elif intf.mode and intf.mode.value == "tagged":
-                interface.switchport_mode = "TRUNK"
-                interface.mode = interface.switchport_mode
-            else:
-                interface.switchport_mode = "NONE"
-                interface.mode = "NONE"
-
-            # Identify Interface Speed based on the type
-            if intf.type and intf.type.value == 800:
-                interface.speed = 1000000000
-            elif intf.type and intf.type.value == 1100:
-                interface.speed = 1000000000
-            elif intf.type and intf.type.value == 1200:
-                interface.speed = 10000000000
-            elif intf.type and intf.type.value == 1350:
-                interface.speed = 25000000000
-            elif intf.type and intf.type.value == 1400:
-                interface.speed = 40000000000
-            elif intf.type and intf.type.value == 1600:
-                interface.speed = 100000000000
-
-            if intf.tagged_vlans:
-                for vid in [v.vid for v in intf.tagged_vlans]:
-                    vlan, new = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
-                    interface.allowed_vlans.append(vlan.get_unique_id())
-
-            if intf.untagged_vlan:
-                vlan, new = self.get_or_create_vlan(
-                    vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
-                )
-                interface.access_vlan = vlan.get_unique_id()
-
-            new_intf, created = self.get_or_add(interface)
-            if created:
-                device.add_child(new_intf)
+            self.convert_interface_from_netbox(site=site, device=device, intf=intf)
 
         LOGGER.debug("%s | Found %s interfaces for %s", self.source, len(intfs), device.name)
 
@@ -437,7 +452,15 @@ class NetBoxAPIAdapter(BaseAdapter):
         return item
 
     def delete_ip_address(self, keys, params):
+        """Delete an IP address in NetBox
 
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to delete
+            params (dict): Dictionnary of attributes/parameters of the object to delete
+
+        Returns:
+            NetboxInterface: DSync object
+        """
         item = self.get(self.ip_address, list(keys.values()))
 
         ipaddr = self.netbox.ipam.ip_addresses.get(item.remote_id)
@@ -467,9 +490,48 @@ class NetBoxAPIAdapter(BaseAdapter):
     # Cable
     # -----------------------------------------------------
     def create_cable(self, keys, params):
+        """Create a Cable in NetBox
 
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to delete
+            params (dict): Dictionnary of attributes/parameters of the object to delete
+
+        Returns:
+            NetboxInterface: DSync object
+        """
         interface_a = self.get(self.interface, keys=[keys["device_a_name"], keys["interface_a_name"]])
         interface_z = self.get(self.interface, keys=[keys["device_z_name"], keys["interface_z_name"]])
+
+        if not interface_a:
+            interface_a = self._get_intf_from_netbox(
+                device_name=keys["device_a_name"], intf_name=keys["interface_a_name"]
+            )
+
+        elif not interface_z:
+            interface_z = self._get_intf_from_netbox(
+                device_name=keys["device_z_name"], intf_name=keys["interface_z_name"]
+            )
+
+        if not interface_a or not interface_z:
+            return False
+
+        if interface_a.connected_endpoint_type:
+            LOGGER.info(
+                "Unable to create Cable in %s, port %s %s is already connected",
+                self.source,
+                keys["device_a_name"],
+                keys["interface_a_name"],
+            )
+            return False
+
+        if interface_z.connected_endpoint_type:
+            LOGGER.info(
+                "Unable to create Cable in %s, port %s %s is already connected",
+                self.source,
+                keys["device_z_name"],
+                keys["interface_z_name"],
+            )
+            return False
 
         try:
             cable = self.netbox.dcim.cables.create(
@@ -482,11 +544,32 @@ class NetBoxAPIAdapter(BaseAdapter):
             LOGGER.warning("Unable to create Cable %s in %s", keys, self.source)
             return False
 
+        interface_a.connected_endpoint_type = "dcim.interface"
+        interface_z.connected_endpoint_type = "dcim.interface"
+
         item = self.default_create(object_type="cable", keys=keys, params=params)
         LOGGER.debug("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
 
         item.remote_id = cable.id
         return item
+
+    def delete_cable(self, keys, params):
+        """Delete a Cable in NetBox
+
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to delete
+            params (dict): Dictionnary of attributes/parameters of the object to delete
+
+        Returns:
+            NetboxInterface: DSync object
+        """
+        item = self.cable(**keys)
+        item = self.get(self.cable, keys=[item.get_unique_id()])
+
+        cable = self.netbox.dcim.cables.get(item.remote_id)
+        cable.delete()
+
+        return cable
 
     # -----------------------------------------------------
     # Vlans
@@ -510,3 +593,40 @@ class NetBoxAPIAdapter(BaseAdapter):
         item.remote_id = vlan.id
 
         return item
+
+    # ----------------------------------------------
+
+    def _get_intf_from_netbox(self, device_name, intf_name):
+        """Get an interface from NetBox based on the name of the device and the name of the interface.
+
+        Exactly one return must be returned from NetBox, the function will return False if more than 1 result are returned.
+
+        Args:
+            device_name (str): name of the device in netbox
+            intf_name (str): name of the interface in Netbox
+
+        Returns:
+            NetBoxInterface, bool: Interface in DSync format
+        """
+        intfs = self.netbox.dcim.interfaces.filter(name=intf_name, device=device_name)
+
+        if len(intfs) == 0:
+            LOGGER.debug("Unable to find the interface in NetBox for %s %s, nothing returned", device_name, intf_name)
+            return False
+
+        if len(intfs) > 1:
+            LOGGER.warning(
+                "Unable to find the proper interface in NetBox for %s %s, more than 1 element returned",
+                device_name,
+                intf_name,
+            )
+            return False
+
+        intf = self.interface(name=intf_name, device_name=device_name, remote_id=intfs[0].id)
+
+        if intfs[0].connected_endpoint_type:
+            intf.connected_endpoint_type = intfs[0].connected_endpoint_type
+
+        self.add(intf)
+
+        return intf

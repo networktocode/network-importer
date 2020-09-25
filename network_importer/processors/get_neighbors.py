@@ -83,3 +83,5 @@ class GetNeighbors(BaseProcessor):
     def clean_neighbor_name(cls, neighbor_name):
         if config.SETTINGS.main.fqdn and config.SETTINGS.main.fqdn in neighbor_name:
             return neighbor_name.replace(f".{config.SETTINGS.main.fqdn}", "")
+
+        return neighbor_name

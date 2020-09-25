@@ -33,6 +33,7 @@ class NetboxDevice(Device):
 
 class NetboxInterface(Interface):
     remote_id: Optional[int]
+    connected_endpoint_type: Optional[str]
 
 
 class NetboxIPAddress(IPAddress):
