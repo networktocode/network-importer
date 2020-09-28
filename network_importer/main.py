@@ -20,7 +20,7 @@ import network_importer.config as config
 from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
-from network_importer.tasks import check_if_reachable
+from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import (
     # valid_devs,
@@ -96,7 +96,7 @@ class NetworkImporter:
                     "username": config.SETTINGS.network.login,
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
-                    "use_primary_ip": config.SETTINGS.main.use_primary_ip,
+                    "use_primary_ip": config.SETTINGS.inventory.use_primary_ip,
                     "fqdn": config.SETTINGS.main.fqdn,
                     "supported_platforms": config.SETTINGS.netbox.supported_platforms,
                 },
@@ -149,13 +149,13 @@ class NetworkImporter:
         # --------------------------------------------------------
 
         LOGGER.info("Import SOT Model")
-        sot_path = config.SETTINGS.main.sot_adapter.split(".")
+        sot_path = config.SETTINGS.adapters.sot_class.split(".")
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
         self.sot = sot_adapter(nornir=self.nornir)
         self.sot.init()
 
         LOGGER.info("Import Network Model")
-        network_adapter_path = config.SETTINGS.main.network_adapter.split(".")
+        network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
@@ -183,7 +183,7 @@ class NetworkImporter:
         # Do a pre-check to ensure that all devices are reachable
         # ----------------------------------------------------
         self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
-        self.warning_devices_not_reachable()
+        self.nornir.filter(filter_func=reachable_devs).run(task=warning_not_reachable, on_failed=True)
 
         results = (
             self.nornir.filter(filter_func=reachable_devs)
@@ -192,9 +192,3 @@ class NetworkImporter:
         )
 
         return True
-
-    def warning_devices_not_reachable(self):
-        """Generate warning logs for each unreachable device."""
-        for host in self.nornir.filter(filter_func=lambda h: h.data["is_reachable"] is False).inventory.hosts:
-            reason = self.nornir.inventory.hosts[host].data.get("not_reachable_reason", "reason not defined")
-            LOGGER.warning("%s device is not reachable, %s", host, reason)

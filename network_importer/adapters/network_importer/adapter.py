@@ -23,6 +23,7 @@ import network_importer.config as config
 from network_importer.adapters.base import BaseAdapter
 from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 from network_importer.inventory import reachable_devs
+from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
 from network_importer.processors.get_neighbors import GetNeighbors
 from network_importer.processors.get_vlans import GetVlans
@@ -47,6 +48,8 @@ class NetworkImporterAdapter(BaseAdapter):
 
     top_level = ["site", "device", "cable"]
 
+    source = "Network"
+
     bfi = None
 
     def init(self):
@@ -68,6 +71,10 @@ class NetworkImporterAdapter(BaseAdapter):
 
             device = self.device(name=hostname, site_name=host.data["site"])
             self.add(device)
+
+        if config.SETTINGS.main.import_cabling in ["lldp", "cdp"] or config.SETTINGS.main.import_vlans in [True, "cli"]:
+            self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
+            self.nornir.filter(filter_func=reachable_devs).run(task=warning_not_reachable, on_failed=True)
 
         self.import_batfish()
         self.import_vlans()

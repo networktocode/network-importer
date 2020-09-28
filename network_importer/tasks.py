@@ -163,3 +163,12 @@ def check_if_reachable(task: Task) -> Result:
         task.host.data["status"] = "fail-ip"
 
     return Result(host=task.host, result=is_reachable)
+
+
+def warning_not_reachable(task: Task) -> Result:
+    """Generate warning logs for each unreachable device."""
+    if task.host.data.get("is_reachable"):
+        return
+
+    reason = task.host.data.get("not_reachable_reason", "reason not defined")
+    LOGGER.warning("%s device is not reachable, %s", task.host.name, reason)

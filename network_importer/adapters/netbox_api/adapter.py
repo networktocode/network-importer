@@ -27,6 +27,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxPrefix,
     NetboxVlan,
 )
+from .tasks import query_device_info_from_netbox
 
 from dsync.exceptions import ObjectAlreadyExist
 
@@ -53,6 +54,8 @@ class NetBoxAPIAdapter(BaseAdapter):
     netbox = None
     source = "NetBox"
 
+    query_device_info_from_netbox = query_device_info_from_netbox
+
     def init(self):
 
         self.netbox = pynetbox.api(
@@ -64,16 +67,28 @@ class NetBoxAPIAdapter(BaseAdapter):
         sites = {}
         device_names = []
 
-        # Create all devices and site object from Nornir Inventory
-        for hostname, host in self.nornir.inventory.hosts.items():
-            if host.data["site"] not in sites.keys():
-                site = self.site(name=host.data["site"], remote_id=host.data["site_id"])
-                sites[host.data["site"]] = site
+        results = self.nornir.run(task=query_device_info_from_netbox)
+
+        for device_name, items in results.items():
+            if items[0].failed:
+                continue
+
+            result = items[0].result
+            nb_device = result["device"]
+            site_name = nb_device["site"].get("slug")
+
+            if site_name not in sites.keys():
+                site = self.site(name=site_name, remote_id=nb_device["site"].get("id"))
+                sites[site_name] = site
                 self.add(site)
             else:
-                site = sites[host.data["site"]]
+                site = sites[site_name]
 
-            device = self.device(name=hostname, site_name=host.data["site"], remote_id=host.data["device_id"])
+            device = self.device(name=device_name, site_name=site_name, remote_id=nb_device["id"])
+
+            if nb_device["primary_ip"]:
+                device.primary_ip = nb_device["primary_ip"].get("address")
+
             self.add(device)
 
         # Import Prefix and Vlan per site
@@ -107,6 +122,8 @@ class NetBoxAPIAdapter(BaseAdapter):
         Args:
             site (NetboxSite): Site to import prefix for
         """
+        if not config.SETTINGS.main.import_prefixes:
+            return False
 
         prefixes = self.netbox.ipam.prefixes.filter(site=site.name, status="active")
 
@@ -126,6 +143,9 @@ class NetBoxAPIAdapter(BaseAdapter):
         Args:
             site (NetboxSite): Site to import vlan for
         """
+        if config.SETTINGS.main.import_vlans in [False, "no"]:
+            return False
+
         vlans = self.netbox.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
@@ -134,7 +154,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             site.add_child(vlan)
 
     def convert_interface_from_netbox(self, device, intf, site=None):
-        """[summary]
+        """Convert PyNetBox interface object to NetBoxInterface model.
 
         Args:
             site (NetBoxSite): [description]
@@ -232,6 +252,14 @@ class NetBoxAPIAdapter(BaseAdapter):
         LOGGER.debug("%s | Found %s interfaces for %s", self.source, len(intfs), device.name)
 
     def import_netbox_ip_address(self, site, device):  # pylint: disable=unused-argument
+        """Import all IP addresses from NetBox for a given device
+
+        Args:
+            site (NetboxSite): DSync object representing a site
+            device (NetboxDevice): DSync object representing the device
+        """
+        if not config.SETTINGS.main.import_ips:
+            return
 
         ips = self.netbox.ipam.ip_addresses.filter(device=device.name)
         for ipaddr in ips:
@@ -311,7 +339,9 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         def convert_vlan_to_nid(vlan_uid):
             vlan = self.get(self.vlan, keys=[vlan_uid])
-            return vlan.remote_id
+            if vlan:
+                return vlan.remote_id
+            return None
 
         nb_params = {}
 
@@ -403,8 +433,8 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         intf = self.netbox.dcim.interfaces.get(item.remote_id)
         intf.update(data=nb_params)
-        LOGGER.debug("Updated Interface %s %s (%s) in NetBox", item.device_name, item.name, item.remote_id)
-        print(nb_params)
+        LOGGER.info("Updated Interface %s %s (%s) in NetBox", item.device_name, item.name, item.remote_id)
+        # print(nb_params)
 
         for key, value in params.items():
             setattr(item, key, value)
@@ -474,7 +504,15 @@ class NetBoxAPIAdapter(BaseAdapter):
     # # Prefix
     # # -----------------------------------------------------
     def create_prefix(self, keys, params):
+        """Create a Prefix in NetBox
 
+        Args:
+            keys (dict): Dictionnary of primary keys of the prefix to create
+            params (dict): Dictionnary of attributes/parameters of the prefix to create
+
+        Returns:
+            NetboxPrefix: DSync object
+        """
         site = self.get(self.site, keys=[keys["site_name"]])
         status = "active"
 
@@ -548,7 +586,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         interface_z.connected_endpoint_type = "dcim.interface"
 
         item = self.default_create(object_type="cable", keys=keys, params=params)
-        LOGGER.debug("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
+        LOGGER.info("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
 
         item.remote_id = cable.id
         return item

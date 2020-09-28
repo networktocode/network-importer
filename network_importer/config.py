@@ -1,5 +1,5 @@
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,12 +16,22 @@ limitations under the License.
 import os
 import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Dict, Optional, Union
 
 import toml
 from pydantic import BaseSettings, ValidationError
+from network_importer.adapters.netbox_api.config import AdapterSettings as NetBoxAPISettings
 
 SETTINGS = None
+
+DEFAULT_DRIVERS_MAPPING = {
+    "default": "network_importer.drivers.default",
+    "cisco_nxos": "network_importer.drivers.cisco_default",
+    "cisco_ios": "network_importer.drivers.cisco_default",
+    "cisco_xr": "network_importer.drivers.cisco_default",
+    "juniper_junos": "network_importer.drivers.juniper_junos",
+    "arista_eos": "network_importer.drivers.arista_eos",
+}
 
 
 class BatfishSettings(BaseSettings):
@@ -79,6 +89,7 @@ class NetworkSettings(BaseSettings):
         fields = {
             "login": {"env": "NETWORK_DEVICE_LOGIN"},
             "password": {"env": "NETWORK_DEVICE_PWD"},
+            "enable": {"env": "NETWORK_DEVICE_ENABLE"},
         }
 
 
@@ -108,19 +119,28 @@ class MainSettings(BaseSettings):
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
     nbr_workers: int = 25
-    inventory_source: str = "netbox"
+    inventory_class: str = "network_importer.inventory.NetboxInventory"
     inventory_filter: str = ""
     configs_directory: str = "configs"
     data_directory: str = "data"
     data_update_cache: bool = True
     data_use_cache: bool = False
-    backend_type: str = "netbox"
-    backend_version: str = "default"
     excluded_platforms_cabling: List[str] = list()
     fqdn: Optional[str]
+
+
+class AdaptersSettings(BaseSettings):
+    network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
+    sot_class: str = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
+    netbox_api: NetBoxAPISettings = NetBoxAPISettings()
+
+
+class DriversSettings(BaseSettings):
+    mapping: Dict[str, str] = DEFAULT_DRIVERS_MAPPING
+
+
+class InventorySettings(BaseSettings):
     use_primary_ip: bool = True
-    network_adapter: str = "network_importer.adapters.network_importer.NetworkImporterAdapter"
-    sot_adapter: str = "network_importer.adapters.netbox_api.NetBoxAPIAdapter"
 
 
 class Settings(BaseSettings):
@@ -135,6 +155,9 @@ class Settings(BaseSettings):
     batfish: BatfishSettings = BatfishSettings()
     logs: LogsSettings = LogsSettings()
     network: NetworkSettings = NetworkSettings()
+    adapters: AdaptersSettings = AdaptersSettings()
+    drivers: DriversSettings = DriversSettings()
+    inventory: InventorySettings = InventorySettings()
 
 
 def load(config_file_name="network_importer.toml", config_data=None):

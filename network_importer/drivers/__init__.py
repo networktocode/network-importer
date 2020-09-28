@@ -17,19 +17,9 @@ import importlib
 # from nornir.core.exceptions import NornirSubTaskError
 from nornir.core.task import Result, Task
 
-# import network_importer.config as config
+import network_importer.config as config
 
 LOGGER = logging.getLogger("network-importer")
-
-# TODO Need to move this table in to the config file
-DRIVERS_MAPPING = {
-    "cisco_nxos": "network_importer.drivers.cisco_default",
-    "cisco_ios": "network_importer.drivers.cisco_default",
-    "cisco_xr": "network_importer.drivers.cisco_default",
-    "default": "network_importer.drivers.default",
-    "juniper_junos": "network_importer.drivers.juniper_junos",
-    "arista_eos": "network_importer.drivers.arista_eos",
-}
 
 
 def dispatcher(task: Task, method: str) -> Result:
@@ -44,7 +34,7 @@ def dispatcher(task: Task, method: str) -> Result:
     LOGGER.debug("Executing dispatcher for %s (%s)", task.host.name, task.host.platform)
 
     # Get the platform specific driver, if not available, get the default driver
-    driver = DRIVERS_MAPPING.get(task.host.platform, DRIVERS_MAPPING.get("default"))
+    driver = config.SETTINGS.drivers.mapping.get(task.host.platform, config.SETTINGS.drivers.mapping.get("default"))
     LOGGER.debug("Found driver %s", driver)
 
     if not driver:
