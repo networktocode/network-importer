@@ -15,6 +15,31 @@ limitations under the License.
 from collections import OrderedDict
 
 
+def clean_attr(attr, separator):
+    """Function to clean up attribute name that may contains long name and return a shorter version.
+    This function is looking for the separator in the code and if found itwill return the anything after the last occurence of the separator.
+
+    Examples:
+        device_a__interfacea > interfacea
+        siteb__vlan10 > vlan10
+
+    Args:
+        attr (str or list): Attribute to clean up
+        separator (str): Separator to search for in the attr
+
+    Returns:
+        str or list: [description]
+    """
+    if isinstance(attr, str):
+        res = attr.split(separator)
+        return res[-1]
+
+    if isinstance(attr, list):
+        return [clean_attr(item, separator) for item in attr]
+
+    return attr
+
+
 def intersection(lst1, lst2):
     lst3 = [value for value in lst1 if value in lst2]
     return lst3

@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-from .utils import intersection, OrderedDefaultDict
+from .utils import intersection, OrderedDefaultDict, clean_attr
 
 
 class Diff:
@@ -176,7 +176,7 @@ class DiffElement:
 
         return status
 
-    def print_detailed(self, indent: int = 0):
+    def print_detailed(self, indent: int = 0, separator: str = "__"):
         """
         Print status on screen for current object and all childs
 
@@ -201,6 +201,8 @@ class DiffElement:
             # need to account for that
             for attr in self.get_attrs_keys():
                 if self.source_attrs.get(attr, None) != self.dest_attrs.get(attr, None):
-                    print(f"{margin}  {attr}   {sname}({self.source_attrs[attr]})   {dname}({self.dest_attrs[attr]})")
+                    attr_source = clean_attr(self.source_attrs[attr], separator)
+                    attr_dest = clean_attr(self.dest_attrs[attr], separator)
+                    print(f"{margin}  {attr}   {sname}({attr_source})   {dname}({attr_dest}))")
 
         self.childs.print_detailed(indent + 2)
