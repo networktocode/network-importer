@@ -106,13 +106,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
     if apply:
-        # pdb.set_trace()
         ni.sync()
 
     elif check:
         diff = ni.diff()
         diff.print_detailed()
-        pdb.set_trace()
 
     # if config.SETTINGS.logs.performance_log:
     #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
