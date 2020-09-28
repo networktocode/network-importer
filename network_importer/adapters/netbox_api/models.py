@@ -29,6 +29,7 @@ class NetboxSite(Site):
 
 class NetboxDevice(Device):
     remote_id: Optional[int]
+    primary_ip: Optional[str]
 
 
 class NetboxInterface(Interface):
