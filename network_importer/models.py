@@ -42,11 +42,11 @@ class Device(DSyncModel):
 
     __modelname__ = "device"
     __identifier__ = ["name"]
-    __attributes__ = []
+    __attributes__ = ["site_name"]
     __children__ = {"interface": "interfaces"}
 
     name: str
-    site_name: str
+    site_name: Optional[str]
     interfaces: List = list()
 
     platform: Optional[str]
