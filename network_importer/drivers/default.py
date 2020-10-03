@@ -17,7 +17,7 @@ from nornir.core.task import Result, Task
 from nornir.core.exceptions import NornirSubTaskError
 
 import network_importer.config as config
-from network_importer.drivers.converters import convert_cisco_genie_neighbors_details
+from network_importer.drivers.converters import convert_cisco_genie_cdp_neighbors_details
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -77,7 +77,7 @@ class NetworkImporterDriver:
             if result[0].failed:
                 return result
 
-            results = convert_cisco_genie_neighbors_details(device_name=task.host.name, data=result[0].result)
+            results = convert_cisco_genie_cdp_neighbors_details(device_name=task.host.name, data=result[0].result)
             return Result(host=task.host, result=results.dict())
 
     @staticmethod
