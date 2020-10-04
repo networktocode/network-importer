@@ -4,6 +4,11 @@ from nornir.plugins.tasks.networking import netmiko_send_command
 from nornir.core.task import Result, Task
 from nornir.core.exceptions import NornirSubTaskError
 
+from netmiko.ssh_exception import (
+    NetmikoAuthenticationException,
+    NetmikoTimeoutException,
+)
+
 import network_importer.config as config
 from network_importer.drivers.default import NetworkImporterDriver as DefaultNetworkImporterDriver
 from network_importer.drivers.converters import (
@@ -34,13 +39,26 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         try:
             result = task.run(task=netmiko_send_command, command_string="show run", enable=True)
         except NornirSubTaskError as exc:
-            LOGGER.debug("An exception occured while pulling the configuration", exec_info=True)
+            if isinstance(exc.result.exception, NetmikoAuthenticationException):
+                LOGGER.warning("Unable get the configuration because it can't connect to %s", task.host.name)
+                return Result(host=task.host, failed=True)
+
+            if isinstance(exc.result.exception, NetmikoTimeoutException):
+                LOGGER.warning("Unable get the configuration because the connection to %s timeout", task.host.name)
+                return Result(host=task.host, failed=True)
+
+            LOGGER.debug("An exception occured while pulling the configuration", exc_info=True)
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
             return result
 
         running_config = result[0].result
+
+        if "ERROR: % Invalid input detected at" in running_config:
+            LOGGER.warning("Unable to get the configuration for %s", task.host.name)
+            return Result(host=task.host, failed=True)
+
         return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
