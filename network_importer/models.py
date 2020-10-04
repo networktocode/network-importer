@@ -116,13 +116,10 @@ class Prefix(DSyncModel):
 
     __modelname__ = "prefix"
     __identifier__ = ["site_name", "prefix"]
-    __attributes__ = ["prefix_type"]
 
     prefix: str
     site_name: Optional[str]
-
     vlan: Optional[str]
-    prefix_type: Optional[str]
 
     # vlan = relationship("Vlan", back_populates="prefixes")
 
