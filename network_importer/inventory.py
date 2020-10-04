@@ -109,7 +109,10 @@ class NetboxInventory(Inventory):
         if password:
             groups["global"]["password"] = password
             if enable:
-                groups["global"]["connection_options"]["netmiko"]["extras"] = {"secret": password, "global_delay_factor": global_delay_factor}
+                groups["global"]["connection_options"]["netmiko"]["extras"] = {
+                    "secret": password,
+                    "global_delay_factor": global_delay_factor,
+                }
                 groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
 
         for dev in nb_devices:
