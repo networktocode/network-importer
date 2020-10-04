@@ -8,7 +8,20 @@ import network_importer.config as config  # pylint: disable=import-error
 LOGGER = logging.getLogger("network-importer")
 
 
-def query_device_info_from_netbox(task):
+def query_device_info_from_netbox(task: Task) -> Result:
+    """Nornir Task to query the device information from NetBox
+
+    Currently this task will pull both the device information but th goal is to pull additional information
+    and return everything in a single dict
+    TODO add logic to pull interfaces as well
+    TODO add logic to pull ip addresses as well
+
+    Args:
+        task (Task): Nornir Task with a valid network device
+
+    Returns:
+        Result: Nornir Result object with the result in a dict format
+    """
 
     netbox = pynetbox.api(
         url=config.SETTINGS.netbox.address,
