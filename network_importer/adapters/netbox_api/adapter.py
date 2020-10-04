@@ -298,7 +298,11 @@ class NetBoxAPIAdapter(BaseAdapter):
                 nb_cable.termination_b.device.name not in device_names
             ):
                 LOGGER.debug(
-                    "%s | Skipping cable %s because device is in the list of devices", self.source, nb_cable.id,
+                    "%s | Skipping cable %s because neither devices (%s, %s) is in the list of devices",
+                    self.source,
+                    nb_cable.id,
+                    nb_cable.termination_a.device.name,
+                    nb_cable.termination_b.device.name,
                 )
                 continue
 
