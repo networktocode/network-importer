@@ -473,6 +473,18 @@ class NetBoxAPIAdapter(BaseAdapter):
         """
 
         item = self.get(self.interface, keys=[keys["device_name"], keys["name"]])
+
+        # Check if the interface has some Ips, check if it is the management interface
+        if item.ips:
+            dev = self.get(self.device, keys=[item.device_name])
+            if dev.primary_ip and dev.primary_ip in item.ips:
+                LOGGER.warning(
+                    "Unable to delete interface %s on %s, because it's currently the management interface",
+                    item.name,
+                    dev.name,
+                )
+                return item
+
         intf = self.netbox.dcim.interfaces.get(item.remote_id)
         intf.delete()
 
