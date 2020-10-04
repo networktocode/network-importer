@@ -56,6 +56,7 @@ class NetboxInventory(Inventory):
         fqdn: Optional[str] = None,
         supported_platforms: Optional[List[str]] = [],
         filter_parameters: Optional[Dict[str, Any]] = None,
+        global_delay_factor: Optional[int] = 5,
         **kwargs: Any,
     ) -> None:
         """
@@ -108,7 +109,7 @@ class NetboxInventory(Inventory):
         if password:
             groups["global"]["password"] = password
             if enable:
-                groups["global"]["connection_options"]["netmiko"]["extras"] = {"secret": password}
+                groups["global"]["connection_options"]["netmiko"]["extras"] = {"secret": password, "global_delay_factor": global_delay_factor}
                 groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
 
         for dev in nb_devices:
