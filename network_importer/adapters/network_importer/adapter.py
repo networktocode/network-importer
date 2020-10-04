@@ -66,8 +66,8 @@ class NetworkImporterAdapter(BaseAdapter):
                 self.nornir.inventory.hosts[hostname].data["has_config"] = False
                 LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
                 continue
-            else:
-                self.nornir.inventory.hosts[hostname].data["has_config"] = True
+
+            self.nornir.inventory.hosts[hostname].data["has_config"] = True
 
             if host.data["site"] not in sites.keys():
                 site = self.site(name=host.data["site"])
@@ -240,10 +240,10 @@ class NetworkImporterAdapter(BaseAdapter):
         device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
-            self.import_batfish_ip_address(device, interface, prefix)
+            self.import_batfish_ip_address(site, device, interface, prefix)
 
     def import_batfish_ip_address(
-        self, device, interface, address, interface_vlans=[]
+        self, site, device, interface, address, interface_vlans=[]
     ):  # pylint: disable=dangerous-default-value
         """Import IP address for a given interface from Batfish.
 
@@ -272,9 +272,9 @@ class NetworkImporterAdapter(BaseAdapter):
                     interface_vlans,
                 )
 
-            self.add_prefix_from_ip(ip_address=ip_address, site_name=device.site_name, vlan=vlan)
+            self.add_prefix_from_ip(ip_address=ip_address, site=site, vlan=vlan)
 
-    def add_prefix_from_ip(self, ip_address, site_name=None, vlan=None):
+    def add_prefix_from_ip(self, ip_address, site=None, vlan=None):
         """Try to extract a prefix from an IP address and save it locally.
 
         Args:
@@ -291,11 +291,12 @@ class NetworkImporterAdapter(BaseAdapter):
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = self.get(self.prefix, keys=[site_name, str(prefix)])
+        prefix_obj = self.get(self.prefix, keys=[site.name, str(prefix)])
 
         if not prefix_obj:
-            prefix_obj = self.prefix(prefix=str(prefix), site_name=site_name, vlan=vlan)
+            prefix_obj = self.prefix(prefix=str(prefix), site_name=site.name, vlan=vlan)
             self.add(prefix_obj)
+            site.add_child(prefix_obj)
             LOGGER.debug("Added Prefix %s from batfish", prefix)
 
         if prefix_obj and vlan and not prefix_obj.vlan:

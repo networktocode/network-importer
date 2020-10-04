@@ -27,7 +27,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxPrefix,
     NetboxVlan,
 )
-from .tasks import query_device_info_from_netbox
+from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
 
 from dsync.exceptions import ObjectAlreadyExist
 
@@ -128,11 +128,8 @@ class NetBoxAPIAdapter(BaseAdapter):
         prefixes = self.netbox.ipam.prefixes.filter(site=site.name, status="active")
 
         for nb_prefix in prefixes:
-            prefix_type = None
 
-            prefix = self.prefix(
-                prefix=nb_prefix.prefix, site_name=site.name, prefix_type=prefix_type, remote_id=nb_prefix.id,
-            )
+            prefix = self.prefix(prefix=nb_prefix.prefix, site_name=site.name, remote_id=nb_prefix.id,)
 
             self.add(prefix)
             site.add_child(prefix)
@@ -199,6 +196,9 @@ class NetBoxAPIAdapter(BaseAdapter):
         elif intf.mode and intf.mode.value == "tagged":
             interface.switchport_mode = "TRUNK"
             interface.mode = interface.switchport_mode
+        elif not intf.mode and intf.tagged_vlans:
+            interface.switchport_mode = "NONE"
+            interface.mode = "L3_SUB_VLAN"
         else:
             interface.switchport_mode = "NONE"
             interface.mode = "NONE"
@@ -278,6 +278,14 @@ class NetBoxAPIAdapter(BaseAdapter):
         LOGGER.debug("%s | Found %s ip addresses for %s", self.source, len(ips), device.name)
 
     def import_netbox_cable(self, site, device_names):
+        """Import all Cables from NetBox for a given site.
+
+        If both devices at each end of the cables are not in the list of device_names, the cable will be ignored.
+
+        Args:
+            site (Site): Site object to import cables for
+            device_names (list): List of device names that are part of the inventory
+        """
 
         cables = self.netbox.dcim.cables.filter(site=site.name)
 
@@ -286,23 +294,32 @@ class NetBoxAPIAdapter(BaseAdapter):
             if nb_cable.termination_a_type != "dcim.interface" or nb_cable.termination_b_type != "dcim.interface":
                 continue
 
-            if nb_cable.termination_a.device.name not in device_names:
+            if (nb_cable.termination_a.device.name not in device_names) and (
+                nb_cable.termination_b.device.name not in device_names
+            ):
                 LOGGER.debug(
-                    "%s | Skipping cable %s because %s is not in the list of devices",
-                    self.source,
-                    nb_cable.id,
-                    nb_cable.termination_a.device.name,
+                    "%s | Skipping cable %s because device is in the list of devices", self.source, nb_cable.id,
                 )
                 continue
 
-            if nb_cable.termination_b.device.name not in device_names:
-                LOGGER.debug(
-                    "%s | Skipping cable %s because %s is not in the list of devices",
-                    self.source,
-                    nb_cable.id,
-                    nb_cable.termination_b.device.name,
-                )
-                continue
+            # Disabling this check for now until we are able to allow user to control how cabling should be imported
+            # if nb_cable.termination_a.device.name not in device_names:
+            #     LOGGER.debug(
+            #         "%s | Skipping cable %s because %s is not in the list of devices",
+            #         self.source,
+            #         nb_cable.id,
+            #         nb_cable.termination_a.device.name,
+            #     )
+            #     continue
+
+            # if nb_cable.termination_b.device.name not in device_names:
+            #     LOGGER.debug(
+            #         "%s | Skipping cable %s because %s is not in the list of devices",
+            #         self.source,
+            #         nb_cable.id,
+            #         nb_cable.termination_b.device.name,
+            #     )
+            #     continue
 
             cable = self.cable(
                 device_a_name=nb_cable.termination_a.device.name,
@@ -314,7 +331,6 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             try:
                 self.add(cable)
-
             except ObjectAlreadyExist:
                 pass
 
@@ -591,7 +607,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         item.remote_id = cable.id
         return item
 
-    def delete_cable(self, keys, params):
+    def delete_cable(self, keys, params):  #  pylint: disable=unused-argument
         """Delete a Cable in NetBox
 
         Args:
@@ -613,7 +629,15 @@ class NetBoxAPIAdapter(BaseAdapter):
     # Vlans
     # -----------------------------------------------------
     def create_vlan(self, keys, params):
+        """Create new Vlan in NetBox
 
+        Args:
+            keys (dict): Dictionnary of primary keys of the object to create
+            params (dict): Dictionnary of attributes/parameters of the object to create
+
+        Returns:
+            NetboxInterface: DSync object
+        """
         site = self.get(self.site, keys=[keys["site_name"]])
 
         if "name" in params and params["name"]:
@@ -629,6 +653,27 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         item = self.default_create(object_type="vlan", keys=keys, params=params)
         item.remote_id = vlan.id
+
+        return item
+
+    def update_vlan(self, keys, params):
+        """Update new Vlan in NetBox
+
+        Args:
+            keys (dict): Dictionnary of primary keys of the vlan to update
+            params (dict): Dictionnary of attributes/parameters of the vlan to update
+
+        Returns:
+            NetboxInterface: DSync object
+        """
+        item = self.vlan(**keys)
+        item = self.get(self.vlan, keys=[item.get_unique_id()])
+
+        vlan = self.netbox.ipam.vlans.get(item.remote_id)
+        vlan.update(data={"name": params["name"]})
+
+        for key, value in params.items():
+            setattr(item, key, value)
 
         return item
 
