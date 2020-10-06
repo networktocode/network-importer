@@ -3,7 +3,7 @@ DOCKER_IMAGE = networktocode/network-importer
 DOCKER_VER = 2.0.0-dev
 
 format:
-	black .
+	black --config pyproject.toml .
 
 # pyment -w -o google --first-line false --ignore-private false network_importer
 
@@ -34,7 +34,7 @@ dev:
 .PHONY: check-format
 check-format:
 	@echo "Starting  lint"
-	docker run -v $(shell pwd):/source -w /source $(DOCKER_IMAGE):$(DOCKER_VER) black --check .
+	docker run -v $(shell pwd):/source -w /source $(DOCKER_IMAGE):$(DOCKER_VER) black --config pyproject.toml --check .
 	docker run -v $(shell pwd):/source -w /source $(DOCKER_IMAGE):$(DOCKER_VER) make pylint
 	docker run -v $(shell pwd):/source -w /source $(DOCKER_IMAGE):$(DOCKER_VER) bandit --recursive --config .bandit.yml .
 	@echo "Completed lint"
