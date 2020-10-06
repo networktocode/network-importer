@@ -403,9 +403,12 @@ class NetBoxAPIAdapter(BaseAdapter):
                 nb_params["tagged_vlans"] = []
 
         if "is_lag_member" in params and params["is_lag_member"]:
-            # TODO add checks to ensure the parent interface is present and has a remote id
             parent_interface = self.get(self.interface, keys=[params["parent"]])
-            nb_params["lag"] = parent_interface.remote_id
+            if parent_interface and parent_interface.remote_id:
+                nb_params["lag"] = parent_interface.remote_id
+            else:
+                # TODO Can we maybe create the parent interface at this point?
+                LOGGER.warning("Parent interface %s of %s does not exist.", params["parent"], keys["name"])
 
         elif "is_lag_member" in params and not params["is_lag_member"]:
             nb_params["lag"] = None
