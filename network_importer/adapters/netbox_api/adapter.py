@@ -391,7 +391,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         # if is None:
         #     intf_properties["enabled"] = intf.active
 
-        if config.SETTINGS.main.import_vlans != "no":
+        if config.SETTINGS.main.import_vlans not in [False, "no"]:
             if "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and params["access_vlan"]:
                 nb_params["untagged_vlan"] = convert_vlan_to_nid(params["access_vlan"])
             elif "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and not params["access_vlan"]:

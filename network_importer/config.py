@@ -20,6 +20,7 @@ from typing import List, Dict, Optional, Union
 
 import toml
 from pydantic import BaseSettings, ValidationError
+from typing_extensions import Literal
 from network_importer.adapters.netbox_api.config import AdapterSettings as NetBoxAPISettings
 
 SETTINGS = None
@@ -115,7 +116,7 @@ class MainSettings(BaseSettings):
     import_transceivers: bool = False
     import_intf_status: bool = False
     import_vlans: Union[
-        bool, str
+        bool, Literal["config", "cli", "no"]
     ] = "config"  # dict(type=["string", "boolean"], enum=["cli", "config", True, False], default="config",),
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
