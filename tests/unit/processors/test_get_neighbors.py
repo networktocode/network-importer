@@ -30,10 +30,7 @@ def nornir(requests_mock):
         logging={"enabled": False},
         inventory={
             "plugin": "network_importer.inventory.NetboxInventory",
-            "options": {
-                "nb_url": "http://mock",
-                "nb_token": "12349askdnfanasdf",
-            },
+            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf",},
         },
     )
 
