@@ -140,7 +140,7 @@ def is_mac_address(data):
 
   Args:
       data (str): string to evaluate
-  
+
   Returns:
     bool: True if the string provided is a mac address, false otherwise
   """
@@ -154,7 +154,7 @@ def is_mac_address(data):
         return False
 
     hex_data = re.findall(hex_chars, data)
-    if len(hex_data) is 12:
+    if len(hex_data) == 12:
         return True
 
     return False

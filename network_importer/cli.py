@@ -62,7 +62,7 @@ logger = logging.getLogger("network-importer")
     "--check", is_flag=True, help="Display what are the differences but do not save them",
 )
 @click.option(
-    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting",
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):

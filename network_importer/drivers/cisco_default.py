@@ -4,9 +4,18 @@ from nornir.plugins.tasks.networking import netmiko_send_command
 from nornir.core.task import Result, Task
 from nornir.core.exceptions import NornirSubTaskError
 
+from netmiko.ssh_exception import (
+    NetmikoAuthenticationException,
+    NetmikoTimeoutException,
+)
+
 import network_importer.config as config
 from network_importer.drivers.default import NetworkImporterDriver as DefaultNetworkImporterDriver
-from network_importer.drivers.converters import convert_cisco_genie_neighbors_details, convert_cisco_genie_vlans
+from network_importer.drivers.converters import (
+    convert_cisco_genie_lldp_neighbors_details,
+    convert_cisco_genie_cdp_neighbors_details,
+    convert_cisco_genie_vlans,
+)
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -28,15 +37,28 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         LOGGER.debug("Executing get_config for %s (%s)", task.host.name, task.host.platform)
 
         try:
-            result = task.run(task=netmiko_send_command, command_string="show run")
+            result = task.run(task=netmiko_send_command, command_string="show run", enable=True)
         except NornirSubTaskError as exc:
-            LOGGER.debug("An exception occured while pulling the configuration", exec_info=True)
+            if isinstance(exc.result.exception, NetmikoAuthenticationException):
+                LOGGER.warning("Unable get the configuration because it can't connect to %s", task.host.name)
+                return Result(host=task.host, failed=True)
+
+            if isinstance(exc.result.exception, NetmikoTimeoutException):
+                LOGGER.warning("Unable get the configuration because the connection to %s timeout", task.host.name)
+                return Result(host=task.host, failed=True)
+
+            LOGGER.debug("An exception occured while pulling the configuration", exc_info=True)
             return Result(host=task.host, failed=True)
 
         if result[0].failed:
             return result
 
         running_config = result[0].result
+
+        if "ERROR: % Invalid input detected at" in running_config:
+            LOGGER.warning("Unable to get the configuration for %s", task.host.name)
+            return Result(host=task.host, failed=True)
+
         return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
@@ -45,9 +67,11 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
         if config.SETTINGS.main.import_cabling == "lldp":
             command = "show lldp neighbors detail"
+            converter = convert_cisco_genie_lldp_neighbors_details
             cmd_type = "LLDP"
         elif config.SETTINGS.main.import_cabling == "cdp":
             command = "show cdp neighbors detail"
+            converter = convert_cisco_genie_cdp_neighbors_details
             cmd_type = "CDP"
         else:
             return Result(host=task.host, failed=True)
@@ -61,7 +85,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         if result[0].failed:
             return result
 
-        results = convert_cisco_genie_neighbors_details(device_name=task.host.name, data=result[0].result)
+        results = converter(device_name=task.host.name, data=result[0].result)
         return Result(host=task.host, result=results.dict())
 
     @staticmethod

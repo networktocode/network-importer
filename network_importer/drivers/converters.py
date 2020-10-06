@@ -7,7 +7,7 @@ from network_importer.processors.get_vlans import Vlans, Vlan
 LOGGER = logging.getLogger("network-importer")
 
 
-def convert_cisco_genie_neighbors_details(device_name, data):
+def convert_cisco_genie_lldp_neighbors_details(device_name, data):
     """Convert the data returned by Genie for show lldp neighbors detail to Neighbors()
 
     Args:
@@ -62,8 +62,65 @@ def convert_cisco_genie_neighbors_details(device_name, data):
     return results
 
 
-def convert_cisco_genie_vlans(device_name, data):
+def convert_cisco_genie_cdp_neighbors_details(device_name, data):
+    """Convert the data returned by Genie for show cdp neighbors detail to Neighbors()
 
+    Args:
+        device_name (str): the name of the device where the data was collected
+        data (Dict): the parsed data returned by Genie
+
+    Returns:
+        Neighbors: List of neighbors in a Pydantic model
+    """
+
+    results = Neighbors()
+
+    if "index" not in data:
+        return results
+
+    for _, intf_data in data["index"].items():
+        intf_name = intf_data.get("local_interface", None)
+        nei_intf_name = intf_data.get("port_id", None)
+        neighbor_name = intf_data.get("device_id", None)
+
+        if not intf_name or not nei_intf_name or not neighbor_name:
+            continue
+
+        if is_interface_lag(nei_intf_name):
+            LOGGER.debug(
+                "%s | Neighbors, %s is connected to %s but is not a valid interface (lag), SKIPPING",
+                device_name,
+                nei_intf_name,
+                intf_name,
+            )
+            continue
+
+        neighbor = Neighbor(hostname=neighbor_name, port=nei_intf_name)
+        results.neighbors[intf_name].append(neighbor)
+
+        # Ensure each interface no not have more than 1 neighbor
+        for intf_name in results.neighbors.keys():
+            if len(results.neighbors[intf_name]) == 1:
+                continue
+
+            LOGGER.warning(
+                "%s | More than 1 neighbor found for %s, SKIPPING", device_name, intf_name,
+            )
+            results.neighbors[intf_name] = []
+
+    return results
+
+
+def convert_cisco_genie_vlans(device_name: str, data: dict) -> Vlans:
+    """Convert data returned by Genie from "show vlans" to the Vlans object
+
+    Args:
+        device_name (str): name if the device
+        data (dict): Structured Data returned by Genie
+
+    Returns:
+        Vlans: List of Vlan in a pydantic model
+    """
     results = Vlans()
 
     if "vlans" not in data:

@@ -82,6 +82,7 @@ class NetworkSettings(BaseSettings):
     login: Optional[str]
     password: Optional[str]
     enable: bool = True
+    global_delay_factor: int = 5
 
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""

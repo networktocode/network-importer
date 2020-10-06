@@ -22,10 +22,10 @@ from pybatfish.client.session import Session
 import network_importer.config as config
 from network_importer.adapters.base import BaseAdapter
 from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
-from network_importer.inventory import reachable_devs
+from network_importer.inventory import reachable_devs, valid_and_reachable_devs
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
-from network_importer.processors.get_neighbors import GetNeighbors
+from network_importer.processors.get_neighbors import GetNeighbors, hosts_for_cabling
 from network_importer.processors.get_vlans import GetVlans
 from network_importer.utils import (
     is_interface_lag,
@@ -57,10 +57,17 @@ class NetworkImporterAdapter(BaseAdapter):
         sites = {}
         device_names = []
 
+        self.init_batfish()
+
         # Create all devices and site object from Nornir Inventory
         for hostname, host in self.nornir.inventory.hosts.items():
-            # if not host.data["has_config"]:
-            #     continue
+
+            if len(self.bfi.q.nodeProperties(nodes=hostname).answer()) == 0:
+                self.nornir.inventory.hosts[hostname].data["has_config"] = False
+                LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
+                continue
+
+            self.nornir.inventory.hosts[hostname].data["has_config"] = True
 
             if host.data["site"] not in sites.keys():
                 site = self.site(name=host.data["site"])
@@ -82,9 +89,9 @@ class NetworkImporterAdapter(BaseAdapter):
 
         self.check_data_consistency()
 
-    def import_batfish(self):
+    def init_batfish(self):
+        """Initialize the Batfish snapshot and session."""
 
-        # CURRENT_DIRECTORY = os.getcwd().split("/")[-1]
         network_name = config.SETTINGS.batfish.network_name
         snapshot_name = config.SETTINGS.batfish.snapshot_name
         snapshot_path = config.SETTINGS.main.configs_directory
@@ -102,6 +109,9 @@ class NetworkImporterAdapter(BaseAdapter):
         self.bfi.verify = False
         self.bfi.set_network(network_name)
         self.bfi.init_snapshot(snapshot_path, name=snapshot_name, overwrite=True)
+
+    def import_batfish(self):
+        """Import all devices, interfaces and IP Addresses from Batfish."""
 
         # Import Devices
         devices = self.get_all(self.device)
@@ -230,10 +240,10 @@ class NetworkImporterAdapter(BaseAdapter):
         device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
-            self.import_batfish_ip_address(device, interface, prefix)
+            self.import_batfish_ip_address(site, device, interface, prefix)
 
     def import_batfish_ip_address(
-        self, device, interface, address, interface_vlans=[]
+        self, site, device, interface, address, interface_vlans=[]
     ):  # pylint: disable=dangerous-default-value
         """Import IP address for a given interface from Batfish.
 
@@ -262,9 +272,9 @@ class NetworkImporterAdapter(BaseAdapter):
                     interface_vlans,
                 )
 
-            self.add_prefix_from_ip(ip_address=ip_address, site_name=device.site_name, vlan=vlan)
+            self.add_prefix_from_ip(ip_address=ip_address, site=site, vlan=vlan)
 
-    def add_prefix_from_ip(self, ip_address, site_name=None, vlan=None):
+    def add_prefix_from_ip(self, ip_address, site=None, vlan=None):
         """Try to extract a prefix from an IP address and save it locally.
 
         Args:
@@ -281,11 +291,12 @@ class NetworkImporterAdapter(BaseAdapter):
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = self.get(self.prefix, keys=[site_name, str(prefix)])
+        prefix_obj = self.get(self.prefix, keys=[site.name, str(prefix)])
 
         if not prefix_obj:
-            prefix_obj = self.prefix(prefix=str(prefix), site_name=site_name, vlan=vlan)
+            prefix_obj = self.prefix(prefix=str(prefix), site_name=site.name, vlan=vlan)
             self.add(prefix_obj)
+            site.add_child(prefix_obj)
             LOGGER.debug("Added Prefix %s from batfish", prefix)
 
         if prefix_obj and vlan and not prefix_obj.vlan:
@@ -317,7 +328,7 @@ class NetworkImporterAdapter(BaseAdapter):
         LOGGER.info("Collecting cabling information from devices .. ")
 
         results = (
-            self.nornir.filter(filter_func=reachable_devs)
+            self.nornir.filter(filter_func=valid_and_reachable_devs)
             .with_processors([GetVlans()])
             .run(task=dispatcher, method="get_vlans")
         )
@@ -377,7 +388,8 @@ class NetworkImporterAdapter(BaseAdapter):
         LOGGER.info("Collecting cabling information from devices .. ")
 
         results = (
-            self.nornir.filter(filter_func=reachable_devs)
+            self.nornir.filter(filter_func=valid_and_reachable_devs)
+            .filter(filter_func=hosts_for_cabling)
             .with_processors([GetNeighbors()])
             .run(task=dispatcher, method="get_neighbors", on_failed=True,)
         )

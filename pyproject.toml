@@ -20,6 +20,10 @@ click = "^7.1.1"
 pydantic = "^1.6.1"
 pybatfish = "^2020.8.11"
 "genie.metaparser" = "^19.12"
+genie = "^20.9"
+pyats = "^20.9"
+netmiko = "^3.3.2"
+ntc-templates = "^1.6.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"
