@@ -16,15 +16,31 @@ LOGGER = logging.getLogger("network-importer")
 
 # Possible Junos port names xe-0/0/1.0, xe-0/0/3:0, ge, et, em sxe, fte, me, fc, xle
 # Match the incorrectly capitalized interface names
-JUNOS_INTERFACE_PATTERN = re.compile("^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
+JUNOS_INTERFACE_PATTERN = re.compile(r"^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
+
+# -----------------------------------------------------------------
+# Inventory Filter functions
+# -----------------------------------------------------------------
+def hosts_for_cabling(host):
+    """
+    Inventory Filter for Nornir, return True or False if a device is eligible for cabling.
+    it's using config.SETTINGS.main.excluded_platforms_cabling to determine if a host is eligible.
+
+    Args:
+      host(Host): Nornir Host
+
+    Returns:
+        bool: True if the device is eligible for cabling, False otherwise.
+    """
+    if host.platform in config.SETTINGS.main.excluded_platforms_cabling:
+        return False
+
+    return True
 
 
-# TODO Create a Filter based on that
-# if host.platform in config.main["excluded_platforms_cabling"]:
-#     LOGGER.debug(f"{host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
-#     return
-
-
+# -----------------------------------------------------------------
+# Expected Returned Data
+# -----------------------------------------------------------------
 class Neighbor(BaseModel):
     hostname: str
     port: str
@@ -34,6 +50,9 @@ class Neighbors(BaseModel):
     neighbors: Dict[str, List[Neighbor]] = defaultdict(list)
 
 
+# -----------------------------------------------------------------
+# Processor
+# -----------------------------------------------------------------
 class GetNeighbors(BaseProcessor):
 
     task_name = "get_neighbors"

@@ -25,7 +25,7 @@ from network_importer.models import Site, Device, Interface, IPAddress, Cable, V
 from network_importer.inventory import reachable_devs, valid_and_reachable_devs
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
-from network_importer.processors.get_neighbors import GetNeighbors
+from network_importer.processors.get_neighbors import GetNeighbors, hosts_for_cabling
 from network_importer.processors.get_vlans import GetVlans
 from network_importer.utils import (
     is_interface_lag,
@@ -389,6 +389,7 @@ class NetworkImporterAdapter(BaseAdapter):
 
         results = (
             self.nornir.filter(filter_func=valid_and_reachable_devs)
+            .filter(filter_func=hosts_for_cabling)
             .with_processors([GetNeighbors()])
             .run(task=dispatcher, method="get_neighbors", on_failed=True,)
         )
