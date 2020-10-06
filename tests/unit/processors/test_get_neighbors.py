@@ -130,7 +130,7 @@ def test_cleanup_port(nornir):
     assert "neighbors" in result
     assert result["neighbors"]["intfa"][0]["port"] == "HundredGigE0/0/0/0"
     assert result["neighbors"]["intfb"][0]["port"] == "TenGigE0/0/0/35/3"
-    assert result["neighbors"]["intfc"][0]["port"] == "Xe-0/1/2"
-    assert result["neighbors"]["intfd"][0]["port"] == "Ge-0/1/3.400"
+    assert result["neighbors"]["intfc"][0]["port"] == "xe-0/1/2"
+    assert result["neighbors"]["intfd"][0]["port"] == "ge-0/1/3.400"
     assert result["neighbors"]["intfe"][0]["port"] == "Eth2/10"
-    assert result["neighbors"]["intff"][0]["port"] == "Xle-0/1/3:400"
+    assert result["neighbors"]["intff"][0]["port"] == "xle-0/1/3:400"
