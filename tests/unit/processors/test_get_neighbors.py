@@ -30,7 +30,10 @@ def nornir(requests_mock):
         logging={"enabled": False},
         inventory={
             "plugin": "network_importer.inventory.NetboxInventory",
-            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf",},
+            "options": {
+                "nb_url": "http://mock",
+                "nb_token": "12349askdnfanasdf",
+            },
         },
     )
 
@@ -103,3 +106,31 @@ def test_cleanup_mac_address(nornir):
     result = results["houston"][0].result[0].result
     assert "neighbors" in result
     assert "intfb" not in result["neighbors"]
+
+
+def test_cleanup_port(nornir):
+    """Validate that we are cleaning up the port from port name."""
+    config.load(config_data={"main": {"fqdn": "test.com"}})
+
+    neighbors = Neighbors()
+    neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea", port="HundredGigE0/0/0/0"))
+    neighbors.neighbors["intfb"].append(Neighbor(hostname="deviceb", port="TenGigE0/0/0/35/3"))
+    neighbors.neighbors["intfc"].append(Neighbor(hostname="devicec", port="Xe-0/1/2"))
+    neighbors.neighbors["intfd"].append(Neighbor(hostname="deviced", port="Ge-0/1/3.400"))
+    neighbors.neighbors["intfe"].append(Neighbor(hostname="devicee", port="Eth2/10"))
+    neighbors.neighbors["intff"].append(Neighbor(hostname="deviced", port="Xle-0/1/3:400"))
+
+    results = (
+        nornir.filter(name="houston")
+        .with_processors([GetNeighbors()])
+        .run(task=dispatch_get_neighbors, neighbors=neighbors.dict())
+    )
+
+    result = results["houston"][0].result[0].result
+    assert "neighbors" in result
+    assert result["neighbors"]["intfa"][0]["port"] == "HundredGigE0/0/0/0"
+    assert result["neighbors"]["intfb"][0]["port"] == "TenGigE0/0/0/35/3"
+    assert result["neighbors"]["intfc"][0]["port"] == "Xe-0/1/2"
+    assert result["neighbors"]["intfd"][0]["port"] == "Ge-0/1/3.400"
+    assert result["neighbors"]["intfe"][0]["port"] == "Eth2/10"
+    assert result["neighbors"]["intff"][0]["port"] == "Xle-0/1/3:400"
