@@ -1,5 +1,6 @@
 from collections import defaultdict
 import logging
+import re
 
 from typing import Dict, List
 
@@ -12,6 +13,10 @@ from network_importer.processors import BaseProcessor
 from network_importer.utils import is_mac_address
 
 LOGGER = logging.getLogger("network-importer")
+
+# Possible Junos port names xe-0/0/1.0, xe-0/0/3:0, ge, et, em sxe, fte, me, fc, xle
+# Match the incorrectly capitalized interface names
+JUNOS_INTERFACE_PATTERN = re.compile("^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
 
 
 # TODO Create a Filter based on that
@@ -79,9 +84,22 @@ class GetNeighbors(BaseProcessor):
             # Clean up hostname to remove full FQDN
             result[0].result["neighbors"][interface][0]["hostname"] = self.clean_neighbor_name(neighbors[0]["hostname"])
 
+            # Clean up the portname if genie incorrectly capitalized it
+            result[0].result["neighbors"][interface][0]["port"] = self.clean_neighbor_port_name(neighbors[0]["port"])
+
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):
         if config.SETTINGS.main.fqdn and config.SETTINGS.main.fqdn in neighbor_name:
             return neighbor_name.replace(f".{config.SETTINGS.main.fqdn}", "")
 
         return neighbor_name
+
+    @classmethod
+    def clean_neighbor_port_name(cls, port_name):
+        """Work around for https://github.com/CiscoTestAutomation/genieparser/issues/287"""
+
+        if JUNOS_INTERFACE_PATTERN.match(port_name):
+            port_name = port_name[0].lower() + port_name[1:]
+            return port_name
+
+        return port_name
