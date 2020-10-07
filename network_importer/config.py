@@ -83,6 +83,7 @@ class NetworkSettings(BaseSettings):
     password: Optional[str]
     enable: bool = True
     global_delay_factor: int = 5
+    fqdns: List[str] = list()  # List of valid FQDN that can be found in the network
 
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""
@@ -127,7 +128,6 @@ class MainSettings(BaseSettings):
     data_update_cache: bool = True
     data_use_cache: bool = False
     excluded_platforms_cabling: List[str] = list()
-    fqdn: Optional[str]
 
 
 class AdaptersSettings(BaseSettings):
@@ -141,7 +141,14 @@ class DriversSettings(BaseSettings):
 
 
 class InventorySettings(BaseSettings):
+    """Parameters Specific to the inventory.
+
+    By default, the inventory will use the primary IP to reach out to the devices
+    if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
+    """
+
     use_primary_ip: bool = True
+    fqdn: Optional[str]
 
 
 class Settings(BaseSettings):

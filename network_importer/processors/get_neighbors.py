@@ -108,8 +108,20 @@ class GetNeighbors(BaseProcessor):
 
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):
-        if config.SETTINGS.main.fqdn and config.SETTINGS.main.fqdn in neighbor_name:
-            return neighbor_name.replace(f".{config.SETTINGS.main.fqdn}", "")
+        """Cleanup the name of a neighbor by removing all known FQDNs
+
+        Args:
+            neighbor_name ([str]): name of a neighbor returned by cdp or lldp
+
+        Returns:
+            str: clean neighboar name
+        """
+
+        # Remove all FQDN from the hostname to match what is in the SOT
+        config.SETTINGS.network.fqdns.sort(key=len, reverse=True)
+        for fqdn in config.SETTINGS.network.fqdns:
+            if fqdn in neighbor_name:
+                return neighbor_name.replace(f".{fqdn}", "")
 
         return neighbor_name
 

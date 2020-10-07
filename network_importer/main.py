@@ -97,7 +97,7 @@ class NetworkImporter:
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
                     "use_primary_ip": config.SETTINGS.inventory.use_primary_ip,
-                    "fqdn": config.SETTINGS.main.fqdn,
+                    "fqdn": config.SETTINGS.inventory.fqdn,
                     "supported_platforms": config.SETTINGS.netbox.supported_platforms,
                     "global_delay_factor": config.SETTINGS.network.global_delay_factor,
                 },
