@@ -325,7 +325,7 @@ class NetworkImporterAdapter(BaseAdapter):
         if config.SETTINGS.main.import_vlans not in ["cli", True]:
             return
 
-        LOGGER.info("Collecting cabling information from devices .. ")
+        LOGGER.info("Collecting vlans information from devices .. ")
 
         results = (
             self.nornir.filter(filter_func=valid_and_reachable_devs)
