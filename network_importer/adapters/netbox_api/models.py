@@ -94,9 +94,9 @@ class NetboxInterface(Interface):
             elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
                 nb_params["untagged_vlan"] = None
 
-            if "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and attrs["allowed_vlans"]:
+            if "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and "allowed_vlans" in attrs and attrs["allowed_vlans"]:
                 nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in attrs["allowed_vlans"]]
-            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and not attrs["allowed_vlans"]:
+            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and ("allowed_vlans" not in attrs or not attrs["allowed_vlans"]):
                 nb_params["tagged_vlans"] = []
 
         if "is_lag_member" in attrs and attrs["is_lag_member"]:
@@ -210,6 +210,15 @@ class NetboxIPAddress(IPAddress):
         Returns:
             NetboxInterface: DSync object
         """
+        if self.device_name:
+            dev = self.dsync.get(self.dsync.device, identifier=self.device_name)
+            if dev.primary_ip == self.address:
+                LOGGER.warning(
+                    "Unable to delete IP Address %s on %s, because it's currently the management IP address",
+                    self.address,
+                    dev.name,
+                )
+                return self
 
         ipaddr = self.dsync.netbox.ipam.ip_addresses.get(self.remote_id)
         ipaddr.delete()
