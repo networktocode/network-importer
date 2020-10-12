@@ -55,7 +55,7 @@ class NetboxInterface(Interface):
         """
 
         def convert_vlan_to_nid(vlan_uid):
-            vlan = self.dsync.get(self.vlan, identifier=vlan_uid)
+            vlan = self.dsync.get(self.dsync.vlan, identifier=vlan_uid)
             if vlan:
                 return vlan.remote_id
             return None
@@ -63,7 +63,7 @@ class NetboxInterface(Interface):
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
-        device = self.dsync.get(self.device, identifier=self.device_name)
+        device = self.dsync.get(self.dsync.device, identifier=self.device_name)
         nb_params["device"] = device.remote_id
         nb_params["name"] = self.name
 
@@ -101,7 +101,7 @@ class NetboxInterface(Interface):
 
         if "is_lag_member" in attrs and attrs["is_lag_member"]:
             # TODO add checks to ensure the parent interface is present and has a remote id
-            parent_interface = self.dsync.get(self.interface, identifier=attrs["parent"])
+            parent_interface = self.dsync.get(self.dsync.interface, identifier=attrs["parent"])
             nb_params["lag"] = parent_interface.remote_id
 
         elif "is_lag_member" in attrs and not attrs["is_lag_member"]:
@@ -151,7 +151,7 @@ class NetboxInterface(Interface):
 
         nb_params = self.translate_attrs_for_netbox(attrs)
 
-        intf = self.netbox.dcim.interfaces.get(self.remote_id)
+        intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
         intf.update(data=nb_params)
         LOGGER.info("Updated Interface %s %s (%s) in NetBox", self.device_name, self.name, self.remote_id)
 
@@ -165,7 +165,7 @@ class NetboxInterface(Interface):
         """
         # Check if the interface has some Ips, check if it is the management interface
         if self.ips:
-            dev = self.dsync.get(self.device, identifier=self.device_name)
+            dev = self.dsync.get(self.dsync.device, identifier=self.device_name)
             if dev.primary_ip and dev.primary_ip in self.ips:
                 LOGGER.warning(
                     "Unable to delete interface %s on %s, because it's currently the management interface",
@@ -174,7 +174,7 @@ class NetboxInterface(Interface):
                 )
                 return self
 
-        intf = self.netbox.dcim.interfaces.get(self.remote_id)
+        intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
         intf.delete()
 
         return self
@@ -211,7 +211,7 @@ class NetboxIPAddress(IPAddress):
             NetboxInterface: DSync object
         """
 
-        ipaddr = self.netbox.ipam.ip_addresses.get(self.remote_id)
+        ipaddr = self.dsync.netbox.ipam.ip_addresses.get(self.remote_id)
         ipaddr.delete()
 
         return self
@@ -357,6 +357,6 @@ class NetboxCable(Cable):
         Returns:
             NetboxInterface: DSync object
         """
-        cable = self.netbox.dcim.cables.get(self.remote_id)
+        cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
         cable.delete()
         return cable
