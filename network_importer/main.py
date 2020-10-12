@@ -20,6 +20,7 @@ import network_importer.config as config
 from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
+from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import (
@@ -166,10 +167,10 @@ class NetworkImporter:
         return True
 
     def sync(self):
-        self.sot.sync_from(self.network)
+        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
 
     def diff(self):
-        return self.sot.diff_from(self.network)
+        return self.sot.diff_from(self.network, diff_class=NetworkImporterDiff)
 
     @timeit
     def update_configurations(self):
