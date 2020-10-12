@@ -50,7 +50,7 @@ class NetworkImporter:
         self.network = None
         self.sot = None
 
-    # @timeit
+    @timeit
     def build_inventory(self, limit=None):
         """
         Build the inventory for the Network Importer in Nornir format
@@ -146,10 +146,8 @@ class NetworkImporter:
             os.mkdir(config.SETTINGS.main.data_directory)
 
         # --------------------------------------------------------
-        # Initialize Object
-        # TODO allow user defined class
+        # Initialize Adapters
         # --------------------------------------------------------
-
         LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])

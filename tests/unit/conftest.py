@@ -1,17 +1,17 @@
 """Used to setup fixtures to be used through tests"""
-from typing import ClassVar, List, Optional, Tuple
-
 import pytest
 
 import pynetbox
-from dsync import DSync, DSyncModel
-from dsync.diff import Diff, DiffElement
-from dsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
+from dsync import DSync
+from dsync.diff import DiffElement
 
-from network_importer.models import Site, Device, Interface, IPAddress
+# from dsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
+
+from network_importer.models import Site, Device, Interface
 
 from network_importer.adapters.netbox_api.adapter import NetBoxAPIAdapter
 from network_importer.adapters.netbox_api.models import NetboxSite
+
 
 @pytest.fixture
 def make_site():
@@ -174,27 +174,21 @@ def diff_children_nyc_dev1():
 
     return children
 
+
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(
-        url="http://mock",
-        token="1234567890",
-        ssl_verify=False,
-    )
+    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)
 
     return dsync
+
 
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(
-        url="http://mock",
-        token="1234567890",
-        ssl_verify=False,
-    )
+    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)
 
     dsync.add(NetboxSite(name="nyc", remote_id=10))
 

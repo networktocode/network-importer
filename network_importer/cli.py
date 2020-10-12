@@ -37,7 +37,7 @@ import network_importer.performance as perf
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 @click.command()
@@ -83,11 +83,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     if config.SETTINGS.logs.level == "debug":
-        logger.setLevel(logging.DEBUG)
+        LOGGER.setLevel(logging.DEBUG)
     elif config.SETTINGS.logs.level == "warning":
-        logger.setLevel(logging.WARNING)
+        LOGGER.setLevel(logging.WARNING)
     else:
-        logger.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.INFO)
 
     filters = {}
     build_filter_params(config.SETTINGS.main.inventory_filter.split((",")), filters)
@@ -112,19 +112,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         diff = ni.diff()
         diff.print_detailed()
 
-    # if config.SETTINGS.logs.performance_log:
-    #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
-    #     perf.TIME_TRACKER.print_all()
+    if config.SETTINGS.logs.performance_log:
+        perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
+        perf.TIME_TRACKER.print_all()
 
-    # if config.SETTINGS.netbox.status_update and apply:
-    #     ni.update_devices_status()
-
-    # if diff:
-    #     ni.print_diffs()
-
-    # logger.info(
-    #     f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
-    # )
+    LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)
     if debug:
         pdb.set_trace()
 

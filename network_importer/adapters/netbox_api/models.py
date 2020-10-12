@@ -16,7 +16,6 @@ import logging
 
 import pynetbox
 
-from dsync import DSync, DSyncModel
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.models import (  # pylint: disable=import-error
     Site,
@@ -45,11 +44,10 @@ class NetboxInterface(Interface):
     remote_id: Optional[int]
     connected_endpoint_type: Optional[str]
 
-    def interface_translate_params(self, keys, params):
+    def translate_attrs_for_netbox(self, attrs):
         """Translate interface parameters into Netbox format
 
         Args:
-            keys (dict): Dictionnary of primary keys of the object to translate
             params (dict): Dictionnary of attributes/parameters of the object to translate
 
         Returns:
@@ -57,7 +55,7 @@ class NetboxInterface(Interface):
         """
 
         def convert_vlan_to_nid(vlan_uid):
-            vlan = self.get(self.vlan, keys=[vlan_uid])
+            vlan = self.dsync.get(self.vlan, identifier=vlan_uid)
             if vlan:
                 return vlan.remote_id
             return None
@@ -65,48 +63,48 @@ class NetboxInterface(Interface):
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
-        device = self.get(self.device, keys=[keys["device_name"]])
+        device = self.dsync.get(self.device, identifier=self.device_name)
         nb_params["device"] = device.remote_id
-        nb_params["name"] = keys["name"]
+        nb_params["name"] = self.name
 
-        if "is_lag" in params and params["is_lag"]:
+        if "is_lag" in attrs and attrs["is_lag"]:
             nb_params["type"] = "lag"
-        elif "is_virtual" in params and params["is_virtual"]:
+        elif "is_virtual" in attrs and attrs["is_virtual"]:
             nb_params["type"] = "virtual"
         else:
             nb_params["type"] = "other"
 
-        if "mtu" in params:
-            nb_params["mtu"] = params["mtu"]
+        if "mtu" in attrs:
+            nb_params["mtu"] = attrs["mtu"]
 
-        if "description" in params:
-            nb_params["description"] = params["description"] or ""
+        if "description" in attrs:
+            nb_params["description"] = attrs["description"] or ""
 
-        if "switchport_mode" in params and params["switchport_mode"] == "ACCESS":
+        if "switchport_mode" in attrs and attrs["switchport_mode"] == "ACCESS":
             nb_params["mode"] = "access"
-        elif "switchport_mode" in params and params["switchport_mode"] == "TRUNK":
+        elif "switchport_mode" in attrs and attrs["switchport_mode"] == "TRUNK":
             nb_params["switchport_mode"] = "tagged"
 
         # if is None:
         #     intf_properties["enabled"] = intf.active
 
         if config.SETTINGS.main.import_vlans != "no":
-            if "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and params["access_vlan"]:
-                nb_params["untagged_vlan"] = convert_vlan_to_nid(params["access_vlan"])
-            elif "mode" in params and params["mode"] in ["TRUNK", "ACCESS"] and not params["access_vlan"]:
+            if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and attrs["access_vlan"]:
+                nb_params["untagged_vlan"] = convert_vlan_to_nid(attrs["access_vlan"])
+            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
                 nb_params["untagged_vlan"] = None
 
-            if "mode" in params and params["mode"] in ["TRUNK", "L3_SUB_VLAN"] and params["allowed_vlans"]:
-                nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in params["allowed_vlans"]]
-            elif "mode" in params and params["mode"] in ["TRUNK", "L3_SUB_VLAN"] and not params["allowed_vlans"]:
+            if "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and attrs["allowed_vlans"]:
+                nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in attrs["allowed_vlans"]]
+            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and not attrs["allowed_vlans"]:
                 nb_params["tagged_vlans"] = []
 
-        if "is_lag_member" in params and params["is_lag_member"]:
+        if "is_lag_member" in attrs and attrs["is_lag_member"]:
             # TODO add checks to ensure the parent interface is present and has a remote id
-            parent_interface = self.get(self.interface, keys=[params["parent"]])
+            parent_interface = self.dsync.get(self.interface, identifier=attrs["parent"])
             nb_params["lag"] = parent_interface.remote_id
 
-        elif "is_lag_member" in params and not params["is_lag_member"]:
+        elif "is_lag_member" in attrs and not attrs["is_lag_member"]:
             nb_params["lag"] = None
 
         return nb_params
@@ -125,8 +123,7 @@ class NetboxInterface(Interface):
         """
 
         item = super().create(**ids, dsync=dsync, **attrs)
-
-        nb_params = cls.interface_translate_params(ids, attrs)
+        nb_params = item.translate_attrs_for_netbox(attrs)
 
         intf = dsync.netbox.dcim.interfaces.create(**nb_params)
         LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
@@ -152,7 +149,7 @@ class NetboxInterface(Interface):
         if attrs == current_attrs:
             return self
 
-        nb_params = self.interface_translate_params(self.get_identifiers(), attrs)
+        nb_params = self.translate_attrs_for_netbox(attrs)
 
         intf = self.netbox.dcim.interfaces.get(self.remote_id)
         intf.update(data=nb_params)
@@ -168,7 +165,7 @@ class NetboxInterface(Interface):
         """
         # Check if the interface has some Ips, check if it is the management interface
         if self.ips:
-            dev = self.get(self.device, keys=[self.device_name])
+            dev = self.dsync.get(self.device, identifier=self.device_name)
             if dev.primary_ip and dev.primary_ip in self.ips:
                 LOGGER.warning(
                     "Unable to delete interface %s on %s, because it's currently the management interface",
