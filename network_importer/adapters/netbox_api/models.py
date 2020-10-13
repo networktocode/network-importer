@@ -94,9 +94,18 @@ class NetboxInterface(Interface):
             elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
                 nb_params["untagged_vlan"] = None
 
-            if "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and "allowed_vlans" in attrs and attrs["allowed_vlans"]:
+            if (
+                "mode" in attrs
+                and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"]
+                and "allowed_vlans" in attrs
+                and attrs["allowed_vlans"]
+            ):
                 nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in attrs["allowed_vlans"]]
-            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"] and ("allowed_vlans" not in attrs or not attrs["allowed_vlans"]):
+            elif (
+                "mode" in attrs
+                and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"]
+                and ("allowed_vlans" not in attrs or not attrs["allowed_vlans"])
+            ):
                 nb_params["tagged_vlans"] = []
 
         if "is_lag_member" in attrs and attrs["is_lag_member"]:
@@ -125,8 +134,15 @@ class NetboxInterface(Interface):
         item = super().create(**ids, dsync=dsync, **attrs)
         nb_params = item.translate_attrs_for_netbox(attrs)
 
-        intf = dsync.netbox.dcim.interfaces.create(**nb_params)
-        LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
+        try:
+            intf = dsync.netbox.dcim.interfaces.create(**nb_params)
+            LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning(
+                "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, exc.error
+            )
+            return False
+
         item.remote_id = intf.id
         return item
 
@@ -151,9 +167,19 @@ class NetboxInterface(Interface):
 
         nb_params = self.translate_attrs_for_netbox(attrs)
 
-        intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
-        intf.update(data=nb_params)
-        LOGGER.info("Updated Interface %s %s (%s) in NetBox", self.device_name, self.name, self.remote_id)
+        try:
+            intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
+            intf.update(data=nb_params)
+            LOGGER.info("Updated Interface %s %s (%s) in NetBox", self.device_name, self.name, self.remote_id)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning(
+                "Unable to update interface %s on %s in %s (%s)",
+                self.name,
+                self.device_name,
+                self.dsync.name,
+                exc.error,
+            )
+            return False
 
         return super().update(attrs)
 
@@ -173,9 +199,17 @@ class NetboxInterface(Interface):
                     dev.name,
                 )
                 return self
-
-        intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
-        intf.delete()
+        try:
+            intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
+            intf.delete()
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning(
+                "Unable to delete Interface %s on %s in %s (%s)",
+                self.name,
+                self.device_name,
+                self.dsync.name,
+                exc.error,
+            )
 
         return self
 
@@ -185,17 +219,27 @@ class NetboxIPAddress(IPAddress):
 
     @classmethod
     def create(cls, dsync: "DSync", ids: dict, attrs: dict) -> Optional["DSyncModel"]:
+        """[summary]
 
+        Returns:
+            [type]: [description]
+        """
         interface = None
         if "interface_name" in attrs and "device_name" in attrs:
             interface = dsync.get(
                 dsync.interface, identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"])
             )
 
-        if interface:
-            ip_address = dsync.netbox.ipam.ip_addresses.create(address=ids["address"], interface=interface.remote_id)
-        else:
-            ip_address = dsync.netbox.ipam.ip_addresses.create(address=ids["address"])
+        try:
+            if interface:
+                ip_address = dsync.netbox.ipam.ip_addresses.create(
+                    address=ids["address"], interface=interface.remote_id
+                )
+            else:
+                ip_address = dsync.netbox.ipam.ip_addresses.create(address=ids["address"])
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to create the ip address %s in %s (%s)", ids["address"], dsync.name, exc.error)
+            return False
 
         LOGGER.debug("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
 
@@ -216,12 +260,21 @@ class NetboxIPAddress(IPAddress):
                 LOGGER.warning(
                     "Unable to delete IP Address %s on %s, because it's currently the management IP address",
                     self.address,
-                    dev.name,
+                    self.device_name,
                 )
                 return self
 
-        ipaddr = self.dsync.netbox.ipam.ip_addresses.get(self.remote_id)
-        ipaddr.delete()
+        try:
+            ipaddr = self.dsync.netbox.ipam.ip_addresses.get(self.remote_id)
+            ipaddr.delete()
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning(
+                "Unable to delete IP Address %s on %s in %s (%s)",
+                self.address,
+                self.device_name,
+                self.dsync.name,
+                exc.error,
+            )
 
         return self
 
@@ -240,8 +293,11 @@ class NetboxPrefix(Prefix):
         site = dsync.get(dsync.site, identifier=ids["site_name"])
         status = "active"
 
-        prefix = dsync.netbox.ipam.prefixes.create(prefix=ids["prefix"], site=site.remote_id, status=status)
-        LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
+        try:
+            prefix = dsync.netbox.ipam.prefixes.create(prefix=ids["prefix"], site=site.remote_id, status=status)
+            LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to create Prefix %s in %s (%s)", ids["prefix"], dsync.name, exc.error)
 
         item = super().create(**ids, dsync=dsync, **attrs)
         item.remote_id = prefix.id
@@ -268,8 +324,8 @@ class NetboxVlan(Vlan):
 
         try:
             vlan = dsync.netbox.ipam.vlans.create(vid=ids["vid"], name=vlan_name, site=site.remote_id)
-        except pynetbox.core.query.RequestError:
-            LOGGER.warning("Unable to create Vlan %s in %s", ids, dsync.name)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, dsync.name, exc.error)
             return False
 
         item = super().create(**ids, dsync=dsync, **attrs)
@@ -284,8 +340,12 @@ class NetboxVlan(Vlan):
             NetboxVlan: DSync object
         """
 
-        vlan = self.dsync.netbox.ipam.vlans.get(self.remote_id)
-        vlan.update(data={"name": attrs["name"]})
+        try:
+            vlan = self.dsync.netbox.ipam.vlans.get(self.remote_id)
+            vlan.update(data={"name": attrs["name"]})
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.dsync.name, exc.error)
+            return False
 
         return super().update(attrs)
 
@@ -320,7 +380,7 @@ class NetboxCable(Cable):
             )
 
         if not interface_a or not interface_z:
-            return False
+            return
 
         if interface_a.connected_endpoint_type:
             LOGGER.info(
@@ -329,7 +389,7 @@ class NetboxCable(Cable):
                 ids["device_a_name"],
                 ids["interface_a_name"],
             )
-            return False
+            return
 
         if interface_z.connected_endpoint_type:
             LOGGER.info(
@@ -338,7 +398,7 @@ class NetboxCable(Cable):
                 ids["device_z_name"],
                 ids["interface_z_name"],
             )
-            return False
+            return
 
         try:
             cable = dsync.netbox.dcim.cables.create(
@@ -347,8 +407,8 @@ class NetboxCable(Cable):
                 termination_a_id=interface_a.remote_id,
                 termination_b_id=interface_z.remote_id,
             )
-        except pynetbox.core.query.RequestError:
-            LOGGER.warning("Unable to create Cable %s in %s", ids, dsync.name)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to create Cable %s in %s (%s)", ids, dsync.name, exc.error)
             return False
 
         interface_a.connected_endpoint_type = "dcim.interface"
@@ -366,6 +426,10 @@ class NetboxCable(Cable):
         Returns:
             NetboxInterface: DSync object
         """
-        cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
-        cable.delete()
-        return cable
+        try:
+            cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
+            cable.delete()
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning("Unable to delete the cable %s in %s (%s)", self.get_unique_id(), self.dsync.name, exc.error)
+
+        return self
