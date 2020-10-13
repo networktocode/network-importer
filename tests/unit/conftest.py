@@ -179,7 +179,7 @@ def diff_children_nyc_dev1():
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)
+    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
 
     return dsync
 
@@ -188,7 +188,7 @@ def netbox_api_empty():
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)
+    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
 
     dsync.add(NetboxSite(name="nyc", remote_id=10))
 
