@@ -376,7 +376,7 @@ class NetboxCable(Cable):
                 device_name=ids["device_a_name"], intf_name=ids["interface_a_name"]
             )
 
-        elif not interface_z:
+        if not interface_z:
             interface_z = dsync.get_intf_from_netbox(
                 device_name=ids["device_z_name"], intf_name=ids["interface_z_name"]
             )
