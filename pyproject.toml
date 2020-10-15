@@ -24,6 +24,7 @@ genie = "^20.9"
 pyats = "^20.9"
 netmiko = "^3.3.2"
 ntc-templates = "^1.6.0"
+structlog = "^20.1.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"

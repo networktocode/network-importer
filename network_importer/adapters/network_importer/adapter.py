@@ -48,11 +48,11 @@ class NetworkImporterAdapter(BaseAdapter):
 
     top_level = ["site", "device", "cable"]
 
-    source = "Network"
+    type = "Network"
 
     bfi = None
 
-    def init(self):
+    def load(self):
 
         sites = {}
         device_names = []
@@ -83,9 +83,9 @@ class NetworkImporterAdapter(BaseAdapter):
             self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
             self.nornir.filter(filter_func=reachable_devs).run(task=warning_not_reachable, on_failed=True)
 
-        self.import_batfish()
-        self.import_vlans()
-        self.import_cabling()
+        self.load_batfish()
+        self.load_vlans()
+        self.load_cabling()
 
         self.check_data_consistency()
 
@@ -110,23 +110,23 @@ class NetworkImporterAdapter(BaseAdapter):
         self.bfi.set_network(network_name)
         self.bfi.init_snapshot(snapshot_path, name=snapshot_name, overwrite=True)
 
-    def import_batfish(self):
+    def load_batfish(self):
         """Import all devices, interfaces and IP Addresses from Batfish."""
 
         # Import Devices
         devices = self.get_all(self.device)
 
         for device in devices:
-            self.import_batfish_device(device=device)
+            self.load_batfish_device(device=device)
 
-    def import_batfish_device(self, device):
+    def load_batfish_device(self, device):
         """Import all devices from Batfish
 
         Args:
             device (Device) Device object
         """
 
-        site = self.get(self.site, keys=[device.site_name])
+        site = self.get(self.site, identifier=device.site_name)
 
         interface_vlans_mapping = defaultdict(list)
         if config.SETTINGS.main.import_vlans == "config":
@@ -146,14 +146,14 @@ class NetworkImporterAdapter(BaseAdapter):
 
         intfs = self.bfi.q.interfaceProperties(nodes=device.name).answer().frame()
         for _, intf in intfs.iterrows():
-            self.import_batfish_interface(
+            self.load_batfish_interface(
                 site=site,
                 device=device,
                 intf=intf,
                 interface_vlans=interface_vlans_mapping[intf["Interface"].interface],
             )
 
-    def import_batfish_interface(
+    def load_batfish_interface(
         self, site, device, intf, interface_vlans=[]
     ):  # pylint: disable=dangerous-default-value,unused-argument
         """Import an interface for a given device from Batfish Data, including IP addresses and prefixes.
@@ -240,9 +240,9 @@ class NetworkImporterAdapter(BaseAdapter):
         device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
-            self.import_batfish_ip_address(site, device, interface, prefix)
+            self.load_batfish_ip_address(site, device, interface, prefix)
 
-    def import_batfish_ip_address(
+    def load_batfish_ip_address(
         self, site, device, interface, address, interface_vlans=[]
     ):  # pylint: disable=dangerous-default-value
         """Import IP address for a given interface from Batfish.
@@ -256,7 +256,7 @@ class NetworkImporterAdapter(BaseAdapter):
         ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
 
         if config.SETTINGS.main.import_ips:
-            LOGGER.debug("%s | Import %s for %s::%s", self.source, ip_address.address, device.name, interface.name)
+            LOGGER.debug("%s | Import %s for %s::%s", self.name, ip_address.address, device.name, interface.name)
             self.add(ip_address)
             interface.add_child(ip_address)
 
@@ -291,7 +291,7 @@ class NetworkImporterAdapter(BaseAdapter):
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = self.get(self.prefix, keys=[site.name, str(prefix)])
+        prefix_obj = self.get(self.prefix, identifier=dict(site_name=site.name, prefix=prefix))
 
         if not prefix_obj:
             prefix_obj = self.prefix(prefix=str(prefix), site_name=site.name, vlan=vlan)
@@ -305,27 +305,27 @@ class NetworkImporterAdapter(BaseAdapter):
 
         return True
 
-    def import_cabling(self):
+    def load_cabling(self):
 
         if config.SETTINGS.main.import_cabling in ["no", False]:
             return False
 
         if config.SETTINGS.main.import_cabling in ["config", True]:
-            self.import_batfish_cable()
+            self.load_batfish_cable()
 
         if config.SETTINGS.main.import_cabling in ["lldp", "cdp", True]:
-            self.import_cabling_from_cmds()
+            self.load_cabling_from_cmds()
 
         self.validate_cabling()
 
         return True
 
-    def import_vlans(self):
+    def load_vlans(self):
 
         if config.SETTINGS.main.import_vlans not in ["cli", True]:
             return
 
-        LOGGER.info("Collecting cabling information from devices .. ")
+        LOGGER.info("Collecting vlans information from devices .. ")
 
         results = (
             self.nornir.filter(filter_func=valid_and_reachable_devs)
@@ -341,8 +341,8 @@ class NetworkImporterAdapter(BaseAdapter):
                 LOGGER.debug("%s | No vlan information returned SKIPPING", dev_name)
                 continue
 
-            device = self.get(self.device, keys=[dev_name])
-            site = self.get(self.site, keys=[device.site_name])
+            device = self.get(self.device, identifier=dev_name)
+            site = self.get(self.site, identifier=device.site_name)
 
             for vlan in items[1].result["vlans"]:
                 new_vlan, created = self.get_or_add(self.vlan(vid=vlan["vid"], name=vlan["name"], site_name=site.name))
@@ -350,7 +350,7 @@ class NetworkImporterAdapter(BaseAdapter):
                 if created:
                     site.add_child(new_vlan)
 
-    def import_batfish_cable(self):
+    def load_batfish_cable(self):
         """Import cables from Batfish using layer3Edges tables."""
 
         device_names = [device.name for device in self.get_all(self.device)]
@@ -380,7 +380,7 @@ class NetworkImporterAdapter(BaseAdapter):
         nbr_cables = len(self.get_all(self.cable))
         LOGGER.debug("Found %s cables in Batfish", nbr_cables)
 
-    def import_cabling_from_cmds(self):
+    def load_cabling_from_cmds(self):
         """Import cabling information from the CLI, either using LDLP or CDP based on the configuration.
 
         If the FQDN is defined, and the hostname of a neighbor include the FQDN, remove it.
@@ -423,7 +423,7 @@ class NetworkImporterAdapter(BaseAdapter):
         On some vendors, it's possible to have a list larger than what is really available
         """
 
-        vlan_uids = list(self.__datas__[self.vlan.get_type()].keys())
+        vlan_uids = list(self._data[self.vlan.get_type()].keys())
         interfaces = self.get_all(self.interface)
 
         for intf in interfaces:
@@ -448,12 +448,12 @@ class NetworkImporterAdapter(BaseAdapter):
             """
             dev_name, intf_name = cable.get_device_intf(side)
 
-            dev = self.get(self.device, keys=[dev_name])
+            dev = self.get(self.device, identifier=dev_name)
 
             if not dev:
                 return True
 
-            intf = self.get(self.interface, keys=[dev_name, intf_name])
+            intf = self.get(self.interface, identifier=dict(name=intf_name, device_name=dev_name))
 
             if not intf:
                 return True
@@ -477,7 +477,7 @@ class NetworkImporterAdapter(BaseAdapter):
                     intf_name,
                     side,
                 )
-                self.delete(cable)
+                self.remove(cable)
                 return False
 
             return True

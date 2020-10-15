@@ -6,7 +6,7 @@ class BaseAdapter(DSync):
         super().__init__()
         self.nornir = nornir
 
-    def init(self):
+    def load(self):
         raise NotImplementedError
 
     def get_or_create_vlan(self, vlan, site=None):
@@ -14,8 +14,8 @@ class BaseAdapter(DSync):
         modelname = vlan.get_type()
         uid = vlan.get_unique_id()
 
-        if uid in self.__datas__[modelname]:
-            return self.__datas__[modelname][uid], False
+        if uid in self._data[modelname]:
+            return self._data[modelname][uid], False
 
         self.add(vlan)
         if site:
@@ -36,8 +36,8 @@ class BaseAdapter(DSync):
         modelname = obj.get_type()
         uid = obj.get_unique_id()
 
-        if uid in self.__datas__[modelname]:
-            return self.__datas__[modelname][uid], False
+        if uid in self._data[modelname]:
+            return self._data[modelname][uid], False
 
         self.add(obj)
 
