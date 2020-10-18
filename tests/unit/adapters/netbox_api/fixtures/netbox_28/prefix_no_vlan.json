@@ -1,0 +1,29 @@
+{
+    "id": 44,
+    "family": {
+      "value": 4,
+      "label": "IPv4"
+    },
+    "prefix": "10.1.111.0/24",
+    "site": {
+      "id": 111,
+      "url": "http://localhost/api/dcim/sites/111/",
+      "name": "ni_02_nyc",
+      "slug": "ni_02_nyc"
+    },
+    "vrf": null,
+    "tenant": null,
+    "vlan": null,
+    "status": {
+      "value": "active",
+      "label": "Active",
+      "id": 1
+    },
+    "role": null,
+    "is_pool": false,
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2020-05-16",
+    "last_updated": "2020-05-16T18:51:48.851027Z"
+  }

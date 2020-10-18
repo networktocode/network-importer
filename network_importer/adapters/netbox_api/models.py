@@ -131,7 +131,7 @@ class NetboxInterface(Interface):
             NetboxInterface: DSync object newly created
         """
 
-        item = super().create(**ids, dsync=dsync, **attrs)
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         nb_params = item.translate_attrs_for_netbox(attrs)
 
         try:
@@ -220,10 +220,10 @@ class NetboxIPAddress(IPAddress):
 
     @classmethod
     def create(cls, dsync: "DSync", ids: dict, attrs: dict) -> Optional["DSyncModel"]:
-        """[summary]
+        """Create an IP address in Netbox, if the name of a valid interface is provided the interface will be assigned to the interface. 
 
         Returns:
-            [type]: [description]
+            NetboxIPAddress: DSync object
         """
         interface = None
         if "interface_name" in attrs and "device_name" in attrs:
@@ -244,7 +244,7 @@ class NetboxIPAddress(IPAddress):
 
         LOGGER.debug("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
 
-        item = super().create(**ids, dsync=dsync, **attrs)
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         item.remote_id = ip_address.id
 
         return item
@@ -253,7 +253,7 @@ class NetboxIPAddress(IPAddress):
         """Delete an IP address in NetBox
 
         Returns:
-            NetboxInterface: DSync object
+            NetboxIPAddress: DSync object
         """
         if self.device_name:
             dev = self.dsync.get(self.dsync.device, identifier=self.device_name)
@@ -263,7 +263,7 @@ class NetboxIPAddress(IPAddress):
                     self.address,
                     self.device_name,
                 )
-                return self
+                return
 
         try:
             ipaddr = self.dsync.netbox.ipam.ip_addresses.get(self.remote_id)
@@ -276,6 +276,7 @@ class NetboxIPAddress(IPAddress):
                 self.dsync.name,
                 exc.error,
             )
+            return
 
         super().delete()
         return self
@@ -300,8 +301,9 @@ class NetboxPrefix(Prefix):
             LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Prefix %s in %s (%s)", ids["prefix"], dsync.name, exc.error)
+            return
 
-        item = super().create(**ids, dsync=dsync, **attrs)
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         item.remote_id = prefix.id
 
         return item
@@ -330,7 +332,7 @@ class NetboxVlan(Vlan):
             LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, dsync.name, exc.error)
             return
 
-        item = super().create(**ids, dsync=dsync, **attrs)
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         item.remote_id = vlan.id
 
         return item
@@ -416,7 +418,7 @@ class NetboxCable(Cable):
         interface_a.connected_endpoint_type = "dcim.interface"
         interface_z.connected_endpoint_type = "dcim.interface"
 
-        item = super().create(**ids, dsync=dsync, **attrs)
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         LOGGER.info("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
         item.remote_id = cable.id
 

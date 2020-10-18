@@ -1,7 +1,7 @@
 # pylint: disable=C0116,C0121,R0801
 
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
