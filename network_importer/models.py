@@ -110,6 +110,7 @@ class Prefix(DSyncModel):
 
     _modelname = "prefix"
     _identifiers = ("site_name", "prefix")
+    _attributes = ("vlan",)
 
     prefix: str
     site_name: Optional[str]

@@ -132,6 +132,9 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             prefix = self.prefix(prefix=nb_prefix.prefix, site_name=site.name, remote_id=nb_prefix.id,)
 
+            if nb_prefix.vlan:
+                prefix.vlan = self.vlan.create_unique_id(vid=nb_prefix.vlan.vid, site_name=site.name)
+
             self.add(prefix)
             site.add_child(prefix)
 

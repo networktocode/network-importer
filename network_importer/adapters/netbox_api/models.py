@@ -285,6 +285,27 @@ class NetboxIPAddress(IPAddress):
 class NetboxPrefix(Prefix):
     remote_id: Optional[int]
 
+    def translate_attrs_for_netbox(self, attrs):
+        """Translate prefix parameters into Netbox format
+
+        Args:
+            params (dict): Dictionnary of attributes/parameters of the object to translate
+
+        Returns:
+            dict: Netbox parameters
+        """
+        nb_params = {"prefix": self.prefix, "status": "active"}
+
+        site = self.dsync.get(self.dsync.site, identifier=self.site_name)
+        nb_params["site"] = site.remote_id
+
+        if "vlan" in attrs:
+            vlan = self.dsync.get(self.dsync.vlan, identifier=attrs["vlan"])
+            if vlan.remote_id:
+                nb_params["vlan"] = vlan.remote_id
+
+        return nb_params
+
     @classmethod
     def create(cls, dsync: "DSync", ids: dict, attrs: dict) -> Optional["DSyncModel"]:
         """Create a Prefix in NetBox
@@ -293,20 +314,52 @@ class NetboxPrefix(Prefix):
             NetboxPrefix: DSync object
         """
 
-        site = dsync.get(dsync.site, identifier=ids["site_name"])
-        status = "active"
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
+        nb_params = item.translate_attrs_for_netbox(attrs)
 
         try:
-            prefix = dsync.netbox.ipam.prefixes.create(prefix=ids["prefix"], site=site.remote_id, status=status)
+            prefix = dsync.netbox.ipam.prefixes.create(**nb_params)
             LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Prefix %s in %s (%s)", ids["prefix"], dsync.name, exc.error)
             return
 
-        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         item.remote_id = prefix.id
 
         return item
+
+    def update(self, attrs: dict) -> Optional["DSyncModel"]:
+        """Update a Prefix object in Netbox.
+
+        Args:
+            attrs: Dictionary of attributes to update on the object
+
+        Returns:
+            DSyncModel: this instance, if all data was successfully updated.
+            None: if data updates failed in such a way that child objects of this model should not be modified.
+
+        Raises:
+            ObjectNotUpdated: if an error occurred.
+        """
+
+        current_attrs = self.get_attrs()
+
+        if attrs == current_attrs:
+            return self
+
+        nb_params = self.translate_attrs_for_netbox(attrs)
+
+        try:
+            prefix = self.dsync.netbox.ipam.prefixes.get(self.remote_id)
+            prefix.update(data=nb_params)
+            LOGGER.info("Updated Prefix %s (%s) in NetBox", self.prefix, self.remote_id)
+        except pynetbox.core.query.RequestError as exc:
+            LOGGER.warning(
+                "Unable to update perfix %s in %s (%s)", self.prefix, self.dsync.name, exc.error,
+            )
+            return
+
+        return super().update(attrs)
 
 
 class NetboxVlan(Vlan):
@@ -428,7 +481,7 @@ class NetboxCable(Cable):
         """Delete a Cable in NetBox
 
         Returns:
-            NetboxInterface: DSync object
+            NetboxCable: DSync object
         """
         try:
             cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
