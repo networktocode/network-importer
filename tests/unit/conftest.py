@@ -10,7 +10,7 @@ from dsync.diff import DiffElement
 from network_importer.models import Site, Device, Interface
 
 from network_importer.adapters.netbox_api.adapter import NetBoxAPIAdapter
-from network_importer.adapters.netbox_api.models import NetboxSite
+from network_importer.adapters.netbox_api.models import NetboxSite, NetboxDevice, NetboxInterface, NetboxVlan
 
 
 @pytest.fixture
@@ -190,6 +190,9 @@ def netbox_api_base():
     dsync = NetBoxAPIAdapter(nornir=None)
     dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
 
-    dsync.add(NetboxSite(name="nyc", remote_id=10))
+    dsync.add(NetboxSite(name="HQ", remote_id=10))
+    dsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    dsync.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
+    dsync.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
 
     return dsync

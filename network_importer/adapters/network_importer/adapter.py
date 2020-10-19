@@ -129,20 +129,24 @@ class NetworkImporterAdapter(BaseAdapter):
         site = self.get(self.site, identifier=device.site_name)
 
         interface_vlans_mapping = defaultdict(list)
-        if config.SETTINGS.main.import_vlans == "config":
+        if config.SETTINGS.main.import_vlans:
             bf_vlans = self.bfi.q.switchedVlanProperties(nodes=device.name).answer()
             for bf_vlan in bf_vlans.frame().itertuples():
-                vlan, created = self.get_or_add(
-                    self.vlan(name=f"vlan-{bf_vlan.VLAN_ID}", vid=bf_vlan.VLAN_ID, site_name=site.name)
-                )
-                if created:
-                    site.add_child(vlan)
+
+                if config.SETTINGS.main.import_vlans in ["config", True]:
+                    vlan, created = self.get_or_add(
+                        self.vlan(name=f"vlan-{bf_vlan.VLAN_ID}", vid=bf_vlan.VLAN_ID, site_name=site.name)
+                    )
+                    if created:
+                        site.add_child(vlan)
 
                 # Save interface to vlan mapping for later use
                 for intf in bf_vlan.Interfaces:
                     if intf.hostname != device.name.lower():
                         continue
-                    interface_vlans_mapping[intf.interface].append(vlan.get_unique_id())
+                    interface_vlans_mapping[intf.interface].append(
+                        self.vlan.create_unique_id(vid=bf_vlan.VLAN_ID, site_name=site.name)
+                    )
 
         intfs = self.bfi.q.interfaceProperties(nodes=device.name).answer().frame()
         for _, intf in intfs.iterrows():
@@ -240,7 +244,9 @@ class NetworkImporterAdapter(BaseAdapter):
         device.add_child(interface)
 
         for prefix in intf["All_Prefixes"]:
-            self.load_batfish_ip_address(site, device, interface, prefix)
+            self.load_batfish_ip_address(
+                site=site, device=device, interface=interface, address=prefix, interface_vlans=interface_vlans
+            )
 
     def load_batfish_ip_address(
         self, site, device, interface, address, interface_vlans=[]

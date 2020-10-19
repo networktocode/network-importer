@@ -1,0 +1,35 @@
+{
+    "id": 44,
+    "family": {
+      "value": 4,
+      "label": "IPv4"
+    },
+    "prefix": "10.1.111.0/24",
+    "site": {
+      "id": 111,
+      "url": "http://localhost/api/dcim/sites/111/",
+      "name": "nyc",
+      "slug": "nyc"
+    },
+    "vrf": null,
+    "tenant": null,
+    "vlan": {
+        "id": 23,
+        "url": "http://localhost/api/ipam/vlans/23/",
+        "vid": 111,
+        "name": "vlan-111",
+        "display_name": "111 (vlan-111)"
+      },
+    "status": {
+      "value": "active",
+      "label": "Active",
+      "id": 1
+    },
+    "role": null,
+    "is_pool": false,
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2020-05-16",
+    "last_updated": "2020-05-16T18:51:48.851027Z"
+  }

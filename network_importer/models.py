@@ -110,6 +110,7 @@ class Prefix(DSyncModel):
 
     _modelname = "prefix"
     _identifiers = ("site_name", "prefix")
+    _attributes = ("vlan",)
 
     prefix: str
     site_name: Optional[str]
@@ -153,11 +154,6 @@ class Cable(DSyncModel):
             new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
 
         super().__init__(*args, **new_kwargs)
-
-    def get_unique_id(self):
-        return "__".join(
-            sorted([f"{self.device_a_name}:{self.interface_a_name}", f"{self.device_z_name}:{self.interface_z_name}",])
-        )
 
     def get_device_intf(self, side):
 
