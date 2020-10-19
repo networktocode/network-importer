@@ -18,6 +18,7 @@ from network_importer.adapters.netbox_api.models import NetboxPrefix
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
+
 def test_create_prefix(requests_mock, netbox_api_base):
 
     with open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json") as file:
