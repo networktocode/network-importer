@@ -19,21 +19,17 @@ from network_importer.models import Cable
 
 
 def test_get_unique_id():
-    """
-    Unit test of Calbe model get_unique_id() parameters
-    """
+    """Unit test of Calbe model get_unique_id() parameters."""
 
     cable = Cable(device_a_name="deva", interface_a_name="inta", device_z_name="devb", interface_z_name="intb")
-    assert cable.get_unique_id() == "deva:inta__devb:intb"
+    assert cable.get_unique_id() == "deva__inta__devb__intb"
 
     cable = Cable(device_z_name="deva", interface_z_name="inta", device_a_name="devb", interface_a_name="intb")
-    assert cable.get_unique_id() == "deva:inta__devb:intb"
+    assert cable.get_unique_id() == "deva__inta__devb__intb"
 
 
 def test_get_device_intf():
-    """
-    Unit test of Cable get_device_intf function
-    """
+    """Unit test of Cable get_device_intf function."""
 
     cable = Cable(device_a_name="deva", interface_a_name="inta", device_z_name="devb", interface_z_name="intb")
     assert cable.get_device_intf("a") == ("deva", "inta")

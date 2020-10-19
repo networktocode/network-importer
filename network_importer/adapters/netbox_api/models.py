@@ -220,7 +220,7 @@ class NetboxIPAddress(IPAddress):
 
     @classmethod
     def create(cls, dsync: "DSync", ids: dict, attrs: dict) -> Optional["DSyncModel"]:
-        """Create an IP address in Netbox, if the name of a valid interface is provided the interface will be assigned to the interface. 
+        """Create an IP address in Netbox, if the name of a valid interface is provided the interface will be assigned to the interface.
 
         Returns:
             NetboxIPAddress: DSync object

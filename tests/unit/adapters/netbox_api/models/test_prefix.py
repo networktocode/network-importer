@@ -49,7 +49,7 @@ def test_create_prefix(requests_mock, netbox_api_base):
 
     assert isinstance(ip_address, NetboxPrefix) is True
     assert ip_address.remote_id == 44
-    assert ip_address.vlan == None
+    assert ip_address.vlan is None
 
 
 def test_update_prefix(requests_mock, netbox_api_base):
