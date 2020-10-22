@@ -88,7 +88,7 @@ class NetboxInterface(Interface):
         # if is None:
         #     intf_properties["enabled"] = intf.active
 
-        if config.SETTINGS.main.import_vlans != "no":
+        if config.SETTINGS.main.import_vlans not in [False, "no"]:
             if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and attrs["access_vlan"]:
                 nb_params["untagged_vlan"] = convert_vlan_to_nid(attrs["access_vlan"])
             elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
