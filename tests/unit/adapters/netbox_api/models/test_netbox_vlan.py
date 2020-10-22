@@ -16,18 +16,18 @@ import yaml
 
 import pynetbox
 
-from network_importer.adapters.netbox_api.models import NetboxVlan
+from network_importer.adapters.netbox_api.models import NetboxVlan, NetboxDevice
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 FIXTURE_28 = "../fixtures/netbox_28"
 
 
-def test_vlan_create_from_pynetbox():
+def test_vlan_create_from_pynetbox(netbox_api_base):
 
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_no_tag.json"))
     pnb = pynetbox.core.response.Record(data, "http://mock", 1)
 
-    item = NetboxVlan.create_from_pynetbox(pnb, "nyc")
+    item = NetboxVlan.create_from_pynetbox(dsync=netbox_api_base, obj=pnb, site_name="nyc")
 
     assert isinstance(item, NetboxVlan) is True
     assert item.remote_id == 1
@@ -35,13 +35,22 @@ def test_vlan_create_from_pynetbox():
     assert item.associated_devices == []
 
 
-def test_vlan_create_from_pynetbox_with_tags():
+def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
 
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_tags_01.json"))
     pnb = pynetbox.core.response.Record(data, "http://mock", 1)
 
-    item = NetboxVlan.create_from_pynetbox(pnb, "nyc")
+    netbox_api_base.add(NetboxDevice(name="devA", site_name="nyc", remote_id=30))
 
+    item = NetboxVlan.create_from_pynetbox(dsync=netbox_api_base, obj=pnb, site_name="nyc")
+    assert isinstance(item, NetboxVlan) is True
+    assert item.remote_id == 1
+    assert item.vid == 101
+    assert item.associated_devices == ["devA"]
+
+    # Try again with one additional device in the inventory
+    netbox_api_base.add(NetboxDevice(name="devB", site_name="nyc", remote_id=31))
+    item = NetboxVlan.create_from_pynetbox(dsync=netbox_api_base, obj=pnb, site_name="nyc")
     assert isinstance(item, NetboxVlan) is True
     assert item.remote_id == 1
     assert item.vid == 101
