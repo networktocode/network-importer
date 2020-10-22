@@ -55,3 +55,32 @@ def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
     assert item.remote_id == 1
     assert item.vid == 101
     assert item.associated_devices == ["devA", "devB"]
+
+
+def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    params = vlan.translate_attrs_for_netbox({})
+
+    assert "name" in params
+    assert params["name"] == "vlan-100"
+    assert "site" in params
+    assert params["site"] == 10
+    assert "tags" not in params
+
+
+def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    params = vlan.translate_attrs_for_netbox({"name": "VOICE", "associated_devices": ["dev1", "dev2"]})
+
+    assert "name" in params
+    assert params["name"] == "VOICE"
+    assert "site" in params
+    assert params["site"] == 10
+    assert "tags" in params
+    assert params["tags"] == ["device=dev1", "device=dev2"]
