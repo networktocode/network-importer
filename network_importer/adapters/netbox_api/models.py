@@ -113,7 +113,7 @@ class NetboxInterface(Interface):
             if parent_interface and parent_interface.remote_id:
                 nb_params["lag"] = parent_interface.remote_id
             else:
-                LOGGER.warn("No Parent interface found for lag member %s %s", self.device_name, self.name)
+                LOGGER.warning("No Parent interface found for lag member %s %s", self.device_name, self.name)
                 nb_params["lag"] = None
 
         elif "is_lag_member" in attrs and not attrs["is_lag_member"]:
