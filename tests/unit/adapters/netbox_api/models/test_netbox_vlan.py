@@ -13,9 +13,11 @@ limitations under the License.
 """
 import os
 import yaml
+import pytest
 
 import pynetbox
 
+from dsync.exceptions import ObjectNotFound
 from network_importer.adapters.netbox_api.models import NetboxVlan, NetboxDevice
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -84,3 +86,13 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
     assert params["site"] == 10
     assert "tags" in params
     assert params["tags"] == ["device=dev1", "device=dev2"]
+
+
+def test_translate_attrs_for_netbox_missing_site(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, site_name="NOTPRESENT", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    with pytest.raises(ObjectNotFound):
+        params = vlan.translate_attrs_for_netbox({})
+        assert True

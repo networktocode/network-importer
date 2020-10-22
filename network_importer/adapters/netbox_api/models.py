@@ -16,6 +16,7 @@ import logging
 
 import pynetbox
 
+from dsync.exceptions import ObjectNotFound
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.models import (  # pylint: disable=import-error
     Site,
@@ -383,6 +384,9 @@ class NetboxVlan(Vlan):
             nb_params["name"] = f"vlan-{self.vid}"
 
         site = self.dsync.get(self.dsync.site, identifier=self.site_name)
+        if not site:
+            raise ObjectNotFound(f"Unable to find site {self.site_name}")
+
         nb_params["site"] = site.remote_id
 
         if "associated_devices" in attrs:
@@ -421,24 +425,24 @@ class NetboxVlan(Vlan):
             NetboxVlan: DSync object
         """
 
-        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
-        nb_params = item.translate_attrs_for_netbox(attrs)
-
         try:
+            item = super().create(ids=ids, dsync=dsync, attrs=attrs)
+            nb_params = item.translate_attrs_for_netbox(attrs)
             vlan = dsync.netbox.ipam.vlans.create(**nb_params)
+            item.remote_id = vlan.id
             LOGGER.info("Created Vlan %s in %s (%s)", vlan.get_unique_id(), dsync.name, vlan.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, dsync.name, exc.error)
             return
 
-        item.remote_id = vlan.id
         return item
 
     def update_clean_tags(self, nb_params, obj):
-        """[summary]
+        """Update list of vlan tags with additinal tags that already exists on the object in netbox
 
         Args:
-            obj ([type]): [description]
+            nb_params (dict): dict of parameters in netbox format
+            obj (pynetbox): Vlan object from pynetbox
         """
         # Before updating the remote vlan we need to check the existing list of tags
         # to ensure that we won't delete an existing tags
