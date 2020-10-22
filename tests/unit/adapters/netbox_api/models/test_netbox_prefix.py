@@ -41,8 +41,7 @@ def test_translate_attrs_for_netbox_with_vlan(netbox_api_base):
 
 def test_create_prefix(requests_mock, netbox_api_base):
 
-    with open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json") as file:
-        data = yaml.safe_load(file)
+    data = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json"))
 
     requests_mock.post("http://mock/api/ipam/prefixes/", json=data, status_code=201)
     ip_address = NetboxPrefix.create(dsync=netbox_api_base, ids=dict(prefix="10.1.111.0/24", site_name="HQ"), attrs={})
@@ -54,10 +53,8 @@ def test_create_prefix(requests_mock, netbox_api_base):
 
 def test_update_prefix(requests_mock, netbox_api_base):
 
-    with open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json") as file:
-        data_no_vlan = yaml.safe_load(file)
-    with open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json") as file:
-        data_vlan = yaml.safe_load(file)
+    data_no_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json"))
+    data_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json"))
 
     remote_id = data_no_vlan["id"]
 
@@ -71,8 +68,7 @@ def test_update_prefix(requests_mock, netbox_api_base):
 
 def test_create_prefix_with_vlan(requests_mock, netbox_api_base):
 
-    with open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json") as file:
-        data = yaml.safe_load(file)
+    data = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json"))
 
     requests_mock.post("http://mock/api/ipam/prefixes/", json=data, status_code=201)
     prefix = NetboxPrefix.create(
