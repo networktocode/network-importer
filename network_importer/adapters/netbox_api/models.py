@@ -110,9 +110,12 @@ class NetboxInterface(Interface):
                 nb_params["tagged_vlans"] = []
 
         if "is_lag_member" in attrs and attrs["is_lag_member"]:
-            # TODO add checks to ensure the parent interface is present and has a remote id
             parent_interface = self.dsync.get(self.dsync.interface, identifier=attrs["parent"])
-            nb_params["lag"] = parent_interface.remote_id
+            if parent_interface and parent_interface.remote_id:
+                nb_params["lag"] = parent_interface.remote_id
+            else:
+                LOGGER.warning("No Parent interface found for lag member %s %s", self.device_name, self.name)
+                nb_params["lag"] = None
 
         elif "is_lag_member" in attrs and not attrs["is_lag_member"]:
             nb_params["lag"] = None
