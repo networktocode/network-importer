@@ -20,6 +20,7 @@ import warnings
 
 import click
 import urllib3
+from dsync.logging import enable_console_logging
 
 urllib3.disable_warnings()
 
@@ -37,7 +38,7 @@ import network_importer.performance as perf
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
 
 
 @click.command()
@@ -62,7 +63,7 @@ logger = logging.getLogger("network-importer")
     "--check", is_flag=True, help="Display what are the differences but do not save them",
 )
 @click.option(
-    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting",
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
@@ -83,11 +84,14 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     if config.SETTINGS.logs.level == "debug":
-        logger.setLevel(logging.DEBUG)
+        LOGGER.setLevel(logging.DEBUG)
     elif config.SETTINGS.logs.level == "warning":
-        logger.setLevel(logging.WARNING)
+        LOGGER.setLevel(logging.WARNING)
     else:
-        logger.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.INFO)
+
+    # Disable logging in console for DSync
+    enable_console_logging(verbosity=0)
 
     filters = {}
     build_filter_params(config.SETTINGS.main.inventory_filter.split((",")), filters)
@@ -112,19 +116,11 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         diff = ni.diff()
         diff.print_detailed()
 
-    # if config.SETTINGS.logs.performance_log:
-    #     perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
-    #     perf.TIME_TRACKER.print_all()
+    if config.SETTINGS.logs.performance_log:
+        perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
+        perf.TIME_TRACKER.print_all()
 
-    # if config.SETTINGS.netbox.status_update and apply:
-    #     ni.update_devices_status()
-
-    # if diff:
-    #     ni.print_diffs()
-
-    # logger.info(
-    #     f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
-    # )
+    LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)
     if debug:
         pdb.set_trace()
 

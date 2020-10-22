@@ -30,10 +30,7 @@ def nornir(requests_mock):
         logging={"enabled": False},
         inventory={
             "plugin": "network_importer.inventory.NetboxInventory",
-            "options": {
-                "nb_url": "http://mock",
-                "nb_token": "12349askdnfanasdf",
-            },
+            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf",},
         },
     )
 
@@ -72,7 +69,7 @@ def test_base(nornir):
 
 def test_cleanup_fqdn(nornir):
     """Validate that we are cleaning up the FQDN from device name."""
-    config.load(config_data={"main": {"fqdn": "test.com"}})
+    config.load(config_data={"network": {"fqdns": ["test.com"]}})
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea.test.com", port="intfa"))
@@ -91,7 +88,7 @@ def test_cleanup_fqdn(nornir):
 
 def test_cleanup_mac_address(nornir):
     """Validate that we are removing neighbor with a mac address name."""
-    config.load(config_data={"main": {"fqdn": "test.com"}})
+    config.load(config_data={"network": {"fqdns": ["test.com"]}})
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea.test.com", port="intfa"))
@@ -110,7 +107,7 @@ def test_cleanup_mac_address(nornir):
 
 def test_cleanup_port(nornir):
     """Validate that we are cleaning up the port from port name."""
-    config.load(config_data={"main": {"fqdn": "test.com"}})
+    config.load(config_data={"network": {"fqdns": ["test.com"]}})
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea", port="HundredGigE0/0/0/0"))

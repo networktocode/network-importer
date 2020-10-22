@@ -17,7 +17,7 @@ services:
       - ./tests:/source/tests
   batfish:
       container_name: batfish-test
-      image: batfish/batfish:test-526
+      image: batfish/batfish:2020.10.08.667
       ports:
         - 9997:9997
         - 9996:9996

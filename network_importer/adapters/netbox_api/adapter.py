@@ -29,7 +29,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
 
-from dsync.exceptions import ObjectAlreadyExist
+from dsync.exceptions import ObjectAlreadyExists
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -52,11 +52,12 @@ class NetBoxAPIAdapter(BaseAdapter):
     top_level = ["site", "device", "cable"]
 
     netbox = None
-    source = "NetBox"
+
+    type = "Netbox"
 
     query_device_info_from_netbox = query_device_info_from_netbox
 
-    def init(self):
+    def load(self):
 
         self.netbox = pynetbox.api(
             url=config.SETTINGS.netbox.address,
@@ -91,32 +92,32 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             self.add(device)
 
-        # Import Prefix and Vlan per site
+        # Load Prefix and Vlan per site
         for site in self.get_all(self.site):
-            self.import_netbox_prefix(site)
-            self.import_netbox_vlan(site)
+            self.load_netbox_prefix(site)
+            self.load_netbox_vlan(site)
 
-        # Import interfaces and IP addresses for each devices
+        # Load interfaces and IP addresses for each devices
         devices = self.get_all(self.device)
         for device in devices:
             site = sites[device.site_name]
             device_names.append(device.name)
-            self.import_netbox_device(site=site, device=device)
+            self.load_netbox_device(site=site, device=device)
 
-        # Import Cabling
+        # Load Cabling
         for site in self.get_all(self.site):
-            self.import_netbox_cable(site=site, device_names=device_names)
+            self.load_netbox_cable(site=site, device_names=device_names)
 
-    def import_netbox_device(self, site, device):
+    def load_netbox_device(self, site, device):
         """Import all interfaces and IP address from Netbox for a given device.
 
         Args:
             device (DSyncModel): Device to import
         """
-        self.import_netbox_interface(site=site, device=device)
-        self.import_netbox_ip_address(site=site, device=device)
+        self.load_netbox_interface(site=site, device=device)
+        self.load_netbox_ip_address(site=site, device=device)
 
-    def import_netbox_prefix(self, site):
+    def load_netbox_prefix(self, site):
         """Import all prefixes from NetBox for a given site.
 
         Args:
@@ -131,10 +132,13 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             prefix = self.prefix(prefix=nb_prefix.prefix, site_name=site.name, remote_id=nb_prefix.id,)
 
+            if nb_prefix.vlan:
+                prefix.vlan = self.vlan.create_unique_id(vid=nb_prefix.vlan.vid, site_name=site.name)
+
             self.add(prefix)
             site.add_child(prefix)
 
-    def import_netbox_vlan(self, site):
+    def load_netbox_vlan(self, site):
         """Import all vlans from NetBox for a given site
 
         Args:
@@ -237,7 +241,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         return new_intf
 
-    def import_netbox_interface(self, site, device):
+    def load_netbox_interface(self, site, device):
         """Import all interfaces & Ips from Netbox for a given device.
 
         Args:
@@ -249,9 +253,9 @@ class NetBoxAPIAdapter(BaseAdapter):
         for intf in intfs:
             self.convert_interface_from_netbox(site=site, device=device, intf=intf)
 
-        LOGGER.debug("%s | Found %s interfaces for %s", self.source, len(intfs), device.name)
+        LOGGER.debug("%s | Found %s interfaces for %s", self.name, len(intfs), device.name)
 
-    def import_netbox_ip_address(self, site, device):  # pylint: disable=unused-argument
+    def load_netbox_ip_address(self, site, device):  # pylint: disable=unused-argument
         """Import all IP addresses from NetBox for a given device
 
         Args:
@@ -272,12 +276,12 @@ class NetBoxAPIAdapter(BaseAdapter):
             )
 
             self.get_or_add(ip_address)
-            interface = self.get(self.interface, keys=[device.name, ipaddr.interface.name])
+            interface = self.get(self.interface, identifier=dict(device_name=device.name, name=ipaddr.interface.name))
             interface.add_child(ip_address)
 
-        LOGGER.debug("%s | Found %s ip addresses for %s", self.source, len(ips), device.name)
+        LOGGER.debug("%s | Found %s ip addresses for %s", self.name, len(ips), device.name)
 
-    def import_netbox_cable(self, site, device_names):
+    def load_netbox_cable(self, site, device_names):
         """Import all Cables from NetBox for a given site.
 
         If both devices at each end of the cables are not in the list of device_names, the cable will be ignored.
@@ -299,7 +303,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             ):
                 LOGGER.debug(
                     "%s | Skipping cable %s because neither devices (%s, %s) is in the list of devices",
-                    self.source,
+                    self.name,
                     nb_cable.id,
                     nb_cable.termination_a.device.name,
                     nb_cable.termination_b.device.name,
@@ -310,7 +314,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             # if nb_cable.termination_a.device.name not in device_names:
             #     LOGGER.debug(
             #         "%s | Skipping cable %s because %s is not in the list of devices",
-            #         self.source,
+            #         self.name,
             #         nb_cable.id,
             #         nb_cable.termination_a.device.name,
             #     )
@@ -319,7 +323,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             # if nb_cable.termination_b.device.name not in device_names:
             #     LOGGER.debug(
             #         "%s | Skipping cable %s because %s is not in the list of devices",
-            #         self.source,
+            #         self.name,
             #         nb_cable.id,
             #         nb_cable.termination_b.device.name,
             #     )
@@ -335,11 +339,12 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             try:
                 self.add(cable)
-            except ObjectAlreadyExist:
+            except ObjectAlreadyExists:
                 pass
 
             nbr_cables += 1
 
+<<<<<<< HEAD
         LOGGER.debug("%s | Found %s cables in netbox for %s", self.source, nbr_cables, site.name)
 
     # -----------------------------------------------------
@@ -697,8 +702,11 @@ class NetBoxAPIAdapter(BaseAdapter):
         return item
 
     # ----------------------------------------------
+=======
+        LOGGER.debug("%s | Found %s cables in netbox for %s", self.name, nbr_cables, site.name)
+>>>>>>> develop-2.0
 
-    def _get_intf_from_netbox(self, device_name, intf_name):
+    def get_intf_from_netbox(self, device_name, intf_name):
         """Get an interface from NetBox based on the name of the device and the name of the interface.
 
         Exactly one return must be returned from NetBox, the function will return False if more than 1 result are returned.

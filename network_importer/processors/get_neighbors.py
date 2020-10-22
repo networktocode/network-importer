@@ -16,15 +16,31 @@ LOGGER = logging.getLogger("network-importer")
 
 # Possible Junos port names xe-0/0/1.0, xe-0/0/3:0, ge, et, em sxe, fte, me, fc, xle
 # Match the incorrectly capitalized interface names
-JUNOS_INTERFACE_PATTERN = re.compile("^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
+JUNOS_INTERFACE_PATTERN = re.compile(r"^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
+
+# -----------------------------------------------------------------
+# Inventory Filter functions
+# -----------------------------------------------------------------
+def hosts_for_cabling(host):
+    """
+    Inventory Filter for Nornir, return True or False if a device is eligible for cabling.
+    it's using config.SETTINGS.main.excluded_platforms_cabling to determine if a host is eligible.
+
+    Args:
+      host(Host): Nornir Host
+
+    Returns:
+        bool: True if the device is eligible for cabling, False otherwise.
+    """
+    if host.platform in config.SETTINGS.main.excluded_platforms_cabling:
+        return False
+
+    return True
 
 
-# TODO Create a Filter based on that
-# if host.platform in config.main["excluded_platforms_cabling"]:
-#     LOGGER.debug(f"{host.name}: device type ({task.host.platform}) found in excluded_platforms_cabling")
-#     return
-
-
+# -----------------------------------------------------------------
+# Expected Returned Data
+# -----------------------------------------------------------------
 class Neighbor(BaseModel):
     hostname: str
     port: str
@@ -34,6 +50,9 @@ class Neighbors(BaseModel):
     neighbors: Dict[str, List[Neighbor]] = defaultdict(list)
 
 
+# -----------------------------------------------------------------
+# Processor
+# -----------------------------------------------------------------
 class GetNeighbors(BaseProcessor):
 
     task_name = "get_neighbors"
@@ -89,8 +108,20 @@ class GetNeighbors(BaseProcessor):
 
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):
-        if config.SETTINGS.main.fqdn and config.SETTINGS.main.fqdn in neighbor_name:
-            return neighbor_name.replace(f".{config.SETTINGS.main.fqdn}", "")
+        """Cleanup the name of a neighbor by removing all known FQDNs
+
+        Args:
+            neighbor_name ([str]): name of a neighbor returned by cdp or lldp
+
+        Returns:
+            str: clean neighboar name
+        """
+
+        # Remove all FQDN from the hostname to match what is in the SOT
+        config.SETTINGS.network.fqdns.sort(key=len, reverse=True)
+        for fqdn in config.SETTINGS.network.fqdns:
+            if fqdn in neighbor_name:
+                return neighbor_name.replace(f".{fqdn}", "")
 
         return neighbor_name
 

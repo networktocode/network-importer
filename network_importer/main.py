@@ -20,6 +20,7 @@ import network_importer.config as config
 from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
+from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import (
@@ -49,7 +50,7 @@ class NetworkImporter:
         self.network = None
         self.sot = None
 
-    # @timeit
+    @timeit
     def build_inventory(self, limit=None):
         """
         Build the inventory for the Network Importer in Nornir format
@@ -97,7 +98,7 @@ class NetworkImporter:
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
                     "use_primary_ip": config.SETTINGS.inventory.use_primary_ip,
-                    "fqdn": config.SETTINGS.main.fqdn,
+                    "fqdn": config.SETTINGS.inventory.fqdn,
                     "supported_platforms": config.SETTINGS.netbox.supported_platforms,
                     "global_delay_factor": config.SETTINGS.network.global_delay_factor,
                 },
@@ -145,15 +146,13 @@ class NetworkImporter:
             os.mkdir(config.SETTINGS.main.data_directory)
 
         # --------------------------------------------------------
-        # Initialize Object
-        # TODO allow user defined class
+        # Initialize Adapters
         # --------------------------------------------------------
-
         LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
         self.sot = sot_adapter(nornir=self.nornir)
-        self.sot.init()
+        self.sot.load()
 
         LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
@@ -161,15 +160,15 @@ class NetworkImporter:
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
         self.network = network_adapter(nornir=self.nornir)
-        self.network.init()
+        self.network.load()
 
         return True
 
     def sync(self):
-        self.sot.sync(self.network)
+        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
 
     def diff(self):
-        return self.sot.diff(self.network)
+        return self.sot.diff_from(self.network, diff_class=NetworkImporterDiff)
 
     @timeit
     def update_configurations(self):
