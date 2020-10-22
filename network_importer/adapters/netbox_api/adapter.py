@@ -344,7 +344,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
             nbr_cables += 1
 
-config.py        LOGGER.debug("%s | Found %s cables in netbox for %s", self.name, nbr_cables, site.name)
+        LOGGER.debug("%s | Found %s cables in netbox for %s", self.name, nbr_cables, site.name)
 
     def get_intf_from_netbox(self, device_name, intf_name):
         """Get an interface from NetBox based on the name of the device and the name of the interface.
