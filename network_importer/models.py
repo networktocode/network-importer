@@ -178,3 +178,8 @@ class Vlan(DSyncModel):
     name: Optional[str]
 
     associated_devices: List[str] = list()
+
+    def add_device(self, device_name):
+
+        if device_name not in self.associated_devices:
+            self.associated_devices.append(device_name)

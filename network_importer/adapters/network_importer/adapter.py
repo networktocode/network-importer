@@ -140,6 +140,8 @@ class NetworkImporterAdapter(BaseAdapter):
                     if created:
                         site.add_child(vlan)
 
+                    vlan.add_device(device.get_unique_id())
+
                 # Save interface to vlan mapping for later use
                 for intf in bf_vlan.Interfaces:
                     if intf.hostname != device.name.lower():
@@ -355,6 +357,8 @@ class NetworkImporterAdapter(BaseAdapter):
 
                 if created:
                     site.add_child(new_vlan)
+
+                new_vlan.add_device(device.get_unique_id())
 
     def load_batfish_cable(self):
         """Import cables from Batfish using layer3Edges tables."""

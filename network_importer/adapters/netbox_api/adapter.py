@@ -150,7 +150,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         vlans = self.netbox.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
-            vlan = self.vlan(vid=nb_vlan.vid, site_name=site.name, name=nb_vlan.name, remote_id=nb_vlan.id,)
+            vlan = self.vlan.create_from_pynetbox(dsync=self, obj=nb_vlan, site_name=site.name)
             self.add(vlan)
             site.add_child(vlan)
 

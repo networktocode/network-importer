@@ -11,6 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from re import split
 from typing import Optional
 import logging
 
@@ -364,6 +365,54 @@ class NetboxPrefix(Prefix):
 
 class NetboxVlan(Vlan):
     remote_id: Optional[int]
+    tag_prefix: str = "device="
+
+    def translate_attrs_for_netbox(self, attrs):
+        """Translate vlan parameters into Netbox format
+
+        Args:
+            params (dict): Dictionnary of attributes/parameters of the object to translate
+
+        Returns:
+            dict: Netbox parameters
+        """
+        nb_params = {"vid": self.vid}
+
+        if "name" in attrs and attrs["name"]:
+            nb_params["name"] = attrs["name"]
+        else:
+            nb_params["name"] = f"vlan-{self.vid}"
+
+        site = self.dsync.get(self.dsync.site, identifier=self.site_name)
+        nb_params["site"] = site.remote_id
+
+        if "associated_devices" in attrs:
+            nb_params["tags"] = [f"device={device}" for device in attrs["associated_devices"]]
+
+        return nb_params
+
+    @classmethod
+    def create_from_pynetbox(cls, dsync: "DSync", obj, site_name):
+        """Create a new NetboxVlan object from a pynetbox vlan object
+
+        Args:
+            pynetbox ([type]): Vlan object returned by Pynetbox
+
+        Returns:
+            NetboxVlan: DSync object
+        """
+
+        item = cls(vid=obj.vid, site_name=site_name, name=obj.name, remote_id=obj.id)
+
+        # Check the existing tags to learn which device is already associated with this vlan
+        # Exclude all vlans that are not part of the inventory
+        if obj.tags:
+            all_devices = [tag.split(item.tag_prefix)[1] for tag in obj.tags if item.tag_prefix in tag]
+            for device in all_devices:
+                if dsync.get(dsync.device, identifier=device):
+                    item.associated_devices.append(device)
+
+        return item
 
     @classmethod
     def create(cls, dsync: "DSync", ids: dict, attrs: dict) -> Optional["DSyncModel"]:
@@ -372,23 +421,38 @@ class NetboxVlan(Vlan):
         Returns:
             NetboxVlan: DSync object
         """
-        site = dsync.get(dsync.site, identifier=ids["site_name"])
 
-        if "name" in attrs and attrs["name"]:
-            vlan_name = attrs["name"]
-        else:
-            vlan_name = f"vlan-{ids['vid']}"
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
+        nb_params = item.translate_attrs_for_netbox(attrs)
 
         try:
-            vlan = dsync.netbox.ipam.vlans.create(vid=ids["vid"], name=vlan_name, site=site.remote_id)
+            vlan = dsync.netbox.ipam.vlans.create(**nb_params)
+            LOGGER.info("Created Vlan %s in %s (%s)", vlan.get_unique_id(), dsync.name, vlan.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, dsync.name, exc.error)
             return
 
-        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         item.remote_id = vlan.id
-
         return item
+
+    def update_clean_tags(self, nb_params, obj):
+        """[summary]
+
+        Args:
+            obj ([type]): [description]
+        """
+        # Before updating the remote vlan we need to check the existing list of tags
+        # to ensure that we won't delete an existing tags
+        if "tags" in nb_params and nb_params["tags"] and obj.tags:
+            for tag in obj.tags:
+                if self.tag_prefix not in tag:
+                    nb_params["tags"].append(tag)
+                else:
+                    dev_name = tag.split(self.tag_prefix)[1]
+                    if not self.dsync.get(self.dsync.device, identifier=dev_name):
+                        nb_params["tags"].append(tag)
+
+        return nb_params
 
     def update(self, attrs: dict) -> Optional["DSyncModel"]:
         """Update new Vlan in NetBox
@@ -397,9 +461,13 @@ class NetboxVlan(Vlan):
             NetboxVlan: DSync object
         """
 
+        nb_params = self.translate_attrs_for_netbox(attrs)
+
         try:
             vlan = self.dsync.netbox.ipam.vlans.get(self.remote_id)
-            vlan.update(data={"name": attrs["name"]})
+            clean_params = self.update_clean_tags(nb_params=nb_params, obj=vlan)
+            vlan.update(data=clean_params)
+            LOGGER.info("Updated Vlan %s (%s) in NetBox", self.get_unique_id(), self.remote_id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.dsync.name, exc.error)
             return
