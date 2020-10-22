@@ -97,12 +97,16 @@ class NetworkSettings(BaseSettings):
 
 class LogsSettings(BaseSettings):
 
-    level: str = "info"  # dict(type="string", enum=["debug", "info", "warning"], default="info"),
+    level: Literal[
+        "debug", "info", "warning"
+    ] = "info"  # dict(type="string", enum=["debug", "info", "warning"], default="info"),
     directory: str = "logs"
     performance_log: bool = True
     performance_log_directory: str = "performance_logs"
     change_log: bool = True
-    change_log_format: str = "text"  # dict(type="string", enum=["jsonlines", "text"], default="text"),
+    change_log_format: Literal[
+        "jsonlines", "text"
+    ] = "text"  # dict(type="string", enum=["jsonlines", "text"], default="text"),
     change_log_filename: str = "changelog"
 
 
@@ -111,7 +115,7 @@ class MainSettings(BaseSettings):
     import_ips: bool = True
     import_prefixes: bool = False
     import_cabling: Union[
-        bool, str
+        bool, Literal["lldp", "cdp", "config", "no"]
     ] = "lldp"  # =dict(type=["string", "boolean"], enum=["lldp", "cdp", "config", False], default="lldp",),
     import_transceivers: bool = False
     import_intf_status: bool = False
