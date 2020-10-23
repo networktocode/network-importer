@@ -7,7 +7,7 @@ from dsync.diff import DiffElement
 
 # from dsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
 
-from network_importer.models import Site, Device, Interface
+from network_importer.models import Site, Device, Interface, Vlan
 
 from network_importer.adapters.network_importer.adapter import NetworkImporterAdapter
 
@@ -48,6 +48,26 @@ def make_interface():
         return Interface(device_name=device_name, name=name, **kwargs)
 
     return interface
+
+
+@pytest.fixture
+def site_hq():
+    return Site(name="HQ")
+
+
+@pytest.fixture
+def site_sfo():
+    return Site(name="sfo")
+
+
+@pytest.fixture
+def dev_spine1():
+    return Device(name="spine1", site_name="sfo")
+
+
+@pytest.fixture
+def dev_spine2():
+    return Device(name="spine2", site_name="sfo")
 
 
 class GenericBackend(DSync):
@@ -204,5 +224,10 @@ def netbox_api_base():
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
     dsync = NetworkImporterAdapter(nornir=None)
+
+    dsync.add(Site(name="HQ"))
+    dsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    dsync.add(Interface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"))
+    dsync.add(Vlan(vid=111, site_name="HQ"))
 
     return dsync

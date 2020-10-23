@@ -94,5 +94,5 @@ def test_translate_attrs_for_netbox_missing_site(netbox_api_base):
     netbox_api_base.add(vlan)
 
     with pytest.raises(ObjectNotFound):
-        params = vlan.translate_attrs_for_netbox({})
+        vlan.translate_attrs_for_netbox({})
         assert True
