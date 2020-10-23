@@ -145,15 +145,20 @@ class Cable(DSyncModel):
         if not kwargs["device_a_name"] or not kwargs["device_z_name"]:
             raise ValueError("device_a_name and device_z_name are mandatory and must not be None")
 
-        new_kwargs = copy.deepcopy(kwargs)
+        keys_to_copy = ["device_a_name", "interface_a_name", "device_z_name", "interface_z_name"]
+        ids = {key: kwargs[key] for key in keys_to_copy}
+
         devices = [kwargs["device_a_name"], kwargs["device_z_name"]]
         if sorted(devices) != devices:
-            new_kwargs["device_a_name"] = kwargs["device_z_name"]
-            new_kwargs["interface_a_name"] = kwargs["interface_z_name"]
-            new_kwargs["device_z_name"] = kwargs["device_a_name"]
-            new_kwargs["interface_z_name"] = kwargs["interface_a_name"]
+            ids["device_a_name"] = kwargs["device_z_name"]
+            ids["interface_a_name"] = kwargs["interface_z_name"]
+            ids["device_z_name"] = kwargs["device_a_name"]
+            ids["interface_z_name"] = kwargs["interface_a_name"]
 
-        super().__init__(*args, **new_kwargs)
+        for key in keys_to_copy:
+            del kwargs[key]
+
+        super().__init__(*args, **ids, **kwargs)
 
     def get_device_intf(self, side):
 
