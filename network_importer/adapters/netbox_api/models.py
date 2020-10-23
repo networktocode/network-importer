@@ -416,7 +416,7 @@ class NetboxVlan(Vlan):
             all_devices = [tag.split(item.tag_prefix)[1] for tag in obj.tags if item.tag_prefix in tag]
             for device in all_devices:
                 if dsync.get(dsync.device, identifier=device):
-                    item.associated_devices.append(device)
+                    item.add_device(device)
 
         return item
 

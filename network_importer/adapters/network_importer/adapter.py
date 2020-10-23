@@ -32,6 +32,7 @@ from network_importer.utils import (
     is_interface_physical,
     expand_vlans_list,
 )
+from network_importer.adapters.network_importer.exceptions import BatfishObjectNotValid
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -165,17 +166,30 @@ class NetworkImporterAdapter(BaseAdapter):
         """Import an interface for a given device from Batfish Data, including IP addresses and prefixes.
 
         Args:
+            site (Site): Site object
             device (Device): Device object
             intf (dict): Batfish interface object in Dict format
+            interface_vlans (list[str], optional): List of vlan uis associated with this interface
+
+        Returns:
+            Interface
         """
+
+        # try:
+        #     self._check_batfish_interface_is_valid(intf)
+        # except BatfishObjectNotValid as exc:
+        #     LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
+        #     return False
 
         interface = self.interface(
             name=intf["Interface"].interface,
             device_name=device.name,
-            description=intf["Description"] or None,
             mtu=intf["MTU"],
             switchport_mode=intf["Switchport_Mode"],
         )
+
+        if "Description" in intf and intf["Description"]:
+            interface.description = intf["Description"].strip()
 
         is_physical = is_interface_physical(interface.name)
         is_lag = is_interface_lag(interface.name)
@@ -187,9 +201,6 @@ class NetworkImporterAdapter(BaseAdapter):
             interface.is_virtual = True
         else:
             interface.is_virtual = False
-
-        # if is_physical and interface.speed:
-        # interface.speed = int(bf.Speed)
 
         if interface.switchport_mode == "FEX_FABRIC":
             interface.switchport_mode = "NONE"
@@ -217,7 +228,6 @@ class NetworkImporterAdapter(BaseAdapter):
                 interface.mode = interface.switchport_mode
 
         if interface.mode == "TRUNK":
-
             vids = expand_vlans_list(intf["Allowed_VLANs"])
             for vid in vids:
                 vlan = self.vlan(vid=vid, site_name=site.name)
@@ -245,10 +255,15 @@ class NetworkImporterAdapter(BaseAdapter):
         self.add(interface)
         device.add_child(interface)
 
+        if "All_Prefixes" not in intf:
+            return interface
+
         for prefix in intf["All_Prefixes"]:
             self.load_batfish_ip_address(
                 site=site, device=device, interface=interface, address=prefix, interface_vlans=interface_vlans
             )
+
+        return interface
 
     def load_batfish_ip_address(
         self, site, device, interface, address, interface_vlans=[]
@@ -256,9 +271,14 @@ class NetworkImporterAdapter(BaseAdapter):
         """Import IP address for a given interface from Batfish.
 
         Args:
+            site (Site): Site object
             device (Device): Device object
             interface (Interface): Interface object
             address (str): IP address in string format
+            interface_vlans (list[str], optional): List of vlan uis associated with this interface
+
+        Returns:
+            IPAddress
         """
 
         ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
@@ -282,16 +302,18 @@ class NetworkImporterAdapter(BaseAdapter):
 
             self.add_prefix_from_ip(ip_address=ip_address, site=site, vlan=vlan)
 
-    def add_prefix_from_ip(self, ip_address, site=None, vlan=None):
+        return ip_address
+
+    def add_prefix_from_ip(self, ip_address, site, vlan=None):
         """Try to extract a prefix from an IP address and save it locally.
 
         Args:
             ip_address (IPAddress): DSync IPAddress object
-            site_name (str, optional): Name of the site the prefix is part of. Defaults to None.
+            site (Site): Site object the prefix is part of.
             vlan (str): Identifier of the vlan
 
         Returns:
-            bool: False if a prefix can't be extracted from this IP address
+            Prefix, bool: False if a prefix can't be extracted from this IP address
         """
 
         prefix = ipaddress.ip_network(ip_address.address, strict=False)
@@ -311,7 +333,7 @@ class NetworkImporterAdapter(BaseAdapter):
             prefix_obj.vlan = vlan
             LOGGER.debug("Updated Prefix %s with vlan %s", prefix, vlan)
 
-        return True
+        return prefix_obj
 
     def load_cabling(self):
 
@@ -431,14 +453,23 @@ class NetworkImporterAdapter(BaseAdapter):
         """
         Ensure the vlans configured for each interface exist in the system
         On some vendors, it's possible to have a list larger than what is really available
+
+        In the process, ensure that all devices are associated with the right vlans
         """
 
-        vlan_uids = list(self._data[self.vlan.get_type()].keys())
+        # Get a dictionnary with all vlans organized by uid
+        vlans = {vlan.get_unique_id(): vlan for vlan in self.get_all(self.vlan)}
         interfaces = self.get_all(self.interface)
 
         for intf in interfaces:
             if intf.allowed_vlans:
-                intf.allowed_vlans = [vlan for vlan in intf.allowed_vlans if vlan in vlan_uids]
+                clean_allowed_vlans = []
+                for vlan in intf.allowed_vlans:
+                    if vlan in vlans.keys():
+                        clean_allowed_vlans.append(vlan)
+                        vlans[vlan].add_device(intf.device_name)
+
+                intf.allowed_vlans = clean_allowed_vlans
 
     def validate_cabling(self):
         """
@@ -547,3 +578,22 @@ class NetworkImporterAdapter(BaseAdapter):
                 #         cable.is_valid = False
                 #         cable.error = "interface-already-connected"
                 #         continue
+
+    @staticmethod
+    def _check_batfish_interface_is_valid(intf):
+        """Check if a given dict meant to represent a batfish interface is valid.
+
+        Args:
+            intf (dict): dict generated from a Batfish Interface
+        """
+
+        if not isinstance(intf, dict):
+            raise BatfishObjectNotValid("batfish interface is not a dict")
+
+        mandatory_fields = ["Interface", "Description", "MTU", "Switchport_Mode"]
+
+        for field in mandatory_fields:
+            if field not in intf.keys():
+                raise BatfishObjectNotValid(f"Key {field} is missing in batfish interface")
+
+        return True
