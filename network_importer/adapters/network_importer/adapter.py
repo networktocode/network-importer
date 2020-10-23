@@ -184,10 +184,12 @@ class NetworkImporterAdapter(BaseAdapter):
         interface = self.interface(
             name=intf["Interface"].interface,
             device_name=device.name,
-            description=intf["Description"].strip() or None,
             mtu=intf["MTU"],
             switchport_mode=intf["Switchport_Mode"],
         )
+
+        if "description" in intf:
+            interface.description = intf["Description"].strip()
 
         is_physical = is_interface_physical(interface.name)
         is_lag = is_interface_lag(interface.name)
