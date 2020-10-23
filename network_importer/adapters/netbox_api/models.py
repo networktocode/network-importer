@@ -169,7 +169,8 @@ class NetboxInterface(Interface):
         if attrs == current_attrs:
             return self
 
-        nb_params = self.translate_attrs_for_netbox(attrs)
+        current_attrs.update(attrs)
+        nb_params = self.translate_attrs_for_netbox(current_attrs)
 
         try:
             intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
