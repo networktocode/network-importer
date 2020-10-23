@@ -493,6 +493,9 @@ class NetboxCable(Cable):
         Returns:
             NetboxCable: DSync object
         """
+
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
+
         interface_a = dsync.get(
             dsync.interface, identifier=dict(device_name=ids["device_a_name"], name=ids["interface_a_name"])
         )
@@ -504,14 +507,27 @@ class NetboxCable(Cable):
             interface_a = dsync.get_intf_from_netbox(
                 device_name=ids["device_a_name"], intf_name=ids["interface_a_name"]
             )
+            LOGGER.info(
+                "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                item.get_unique_id(),
+                dsync.name,
+                ids["device_a_name"],
+                ids["interface_a_name"],
+            )
+            return item
 
         if not interface_z:
             interface_z = dsync.get_intf_from_netbox(
                 device_name=ids["device_z_name"], intf_name=ids["interface_z_name"]
             )
-
-        if not interface_a or not interface_z:
-            return
+            LOGGER.info(
+                "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                item.get_unique_id(),
+                dsync.name,
+                ids["device_z_name"],
+                ids["interface_z_name"],
+            )
+            return item
 
         if interface_a.connected_endpoint_type:
             LOGGER.info(
@@ -520,7 +536,7 @@ class NetboxCable(Cable):
                 ids["device_a_name"],
                 ids["interface_a_name"],
             )
-            return
+            return item
 
         if interface_z.connected_endpoint_type:
             LOGGER.info(
@@ -529,7 +545,7 @@ class NetboxCable(Cable):
                 ids["device_z_name"],
                 ids["interface_z_name"],
             )
-            return
+            return item
 
         try:
             cable = dsync.netbox.dcim.cables.create(
@@ -540,12 +556,11 @@ class NetboxCable(Cable):
             )
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Cable %s in %s (%s)", ids, dsync.name, exc.error)
-            return
+            return item
 
         interface_a.connected_endpoint_type = "dcim.interface"
         interface_z.connected_endpoint_type = "dcim.interface"
 
-        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         LOGGER.info("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
         item.remote_id = cable.id
 
