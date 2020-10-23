@@ -82,7 +82,6 @@ class NetworkSettings(BaseSettings):
     global_delay_factor: int = 5
     banner_timeout: int = 15
     conn_timeout: int = 5
-
     fqdns: List[str] = list()  # List of valid FQDN that can be found in the network
 
     class Config:
