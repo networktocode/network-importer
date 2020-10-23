@@ -101,6 +101,8 @@ class NetworkImporter:
                     "fqdn": config.SETTINGS.inventory.fqdn,
                     "supported_platforms": config.SETTINGS.netbox.supported_platforms,
                     "global_delay_factor": config.SETTINGS.network.global_delay_factor,
+                    "banner_timeout": config.SETTINGS.network.banner_timeout,
+                    "conn_timeout": config.SETTINGS.network.conn_timeout,
                 },
             },
         )

@@ -57,6 +57,8 @@ class NetboxInventory(Inventory):
         supported_platforms: Optional[List[str]] = [],
         filter_parameters: Optional[Dict[str, Any]] = None,
         global_delay_factor: Optional[int] = 5,
+        banner_timeout: Optional[int] = 15,
+        conn_timeout: Optional[int] = 5,
         **kwargs: Any,
     ) -> None:
         """
@@ -76,6 +78,9 @@ class NetboxInventory(Inventory):
           use_primary_ip: Optional[bool] = True,
           fqdn: Optional[str] = None,
           supported_platforms: Optional[List[str]]
+          global_delay_factor: Optional[int] Global Delay factor for netmiko
+          banner_timeout: Optional[int] Banner Timeout for netmiko/paramiko
+          conn_timeout: Optional[int] Connection timeout for netmiko/paramiko
           **kwargs: Any:
 
         Returns:
@@ -112,6 +117,8 @@ class NetboxInventory(Inventory):
                 groups["global"]["connection_options"]["netmiko"]["extras"] = {
                     "secret": password,
                     "global_delay_factor": global_delay_factor,
+                    "banner_timeout": banner_timeout,
+                    "conn_timeout": conn_timeout,
                 }
                 groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
 
