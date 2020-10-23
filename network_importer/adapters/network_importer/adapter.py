@@ -188,7 +188,7 @@ class NetworkImporterAdapter(BaseAdapter):
             switchport_mode=intf["Switchport_Mode"],
         )
 
-        if "Description" in intf:
+        if "Description" in intf and intf["Description"]:
             interface.description = intf["Description"].strip()
 
         is_physical = is_interface_physical(interface.name)
