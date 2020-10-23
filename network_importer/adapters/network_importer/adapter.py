@@ -174,11 +174,12 @@ class NetworkImporterAdapter(BaseAdapter):
         Returns:
             Interface
         """
-        try:
-            self._check_batfish_interface_is_valid(intf)
-        except BatfishObjectNotValid as exc:
-            LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
-            return False
+
+        # try:
+        #     self._check_batfish_interface_is_valid(intf)
+        # except BatfishObjectNotValid as exc:
+        #     LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
+        #     return False
 
         interface = self.interface(
             name=intf["Interface"].interface,
