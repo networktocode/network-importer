@@ -16,7 +16,7 @@ limitations under the License.
 from network_importer.models import Vlan
 
 
-def test_add_device():
+def test_add_device_is_idempotent():
     """Validate that add device is workign properly and that the same device won't be added twice."""
     vlan = Vlan(vid=120, site_name="nyc")
     assert len(vlan.associated_devices) == 0
@@ -26,3 +26,16 @@ def test_add_device():
     assert len(vlan.associated_devices) == 2
     vlan.add_device("device1")
     assert len(vlan.associated_devices) == 2
+
+
+def test_add_device_sort():
+    """Validate that add_device is always sorting the list of associated devices."""
+    vlan = Vlan(vid=120, site_name="nyc")
+    vlan.add_device("device_B")
+    vlan.add_device("device_D")
+    assert len(vlan.associated_devices) == 2
+    assert vlan.associated_devices[0] == "device_B"
+    vlan.add_device("device_A")
+    assert vlan.associated_devices[0] == "device_A"
+    vlan.add_device("device_C")
+    assert vlan.associated_devices[2] == "device_C"

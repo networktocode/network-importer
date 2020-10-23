@@ -187,3 +187,4 @@ class Vlan(DSyncModel):
         """
         if device_name not in self.associated_devices:
             self.associated_devices.append(device_name)
+            self.associated_devices = sorted(self.associated_devices)
