@@ -188,9 +188,6 @@ class NetworkImporterAdapter(BaseAdapter):
         else:
             interface.is_virtual = False
 
-        # if is_physical and interface.speed:
-        # interface.speed = int(bf.Speed)
-
         if interface.switchport_mode == "FEX_FABRIC":
             interface.switchport_mode = "NONE"
 
@@ -431,14 +428,23 @@ class NetworkImporterAdapter(BaseAdapter):
         """
         Ensure the vlans configured for each interface exist in the system
         On some vendors, it's possible to have a list larger than what is really available
+
+        In the process, ensure that all devices are associated with the right vlans
         """
 
-        vlan_uids = list(self._data[self.vlan.get_type()].keys())
+        # Get a dictionnary with all vlans organized by uid
+        vlans = {vlan.get_unique_id(): vlan for vlan in self.get_all(self.vlan)}
         interfaces = self.get_all(self.interface)
 
         for intf in interfaces:
             if intf.allowed_vlans:
-                intf.allowed_vlans = [vlan for vlan in intf.allowed_vlans if vlan in vlan_uids]
+                clean_allowed_vlans = []
+                for vlan in intf.allowed_vlans:
+                    if vlan in vlans.keys():
+                        clean_allowed_vlans.append(vlan)
+                        vlans[vlan].add_device(intf.device_name)
+
+                intf.allowed_vlans = clean_allowed_vlans
 
     def validate_cabling(self):
         """

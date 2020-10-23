@@ -9,6 +9,8 @@ from dsync.diff import DiffElement
 
 from network_importer.models import Site, Device, Interface
 
+from network_importer.adapters.network_importer.adapter import NetworkImporterAdapter
+
 from network_importer.adapters.netbox_api.adapter import NetBoxAPIAdapter
 from network_importer.adapters.netbox_api.models import NetboxSite, NetboxDevice, NetboxInterface, NetboxVlan
 
@@ -194,5 +196,13 @@ def netbox_api_base():
     dsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
     dsync.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
     dsync.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
+
+    return dsync
+
+
+@pytest.fixture
+def network_importer_base():
+    """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
+    dsync = NetworkImporterAdapter(nornir=None)
 
     return dsync
