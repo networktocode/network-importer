@@ -156,7 +156,7 @@ class NetworkImporterAdapter(BaseAdapter):
             self.load_batfish_interface(
                 site=site,
                 device=device,
-                intf=intf,
+                intf=dict(intf),
                 interface_vlans=interface_vlans_mapping[intf["Interface"].interface],
             )
 
@@ -175,11 +175,20 @@ class NetworkImporterAdapter(BaseAdapter):
             Interface
         """
 
-        # try:
-        #     self._check_batfish_interface_is_valid(intf)
-        # except BatfishObjectNotValid as exc:
-        #     LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
-        #     return False
+        try:
+            self._check_batfish_interface_is_valid(intf)
+        except BatfishObjectNotValid as exc:
+            LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
+            return False
+
+        # Since it's possible to import vlans from the config and or from the CLI, we need to track 2 differents flags
+        #  import_vlans = import the vlans information to the interface, populate allowed_vlans, access_vlan and mode
+        #  create_vlans = create the vlans object
+        import_vlans = create_vlans = False
+        if config.SETTINGS.main.import_vlans in ["config", True, "yes"]:
+            create_vlans = True
+        if config.SETTINGS.main.import_vlans not in [False, "no"]:
+            import_vlans = True
 
         interface = self.interface(
             name=intf["Interface"].interface,
@@ -221,9 +230,10 @@ class NetworkImporterAdapter(BaseAdapter):
             if intf["Encapsulation_VLAN"]:
                 interface.mode = "L3_SUB_VLAN"
                 vlan = self.vlan(vid=intf["Encapsulation_VLAN"], site_name=site.name)
-                if config.SETTINGS.main.import_vlans in ["config", True]:
+                if create_vlans:
                     vlan, _ = self.get_or_create_vlan(vlan)
-                interface.allowed_vlans = [vlan.get_unique_id()]
+                if import_vlans:
+                    interface.allowed_vlans = [vlan.get_unique_id()]
             else:
                 interface.mode = interface.switchport_mode
 
@@ -231,21 +241,24 @@ class NetworkImporterAdapter(BaseAdapter):
             vids = expand_vlans_list(intf["Allowed_VLANs"])
             for vid in vids:
                 vlan = self.vlan(vid=vid, site_name=site.name)
-                if config.SETTINGS.main.import_vlans in ["config", True]:
+                if create_vlans:
                     vlan, _ = self.get_or_create_vlan(vlan)
-                interface.allowed_vlans.append(vlan.get_unique_id())
+                if import_vlans:
+                    interface.allowed_vlans.append(vlan.get_unique_id())
 
             if intf["Native_VLAN"]:
                 native_vlan = self.vlan(vid=intf["Native_VLAN"], site_name=site.name)
-                if config.SETTINGS.main.import_vlans in ["config", True]:
+                if create_vlans:
                     native_vlan, _ = self.get_or_create_vlan(native_vlan)
-                interface.access_vlan = native_vlan.get_unique_id()
+                if import_vlans:
+                    interface.access_vlan = native_vlan.get_unique_id()
 
         elif interface.mode == "ACCESS" and intf["Access_VLAN"]:
             vlan = self.vlan(vid=intf["Access_VLAN"], site_name=site.name)
-            if config.SETTINGS.main.import_vlans in ["config", True]:
+            if create_vlans:
                 vlan, _ = self.get_or_create_vlan(vlan)
-            interface.access_vlan = vlan.get_unique_id()
+            if import_vlans:
+                interface.access_vlan = vlan.get_unique_id()
 
         if interface.is_lag is False and interface.is_lag_member is None and intf["Channel_Group"]:
             interface.parent = self.interface(name=intf["Channel_Group"], device_name=device.name).get_unique_id()
