@@ -15,7 +15,7 @@ limitations under the License.
 from pybatfish.datamodel.primitives import Interface as BFInterface
 
 import network_importer.config as config
-from network_importer.models import Site, Device, Interface
+from network_importer.models import Interface
 
 ETHERNET_1 = {
     "Interface": BFInterface(hostname="spine1", interface="GigabitEthernet0/0/0"),
