@@ -18,14 +18,11 @@ import network_importer.config as config
 from network_importer.models import Site, Device, Interface
 
 
-def test_load_batfish_interface_loopback(network_importer_base):
+def test_load_batfish_interface_loopback(network_importer_base, site_sfo, dev_spine1):
 
     adapter = network_importer_base
-
-    site1 = Site(name="sfo")
-    device1 = Device(name="spine1", site_name="sfo")
-    adapter.add(site1)
-    adapter.add(device1)
+    adapter.add(site_sfo)
+    adapter.add(dev_spine1)
 
     config.load()
 
@@ -43,7 +40,7 @@ def test_load_batfish_interface_loopback(network_importer_base):
         "Channel_Group": None,
     }
 
-    intf = adapter.load_batfish_interface(site=site1, device=device1, intf=data)
+    intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=data)
 
     assert isinstance(intf, Interface)
     assert intf.is_virtual
@@ -51,14 +48,11 @@ def test_load_batfish_interface_loopback(network_importer_base):
     assert not intf.is_lag_member
 
 
-def test_load_batfish_interface_phy_intf_ether_std(network_importer_base):
+def test_load_batfish_interface_phy_intf_ether_std(network_importer_base, site_sfo, dev_spine1):
 
     adapter = network_importer_base
-
-    site1 = Site(name="sfo")
-    device1 = Device(name="spine1", site_name="sfo")
-    adapter.add(site1)
-    adapter.add(device1)
+    adapter.add(site_sfo)
+    adapter.add(dev_spine1)
 
     config.load()
 
@@ -76,7 +70,7 @@ def test_load_batfish_interface_phy_intf_ether_std(network_importer_base):
         "Channel_Group": None,
     }
 
-    intf = adapter.load_batfish_interface(site=site1, device=device1, intf=data)
+    intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=data)
 
     assert isinstance(intf, Interface)
     assert not intf.is_virtual
@@ -84,14 +78,11 @@ def test_load_batfish_interface_phy_intf_ether_std(network_importer_base):
     assert not intf.is_lag_member
 
 
-def test_load_batfish_interface_intf_ether_sub(network_importer_base):
+def test_load_batfish_interface_intf_ether_sub(network_importer_base, site_sfo, dev_spine1):
 
     adapter = network_importer_base
-
-    site1 = Site(name="sfo")
-    device1 = Device(name="spine1", site_name="sfo")
-    adapter.add(site1)
-    adapter.add(device1)
+    adapter.add(site_sfo)
+    adapter.add(dev_spine1)
 
     config.load()
 
@@ -109,7 +100,7 @@ def test_load_batfish_interface_intf_ether_sub(network_importer_base):
         "Channel_Group": None,
     }
 
-    intf = adapter.load_batfish_interface(site=site1, device=device1, intf=data)
+    intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=data)
 
     assert isinstance(intf, Interface)
     assert intf.is_virtual
@@ -118,14 +109,11 @@ def test_load_batfish_interface_intf_ether_sub(network_importer_base):
     assert intf.allowed_vlans == ["sfo__201"]
 
 
-def test_load_batfish_interface_intf_lag_member(network_importer_base):
+def test_load_batfish_interface_intf_lag_member(network_importer_base, site_sfo, dev_spine1):
 
     adapter = network_importer_base
-
-    site1 = Site(name="sfo")
-    device1 = Device(name="spine1", site_name="sfo")
-    adapter.add(site1)
-    adapter.add(device1)
+    adapter.add(site_sfo)
+    adapter.add(dev_spine1)
 
     config.load()
 
@@ -144,7 +132,7 @@ def test_load_batfish_interface_intf_lag_member(network_importer_base):
         "Channel_Group": "Port-Channel111",
     }
 
-    intf = adapter.load_batfish_interface(site=site1, device=device1, intf=data)
+    intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=data)
 
     assert isinstance(intf, Interface)
     assert not intf.is_virtual
