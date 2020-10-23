@@ -175,11 +175,11 @@ class NetworkImporterAdapter(BaseAdapter):
             Interface
         """
 
-        try:
-            self._check_batfish_interface_is_valid(intf)
-        except BatfishObjectNotValid as exc:
-            LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
-            return False
+        # try:
+        #     self._check_batfish_interface_is_valid(intf)
+        # except BatfishObjectNotValid as exc:
+        #     LOGGER.warning("Unable to add an interface on %s, the data is not valid (%s)", device.name, str(exc))
+        #     return False
 
         # Since it's possible to import vlans from the config and or from the CLI, we need to track 2 differents flags
         #  import_vlans = import the vlans information to the interface, populate allowed_vlans, access_vlan and mode
