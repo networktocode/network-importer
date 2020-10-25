@@ -113,7 +113,7 @@ class GetConfig(BaseProcessor):
         changed = False
 
         if host.name in self.previous_md5 and self.previous_md5[host.name] == self.current_md5[host.name]:
-            LOGGER.debug("%s | Latest config file already present ...", task.host.name)
+            LOGGER.info("%s | Latest config file already present ...", task.host.name)
         else:
             LOGGER.info("%s | Configuration file updated", task.host.name)
             changed = True
