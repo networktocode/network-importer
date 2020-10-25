@@ -17,6 +17,7 @@ import logging
 import pynetbox
 
 from dsync.exceptions import ObjectNotFound
+from .exceptions import NetboxObjectNotValid
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.models import (  # pylint: disable=import-error
     Site,
@@ -65,6 +66,12 @@ class NetboxInterface(Interface):
 
         # Identify the id of the device this interface is attached to
         device = self.dsync.get(self.dsync.device, identifier=self.device_name)
+        if not device:
+            raise ObjectNotFound(f"device {self.device_name}, not found")
+
+        if not device.remote_id:
+            raise NetboxObjectNotValid(f"device {self.device_name}, is missing a remote_id")
+
         nb_params["device"] = device.remote_id
         nb_params["name"] = self.name
 
@@ -134,18 +141,22 @@ class NetboxInterface(Interface):
         Returns:
             NetboxInterface: DSync object newly created
         """
-
         item = super().create(ids=ids, dsync=dsync, attrs=attrs)
-        nb_params = item.translate_attrs_for_netbox(attrs)
 
         try:
+            nb_params = item.translate_attrs_for_netbox(attrs)
             intf = dsync.netbox.dcim.interfaces.create(**nb_params)
             LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning(
                 "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, exc.error
             )
-            return
+            return item
+        except Exception as exc:
+            LOGGER.warning(
+                "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, str(exc)
+            )
+            return item
 
         item.remote_id = intf.id
         return item
