@@ -510,6 +510,7 @@ class DSync:
                 source_root=source,
                 flags=flags,
                 logger=log,
+                diff_class=diff_class,
             )
 
             for diff_element in diff_elements:
@@ -537,6 +538,7 @@ class DSync:
         source_root: "DSync",
         flags: DSyncFlags = DSyncFlags.NONE,
         logger: structlog.BoundLogger = None,
+        diff_class: Type[Diff] = Diff,
     ) -> List[DiffElement]:
         """Generate a list of DiffElement between the given lists of objects.
 
@@ -587,6 +589,7 @@ class DSync:
                     keys=src_obj.get_identifiers(),
                     source_name=source_root.name,
                     dest_name=self.name,
+                    diff_class=diff_class,
                 )
             elif dst_obj:
                 log = log.bind(model=dst_obj.get_type(), unique_id=dst_obj.get_unique_id())
@@ -599,6 +602,7 @@ class DSync:
                     keys=dst_obj.get_identifiers(),
                     source_name=source_root.name,
                     dest_name=self.name,
+                    diff_class=diff_class,
                 )
 
             if src_obj:
@@ -607,7 +611,9 @@ class DSync:
                 diff_element.add_attrs(source=None, dest=dst_obj.get_attrs())
 
             # Recursively diff the children of src_obj and dst_obj and attach the resulting diffs to the diff_element
-            self._diff_child_objects(diff_element, src_obj, dst_obj, source_root, flags=flags, logger=logger)
+            self._diff_child_objects(
+                diff_element, src_obj, dst_obj, source_root, flags=flags, logger=logger, diff_class=diff_class
+            )
 
             diffs.append(diff_element)
 
@@ -643,6 +649,7 @@ class DSync:
         source_root: "DSync",
         flags: DSyncFlags,
         logger: structlog.BoundLogger,
+        diff_class: Type[Diff] = Diff,
     ):
         """For all children of the given DSyncModel pair, diff them recursively, adding diffs to the given diff_element.
 
@@ -674,7 +681,12 @@ class DSync:
             dst_objs = self.get_by_uids(getattr(dst_obj, child_fieldname), child_type) if dst_obj else []
 
             for child_diff_element in self._diff_objects(
-                source=src_objs, dest=dst_objs, source_root=source_root, flags=flags, logger=logger,
+                source=src_objs,
+                dest=dst_objs,
+                source_root=source_root,
+                flags=flags,
+                logger=logger,
+                diff_class=diff_class,
             ):
                 diff_element.add_child(child_diff_element)
 
