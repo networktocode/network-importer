@@ -362,6 +362,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         Returns:
             NetBoxInterface, bool: Interface in DSync format
         """
+        LOGGER.debug("Searching for '%s' '%s' in %s", device_name, intf_name, self.name)
         intfs = self.netbox.dcim.interfaces.filter(name=intf_name, device=device_name)
 
         if len(intfs) == 0:
