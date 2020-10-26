@@ -6,7 +6,6 @@ authors = ["Damien Garros <dgarros@gmail.com>"]
 license = "Apache-2.0"
 packages = [
     { include = "network_importer" },
-    { include = "dsync" },
 ]
 
 [tool.poetry.dependencies]
@@ -25,6 +24,7 @@ pyats = "^20.9"
 netmiko = "^3.3.2"
 ntc-templates = "^1.6.0"
 structlog = "^20.1.0"
+diffsync = "^1.0.0"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"

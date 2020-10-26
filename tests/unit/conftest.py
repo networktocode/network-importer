@@ -2,10 +2,10 @@
 import pytest
 
 import pynetbox
-from dsync import DSync
-from dsync.diff import DiffElement
+from diffsync import DiffSync
+from diffsync.diff import DiffElement
 
-# from dsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
+# from diffsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
 
 from network_importer.models import Site, Device, Interface, Vlan
 
@@ -70,8 +70,8 @@ def dev_spine2():
     return Device(name="spine2", site_name="sfo")
 
 
-class GenericBackend(DSync):
-    """An example semi-abstract subclass of DSync."""
+class GenericBackend(DiffSync):
+    """An example semi-abstract subclass of DiffSync."""
 
     site = Site
     device = Device
@@ -98,7 +98,7 @@ class GenericBackend(DSync):
 
 
 class BackendA(GenericBackend):
-    """An example concrete subclass of DSync."""
+    """An example concrete subclass of DiffSync."""
 
     DATA = {
         "nyc": {
@@ -132,14 +132,14 @@ class BackendA(GenericBackend):
 
 @pytest.fixture
 def backend_a():
-    """Provide an instance of BackendA subclass of DSync."""
-    dsync = BackendA()
-    dsync.load()
-    return dsync
+    """Provide an instance of BackendA subclass of DiffSync."""
+    diffsync = BackendA()
+    diffsync.load()
+    return diffsync
 
 
 class BackendB(GenericBackend):
-    """Another DSync concrete subclass with different data from BackendA."""
+    """Another DiffSync concrete subclass with different data from BackendA."""
 
     DATA = {
         "nyc": {
@@ -173,10 +173,10 @@ class BackendB(GenericBackend):
 
 @pytest.fixture
 def backend_b():
-    """Provide an instance of BackendB subclass of DSync."""
-    dsync = BackendB()
-    dsync.load()
-    return dsync
+    """Provide an instance of BackendB subclass of DiffSync."""
+    diffsync = BackendB()
+    diffsync.load()
+    return diffsync
 
 
 @pytest.fixture
@@ -200,34 +200,34 @@ def diff_children_nyc_dev1():
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
+    diffsync = NetBoxAPIAdapter(nornir=None)
+    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
 
-    return dsync
+    return diffsync
 
 
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    dsync = NetBoxAPIAdapter(nornir=None)
-    dsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
+    diffsync = NetBoxAPIAdapter(nornir=None)
+    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
 
-    dsync.add(NetboxSite(name="HQ", remote_id=10))
-    dsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
-    dsync.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
-    dsync.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
+    diffsync.add(NetboxSite(name="HQ", remote_id=10))
+    diffsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    diffsync.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
+    diffsync.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
 
-    return dsync
+    return diffsync
 
 
 @pytest.fixture
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
-    dsync = NetworkImporterAdapter(nornir=None)
+    diffsync = NetworkImporterAdapter(nornir=None)
 
-    dsync.add(Site(name="HQ"))
-    dsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
-    dsync.add(Interface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"))
-    dsync.add(Vlan(vid=111, site_name="HQ"))
+    diffsync.add(Site(name="HQ"))
+    diffsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    diffsync.add(Interface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"))
+    diffsync.add(Vlan(vid=111, site_name="HQ"))
 
-    return dsync
+    return diffsync

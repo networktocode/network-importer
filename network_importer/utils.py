@@ -138,12 +138,12 @@ def is_interface_lag(name):
 def is_mac_address(data):
     """Evaluate if a given string is a mac address.
 
-  Args:
-      data (str): string to evaluate
+    Args:
+        data (str): string to evaluate
 
-  Returns:
-    bool: True if the string provided is a mac address, false otherwise
-  """
+    Returns:
+      bool: True if the string provided is a mac address, false otherwise
+    """
     mac_address_chars = r"^[0-9a-fA-F\.\-\:]+$"
     hex_chars = r"[0-9a-fA-F]"
 

@@ -20,7 +20,7 @@ import warnings
 
 import click
 import urllib3
-from dsync.logging import enable_console_logging
+from diffsync.logging import enable_console_logging
 
 urllib3.disable_warnings()
 
@@ -90,7 +90,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     else:
         LOGGER.setLevel(logging.INFO)
 
-    # Disable logging in console for DSync
+    # Disable logging in console for DiffSync
     enable_console_logging(verbosity=0)
 
     filters = {}
