@@ -15,10 +15,10 @@ from typing import Optional
 import logging
 
 import pynetbox
-
 from dsync.exceptions import ObjectNotFound
-from .exceptions import NetboxObjectNotValid
+
 import network_importer.config as config  # pylint: disable=import-error
+from network_importer.adapters.netbox_api.exceptions import NetboxObjectNotValid
 from network_importer.models import (  # pylint: disable=import-error
     Site,
     Device,
@@ -152,7 +152,7 @@ class NetboxInterface(Interface):
                 "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, exc.error
             )
             return item
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             LOGGER.warning(
                 "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, str(exc)
             )
