@@ -114,7 +114,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     elif check:
         diff = ni.diff()
-        diff.print_detailed()
+        print(diff.str())
 
     if config.SETTINGS.logs.performance_log:
         perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
