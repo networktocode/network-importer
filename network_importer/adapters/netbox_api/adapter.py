@@ -171,6 +171,10 @@ class NetBoxAPIAdapter(BaseAdapter):
             mtu=intf.mtu,
         )
 
+        import_vlans = False
+        if config.SETTINGS.main.import_vlans not in [False, "no"]:
+            import_vlans = True
+
         # Define status if it's enabled in the config file
         if config.SETTINGS.main.import_intf_status:
             interface.active = intf.enabled
@@ -221,12 +225,12 @@ class NetBoxAPIAdapter(BaseAdapter):
         elif intf.type and intf.type.value == 1600:
             interface.speed = 100000000000
 
-        if site and intf.tagged_vlans:
+        if site and intf.tagged_vlans and import_vlans:
             for vid in [v.vid for v in intf.tagged_vlans]:
                 vlan, new = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
                 interface.allowed_vlans.append(vlan.get_unique_id())
 
-        if site and intf.untagged_vlan:
+        if site and intf.untagged_vlan and import_vlans:
             vlan, new = self.get_or_create_vlan(
                 vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
             )
@@ -361,7 +365,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         intfs = self.netbox.dcim.interfaces.filter(name=intf_name, device=device_name)
 
         if len(intfs) == 0:
-            LOGGER.debug("Unable to find the interface in NetBox for %s %s, nothing returned", device_name, intf_name)
+            # LOGGER.debug("Unable to find the interface in NetBox for %s %s, nothing returned", device_name, intf_name)
             return False
 
         if len(intfs) > 1:

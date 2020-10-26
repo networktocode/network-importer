@@ -15,9 +15,10 @@ from typing import Optional
 import logging
 
 import pynetbox
-
 from dsync.exceptions import ObjectNotFound
+
 import network_importer.config as config  # pylint: disable=import-error
+from network_importer.adapters.netbox_api.exceptions import NetboxObjectNotValid
 from network_importer.models import (  # pylint: disable=import-error
     Site,
     Device,
@@ -65,6 +66,12 @@ class NetboxInterface(Interface):
 
         # Identify the id of the device this interface is attached to
         device = self.dsync.get(self.dsync.device, identifier=self.device_name)
+        if not device:
+            raise ObjectNotFound(f"device {self.device_name}, not found")
+
+        if not device.remote_id:
+            raise NetboxObjectNotValid(f"device {self.device_name}, is missing a remote_id")
+
         nb_params["device"] = device.remote_id
         nb_params["name"] = self.name
 
@@ -84,7 +91,7 @@ class NetboxInterface(Interface):
         if "switchport_mode" in attrs and attrs["switchport_mode"] == "ACCESS":
             nb_params["mode"] = "access"
         elif "switchport_mode" in attrs and attrs["switchport_mode"] == "TRUNK":
-            nb_params["switchport_mode"] = "tagged"
+            nb_params["mode"] = "tagged"
 
         # if is None:
         #     intf_properties["enabled"] = intf.active
@@ -134,18 +141,22 @@ class NetboxInterface(Interface):
         Returns:
             NetboxInterface: DSync object newly created
         """
-
         item = super().create(ids=ids, dsync=dsync, attrs=attrs)
-        nb_params = item.translate_attrs_for_netbox(attrs)
 
         try:
+            nb_params = item.translate_attrs_for_netbox(attrs)
             intf = dsync.netbox.dcim.interfaces.create(**nb_params)
             LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning(
                 "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, exc.error
             )
-            return
+            return item
+        except Exception as exc:  # pylint: disable=broad-except
+            LOGGER.warning(
+                "Unable to create interface %s on %s in %s (%s)", ids["name"], ids["device_name"], dsync.name, str(exc)
+            )
+            return item
 
         item.remote_id = intf.id
         return item
@@ -169,8 +180,9 @@ class NetboxInterface(Interface):
         if attrs == current_attrs:
             return self
 
-        nb_params = self.translate_attrs_for_netbox(attrs)
-
+        current_attrs.update(attrs)
+        nb_params = self.translate_attrs_for_netbox(current_attrs)
+        LOGGER.debug("Update interface : %s", nb_params)
         try:
             intf = self.dsync.netbox.dcim.interfaces.get(self.remote_id)
             intf.update(data=nb_params)
@@ -493,6 +505,9 @@ class NetboxCable(Cable):
         Returns:
             NetboxCable: DSync object
         """
+
+        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
+
         interface_a = dsync.get(
             dsync.interface, identifier=dict(device_name=ids["device_a_name"], name=ids["interface_a_name"])
         )
@@ -504,14 +519,29 @@ class NetboxCable(Cable):
             interface_a = dsync.get_intf_from_netbox(
                 device_name=ids["device_a_name"], intf_name=ids["interface_a_name"]
             )
+            if not interface_a:
+                LOGGER.info(
+                    "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                    item.get_unique_id(),
+                    dsync.name,
+                    ids["device_a_name"],
+                    ids["interface_a_name"],
+                )
+                return item
 
         if not interface_z:
             interface_z = dsync.get_intf_from_netbox(
                 device_name=ids["device_z_name"], intf_name=ids["interface_z_name"]
             )
-
-        if not interface_a or not interface_z:
-            return
+            if not interface_z:
+                LOGGER.info(
+                    "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                    item.get_unique_id(),
+                    dsync.name,
+                    ids["device_z_name"],
+                    ids["interface_z_name"],
+                )
+                return item
 
         if interface_a.connected_endpoint_type:
             LOGGER.info(
@@ -520,7 +550,7 @@ class NetboxCable(Cable):
                 ids["device_a_name"],
                 ids["interface_a_name"],
             )
-            return
+            return item
 
         if interface_z.connected_endpoint_type:
             LOGGER.info(
@@ -529,7 +559,7 @@ class NetboxCable(Cable):
                 ids["device_z_name"],
                 ids["interface_z_name"],
             )
-            return
+            return item
 
         try:
             cable = dsync.netbox.dcim.cables.create(
@@ -540,28 +570,34 @@ class NetboxCable(Cable):
             )
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Cable %s in %s (%s)", ids, dsync.name, exc.error)
-            return
+            return item
 
         interface_a.connected_endpoint_type = "dcim.interface"
         interface_z.connected_endpoint_type = "dcim.interface"
 
-        item = super().create(ids=ids, dsync=dsync, attrs=attrs)
         LOGGER.info("Created Cable %s (%s) in NetBox", item.get_unique_id(), cable.id)
         item.remote_id = cable.id
 
         return item
 
     def delete(self):  #  pylint: disable=unused-argument
-        """Delete a Cable in NetBox
+        """Do not Delete the Cable in NetBox, just print a warning message
 
         Returns:
             NetboxCable: DSync object
         """
-        try:
-            cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
-            cable.delete()
-        except pynetbox.core.query.RequestError as exc:
-            LOGGER.warning("Unable to delete the cable %s in %s (%s)", self.get_unique_id(), self.dsync.name, exc.error)
+        LOGGER.warning(
+            "Cable %s is present in %s but not in the Network, please delete it manually if it shouldn't be in %s",
+            self.get_unique_id(),
+            self.dsync.name,
+            self.dsync.name,
+        )
+
+        # try:
+        #     cable = self.dsync.netbox.dcim.cables.get(self.remote_id)
+        #     cable.delete()
+        # except pynetbox.core.query.RequestError as exc:
+        #
 
         super().delete()
         return self
