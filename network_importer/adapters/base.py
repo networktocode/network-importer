@@ -1,7 +1,7 @@
-from dsync import DSync
+from diffsync import DiffSync
 
 
-class BaseAdapter(DSync):
+class BaseAdapter(DiffSync):
     def __init__(self, nornir):
         super().__init__()
         self.nornir = nornir
@@ -27,10 +27,10 @@ class BaseAdapter(DSync):
         """Add a new object or retrieve it if it already exists
 
         Args:
-            obj (DSyncModel): DSyncModel oject
+            obj (DiffSyncModel): DiffSyncModel oject
 
         Returns:
-            DSyncModel: DSyncObject retrieved from the datastore
+            DiffSyncModel: DiffSyncObject retrieved from the datastore
             Bool: True if the object was created
         """
         modelname = obj.get_type()

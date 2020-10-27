@@ -321,7 +321,7 @@ class NetworkImporterAdapter(BaseAdapter):
         """Try to extract a prefix from an IP address and save it locally.
 
         Args:
-            ip_address (IPAddress): DSync IPAddress object
+            ip_address (IPAddress): DiffSync IPAddress object
             site (Site): Site object the prefix is part of.
             vlan (str): Identifier of the vlan
 

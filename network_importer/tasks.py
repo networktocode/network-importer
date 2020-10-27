@@ -138,7 +138,7 @@ def check_if_reachable(task: Task) -> Result:
 
     Will change the status of the variable `is_reachable` in host.data based on the results
 
-   Args:
+    Args:
       task: Nornir Task
 
     Returns:

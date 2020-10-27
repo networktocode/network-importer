@@ -16,6 +16,8 @@ import warnings
 
 import pynetbox
 
+from diffsync.exceptions import ObjectAlreadyExists
+
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.base import BaseAdapter  # pylint: disable=import-error
 from network_importer.adapters.netbox_api.models import (  # pylint: disable=import-error
@@ -28,8 +30,6 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxVlan,
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
-
-from dsync.exceptions import ObjectAlreadyExists
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -112,7 +112,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         """Import all interfaces and IP address from Netbox for a given device.
 
         Args:
-            device (DSyncModel): Device to import
+            device (DiffSyncModel): Device to import
         """
         self.load_netbox_interface(site=site, device=device)
         self.load_netbox_ip_address(site=site, device=device)
@@ -150,7 +150,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         vlans = self.netbox.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
-            vlan = self.vlan.create_from_pynetbox(dsync=self, obj=nb_vlan, site_name=site.name)
+            vlan = self.vlan.create_from_pynetbox(diffsync=self, obj=nb_vlan, site_name=site.name)
             self.add(vlan)
             site.add_child(vlan)
 
@@ -249,8 +249,8 @@ class NetBoxAPIAdapter(BaseAdapter):
         """Import all interfaces & Ips from Netbox for a given device.
 
         Args:
-            site (NetboxSite): DSync object representing a site
-            device (NetboxDevice): DSync object representing the device
+            site (NetboxSite): DiffSync object representing a site
+            device (NetboxDevice): DiffSync object representing the device
         """
 
         intfs = self.netbox.dcim.interfaces.filter(device=device.name)
@@ -263,8 +263,8 @@ class NetBoxAPIAdapter(BaseAdapter):
         """Import all IP addresses from NetBox for a given device
 
         Args:
-            site (NetboxSite): DSync object representing a site
-            device (NetboxDevice): DSync object representing the device
+            site (NetboxSite): DiffSync object representing a site
+            device (NetboxDevice): DiffSync object representing the device
         """
         if not config.SETTINGS.main.import_ips:
             return
@@ -360,7 +360,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             intf_name (str): name of the interface in Netbox
 
         Returns:
-            NetBoxInterface, bool: Interface in DSync format
+            NetBoxInterface, bool: Interface in DiffSync format
         """
         intfs = self.netbox.dcim.interfaces.filter(name=intf_name, device=device_name)
 

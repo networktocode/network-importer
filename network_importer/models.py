@@ -13,12 +13,11 @@ limitations under the License.
 """
 from typing import List, Optional
 
-from dsync import DSyncModel
+from diffsync import DiffSyncModel
 
 
-class Site(DSyncModel):
-    """
-    """
+class Site(DiffSyncModel):
+    """"""
 
     _modelname = "site"
     _identifiers = ("name",)
@@ -29,9 +28,8 @@ class Site(DSyncModel):
     vlans: List[str] = list()
 
 
-class Device(DSyncModel):
-    """
-    """
+class Device(DiffSyncModel):
+    """"""
 
     _modelname = "device"
     _identifiers = ("name",)
@@ -48,9 +46,8 @@ class Device(DSyncModel):
     vendor: Optional[str]
 
 
-class Interface(DSyncModel):
-    """
-    """
+class Interface(DiffSyncModel):
+    """"""
 
     _modelname = "interface"
     _identifiers = ("device_name", "name")
@@ -90,9 +87,8 @@ class Interface(DSyncModel):
     ips: List[str] = list()
 
 
-class IPAddress(DSyncModel):
-    """
-    """
+class IPAddress(DiffSyncModel):
+    """"""
 
     _modelname = "ip_address"
     _identifiers = ("address",)
@@ -103,9 +99,8 @@ class IPAddress(DSyncModel):
     device_name: Optional[str]
 
 
-class Prefix(DSyncModel):
-    """
-    """
+class Prefix(DiffSyncModel):
+    """"""
 
     _modelname = "prefix"
     _identifiers = ("site_name", "prefix")
@@ -116,7 +111,7 @@ class Prefix(DSyncModel):
     vlan: Optional[str]
 
 
-class Cable(DSyncModel):
+class Cable(DiffSyncModel):
     """ """
 
     _modelname = "cable"
@@ -170,7 +165,7 @@ class Cable(DSyncModel):
         raise ValueError("side must be either 'a' or 'z'")
 
 
-class Vlan(DSyncModel):
+class Vlan(DiffSyncModel):
     """ """
 
     _modelname = "vlan"

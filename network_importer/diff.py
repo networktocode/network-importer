@@ -1,5 +1,5 @@
 from collections import defaultdict
-from dsync.diff import Diff
+from diffsync.diff import Diff
 
 
 class NetworkImporterDiff(Diff):
