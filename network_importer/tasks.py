@@ -134,15 +134,15 @@ def device_save_hostvars(task: Task) -> Result:
 
 def check_if_reachable(task: Task) -> Result:
     """
-     Check if a device is reachable by doing a TCP ping it on port 22
+    Check if a device is reachable by doing a TCP ping it on port 22
 
-     Will change the status of the variable `is_reachable` in host.data based on the results
+    Will change the status of the variable `is_reachable` in host.data based on the results
 
     Args:
-       task: Nornir Task
+      task: Nornir Task
 
-     Returns:
-       Result:
+    Returns:
+      Result:
     """
 
     port_to_check = 22
