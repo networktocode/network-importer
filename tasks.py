@@ -236,7 +236,7 @@ def tests(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     black(context, name, image_ver, local)
     flake8(context, name, image_ver, local)
     pylint(context, name, image_ver, local)
-    # yamllint(context, name, image_ver, local)
+    yamllint(context, name, image_ver, local)
     pydocstyle(context, name, image_ver, local)
     bandit(context, name, image_ver, local)
     pytest(context, name, image_ver, local)
