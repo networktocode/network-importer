@@ -1,4 +1,5 @@
-"""
+"""Collection of Nornir tasks for the network importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,7 +34,6 @@ def save_data_to_file(host, filename, content):
       filename (str): Name of the output file where the data will be saved
       content (dict or list): Content to save in the file
     """
-
     directory = config.SETTINGS.main.data_directory
     filepath = f"{directory}/{host}/{filename}.json"
 
@@ -51,7 +51,6 @@ def get_data_from_file(host, filename):
     Returns:
         bool, dict or list, depending on the content of the file
     """
-
     directory = config.SETTINGS.main.data_directory
     filepath = f"{directory}/{host}/{filename}.json"
 
@@ -62,7 +61,7 @@ def get_data_from_file(host, filename):
     try:
         with open(filepath) as file_:
             data = json.load(file_)
-    except:
+    except:  # noqa: E722 # pylint: disable=bare-except
         LOGGER.warning("%s | Unable to load the cache for %s", host, filename)
         return False
 
@@ -75,7 +74,6 @@ def check_data_dir(host):
     Args:
       host (str): Name of the host
     """
-
     directory = config.SETTINGS.main.data_directory
     host_dir = f"{directory}/{host}"
 
@@ -84,16 +82,14 @@ def check_data_dir(host):
 
 
 def device_save_hostvars(task: Task) -> Result:
-    """
-    Save the device hostvars into a yaml file
+    """Save the device hostvars into a yaml file.
 
     Args:
       task (Task): Nornir Task
 
     Returns:
-      Result
+      Result: Nornir Result
     """
-
     if not task.host.data["obj"].hostvars:
         return Result(host=task.host)
 
@@ -133,8 +129,7 @@ def device_save_hostvars(task: Task) -> Result:
 
 
 def check_if_reachable(task: Task) -> Result:
-    """
-    Check if a device is reachable by doing a TCP ping it on port 22
+    """Check if a device is reachable by doing a TCP ping it on port 22.
 
     Will change the status of the variable `is_reachable` in host.data based on the results
 
@@ -142,13 +137,12 @@ def check_if_reachable(task: Task) -> Result:
       task: Nornir Task
 
     Returns:
-      Result:
+       Result: Nornir Result
     """
-
     port_to_check = 22
     try:
         results = task.run(task=tcp_ping, ports=[port_to_check])
-    except:
+    except:  # noqa: E722 # pylint: disable=bare-except
         LOGGER.debug(
             "An exception occured while running the reachability test (tcp_ping)", exc_info=True,
         )

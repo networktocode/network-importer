@@ -1,3 +1,17 @@
+"""default network_importer driver for cisco.
+
+(c) 2020 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import logging
 
 from nornir.plugins.tasks.networking import netmiko_send_command
@@ -63,6 +77,15 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
     @staticmethod
     def get_neighbors(task: Task) -> Result:
+        """Get a list of neighbors from the device.
+
+        Args:
+            task (Task): Nornir Task
+
+        Returns:
+            Result: Nornir Result object with a dict as a result containing the neighbors
+            The format of the result but must be similar to Neighbors defined in network_importer.processors.get_neighbors
+        """
         LOGGER.debug("Executing get_neighbor for %s (%s)", task.host.name, task.host.platform)
 
         if config.SETTINGS.main.import_cabling == "lldp":
@@ -90,6 +113,15 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
 
     @staticmethod
     def get_vlans(task: Task) -> Result:
+        """Get a list of vlans from the device using netmiko and genie parser.
+
+        Args:
+            task (Task): Nornir Task
+
+        Returns:
+            Result: Nornir Result object with a dict as a result containing the vlans
+            The format of the result but must be similar to Vlans defined in network_importer.processors.get_vlans
+        """
         LOGGER.debug("Executing get_vlans for %s (%s)", task.host.name, task.host.platform)
 
         try:
@@ -100,7 +132,7 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             )
             return Result(host=task.host, failed=True)
 
-        if not isinstance(results[0].result, dict) or not "vlans" in results[0].result:
+        if not isinstance(results[0].result, dict) or "vlans" not in results[0].result:
             LOGGER.warning("%s | No vlans information returned", task.host.name)
             return Result(host=task.host, result=False)
 

@@ -1,4 +1,5 @@
-"""
+"""Norning Inventory for netbox.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,28 +23,26 @@ from nornir.core.deserializer.inventory import Inventory, HostsDict
 
 # import network_importer.config as config
 
-### ------------------------------------------------------------
-### Network Importer Base Dict for device data
-###   status:
-###     ok: device is reachable
-###     fail-ip: Primary IP address not reachable
-###     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or
-###                  responding.
-###     fail-login: Unable to login authenticate with device
-###     fail-other:  Other general processing error (also catches traps/bug)
-###   is_reachable: Global Flag to indicate if we are able to connect to a device
-###   has_config: Indicate if the configuration is present and has been properly imported in Batfish
-### ------------------------------------------------------------
+# ------------------------------------------------------------
+# Network Importer Base Dict for device data
+#   status:
+#     ok: device is reachable
+#     fail-ip: Primary IP address not reachable
+#     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or
+#                  responding.
+#     fail-login: Unable to login authenticate with device
+#     fail-other:  Other general processing error (also catches traps/bug)
+#   is_reachable: Global Flag to indicate if we are able to connect to a device
+#   has_config: Indicate if the configuration is present and has been properly imported in Batfish
+# ------------------------------------------------------------
 
 BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False}
 
 
 class NetboxInventory(Inventory):
-    """
-    Netbox Inventory Class
-    """
+    """Netbox Inventory Class."""
 
-    # pylint: disable=dangerous-default-value
+    # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
     def __init__(
         self,
         nb_url: Optional[str] = None,
@@ -61,10 +60,10 @@ class NetboxInventory(Inventory):
         conn_timeout: Optional[int] = 5,
         **kwargs: Any,
     ) -> None:
-        """
-        Netbox plugin
-          hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py,
-          need to see how to contribute back some of these modifications
+        """Norning Inventory Plugin fir Netbox.
+
+        Hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py,
+        Need to see how to contribute back some of these modifications
 
         Args:
           filter_parameters: Key
@@ -82,9 +81,6 @@ class NetboxInventory(Inventory):
           banner_timeout: Optional[int] Banner Timeout for netmiko/paramiko
           conn_timeout: Optional[int] Connection timeout for netmiko/paramiko
           **kwargs: Any:
-
-        Returns:
-
         """
         filter_parameters = filter_parameters or {}
 
@@ -105,7 +101,7 @@ class NetboxInventory(Inventory):
         platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
 
         hosts = {}
-        groups = {"global": {"connection_options": {"netmiko": {"extras": {}}, "napalm": {"extras": {}},}}}
+        groups = {"global": {"connection_options": {"netmiko": {"extras": {}}, "napalm": {"extras": {}}}}}
 
         # Pull the login and password from the NI config object if available
         if username:
@@ -195,12 +191,13 @@ class NetboxInventory(Inventory):
         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
 
 
-### -----------------------------------------------------------------
-### Inventory Filter functions
-### -----------------------------------------------------------------
+# -----------------------------------------------------------------
+# Inventory Filter functions
+# -----------------------------------------------------------------
 def valid_devs(host):
-    """
-    Inventory Filter for Nornir, return True or False if a device is valid
+    """Inventory Filter for Nornir for all valid devices.
+
+    Return True or False if a device is valid
 
     Args:
       host(Host): Nornir Host
@@ -215,8 +212,9 @@ def valid_devs(host):
 
 
 def non_valid_devs(host):
-    """
-    Inventory Filter for Nornir, return True or False if a device is not valid
+    """Inventory Filter for Nornir for all non-valid devices.
+
+    Return True or False if a device is not valid
 
     Args:
       host(Host): Nornir Host
@@ -231,8 +229,9 @@ def non_valid_devs(host):
 
 
 def reachable_devs(host):
-    """
-    Inventory Filter for Nornir, return True if the device is reachable
+    """Inventory Filter for Nornir for all reachable devices.
+
+    Return True if the device is reachable.
 
     Args:
       host(Host): Nornir Host
@@ -247,8 +246,9 @@ def reachable_devs(host):
 
 
 def non_reachable_devs(host):
-    """
-    Inventory Filter for Nornir, return True if the device is not reachable.
+    """Inventory Filter for Nornir for all non reachable devices.
+
+    Return True if the device is not reachable.
 
     Args:
       host(Host): Nornir Host
@@ -263,8 +263,9 @@ def non_reachable_devs(host):
 
 
 def valid_and_reachable_devs(host):
-    """
-    Inventory Filter for Nornir, return True if the device is reachable and has a config.
+    """Inventory Filter for Nornir for all valid and reachable devices.
+
+    Return True if the device is reachable and has a config.
 
     Args:
       host(Host): Nornir Host

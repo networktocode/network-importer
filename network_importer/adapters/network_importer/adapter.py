@@ -1,4 +1,5 @@
-"""
+"""Custom Exceptions for the NetworkImporterAdapter.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +39,7 @@ LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporterAdapter(BaseAdapter):
+    """Adapter to import data from a network based on Batfish."""
 
     site = Site
     device = Device
@@ -54,9 +56,8 @@ class NetworkImporterAdapter(BaseAdapter):
     bfi = None
 
     def load(self):
-
+        """Initialize batfish and load all data from the network in the local cache."""
         sites = {}
-        device_names = []
 
         self.init_batfish()
 
@@ -91,8 +92,7 @@ class NetworkImporterAdapter(BaseAdapter):
         self.check_data_consistency()
 
     def init_batfish(self):
-        """Initialize the Batfish snapshot and session."""
-
+        """Initialize Batfish snapshot and session."""
         network_name = config.SETTINGS.batfish.network_name
         snapshot_name = config.SETTINGS.batfish.snapshot_name
         snapshot_path = config.SETTINGS.main.configs_directory
@@ -112,8 +112,7 @@ class NetworkImporterAdapter(BaseAdapter):
         self.bfi.init_snapshot(snapshot_path, name=snapshot_name, overwrite=True)
 
     def load_batfish(self):
-        """Import all devices, interfaces and IP Addresses from Batfish."""
-
+        """Load all devices, interfaces and IP Addresses from Batfish."""
         # Import Devices
         devices = self.get_all(self.device)
 
@@ -121,12 +120,11 @@ class NetworkImporterAdapter(BaseAdapter):
             self.load_batfish_device(device=device)
 
     def load_batfish_device(self, device):
-        """Import all devices from Batfish
+        """Load all devices from Batfish.
 
         Args:
-            device (Device) Device object
+            device (Device): Device object
         """
-
         site = self.get(self.site, identifier=device.site_name)
 
         interface_vlans_mapping = defaultdict(list)
@@ -162,8 +160,8 @@ class NetworkImporterAdapter(BaseAdapter):
 
     def load_batfish_interface(
         self, site, device, intf, interface_vlans=[]
-    ):  # pylint: disable=dangerous-default-value,unused-argument
-        """Import an interface for a given device from Batfish Data, including IP addresses and prefixes.
+    ):  # pylint: disable=dangerous-default-value,unused-argument,too-many-statements,too-many-branches,too-many-locals
+        """Load an interface for a given device from Batfish Data, including IP addresses and prefixes.
 
         Args:
             site (Site): Site object
@@ -174,7 +172,6 @@ class NetworkImporterAdapter(BaseAdapter):
         Returns:
             Interface
         """
-
         # try:
         #     self._check_batfish_interface_is_valid(intf)
         # except BatfishObjectNotValid as exc:
@@ -206,7 +203,7 @@ class NetworkImporterAdapter(BaseAdapter):
         if is_lag:
             interface.is_lag = True
             interface.is_virtual = False
-        elif is_physical == False:  # pylint: disable=C0121
+        elif is_physical is False:  # pylint: disable=C0121
             interface.is_virtual = True
         else:
             interface.is_virtual = False
@@ -280,8 +277,8 @@ class NetworkImporterAdapter(BaseAdapter):
 
     def load_batfish_ip_address(
         self, site, device, interface, address, interface_vlans=[]
-    ):  # pylint: disable=dangerous-default-value
-        """Import IP address for a given interface from Batfish.
+    ):  # pylint: disable=dangerous-default-value,too-many-arguments
+        """Load IP address for a given interface from Batfish.
 
         Args:
             site (Site): Site object
@@ -293,7 +290,6 @@ class NetworkImporterAdapter(BaseAdapter):
         Returns:
             IPAddress
         """
-
         ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
 
         if config.SETTINGS.main.import_ips:
@@ -328,7 +324,6 @@ class NetworkImporterAdapter(BaseAdapter):
         Returns:
             Prefix, bool: False if a prefix can't be extracted from this IP address
         """
-
         prefix = ipaddress.ip_network(ip_address.address, strict=False)
 
         if prefix.num_addresses == 1:
@@ -349,7 +344,7 @@ class NetworkImporterAdapter(BaseAdapter):
         return prefix_obj
 
     def load_cabling(self):
-
+        """Load cabling from either batfish, cdl or lldp based on the configuration."""
         if config.SETTINGS.main.import_cabling in ["no", False]:
             return False
 
@@ -364,7 +359,7 @@ class NetworkImporterAdapter(BaseAdapter):
         return True
 
     def load_vlans(self):
-
+        """Load vlans information from the devices using CLI."""
         if config.SETTINGS.main.import_vlans not in ["cli", True]:
             return
 
@@ -397,7 +392,6 @@ class NetworkImporterAdapter(BaseAdapter):
 
     def load_batfish_cable(self):
         """Import cables from Batfish using layer3Edges tables."""
-
         device_names = [device.name for device in self.get_all(self.device)]
         p2p_links = self.bfi.q.layer3Edges().answer()
         existing_cables = []
@@ -463,13 +457,13 @@ class NetworkImporterAdapter(BaseAdapter):
         LOGGER.debug("Found %s cables from Cli", nbr_cables)
 
     def check_data_consistency(self):
-        """
-        Ensure the vlans configured for each interface exist in the system
+        """Check the validaty and consistency of the data in the local store.
+
+        Ensure the vlans configured for each interface exist in the system.
         On some vendors, it's possible to have a list larger than what is really available
 
         In the process, ensure that all devices are associated with the right vlans
         """
-
         # Get a dictionnary with all vlans organized by uid
         vlans = {vlan.get_unique_id(): vlan for vlan in self.get_all(self.vlan)}
         interfaces = self.get_all(self.interface)
@@ -485,20 +479,22 @@ class NetworkImporterAdapter(BaseAdapter):
                 intf.allowed_vlans = clean_allowed_vlans
 
     def validate_cabling(self):
-        """
+        """Check if all cables are valid.
+
         Check if all cables are valid
-            Check if both devices are present in the device list
-                For now only process cables with both devices present
-            Check if both interfaces are present as well and are not virtual
-            Check that both interfaces are not already connected to a different device/interface
+        Check if both devices are present in the device list
+            For now only process cables with both devices present
+        Check if both interfaces are present as well and are not virtual
+        Check that both interfaces are not already connected to a different device/interface
 
         When a cable is not valid, update the flag valid on the object itself
         Non valid cables will be ignored later on for update/creation
         """
 
         def is_cable_side_valid(cable, side):
-            """Check if the given side of a cable (a or z) is valid or not
-            Check if both the device and the interface are present in internal store
+            """Check if the given side of a cable (a or z) is valid or not.
+
+            Check if both the device and the interface are present in the internal store
             """
             dev_name, intf_name = cable.get_device_intf(side)
 
@@ -599,7 +595,6 @@ class NetworkImporterAdapter(BaseAdapter):
         Args:
             intf (dict): dict generated from a Batfish Interface
         """
-
         if not isinstance(intf, dict):
             raise BatfishObjectNotValid("batfish interface is not a dict")
 

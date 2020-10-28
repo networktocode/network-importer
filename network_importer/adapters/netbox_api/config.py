@@ -1,4 +1,5 @@
-"""
+"""Settings definition for the NetboxAPIAdapter.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +15,10 @@ limitations under the License.
 
 from pydantic import BaseSettings
 
+# pylint: disable=too-few-public-methods
+
 
 class AdapterSettings(BaseSettings):
+    """Config settings for the netbox_api adapter. Not used currently."""
+
     backend_version: str = "default"

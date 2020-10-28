@@ -1,4 +1,5 @@
-"""
+"""default driver for the network_importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +24,8 @@ LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporterDriver:
+    """Default collection of Nornir Tasks based on Napalm."""
+
     @staticmethod
     def get_config(task: Task) -> Result:
         """Get the latest configuration from the device.
@@ -38,7 +41,7 @@ class NetworkImporterDriver:
 
         try:
             result = task.run(task=napalm_get, getters=["config"], retrieve="running")
-        except:
+        except:  # noqa: E722 # pylint: disable=bare-except
             LOGGER.debug("An exception occured while pulling the configuration", exc_info=True)
             return Result(host=task.host, failed=True)
 
@@ -49,14 +52,23 @@ class NetworkImporterDriver:
         return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
-    def get_neighbors(task: Task) -> Result:
+    def get_neighbors(task: Task) -> Result:  # pylint: disable=inconsistent-return-statements
+        """Get a list of neighbors from the device.
+
+        Args:
+            task (Task): Nornir Task
+
+        Returns:
+            Result: Nornir Result object with a dict as a result containing the neighbors
+            The format of the result but must be similar to Neighbors defined in network_importer.processors.get_neighbors
+        """
         LOGGER.debug("Executing get_neighbor for %s (%s)", task.host.name, task.host.platform)
 
         if config.SETTINGS.main.import_cabling == "lldp":
 
             try:
                 result = task.run(task=napalm_get, getters=["lldp_neighbors"])
-            except:
+            except:  # noqa: E722 # pylint: disable=bare-except
                 LOGGER.debug("An exception occured while pulling lldp_data", exc_info=True)
                 return Result(host=task.host, failed=True)
 
@@ -82,4 +94,13 @@ class NetworkImporterDriver:
 
     @staticmethod
     def get_vlans(task: Task) -> Result:
+        """Placeholder for get_vlans Get a list of vlans from the device.
+
+        Args:
+            task (Task): Nornir Task
+
+        Returns:
+            Result: Nornir Result object with a dict as a result containing the vlans
+            The format of the result but must be similar to Vlans defined in network_importer.processors.get_vlans
+        """
         LOGGER.warning("%s | Get Vlans not implemented in the default driver.", task.host.name)

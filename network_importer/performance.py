@@ -1,5 +1,6 @@
-"""
-(c) 2019 Network To Code
+"""TimeTracker class to track the performance of the application.
+
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,9 +22,11 @@ import network_importer.config as config
 TIME_TRACKER = None
 LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
+# pylint: disable=global-statement
+
 
 def init():
-    """ """
+    """Initialize the global time tracker."""
     global TIME_TRACKER
 
     if not TIME_TRACKER:
@@ -31,16 +34,14 @@ def init():
 
 
 def print_from_ms(msec) -> str:
-    """
-
+    """Result time in human readable format from milliseconds.
 
     Args:
-      ms:
+      ms: time in millisecond
 
     Returns:
-
+        str: Time in human readable format
     """
-
     ms_per_sec = 1000
     ms_per_min = ms_per_sec * 60
 
@@ -57,28 +58,11 @@ def print_from_ms(msec) -> str:
 
 
 def timeit(method):
-    """
-
-
-    Args:
-      method:
-
-    Returns:
-
-    """
+    """Decorator to record the execution time of a function."""
     global TIME_TRACKER
 
     def timed(*args, **kw):
-        """
-
-
-        Args:
-          *args:
-          **kw:
-
-        Returns:
-
-        """
+        """Decorator to record the execution time of a function and store the result in TIME_TRACKER."""
         timestart = time()
         result = method(*args, **kw)
         timeend = time()
@@ -95,29 +79,20 @@ def timeit(method):
 
 
 class TimeTracker:
-    """ """
+    """TimeTracker object used to keep track of different information around the execution of network importer."""
 
     def __init__(self):
-        """ """
+        """Initialize the TimeTracker object."""
         self.start_time = time()
         self.times = {}
         self.nbr_devices = None
 
     def set_nbr_devices(self, nbr: int):
-        """
-
-
-        Args:
-          nbr:
-
-        Returns:
-
-        """
+        """Define the number of devices."""
         self.nbr_devices = nbr
 
     def print_all(self):
-        """ """
-
+        """Print all information related to time tracking to file if enabled in the configuration."""
         if not os.path.exists(config.SETTINGS.logs.performance_log_directory):
             os.makedirs(config.SETTINGS.logs.performance_log_directory)
             LOGGER.debug("Directory %s was missing, created it", config.SETTINGS.logs.performance_log_directory)

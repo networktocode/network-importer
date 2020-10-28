@@ -6,9 +6,7 @@ from invoke import task
 try:
     import toml
 except ImportError:
-    sys.exit(
-        "Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`."
-    )
+    sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
 
 
 def project_ver():
@@ -47,9 +45,7 @@ def run_cmd(context, exec_cmd, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCA
         result = context.run(exec_cmd, pty=True)
     else:
         print(f"DOCKER - Running command: {exec_cmd} container: {name}:{image_ver}")
-        result = context.run(
-            f"docker run -it -v {PWD}:/local {name}:{image_ver} {exec_cmd}", pty=True
-        )
+        result = context.run(f"docker run -it -v {PWD}:/local {name}:{image_ver} {exec_cmd}", pty=True)
 
     return result
 
@@ -65,10 +61,7 @@ def build_image(context, name=NAME, python_ver=PYTHON_VER, image_ver=IMAGE_VER):
         image_ver (str): Define image version
     """
     print(f"Building image {name}:{image_ver}")
-    result = context.run(
-        f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile .",
-        hide=True,
-    )
+    result = context.run(f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile .",)
     if result.exited != 0:
         print(f"Failed to build image {name}:{image_ver}\nError: {result.stderr}")
 
@@ -163,9 +156,7 @@ def pylint(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     # pty is set to true to properly run the docker commands due to the invocation process of docker
     # https://docs.pyinvoke.org/en/latest/api/runners.html - Search for pty for more information
     if not local:
-        exec_cmd = (
-            "sh -c 'find . -name " "*.py" " | xargs pylint'"  # pylint: disable=W1404
-        )
+        exec_cmd = "sh -c 'find . -name " "*.py" " | xargs pylint'"  # pylint: disable=W1404
     else:
         exec_cmd = "find . -name '*.py' | xargs pylint"
     run_cmd(context, exec_cmd, name, image_ver, local)
@@ -245,7 +236,7 @@ def tests(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     black(context, name, image_ver, local)
     flake8(context, name, image_ver, local)
     pylint(context, name, image_ver, local)
-    yamllint(context, name, image_ver, local)
+    # yamllint(context, name, image_ver, local)
     pydocstyle(context, name, image_ver, local)
     bandit(context, name, image_ver, local)
     pytest(context, name, image_ver, local)

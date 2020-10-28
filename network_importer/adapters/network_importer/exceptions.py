@@ -1,4 +1,5 @@
-"""
+"""Custom Exceptions for the NetworkImporterAdapter.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,4 +15,4 @@ limitations under the License.
 
 
 class BatfishObjectNotValid(Exception):
-    pass
+    """Exception to indicate that a given batfish object is not valid."""

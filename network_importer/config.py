@@ -1,4 +1,5 @@
-"""
+"""Settings definition for the network importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,8 +35,11 @@ DEFAULT_DRIVERS_MAPPING = {
     "arista_eos": "network_importer.drivers.arista_eos",
 }
 
+# pylint: disable=too-few-public-methods,global-statement
+
 
 class BatfishSettings(BaseSettings):
+    """Settings definition for the Batfish section of the configuration."""
 
     address: str = "localhost"
     network_name: str = "network-importer"
@@ -55,6 +59,7 @@ class BatfishSettings(BaseSettings):
 
 
 class NetboxSettings(BaseSettings):
+    """Settings definition for the Netbox section of the configuration."""
 
     address: str = "http://localhost"
     token: Optional[str]
@@ -75,6 +80,7 @@ class NetboxSettings(BaseSettings):
 
 
 class NetworkSettings(BaseSettings):
+    """Settings definition for the Network section of the configuration."""
 
     login: Optional[str]
     password: Optional[str]
@@ -95,10 +101,9 @@ class NetworkSettings(BaseSettings):
 
 
 class LogsSettings(BaseSettings):
+    """Settings definition for the Log section of the configuration."""
 
-    level: Literal[
-        "debug", "info", "warning"
-    ] = "info"  # dict(type="string", enum=["debug", "info", "warning"], default="info"),
+    level: Literal["debug", "info", "warning"] = "info"
     directory: str = "logs"
     performance_log: bool = True
     performance_log_directory: str = "performance_logs"
@@ -110,17 +115,14 @@ class LogsSettings(BaseSettings):
 
 
 class MainSettings(BaseSettings):
+    """Settings definition for the Main section of the configuration."""
 
     import_ips: bool = True
     import_prefixes: bool = False
-    import_cabling: Union[
-        bool, Literal["lldp", "cdp", "config", "no"]
-    ] = "lldp"  # =dict(type=["string", "boolean"], enum=["lldp", "cdp", "config", False], default="lldp",),
+    import_cabling: Union[bool, Literal["lldp", "cdp", "config", "no"]] = "lldp"
     import_transceivers: bool = False
     import_intf_status: bool = False
-    import_vlans: Union[
-        bool, Literal["config", "cli", "no"]
-    ] = "config"  # dict(type=["string", "boolean"], enum=["cli", "config", True, False], default="config",),
+    import_vlans: Union[bool, Literal["config", "cli", "no"]] = "config"
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
     nbr_workers: int = 25
@@ -134,17 +136,21 @@ class MainSettings(BaseSettings):
 
 
 class AdaptersSettings(BaseSettings):
+    """Settings definition for the Adapters section of the configuration."""
+
     network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
     sot_class: str = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
     netbox_api: NetBoxAPISettings = NetBoxAPISettings()
 
 
 class DriversSettings(BaseSettings):
+    """Settings definition for the Drivers section of the configuration."""
+
     mapping: Dict[str, str] = DEFAULT_DRIVERS_MAPPING
 
 
 class InventorySettings(BaseSettings):
-    """Parameters Specific to the inventory.
+    """Settings definition for the Inventory section of the configuration.
 
     By default, the inventory will use the primary IP to reach out to the devices
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
@@ -155,8 +161,8 @@ class InventorySettings(BaseSettings):
 
 
 class Settings(BaseSettings):
-    """
-    Main Settings Class for the project.
+    """Main Settings Class for the project.
+
     The type of each setting is defined using Python annotations
     and is validated when a config file is loaded with Pydantic.
     """
@@ -172,8 +178,7 @@ class Settings(BaseSettings):
 
 
 def load(config_file_name="network_importer.toml", config_data=None):
-    """
-    Load a configuration file in pyproject.toml format that contains the settings.
+    """Load a configuration file in pyproject.toml format that contains the settings.
 
     The settings for this app are expected to be in [tool.json_schema_testing] in TOML
     if nothing is found in the config file or if the config file do not exist, the default values will be used.
@@ -182,7 +187,6 @@ def load(config_file_name="network_importer.toml", config_data=None):
         config_file_name (str, optional): Name of the configuration file to load. Defaults to "pyproject.toml".
         config_data (dict, optional): dict to load as the config file instead of reading the file. Defaults to None.
     """
-
     global SETTINGS
 
     if config_data:

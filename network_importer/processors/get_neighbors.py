@@ -1,3 +1,17 @@
+"""GetNeighbors processor for the network_importer.
+
+(c) 2020 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 from collections import defaultdict
 import logging
 import re
@@ -18,13 +32,17 @@ LOGGER = logging.getLogger("network-importer")
 # Match the incorrectly capitalized interface names
 JUNOS_INTERFACE_PATTERN = re.compile(r"^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
 
+# pylint: disable=too-few-public-methods
+
+
 # -----------------------------------------------------------------
 # Inventory Filter functions
 # -----------------------------------------------------------------
 def hosts_for_cabling(host):
-    """
-    Inventory Filter for Nornir, return True or False if a device is eligible for cabling.
-    it's using config.SETTINGS.main.excluded_platforms_cabling to determine if a host is eligible.
+    """Inventory Filter for Nornir.
+
+    Return True or False if a device is eligible for cabling.
+    It's using config.SETTINGS.main.excluded_platforms_cabling to determine if a host is eligible.
 
     Args:
       host(Host): Nornir Host
@@ -42,11 +60,15 @@ def hosts_for_cabling(host):
 # Expected Returned Data
 # -----------------------------------------------------------------
 class Neighbor(BaseModel):
+    """Dataclass model to store one Neighbor returned by get_neighbors."""
+
     hostname: str
     port: str
 
 
 class Neighbors(BaseModel):
+    """Dataclass model to store all Neighbors returned by get_neighbors."""
+
     neighbors: Dict[str, List[Neighbor]] = defaultdict(list)
 
 
@@ -54,25 +76,28 @@ class Neighbors(BaseModel):
 # Processor
 # -----------------------------------------------------------------
 class GetNeighbors(BaseProcessor):
+    """GetNeighbors processor for the network_importer."""
 
     task_name = "get_neighbors"
 
-    def __init__(self) -> None:
-        pass
-
     def subtask_instance_started(self, task: Task, host: Host) -> None:
-        """Before getting the new configuration, check if a configuration already exist and calculate it's md5
+        """Before getting the new configuration, check if a configuration already exist and calculate its md5.
 
         Args:
             task (Task): Nornir Task
             host (Host): Nornir Host
         """
-
         if task.name != self.task_name:
             return
 
     def subtask_instance_completed(self, task: Task, host: Host, result: MultiResult) -> None:
+        """For each host, check if the results returned by the task is valid and cleanup results as needed.
 
+        Args:
+            task (Task): Nornir Task
+            host (Host): Nornir Host
+            result (MultiResult): Nornir Results
+        """
         if task.name != self.task_name:
             return
 
@@ -108,7 +133,7 @@ class GetNeighbors(BaseProcessor):
 
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):
-        """Cleanup the name of a neighbor by removing all known FQDNs
+        """Cleanup the name of a neighbor by removing all known FQDNs.
 
         Args:
             neighbor_name ([str]): name of a neighbor returned by cdp or lldp
@@ -116,7 +141,6 @@ class GetNeighbors(BaseProcessor):
         Returns:
             str: clean neighboar name
         """
-
         # Remove all FQDN from the hostname to match what is in the SOT
         config.SETTINGS.network.fqdns.sort(key=len, reverse=True)
         for fqdn in config.SETTINGS.network.fqdns:
@@ -127,8 +151,7 @@ class GetNeighbors(BaseProcessor):
 
     @classmethod
     def clean_neighbor_port_name(cls, port_name):
-        """Work around for https://github.com/CiscoTestAutomation/genieparser/issues/287"""
-
+        """Work around for https://github.com/CiscoTestAutomation/genieparser/issues/287."""
         if JUNOS_INTERFACE_PATTERN.match(port_name):
             port_name = port_name[0].lower() + port_name[1:]
             return port_name

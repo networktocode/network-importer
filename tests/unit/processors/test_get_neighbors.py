@@ -1,3 +1,17 @@
+"""unit test for get_neighbors processor.
+
+(c) 2020 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 from os import path
 import yaml
 
@@ -17,8 +31,8 @@ FIXTURES = "../config/fixtures/NBInventory"
 
 @pytest.fixture()
 def nornir(requests_mock):
+    """pytest fixture to return a nornir inventory based on mock data."""
 
-    # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
     requests_mock.get("http://mock/api/dcim/devices/?exclude=config_context", json=data1)
 
@@ -30,7 +44,7 @@ def nornir(requests_mock):
         logging={"enabled": False},
         inventory={
             "plugin": "network_importer.inventory.NetboxInventory",
-            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf",},
+            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf"},
         },
     )
 
@@ -38,6 +52,7 @@ def nornir(requests_mock):
 
 
 def get_neighbors(task: Task, neighbors) -> Result:
+    """Test task to validate the neighbors."""
     results = Neighbors(**neighbors)
     return Result(host=task.host, result=results.dict())
 
@@ -49,7 +64,7 @@ def dispatch_get_neighbors(task, **kwargs):
 
 
 def test_base(nornir):
-
+    """Validate that the processor is working as expected with standard inputs."""
     config.load()
 
     neighbors = Neighbors()

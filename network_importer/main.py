@@ -1,4 +1,5 @@
-"""
+"""main class for the network importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,8 +44,10 @@ LOGGER = logging.getLogger("network-importer")
 
 
 class NetworkImporter:
-    def __init__(self, check_mode=False, nornir=None):
+    """Main NetworkImporter object to track all state related to the network importer."""
 
+    def __init__(self, check_mode=False, nornir=None):
+        """Initialize the NetworkImporter class."""
         self.nornir = nornir
         self.check_mode = check_mode
         self.network = None
@@ -52,10 +55,7 @@ class NetworkImporter:
 
     @timeit
     def build_inventory(self, limit=None):
-        """
-        Build the inventory for the Network Importer in Nornir format
-        """
-
+        """Build the inventory for the Network Importer in Nornir format."""
         params = {}
 
         # ------------------------------------------------------------------------
@@ -111,23 +111,11 @@ class NetworkImporter:
 
     @timeit
     def init(self, limit=None):
-        """
-        Initilize NetworkImporter Object
-            Check if NB is reachable
-            Create inventory
-            Create all NetworkImporterDevice object
-            Create all sites
-
-        inputs:
-            limit: filter the inventory to limit the execution to a subset of devices
+        """Initilize NetworkImporter Object.
 
         Args:
-          limit: (Default value = None)
-
-        Returns:
-
+          limit (str): (Default value = None)
         """
-
         patch_http_connection_pool(maxsize=100)
 
         if not self.nornir:
@@ -167,18 +155,19 @@ class NetworkImporter:
         return True
 
     def sync(self):
+        """Syncronize the SOT adapter and the network adapter."""
         self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
 
     def diff(self):
+        """Generate a diff of the SOT adapter and the network adapter."""
         return self.sot.diff_from(self.network, diff_class=NetworkImporterDiff)
 
     @timeit
     def update_configurations(self):
-        """
-        Pull the latest configurations from all devices that are reachable
+        """Pull the latest configurations from all reachable devices.
+
         Automatically cleanup the directory after to remove all configurations that have not been updated
         """
-
         LOGGER.info("Updating configuration from devices .. ")
 
         # ----------------------------------------------------
@@ -187,10 +176,8 @@ class NetworkImporter:
         self.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
         self.nornir.filter(filter_func=reachable_devs).run(task=warning_not_reachable, on_failed=True)
 
-        results = (
-            self.nornir.filter(filter_func=reachable_devs)
-            .with_processors([GetConfig()])
-            .run(task=dispatcher, method="get_config", on_failed=True,)
+        self.nornir.filter(filter_func=reachable_devs).with_processors([GetConfig()]).run(
+            task=dispatcher, method="get_config", on_failed=True,
         )
 
         return True

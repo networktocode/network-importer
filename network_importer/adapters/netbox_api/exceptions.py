@@ -1,4 +1,5 @@
-"""
+"""Custom Exceptions for the NetboxAPIAdapter.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,4 +15,4 @@ limitations under the License.
 
 
 class NetboxObjectNotValid(Exception):
-    pass
+    """Exception to indicate that a given Netbox object is not valid."""

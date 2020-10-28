@@ -1,5 +1,5 @@
 ---
-skips: []
+skips: [ B303 ]
 # No need to check for security issues in the test scripts!
 exclude_dirs:
   - "./tests/"

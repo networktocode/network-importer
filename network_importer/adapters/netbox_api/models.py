@@ -1,4 +1,5 @@
-"""
+"""Extension of the base Models for the NetboxAPIAdapter.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,25 +30,32 @@ from network_importer.models import (  # pylint: disable=import-error
     Vlan,
 )
 
+# pylint: disable=inconsistent-return-statements
 
 LOGGER = logging.getLogger("network-importer")
 
 
 class NetboxSite(Site):
+    """Extension of the Site model."""
+
     remote_id: Optional[int]
 
 
 class NetboxDevice(Device):
+    """Extension of the Device model."""
+
     remote_id: Optional[int]
     primary_ip: Optional[str]
 
 
 class NetboxInterface(Interface):
+    """Extension of the Interface model."""
+
     remote_id: Optional[int]
     connected_endpoint_type: Optional[str]
 
-    def translate_attrs_for_netbox(self, attrs):
-        """Translate interface parameters into Netbox format
+    def translate_attrs_for_netbox(self, attrs):  # pylint: disable=too-many-branches
+        """Translate interface parameters into Netbox format.
 
         Args:
             params (dict): Dictionnary of attributes/parameters of the object to translate
@@ -182,7 +190,6 @@ class NetboxInterface(Interface):
         Raises:
             ObjectNotUpdated: if an error occurred.
         """
-
         current_attrs = self.get_attrs()
 
         if attrs == current_attrs:
@@ -240,6 +247,8 @@ class NetboxInterface(Interface):
 
 
 class NetboxIPAddress(IPAddress):
+    """Extension of the IPAddress model."""
+
     remote_id: Optional[int]
 
     @classmethod
@@ -274,7 +283,7 @@ class NetboxIPAddress(IPAddress):
         return item
 
     def delete(self) -> Optional["DiffSyncModel"]:
-        """Delete an IP address in NetBox
+        """Delete an IP address in NetBox.
 
         Returns:
             NetboxIPAddress: DiffSync object
@@ -307,10 +316,12 @@ class NetboxIPAddress(IPAddress):
 
 
 class NetboxPrefix(Prefix):
+    """Extension of the Prefix model."""
+
     remote_id: Optional[int]
 
     def translate_attrs_for_netbox(self, attrs):
-        """Translate prefix parameters into Netbox format
+        """Translate prefix parameters into Netbox format.
 
         Args:
             params (dict): Dictionnary of attributes/parameters of the object to translate
@@ -332,12 +343,11 @@ class NetboxPrefix(Prefix):
 
     @classmethod
     def create(cls, diffsync: "DiffSync", ids: dict, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Create a Prefix in NetBox
+        """Create a Prefix in NetBox.
 
         Returns:
             NetboxPrefix: DiffSync object
         """
-
         item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
         nb_params = item.translate_attrs_for_netbox(attrs)
 
@@ -365,7 +375,6 @@ class NetboxPrefix(Prefix):
         Raises:
             ObjectNotUpdated: if an error occurred.
         """
-
         current_attrs = self.get_attrs()
 
         if attrs == current_attrs:
@@ -387,11 +396,13 @@ class NetboxPrefix(Prefix):
 
 
 class NetboxVlan(Vlan):
+    """Extension of the Vlan model."""
+
     remote_id: Optional[int]
     tag_prefix: str = "device="
 
     def translate_attrs_for_netbox(self, attrs):
-        """Translate vlan parameters into Netbox format
+        """Translate vlan parameters into Netbox format.
 
         Args:
             params (dict): Dictionnary of attributes/parameters of the object to translate
@@ -419,7 +430,7 @@ class NetboxVlan(Vlan):
 
     @classmethod
     def create_from_pynetbox(cls, diffsync: "DiffSync", obj, site_name):
-        """Create a new NetboxVlan object from a pynetbox vlan object
+        """Create a new NetboxVlan object from a pynetbox vlan object.
 
         Args:
             pynetbox ([type]): Vlan object returned by Pynetbox
@@ -427,7 +438,6 @@ class NetboxVlan(Vlan):
         Returns:
             NetboxVlan: DiffSync object
         """
-
         item = cls(vid=obj.vid, site_name=site_name, name=obj.name, remote_id=obj.id)
 
         # Check the existing tags to learn which device is already associated with this vlan
@@ -442,12 +452,11 @@ class NetboxVlan(Vlan):
 
     @classmethod
     def create(cls, diffsync: "DiffSync", ids: dict, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Create new Vlan in NetBox
+        """Create new Vlan in NetBox.
 
         Returns:
             NetboxVlan: DiffSync object
         """
-
         try:
             item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
             nb_params = item.translate_attrs_for_netbox(attrs)
@@ -461,7 +470,7 @@ class NetboxVlan(Vlan):
         return item
 
     def update_clean_tags(self, nb_params, obj):
-        """Update list of vlan tags with additinal tags that already exists on the object in netbox
+        """Update list of vlan tags with additinal tags that already exists on the object in netbox.
 
         Args:
             nb_params (dict): dict of parameters in netbox format
@@ -481,12 +490,11 @@ class NetboxVlan(Vlan):
         return nb_params
 
     def update(self, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Update new Vlan in NetBox
+        """Update new Vlan in NetBox.
 
         Returns:
             NetboxVlan: DiffSync object
         """
-
         nb_params = self.translate_attrs_for_netbox(attrs)
 
         try:
@@ -502,18 +510,19 @@ class NetboxVlan(Vlan):
 
 
 class NetboxCable(Cable):
+    """Extension of the Cable model."""
+
     remote_id: Optional[int]
     termination_a_id: Optional[int]
     termination_z_id: Optional[int]
 
     @classmethod
     def create(cls, diffsync: "DiffSync", ids: dict, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Create a Cable in NetBox
+        """Create a Cable in NetBox.
 
         Returns:
             NetboxCable: DiffSync object
         """
-
         item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
         interface_a = diffsync.get(
@@ -589,7 +598,7 @@ class NetboxCable(Cable):
         return item
 
     def delete(self):  #  pylint: disable=unused-argument
-        """Do not Delete the Cable in NetBox, just print a warning message
+        """Do not Delete the Cable in NetBox, just print a warning message.
 
         Returns:
             NetboxCable: DiffSync object
