@@ -7,7 +7,7 @@ python:
 
 before_script:
   - "pip install invoke toml"
-  - "invoke build-test-container -p $TRAVIS_PYTHON_VERSION"
+  - "invoke build-image -p $TRAVIS_PYTHON_VERSION"
 
 script:
   - "invoke tests -p $TRAVIS_PYTHON_VERSION"
