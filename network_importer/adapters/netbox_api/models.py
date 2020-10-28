@@ -30,8 +30,6 @@ from network_importer.models import (  # pylint: disable=import-error
     Vlan,
 )
 
-# pylint: disable=inconsistent-return-statements
-
 LOGGER = logging.getLogger("network-importer")
 
 
@@ -210,7 +208,7 @@ class NetboxInterface(Interface):
                 self.diffsync.name,
                 exc.error,
             )
-            return
+            return None
 
         return super().update(attrs)
 
@@ -273,7 +271,7 @@ class NetboxIPAddress(IPAddress):
                 ip_address = diffsync.netbox.ipam.ip_addresses.create(address=ids["address"])
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create the ip address %s in %s (%s)", ids["address"], diffsync.name, exc.error)
-            return
+            return None
 
         LOGGER.debug("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
 
@@ -296,7 +294,7 @@ class NetboxIPAddress(IPAddress):
                     self.address,
                     self.device_name,
                 )
-                return
+                return None
 
         try:
             ipaddr = self.diffsync.netbox.ipam.ip_addresses.get(self.remote_id)
@@ -309,7 +307,7 @@ class NetboxIPAddress(IPAddress):
                 self.diffsync.name,
                 exc.error,
             )
-            return
+            return None
 
         super().delete()
         return self
@@ -356,7 +354,7 @@ class NetboxPrefix(Prefix):
             LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Prefix %s in %s (%s)", ids["prefix"], diffsync.name, exc.error)
-            return
+            return None
 
         item.remote_id = prefix.id
 
@@ -390,7 +388,7 @@ class NetboxPrefix(Prefix):
             LOGGER.warning(
                 "Unable to update perfix %s in %s (%s)", self.prefix, self.diffsync.name, exc.error,
             )
-            return
+            return None
 
         return super().update(attrs)
 
@@ -465,7 +463,7 @@ class NetboxVlan(Vlan):
             LOGGER.info("Created Vlan %s in %s (%s)", vlan.get_unique_id(), diffsync.name, vlan.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, diffsync.name, exc.error)
-            return
+            return None
 
         return item
 
@@ -504,7 +502,7 @@ class NetboxVlan(Vlan):
             LOGGER.info("Updated Vlan %s (%s) in NetBox", self.get_unique_id(), self.remote_id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.diffsync.name, exc.error)
-            return
+            return None
 
         return super().update(attrs)
 

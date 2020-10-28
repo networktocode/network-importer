@@ -52,7 +52,7 @@ class NetworkImporterDriver:
         return Result(host=task.host, result={"config": running_config})
 
     @staticmethod
-    def get_neighbors(task: Task) -> Result:  # pylint: disable=inconsistent-return-statements
+    def get_neighbors(task: Task) -> Result:  # pylint: disable=too-many-return-statements
         """Get a list of neighbors from the device.
 
         Args:
@@ -91,6 +91,9 @@ class NetworkImporterDriver:
 
             results = convert_cisco_genie_cdp_neighbors_details(device_name=task.host.name, data=result[0].result)
             return Result(host=task.host, result=results.dict())
+
+        LOGGER.warning("%s | Unexpected value for `import_cabling`, should be either LLDP or CDP", task.host.name)
+        return Result(host=task.host, failed=True)
 
     @staticmethod
     def get_vlans(task: Task) -> Result:
