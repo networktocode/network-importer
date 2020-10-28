@@ -6,7 +6,7 @@ python:
   - 3.7
 
 before_script:
-  - "pip install invoke"
+  - "pip install invoke toml"
   - "invoke build-test-container -p $TRAVIS_PYTHON_VERSION"
 
 script:
