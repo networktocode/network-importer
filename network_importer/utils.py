@@ -1,5 +1,6 @@
-"""
-(c) 2019 Network To Code
+"""library of utilities.
+
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,13 +18,12 @@ import logging
 from urllib3 import connectionpool, poolmanager
 import yaml
 
-logger = logging.getLogger("network-importer")  # pylint: disable=C0103
+LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def patch_http_connection_pool(**constructor_kwargs):
-    """
-    This allows to override the default parameters of the
-    HTTPConnectionPool constructor.
+    """This allows to override the default parameters of the HTTPConnectionPool constructor.
+
     For example, to increase the poolsize to fix problems
     with "HttpConnectionPool is full, discarding connection"
     call this function with maxsize=16 (or whatever size
@@ -31,57 +31,41 @@ def patch_http_connection_pool(**constructor_kwargs):
 
     Args:
       **constructor_kwargs:
-
-    Returns:
-
     """
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
-        """ """
+        """Class to increase the size of the HTTP Connection pool."""
 
         def __init__(self, *args, **kwargs):
-            """
-
-
-            Args:
-              *args:
-              **kwargs:
-
-            Returns:
-
-            """
+            """Initialize the HTTP Connection pool."""
             kwargs.update(constructor_kwargs)
-            super(MyHTTPConnectionPool, self).__init__(*args, **kwargs)
+            super().__init__(*args, **kwargs)
 
     poolmanager.pool_classes_by_scheme["http"] = MyHTTPConnectionPool
 
 
 def sort_by_digits(if_name: str) -> tuple:
-    """
-    Extract all digits from a string and return them as tuple
+    """Extract all digits from a string and return them as tuple.
 
     Args:
-      if_name:
+      if_name (str): name of an interface
 
     Returns:
       tuple of all digits in the string
-
     """
     find_digit = re.compile(r"\D?(\d+)\D?")
     return tuple(map(int, find_digit.findall(if_name)))
 
 
 def is_interface_physical(name):  # pylint: disable=R0911
-    """
-    Function evaluate if an interface is likely to be a physical interface
+    """Function evaluate if an interface is likely to be a physical interface.
 
     Args:
-      name: str name of the interface to evaluate
+      name (str): name of the interface to evaluate
 
     Return:
       True, False or None
     """
-
     # Match most physical interface Cisco that contains Ethernet
     #  GigabitEthernet0/0/2
     #  GigabitEthernet0/0/2:3
@@ -119,17 +103,14 @@ def is_interface_physical(name):  # pylint: disable=R0911
 
 
 def is_interface_lag(name):
-    """
-    Function evaluate if an interface is likely to be a lag
+    """Function to evaluate if an interface is likely to be a lag.
 
     Args:
-      name: str name of the interface to evaluate
-      vendor: str name of the vendor (optional)
+      name (str): name of the interface to evaluate
 
     Return:
       True, False or None
     """
-
     port_channel_intf = r"^port\-channel[0-9]+$"
     po_intf = r"^po[0-9]+$"
     ae_intf = r"^ae[0-9]+$"
@@ -147,41 +128,63 @@ def is_interface_lag(name):
     return None
 
 
-def jinja_filter_toyaml_list(value) -> str:
-    """
-    JinjaFilter to return a dict as a Nice Yaml
+def is_mac_address(data):
+    """Evaluate if a given string is a mac address.
 
     Args:
-      value:
+        data (str): string to evaluate
 
     Returns:
-      Str formatted as Yaml
+      bool: True if the string provided is a mac address, false otherwise
+    """
+    mac_address_chars = r"^[0-9a-fA-F\.\-\:]+$"
+    hex_chars = r"[0-9a-fA-F]"
+
+    if not isinstance(data, str):
+        raise TypeError("data should be of type string")
+
+    if not re.match(mac_address_chars, data):
+        return False
+
+    hex_data = re.findall(hex_chars, data)
+    if len(hex_data) == 12:
+        return True
+
+    return False
+
+
+def jinja_filter_toyaml_list(value) -> str:
+    """Jinjafilter to return a list as a Nice Yaml.
+
+    Args:
+        value (list): value to convert
+
+    Returns:
+        Str formatted as Yaml
     """
     return yaml.dump(value, default_flow_style=None)
 
 
 def jinja_filter_toyaml_dict(value) -> str:
-    """
+    """Jinjafilter to return a dict as a Nice Yaml.
 
     Args:
-      value:
+        value (dict): value to convert
 
     Returns:
-
+        Str formatted as Yaml
     """
     return yaml.dump(value, default_flow_style=False)
 
 
 def expand_vlans_list(vlans: str) -> list:
-    """
-    Convert string of comma separated integer (vlan) into a list
+    """Convert string of comma separated integer (vlan) into a list.
 
     Args:
-      vlans: String (TODO add support for list)
+        vlans (str)
 
     Returns:
-      List: sorted list of vlans
-
+        List: sorted list of vlans
     """
     raw_vlans_list = []
     clean_vlans_list = []
@@ -199,8 +202,26 @@ def expand_vlans_list(vlans: str) -> list:
         try:
             clean_vlans_list.append(int(vlan_))
         except ValueError as exc:
-            logger.debug(
-                f"expand_vlans_list() Unable to convert {vlan_} as integer .. skipping"
-            )
+            LOGGER.debug("expand_vlans_list() Unable to convert %s as integer .. skipping (%s)", vlan_, exc)
 
     return sorted(clean_vlans_list)
+
+
+def build_filter_params(filter_params, params):
+    """Update params dict() with filter args in required format for pynetbox.
+
+    Args:
+      filter_params (str): split string from cli or config
+      params (dict): object to hold params
+    """
+    for param_value in filter_params:
+        if "=" not in param_value:
+            continue
+        key, value = param_value.split("=", 1)
+        existing_value = params.get(key)
+        if existing_value and isinstance(existing_value, list):
+            params[key].append(value)
+        elif existing_value and isinstance(existing_value, str):
+            params[key] = [existing_value, value]
+        else:
+            params[key] = value

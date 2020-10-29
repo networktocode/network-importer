@@ -1,7 +1,7 @@
 # pylint: disable=C0116,C0121,R0801
 
 """
-(c) 2019 Network To Code
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,60 +15,23 @@ limitations under the License.
 """
 import pytest
 
-from network_importer.base_model import Cable
-from network_importer.model import NetworkImporterCable
+from network_importer.models import Cable
 
 
-def test_network_importer_cable_diff():
-    """ """
+def test_get_unique_id():
+    """Unit test of Calbe model get_unique_id() parameters."""
 
-    nic = NetworkImporterCable()
-    cable = Cable()
-    cable.add_device("deva", "inta")
-    cable.add_device("devb", "intb")
-    nic.local = cable
-    nic.remote = cable
+    cable = Cable(device_a_name="deva", interface_a_name="inta", device_z_name="devb", interface_z_name="intb")
+    assert cable.get_unique_id() == "deva__inta__devb__intb"
 
-    diff = nic.diff()
-    assert diff.has_diffs() == False
-
-    nic.remote = None
-    diff = nic.diff()
-    assert diff.has_diffs() == True
+    cable = Cable(device_z_name="deva", interface_z_name="inta", device_a_name="devb", interface_a_name="intb")
+    assert cable.get_unique_id() == "deva__inta__devb__intb"
 
 
-def test_base_model_cable_unique_id():
-    """
-    Unit test of base model Cable unique_id parameters
-    """
+def test_get_device_intf():
+    """Unit test of Cable get_device_intf function."""
 
-    cable = Cable()
-    cable.add_device("deva", "inta")
-    cable.add_device("devb", "intb")
-
-    assert cable.unique_id == "deva:inta_devb:intb"
-
-    cable = Cable()
-    cable.add_device("devb", "intb")
-    cable.add_device("deva", "inta")
-
-    assert cable.unique_id == "deva:inta_devb:intb"
-
-    cable = Cable()
-    cable.add_device("devb", "intb")
-
-    assert cable.unique_id == None
-
-
-def test_base_model_cable_get_device_intf():
-    """
-    Unit test of Cable get_device_intf function
-    """
-
-    cable = Cable()
-    cable.add_device("deva", "inta")
-    cable.add_device("devb", "intb")
-
+    cable = Cable(device_a_name="deva", interface_a_name="inta", device_z_name="devb", interface_z_name="intb")
     assert cable.get_device_intf("a") == ("deva", "inta")
     assert cable.get_device_intf("z") == ("devb", "intb")
 

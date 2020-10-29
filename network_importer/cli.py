@@ -1,5 +1,6 @@
-"""
-(c) 2019 Network To Code
+"""main cli for the network importer.
+
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,17 +17,24 @@ limitations under the License.
 import logging
 import sys
 import pdb
+
 import click
+import urllib3
+from diffsync.logging import enable_console_logging
 
 import network_importer.config as config
+from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
+urllib3.disable_warnings()
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
-logger = logging.getLogger("network-importer")
+LOGGER = logging.getLogger("network-importer")
+
+# pylint: disable=too-many-arguments
 
 
 @click.command()
@@ -48,20 +56,15 @@ logger = logging.getLogger("network-importer")
 @click.option("--diff", is_flag=True, help="Show the diff for all objects")
 @click.option("--apply", is_flag=True, help="Save changes in Backend")
 @click.option(
-    "--check",
-    is_flag=True,
-    help="Display what are the differences but do not save them",
+    "--check", is_flag=True, help="Display what are the differences but do not save them",
 )
 @click.option(
-    "--debug",
-    is_flag=True,
-    help="Keep the script in interactive mode once finished for troubleshooting",
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
-@click.option(
-    "--update-configs", is_flag=True, help="Pull the latest configs from the devices"
-)
+@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
-    config.load_config(config_file)
+    """Main CLI command for the network_importer."""
+    config.load(config_file_name=config_file)
     perf.init()
 
     # ------------------------------------------------------------
@@ -70,23 +73,24 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     logging.getLogger("pybatfish").setLevel(logging.ERROR)
     logging.getLogger("netaddr").setLevel(logging.ERROR)
 
-    if config.logs["level"] != "debug":
+    if config.SETTINGS.logs.level != "debug":
         logging.getLogger("paramiko.transport").setLevel(logging.CRITICAL)
         logging.getLogger("nornir.core.task").setLevel(logging.CRITICAL)
 
-    logging.basicConfig(
-        stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(stream=sys.stdout, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
-    if config.logs["level"] == "debug":
-        logger.setLevel(logging.DEBUG)
-    elif config.logs["level"] == "warning":
-        logger.setLevel(logging.WARNING)
+    if config.SETTINGS.logs.level == "debug":
+        LOGGER.setLevel(logging.DEBUG)
+    elif config.SETTINGS.logs.level == "warning":
+        LOGGER.setLevel(logging.WARNING)
     else:
-        logger.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.INFO)
 
-    # TODO add code to set config.main["hostvars_directory"] based on options.output
-    # TODO add code to set config.main["configs_directory"] based on options.configs
+    # Disable logging in console for DiffSync
+    enable_console_logging(verbosity=0)
+
+    filters = {}
+    build_filter_params(config.SETTINGS.main.inventory_filter.split((",")), filters)
 
     ni = NetworkImporter()
 
@@ -98,35 +102,21 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
 
     ni.init(limit=limit)
 
-    ni.import_devices_from_configs()
-    ni.import_devices_from_cmds()
-
-    ni.import_cabling()
-
-    ni.check_data_consistency()
-
-    # ------------------------------------------------------------------------------------
-    # Update Remote if apply is enabled
-    # ------------------------------------------------------------------------------------
+    # # ------------------------------------------------------------------------------------
+    # # Update Remote if apply is enabled
+    # # ------------------------------------------------------------------------------------
     if apply:
-        ni.update_remote()
+        ni.sync()
 
     elif check:
-        ni.diff_local_remote()
+        diff = ni.diff()
+        print(diff.str())
 
-    if config.logs["performance_log"]:
-        perf.TIME_TRACKER.set_nbr_devices(len(ni.devs.inventory.hosts.keys()))
+    if config.SETTINGS.logs.performance_log:
+        perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
         perf.TIME_TRACKER.print_all()
 
-    if config.netbox["status_update"] and apply:
-        ni.update_devices_status()
-
-    if diff:
-        ni.print_diffs()
-
-    logger.info(
-        f"Execution finished, processed {perf.TIME_TRACKER.nbr_devices} device(s) "
-    )
+    LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)
     if debug:
         pdb.set_trace()
 

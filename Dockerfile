@@ -1,19 +1,16 @@
-FROM python:3.7.5
+ARG PYTHON_VER
+
+FROM python:${PYTHON_VER}
 
 RUN pip install --upgrade pip \
   && pip install poetry
 
-RUN mkdir /source
-COPY . /source
-WORKDIR /source
+WORKDIR /local
+COPY pyproject.toml poetry.lock /local/
+
 RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi
+  && poetry install --no-interaction --no-ansi --no-root
 
-RUN mkdir /library
-WORKDIR /library
-RUN git clone --single-branch --branch master https://github.com/networktocode/ntc-templates.git 
-ENV NET_TEXTFSM=/library/ntc-templates
+COPY . /local
+RUN poetry install --no-interaction --no-ansi
 
-WORKDIR /source
-
-CMD /bin/bash

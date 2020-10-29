@@ -1,39 +1,39 @@
-
-- name: Create all requirements for the Network Importer in Netbox
-  hosts: [ all ]
+---
+- name: "Create all requirements for the Network Importer in Netbox"
+  hosts: ["all"]
   gather_facts: no
-  connection: local
+  connection: "local"
   collections:
-  # ansible-galaxy collection install fragmentedpacket.netbox_modules
-  - fragmentedpacket.netbox_modules
+    # ansible-galaxy collection install fragmentedpacket.netbox_modules
+    - "fragmentedpacket.netbox_modules"
   vars:
-    manufacturers: [ juniper, cisco, arista ]
-    device_roles: [ spine, leaf, router ] 
-    platforms: 
-      - { name: junos, manufacturer: juniper }
-      - { name: iosxr, manufacturer: cisco } 
-      - { name: ios, manufacturer: cisco } 
-      - { name: nxos, manufacturer: cisco } 
-      - { name: eos, manufacturer: arista }
+    manufacturers: ["juniper", "cisco", "arista"]
+    device_roles: ["spine", "leaf", "router"]
+    platforms:
+      - {name: "junos", manufacturer: "juniper"}
+      - {name: "iosxr", manufacturer: "cisco"}
+      - {name: "ios", manufacturer: "cisco"}
+      - {name: "nxos", manufacturer: "cisco"}
+      - {name: "eos", manufacturer: "arista"}
     site_prefix: "ni_02"
-    sites: [ "hou", "nyc", "sjc"] 
+    sites: ["hou", "nyc", "sjc"]
     netbox_address: "{{ lookup('env','NETBOX_ADDRESS') }}"
     netbox_token: "{{ lookup('env','NETBOX_TOKEN') }}"
 
   tasks:
-    - name: Create Manufacturer in Netbox
-      netbox_manufacturer:
-        netbox_url: "{{ netbox_address }}"
-        netbox_token: "{{ netbox_token }}"
-        data:
-          name: "{{ item.manufacturer }}"
-        state: present
-      loop: "{{platforms}}"
-      run_once: true
-      tags: [ manufacturer, device_type ]
-      delegate_to: localhost
+    # - name: "Create Manufacturer in Netbox"
+    #   netbox_manufacturer:
+    #     netbox_url: "{{ netbox_address }}"
+    #     netbox_token: "{{ netbox_token }}"
+    #     data:
+    #       name: "{{ item.manufacturer }}"
+    #     state: "present"
+    #   loop: "{{platforms}}"
+    #   run_once: true
+    #   tags: ["manufacturer, device_type"]
+    #   delegate_to: "localhost"
 
-    - name: Create Device Type in Netbox
+    - name: "Create Device Type in Netbox"
       netbox_device_type:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
@@ -44,38 +44,38 @@
           part_number: "{{item.name}}"
           u_height: 1
           is_full_depth: False
-        state: present
+        state: "present"
       loop: "{{platforms}}"
       run_once: true
-      tags: [ device_type ] 
-      delegate_to: localhost
+      tags: ["device_type"]
+      delegate_to: "localhost"
 
-    - name: Create Device Role in Netbox
+    - name: "Create Device Role in Netbox"
       netbox_device_role:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
           name: "{{item}}"
           color: "0000FF"
-        state: present
+        state: "present"
       loop: "{{device_roles}}"
       run_once: true
-      tags: [ device_role ] 
-      delegate_to: localhost
+      tags: ["device_role"]
+      delegate_to: "localhost"
 
-    - name: Create Sites in Netbox
+    - name: "Create Sites in Netbox"
       netbox_site:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
           name: "{{site_prefix}}_{{item}}"
-        state: present
+        state: "present"
       loop: "{{sites}}"
       run_once: true
-      tags: [ device_site ] 
-      delegate_to: localhost
+      tags: ["device_site"]
+      delegate_to: "localhost"
 
-    - name: Create Device in Netbox
+    - name: "Create Device in Netbox"
       netbox_device:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
@@ -84,6 +84,6 @@
           device_type: "{{platform}}"
           device_role: "{{role}}"
           site: "{{site_prefix}}_{{site}}"
-        state: present
-      tags: [ device ] 
-      delegate_to: localhost
+        state: "present"
+      tags: ["device"]
+      delegate_to: "localhost"

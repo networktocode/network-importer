@@ -1,5 +1,6 @@
-"""
-(c) 2019 Network To Code
+"""network_importer specific diff class based on diffsync.
+
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,188 +12,55 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from collections import defaultdict
+from diffsync.diff import Diff
 
 
-class NetworkImporterDiff:
-    """ """
+class NetworkImporterDiff(Diff):
+    """network_importer specific diff class based on diffsync."""
 
-    def __init__(self, obj_type: str, name: str):
-        """
+    @classmethod
+    def order_children_interface(cls, children):
+        """Return the interface children ordered order."""
+        intfs_lags = defaultdict(list)
+        intfs_regs = defaultdict(list)
+        intfs_lag_members = defaultdict(list)
 
-        Args:
-          obj_type:
-          name:
+        for child_name, child in children.items():
+            action = child.action
 
-        Returns:
+            if action is None:
+                action = "update"
 
-        """
-        if not isinstance(obj_type, str):
-            raise ValueError(f"obj_type must be a string (not {type(obj_type)})")
+            if action == "delete":
+                if "is_lag" in child.dest_attrs and child.dest_attrs["is_lag"]:
+                    intfs_lags[action].append(child_name)
+                elif "is_lag_member" in child.dest_attrs and child.dest_attrs["is_lag_member"]:
+                    intfs_lag_members[action].append(child_name)
+                else:
+                    intfs_regs[action].append(child_name)
 
-        if not isinstance(name, str):
-            raise ValueError(f"name must be a string (not {type(name)})")
+            elif action in ["update", "create"]:
 
-        self.type = obj_type
-        self.name = name
-        self.items = {}
-        self.childs = {}
-        self.missing_remote = None
-        self.missing_local = None
+                if "is_lag" in child.source_attrs and child.source_attrs["is_lag"]:
+                    intfs_lags[action].append(child_name)
+                elif "is_lag_member" in child.source_attrs and child.source_attrs["is_lag_member"]:
+                    intfs_lag_members[action].append(child_name)
+                else:
+                    intfs_regs[action].append(child_name)
 
-    def __str__(self):
-        """ """
+            else:
+                raise Exception("invalid DiffElement")
 
-        if self.missing_remote and self.missing_local:
-            return f"{self.type}:{self.name} MISSING BOTH"
-        if self.missing_remote:
-            return f"{self.type}:{self.name} MISSING REMOTE"
-        if self.missing_local:
-            return f"{self.type}:{self.name} MISSING LOCAL"
-        if not self.has_diffs():
-            return f"{self.type}:{self.name} NO DIFF"
+        sorted_intfs = intfs_regs["create"]
+        sorted_intfs += intfs_regs["update"]
+        sorted_intfs += intfs_lags["create"]
+        sorted_intfs += intfs_lags["update"]
+        sorted_intfs += intfs_lag_members["create"]
+        sorted_intfs += intfs_lag_members["update"]
+        sorted_intfs += intfs_regs["delete"]
+        sorted_intfs += intfs_lags["delete"]
+        sorted_intfs += intfs_lag_members["delete"]
 
-        return f"{self.type}:{self.name} {self.nbr_diffs()} DIFFs"
-
-    def add_item(self, name: str, local, remote):
-        """
-        Add an item tin
-
-        Args:
-          name: name or unique identifier if the item
-          local: value on the local system
-          remote: value on the remote system
-
-        Returns:
-
-        """
-
-        self.items[name] = NetworkImporterDiffProp(name, local, remote)
-
-    def add_child(self, child):
-        """
-        Attach a child object ( )
-        The childs are organized by name,
-        if a child with the same name already exist
-        it will be overwritten
-
-        Args:
-          child: NetworkImporterDiff
-
-        Returns:
-
-        """
-        self.childs[child.name] = child
-
-    def nbr_diffs(self) -> int:
-        """
-        Return the number of items AKA diffs attached to the object
-
-        Returns
-            Int: number of items currently attached to the object
-        """
-        return len(self.items.keys())
-
-    def has_diffs(self, include_childs: bool = True) -> bool:
-        """
-        return true if the object has some diffs,
-        by default it recursively checks all childs as well
-
-        Args:
-          include_childs: Default value = True
-
-        Returns:
-            Bool
-        """
-
-        status = False
-
-        if len(self.items.keys()) > 0:
-            status = True
-
-        if self.missing_remote or self.missing_local:
-            status = True
-
-        if not include_childs:
-            return status
-
-        for child in self.childs.values():
-            if child.has_diffs():
-                status = True
-
-        return status
-
-    def print_detailed(self, indent: int = 0):
-        """
-
-        Args:
-          indent: Default value = 0
-
-        Returns:
-
-        """
-
-        margin = " " * indent
-
-        if self.missing_remote and self.missing_local:
-            print(f"{margin}{self.type}: {self.name} MISSING BOTH")
-        elif self.missing_remote:
-            print(f"{margin}{self.type}: {self.name} MISSING REMOTE")
-        elif self.missing_local:
-            print(f"{margin}{self.type}: {self.name} MISSING LOCAL")
-        else:
-            print(f"{margin}{self.type}: {self.name}")
-            for item in self.items.values():
-                print(f"{margin}  {item.name}   L({item.local})   R({item.remote})")
-
-        if len(self.childs) == 0:
-            return True
-
-        print(f"{margin}  Childs")
-        for child in self.childs.values():
-            if child.has_diffs():
-                child.print_detailed(indent=indent + 4)
-
-    def items_to_dict(self) -> dict:
-        """
-        Return a dictionnary of the local values for all the items attached to the object
-
-        Returns:
-            Dict: dictionnary of the local values for all the items attached to the object
-        """
-
-        items = {}
-        for item in self.items.values():
-            items[item.name] = item.local
-
-        return items
-
-
-class NetworkImporterDiffProp:
-    """
-    Simple class to save together the local and the remote value of an object
-    """
-
-    def __init__(self, name: str, local, remote):
-        """
-
-
-        Args:
-          name:
-          local:
-          remote:
-
-        Returns:
-
-        """
-
-        self.name = name
-
-        if (  # pylint: disable=unidiomatic-typecheck
-            local is not None and remote is not None and type(local) != type(remote)
-        ):
-            raise ValueError(
-                f"local and remote value must be of same type (local:{type(local)}, remote:{type(remote)})"
-            )
-
-        self.local = local
-        self.remote = remote
+        for intf in sorted_intfs:
+            yield children[intf]
