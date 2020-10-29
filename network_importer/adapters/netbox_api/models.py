@@ -595,7 +595,7 @@ class NetboxCable(Cable):
 
         return item
 
-    def delete(self):  #  pylint: disable=unused-argument
+    def delete(self):
         """Do not Delete the Cable in NetBox, just print a warning message.
 
         Returns:

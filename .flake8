@@ -2,5 +2,4 @@
 # E501: Line length is enforced by Black, so flake8 doesn't need to check it
 # W503: Black disagrees with this rule, as does PEP 8; Black wins
 # F821: Getting error about undefined name in models.py
-# E262: Conflicting with pylint inline comment
-ignore = E501, W503, F821, E262
+ignore = E501, W503, F821
