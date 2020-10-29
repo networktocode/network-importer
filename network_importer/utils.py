@@ -1,5 +1,6 @@
-"""
-(c) 2019 Network To Code
+"""library of utilities.
+
+(c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,9 +22,8 @@ LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
 
 
 def patch_http_connection_pool(**constructor_kwargs):
-    """
-    This allows to override the default parameters of the
-    HTTPConnectionPool constructor.
+    """This allows to override the default parameters of the HTTPConnectionPool constructor.
+
     For example, to increase the poolsize to fix problems
     with "HttpConnectionPool is full, discarding connection"
     call this function with maxsize=16 (or whatever size
@@ -34,10 +34,10 @@ def patch_http_connection_pool(**constructor_kwargs):
     """
 
     class MyHTTPConnectionPool(connectionpool.HTTPConnectionPool):
-        """ """
+        """Class to increase the size of the HTTP Connection pool."""
 
         def __init__(self, *args, **kwargs):
-            """ """
+            """Initialize the HTTP Connection pool."""
             kwargs.update(constructor_kwargs)
             super().__init__(*args, **kwargs)
 
@@ -45,31 +45,27 @@ def patch_http_connection_pool(**constructor_kwargs):
 
 
 def sort_by_digits(if_name: str) -> tuple:
-    """
-    Extract all digits from a string and return them as tuple
+    """Extract all digits from a string and return them as tuple.
 
     Args:
       if_name (str): name of an interface
 
     Returns:
       tuple of all digits in the string
-
     """
     find_digit = re.compile(r"\D?(\d+)\D?")
     return tuple(map(int, find_digit.findall(if_name)))
 
 
 def is_interface_physical(name):  # pylint: disable=R0911
-    """
-    Function evaluate if an interface is likely to be a physical interface
+    """Function evaluate if an interface is likely to be a physical interface.
 
     Args:
-      name: str name of the interface to evaluate
+      name (str): name of the interface to evaluate
 
     Return:
       True, False or None
     """
-
     # Match most physical interface Cisco that contains Ethernet
     #  GigabitEthernet0/0/2
     #  GigabitEthernet0/0/2:3
@@ -107,17 +103,14 @@ def is_interface_physical(name):  # pylint: disable=R0911
 
 
 def is_interface_lag(name):
-    """
-    Function evaluate if an interface is likely to be a lag
+    """Function to evaluate if an interface is likely to be a lag.
 
     Args:
-      name: str name of the interface to evaluate
-      vendor: str name of the vendor (optional)
+      name (str): name of the interface to evaluate
 
     Return:
       True, False or None
     """
-
     port_channel_intf = r"^port\-channel[0-9]+$"
     po_intf = r"^po[0-9]+$"
     ae_intf = r"^ae[0-9]+$"
@@ -161,40 +154,37 @@ def is_mac_address(data):
 
 
 def jinja_filter_toyaml_list(value) -> str:
-    """
-    JinjaFilter to return a dict as a Nice Yaml
+    """Jinjafilter to return a list as a Nice Yaml.
 
     Args:
-      value:
+        value (list): value to convert
 
     Returns:
-      Str formatted as Yaml
+        Str formatted as Yaml
     """
     return yaml.dump(value, default_flow_style=None)
 
 
 def jinja_filter_toyaml_dict(value) -> str:
-    """
+    """Jinjafilter to return a dict as a Nice Yaml.
 
     Args:
-      value:
+        value (dict): value to convert
 
     Returns:
-
+        Str formatted as Yaml
     """
     return yaml.dump(value, default_flow_style=False)
 
 
 def expand_vlans_list(vlans: str) -> list:
-    """
-    Convert string of comma separated integer (vlan) into a list
+    """Convert string of comma separated integer (vlan) into a list.
 
     Args:
-      vlans: String (TODO add support for list)
+        vlans (str)
 
     Returns:
-      List: sorted list of vlans
-
+        List: sorted list of vlans
     """
     raw_vlans_list = []
     clean_vlans_list = []
@@ -212,21 +202,17 @@ def expand_vlans_list(vlans: str) -> list:
         try:
             clean_vlans_list.append(int(vlan_))
         except ValueError as exc:
-            LOGGER.debug("expand_vlans_list() Unable to convert %s as integer .. skipping", vlan_)
+            LOGGER.debug("expand_vlans_list() Unable to convert %s as integer .. skipping (%s)", vlan_, exc)
 
     return sorted(clean_vlans_list)
 
 
 def build_filter_params(filter_params, params):
-    """
-    Update parms dict() with filter args in required format
-    for pynetbox
+    """Update params dict() with filter args in required format for pynetbox.
 
     Args:
-      filter_parmas: split string from cli or config
-      parms: dict() object to hold params
-
-    Returns:
+      filter_params (str): split string from cli or config
+      params (dict): object to hold params
     """
     for param_value in filter_params:
         if "=" not in param_value:

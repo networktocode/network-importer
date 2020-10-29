@@ -1,14 +1,16 @@
-FROM python:3.7.7
+ARG PYTHON_VER
+
+FROM python:${PYTHON_VER}
 
 RUN pip install --upgrade pip \
   && pip install poetry
 
-RUN mkdir /source
-COPY . /source
-WORKDIR /source
+WORKDIR /local
+COPY pyproject.toml poetry.lock /local/
+
 RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi
+  && poetry install --no-interaction --no-ansi --no-root
 
-WORKDIR /source
+COPY . /local
+RUN poetry install --no-interaction --no-ansi
 
-CMD /bin/bash

@@ -1,4 +1,5 @@
-"""
+"""main cli for the network importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,18 +17,10 @@ limitations under the License.
 import logging
 import sys
 import pdb
-import warnings
 
 import click
 import urllib3
 from diffsync.logging import enable_console_logging
-
-urllib3.disable_warnings()
-
-# warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-# with warnings.catch_warnings():
-#     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import network_importer.config as config
 from network_importer.utils import build_filter_params
@@ -35,10 +28,13 @@ from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
 
+urllib3.disable_warnings()
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
 
 LOGGER = logging.getLogger("network-importer")
+
+# pylint: disable=too-many-arguments
 
 
 @click.command()
@@ -67,7 +63,7 @@ LOGGER = logging.getLogger("network-importer")
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 def main(config_file, limit, diff, apply, check, debug, update_configs):
-
+    """Main CLI command for the network_importer."""
     config.load(config_file_name=config_file)
     perf.init()
 

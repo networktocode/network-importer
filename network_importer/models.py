@@ -1,4 +1,5 @@
-"""
+"""DiffSync Models for the network importer.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +18,10 @@ from diffsync import DiffSyncModel
 
 
 class Site(DiffSyncModel):
-    """"""
+    """Site Model based on DiffSyncModel.
+
+    A site must have a unique name and can be composed of Vlans and Prefixes.
+    """
 
     _modelname = "site"
     _identifiers = ("name",)
@@ -29,7 +33,10 @@ class Site(DiffSyncModel):
 
 
 class Device(DiffSyncModel):
-    """"""
+    """Device Model based on DiffSyncModel.
+
+    A device must have a unique name and can be part of a site.
+    """
 
     _modelname = "device"
     _identifiers = ("name",)
@@ -47,7 +54,10 @@ class Device(DiffSyncModel):
 
 
 class Interface(DiffSyncModel):
-    """"""
+    """Interface Model based on DiffSyncModel.
+
+    An interface must be attached to a device and the name must be unique per device.
+    """
 
     _modelname = "interface"
     _identifiers = ("device_name", "name")
@@ -88,7 +98,10 @@ class Interface(DiffSyncModel):
 
 
 class IPAddress(DiffSyncModel):
-    """"""
+    """IPAddress Model based on DiffSyncModel.
+
+    An IP address must be unique and can be associated with an interface.
+    """
 
     _modelname = "ip_address"
     _identifiers = ("address",)
@@ -100,7 +113,10 @@ class IPAddress(DiffSyncModel):
 
 
 class Prefix(DiffSyncModel):
-    """"""
+    """Prefix Model based on DiffSyncModel.
+
+    An Prefix must be associated with a Site and must be unique within a site.
+    """
 
     _modelname = "prefix"
     _identifiers = ("site_name", "prefix")
@@ -112,7 +128,7 @@ class Prefix(DiffSyncModel):
 
 
 class Cable(DiffSyncModel):
-    """ """
+    """Cable Model based on DiffSyncModel."""
 
     _modelname = "cable"
     _identifiers = (
@@ -132,8 +148,7 @@ class Cable(DiffSyncModel):
     error: Optional[str]
 
     def __init__(self, *args, **kwargs):
-        """ Ensure the """
-
+        """Ensure the cable is unique by ordering the devices alphabetically."""
         if "device_a_name" not in kwargs or "device_z_name" not in kwargs:
             raise ValueError("device_a_name and device_z_name are mandatory")
         if not kwargs["device_a_name"] or not kwargs["device_z_name"]:
@@ -155,7 +170,17 @@ class Cable(DiffSyncModel):
         super().__init__(*args, **ids, **kwargs)
 
     def get_device_intf(self, side):
+        """Get the device name and the interface name for a given side.
 
+        Args:
+            side (str): site to query, must be either a or z
+
+        Raises:
+            ValueError: when the side is not either a or z
+
+        Returns:
+            (device_name (str), interface_name (str))
+        """
         if side.lower() == "a":
             return self.device_a_name, self.interface_a_name
 
@@ -166,7 +191,10 @@ class Cable(DiffSyncModel):
 
 
 class Vlan(DiffSyncModel):
-    """ """
+    """Vlan Model based on DiffSyncModel.
+
+    An Vlan must be associated with a Site and the vlan_id msut be unique within a site.
+    """
 
     _modelname = "vlan"
     _identifiers = ("site_name", "vid")

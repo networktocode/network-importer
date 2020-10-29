@@ -1,3 +1,17 @@
+"""Collection of nornir tasks for the NetboxAPIAdapter.
+
+(c) 2020 Network To Code
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+  http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
 import logging
 import pynetbox
 
@@ -9,7 +23,7 @@ LOGGER = logging.getLogger("network-importer")
 
 
 def query_device_info_from_netbox(task: Task) -> Result:
-    """Nornir Task to query the device information from NetBox
+    """Nornir Task to query the device information from NetBox.
 
     Currently this task will pull both the device information but th goal is to pull additional information
     and return everything in a single dict
@@ -22,7 +36,6 @@ def query_device_info_from_netbox(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-
     netbox = pynetbox.api(
         url=config.SETTINGS.netbox.address,
         token=config.SETTINGS.netbox.token,

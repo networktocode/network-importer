@@ -1,9 +1,14 @@
-language: python
+---
+language: "python"
+services:
+  - "docker"
 python:
   - 3.7
 
-before_install:
-  - make build
+before_script:
+  - "pip install invoke toml"
+  - "invoke build-image -p $TRAVIS_PYTHON_VERSION"
 
-script: 
-  - make tests # run tests
+script:
+  # TODO Update invoke to pass the version of python.
+  - "invoke tests"

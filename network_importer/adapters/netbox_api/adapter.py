@@ -1,4 +1,5 @@
-"""
+"""NetBoxAPIAdapter class.
+
 (c) 2020 Network To Code
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -40,6 +41,7 @@ LOGGER = logging.getLogger("network-importer")
 
 
 class NetBoxAPIAdapter(BaseAdapter):
+    """Adapter to import Data from a Netbox Server over its API."""
 
     site = NetboxSite
     device = NetboxDevice
@@ -58,7 +60,7 @@ class NetBoxAPIAdapter(BaseAdapter):
     query_device_info_from_netbox = query_device_info_from_netbox
 
     def load(self):
-
+        """Initialize pynetbox and load all data from netbox in the local cache."""
         self.netbox = pynetbox.api(
             url=config.SETTINGS.netbox.address,
             token=config.SETTINGS.netbox.token,
@@ -112,6 +114,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         """Import all interfaces and IP address from Netbox for a given device.
 
         Args:
+            site (NetboxSite): Site the device is part of
             device (DiffSyncModel): Device to import
         """
         self.load_netbox_interface(site=site, device=device)
@@ -124,7 +127,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             site (NetboxSite): Site to import prefix for
         """
         if not config.SETTINGS.main.import_prefixes:
-            return False
+            return
 
         prefixes = self.netbox.ipam.prefixes.filter(site=site.name, status="active")
 
@@ -139,13 +142,13 @@ class NetBoxAPIAdapter(BaseAdapter):
             site.add_child(prefix)
 
     def load_netbox_vlan(self, site):
-        """Import all vlans from NetBox for a given site
+        """Import all vlans from NetBox for a given site.
 
         Args:
             site (NetboxSite): Site to import vlan for
         """
         if config.SETTINGS.main.import_vlans in [False, "no"]:
-            return False
+            return
 
         vlans = self.netbox.ipam.vlans.filter(site=site.name)
 
@@ -154,7 +157,9 @@ class NetBoxAPIAdapter(BaseAdapter):
             self.add(vlan)
             site.add_child(vlan)
 
-    def convert_interface_from_netbox(self, device, intf, site=None):
+    def convert_interface_from_netbox(
+        self, device, intf, site=None
+    ):  # pylint: disable=too-many-branches,too-many-statements
         """Convert PyNetBox interface object to NetBoxInterface model.
 
         Args:
@@ -162,7 +167,6 @@ class NetBoxAPIAdapter(BaseAdapter):
             device (NetBoxDevice): [description]
             intf (pynetbox interface object): [description]
         """
-
         interface = self.interface(
             name=intf.name,
             device_name=device.name,
@@ -227,11 +231,11 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         if site and intf.tagged_vlans and import_vlans:
             for vid in [v.vid for v in intf.tagged_vlans]:
-                vlan, new = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
+                vlan, _ = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
                 interface.allowed_vlans.append(vlan.get_unique_id())
 
         if site and intf.untagged_vlan and import_vlans:
-            vlan, new = self.get_or_create_vlan(
+            vlan, _ = self.get_or_create_vlan(
                 vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
             )
             interface.access_vlan = vlan.get_unique_id()
@@ -252,7 +256,6 @@ class NetBoxAPIAdapter(BaseAdapter):
             site (NetboxSite): DiffSync object representing a site
             device (NetboxDevice): DiffSync object representing the device
         """
-
         intfs = self.netbox.dcim.interfaces.filter(device=device.name)
         for intf in intfs:
             self.convert_interface_from_netbox(site=site, device=device, intf=intf)
@@ -260,7 +263,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         LOGGER.debug("%s | Found %s interfaces for %s", self.name, len(intfs), device.name)
 
     def load_netbox_ip_address(self, site, device):  # pylint: disable=unused-argument
-        """Import all IP addresses from NetBox for a given device
+        """Import all IP addresses from NetBox for a given device.
 
         Args:
             site (NetboxSite): DiffSync object representing a site
@@ -294,7 +297,6 @@ class NetBoxAPIAdapter(BaseAdapter):
             site (Site): Site object to import cables for
             device_names (list): List of device names that are part of the inventory
         """
-
         cables = self.netbox.dcim.cables.filter(site=site.name)
 
         nbr_cables = 0

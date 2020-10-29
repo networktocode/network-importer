@@ -52,21 +52,25 @@ def make_interface():
 
 @pytest.fixture
 def site_hq():
+    """Fixture for a site named HQ."""
     return Site(name="HQ")
 
 
 @pytest.fixture
 def site_sfo():
+    """Fixture for a site named SFO."""
     return Site(name="sfo")
 
 
 @pytest.fixture
 def dev_spine1():
+    """Fixture for a device named spine1 as part of SFO."""
     return Device(name="spine1", site_name="sfo")
 
 
 @pytest.fixture
 def dev_spine2():
+    """Fixture for a device named spine2 as part of SFO."""
     return Device(name="spine2", site_name="sfo")
 
 
@@ -181,7 +185,7 @@ def backend_b():
 
 @pytest.fixture
 def diff_children_nyc_dev1():
-
+    """Fixture dict of DiffElement."""
     children = dict()
     device_name = "nyc-dev1"
     site_name = "nyc"
