@@ -17,6 +17,7 @@ import logging
 
 import pynetbox
 from diffsync.exceptions import ObjectNotFound
+from diffsync import DiffSync, DiffSyncModel  # pylint: disable=unused-import
 
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.netbox_api.exceptions import NetboxObjectNotValid
