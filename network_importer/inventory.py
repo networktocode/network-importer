@@ -17,6 +17,8 @@ limitations under the License.
 
 import copy
 from typing import Any, Dict, List, Optional, Union
+
+import requests
 import pynetbox
 
 from nornir.core.deserializer.inventory import Inventory, HostsDict
@@ -88,7 +90,11 @@ class NetboxInventory(Inventory):
             filter_parameters["exclude"] = "config_context"
 
         # Instantiate netbox session using pynetbox
-        nb_session = pynetbox.api(url=nb_url, ssl_verify=ssl_verify, token=nb_token)
+        nb_session = pynetbox.api(url=nb_url, token=nb_token)
+        if not ssl_verify:
+            session = requests.Session()
+            session.verify = False
+            nb_session.http_session = session
 
         # fetch devices from netbox
         if filter_parameters:

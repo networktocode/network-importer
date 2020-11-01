@@ -205,7 +205,7 @@ def diff_children_nyc_dev1():
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     diffsync = NetBoxAPIAdapter(nornir=None)
-    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
+    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     return diffsync
 
@@ -214,7 +214,7 @@ def netbox_api_empty():
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
     diffsync = NetBoxAPIAdapter(nornir=None)
-    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890", ssl_verify=False,)  # nosec
+    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     diffsync.add(NetboxSite(name="HQ", remote_id=10))
     diffsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))

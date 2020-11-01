@@ -26,8 +26,10 @@ FIXTURE_28 = "../fixtures/netbox_28"
 
 def test_vlan_create_from_pynetbox(netbox_api_base):
 
+    api = pynetbox.api(url="http://mock", token="1234567890")
+
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_no_tag.json"))
-    pnb = pynetbox.core.response.Record(data, "http://mock", 1)
+    pnb = pynetbox.core.response.Record(values=data, api=api, endpoint=1)
 
     item = NetboxVlan.create_from_pynetbox(diffsync=netbox_api_base, obj=pnb, site_name="nyc")
 
@@ -39,8 +41,10 @@ def test_vlan_create_from_pynetbox(netbox_api_base):
 
 def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
 
+    api = pynetbox.api(url="http://mock", token="1234567890")
+
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_tags_01.json"))
-    pnb = pynetbox.core.response.Record(data, "http://mock", 1)
+    pnb = pynetbox.core.response.Record(values=data, api=api, endpoint=1)
 
     netbox_api_base.add(NetboxDevice(name="devA", site_name="nyc", remote_id=30))
 

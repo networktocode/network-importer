@@ -13,8 +13,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-import pynetbox
 
+import pynetbox
+import requests
 from nornir.core.task import Result, Task
 
 import network_importer.config as config  # pylint: disable=import-error
@@ -36,11 +37,12 @@ def query_device_info_from_netbox(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-    netbox = pynetbox.api(
-        url=config.SETTINGS.netbox.address,
-        token=config.SETTINGS.netbox.token,
-        ssl_verify=config.SETTINGS.netbox.request_ssl_verify,
-    )
+    netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
+
+    if not config.SETTINGS.netbox.request_ssl_verify:
+        session = requests.Session()
+        session.verify = False
+        netbox.http_session = session
 
     results = {
         "device": None,
