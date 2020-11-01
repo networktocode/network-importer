@@ -1,13 +1,9 @@
 ---
-- name: "Create all requirements for the Network Importer in Netbox"
+- name: "CREATE ALL OBJECTS REQUIRED FOR THE NETWORK IMPORTER IN NETBOX"
   hosts: ["all"]
   gather_facts: no
   connection: "local"
-  collections:
-    # ansible-galaxy collection install fragmentedpacket.netbox_modules
-    - "fragmentedpacket.netbox_modules"
   vars:
-    manufacturers: ["juniper", "cisco", "arista"]
     device_roles: ["spine", "leaf", "router"]
     platforms:
       - {name: "junos", manufacturer: "juniper"}
@@ -16,25 +12,35 @@
       - {name: "nxos", manufacturer: "cisco"}
       - {name: "eos", manufacturer: "arista"}
     site_prefix: "ni_02"
+    region: "ni_multi_site_02"
     sites: ["hou", "nyc", "sjc"]
     netbox_address: "{{ lookup('env','NETBOX_ADDRESS') }}"
     netbox_token: "{{ lookup('env','NETBOX_TOKEN') }}"
 
   tasks:
-    # - name: "Create Manufacturer in Netbox"
-    #   netbox_manufacturer:
-    #     netbox_url: "{{ netbox_address }}"
-    #     netbox_token: "{{ netbox_token }}"
-    #     data:
-    #       name: "{{ item.manufacturer }}"
-    #     state: "present"
-    #   loop: "{{platforms}}"
-    #   run_once: true
-    #   tags: ["manufacturer, device_type"]
-    #   delegate_to: "localhost"
+    - name: "01 CREATE REGION IN NETBOX"
+      netbox.netbox.netbox_region:
+        netbox_url: "{{ netbox_address }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ region }}"
+        state: "present"
+      run_once: true
+      tags: ["region"]
 
-    - name: "Create Device Type in Netbox"
-      netbox_device_type:
+    - name: "05 CREATE MANUFACTURER IN NETBOX"
+      netbox.netbox.netbox_manufacturer:
+        netbox_url: "{{ netbox_address }}"
+        netbox_token: "{{ netbox_token }}"
+        data:
+          name: "{{ item.manufacturer }}"
+        state: "present"
+      loop: "{{platforms}}"
+      run_once: true
+      tags: ["manufacturer", "device_type"]
+
+    - name: "10 CREATE DEVICE TYPE IN NETBOX"
+      netbox.netbox.netbox_device_type:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
@@ -48,10 +54,9 @@
       loop: "{{platforms}}"
       run_once: true
       tags: ["device_type"]
-      delegate_to: "localhost"
 
-    - name: "Create Device Role in Netbox"
-      netbox_device_role:
+    - name: "15 CREATE DEVICE ROLE IN NETBOX"
+      netbox.netbox.netbox_device_role:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
@@ -61,22 +66,21 @@
       loop: "{{device_roles}}"
       run_once: true
       tags: ["device_role"]
-      delegate_to: "localhost"
 
-    - name: "Create Sites in Netbox"
-      netbox_site:
+    - name: "20 CREATE SITE IN NETBOX"
+      netbox.netbox.netbox_site:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
           name: "{{site_prefix}}_{{item}}"
+          region: "{{ region }}"
         state: "present"
       loop: "{{sites}}"
       run_once: true
       tags: ["device_site"]
-      delegate_to: "localhost"
 
-    - name: "Create Device in Netbox"
-      netbox_device:
+    - name: "25 CREATE DEVICES IN NETBOX"
+      netbox.netbox.netbox_device:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
         data:
@@ -86,4 +90,3 @@
           site: "{{site_prefix}}_{{site}}"
         state: "present"
       tags: ["device"]
-      delegate_to: "localhost"
