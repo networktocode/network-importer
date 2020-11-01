@@ -80,3 +80,27 @@ def test_create_prefix_with_vlan(requests_mock, netbox_api_base):
     assert isinstance(prefix, NetboxPrefix) is True
     assert prefix.remote_id == 44
     assert prefix.vlan == "HQ__111"
+
+
+def test_translate_attrs_for_netbox_w_vlan(netbox_api_base):
+
+    prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=30)
+    netbox_api_base.add(prefix)
+
+    params = prefix.translate_attrs_for_netbox({"vlan": "HQ__111"})
+
+    assert "prefix" in params
+    assert params["site"] == 10
+    assert params["vlan"] == 23
+
+
+def test_translate_attrs_for_netbox_wo_vlan(netbox_api_base):
+
+    prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=30)
+    netbox_api_base.add(prefix)
+
+    params = prefix.translate_attrs_for_netbox({"vlan": None})
+
+    assert "prefix" in params
+    assert params["site"] == 10
+    assert "vlan" not in params
