@@ -10,7 +10,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-pynetbox = "^4.3"
+pynetbox = "^5.0"
 jsonschema = {version = "^3.2.0" }
 toml = {version = "^0.10.0" }
 nornir = "^2.4"

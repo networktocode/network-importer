@@ -15,6 +15,7 @@ limitations under the License.
 import logging
 import warnings
 
+import requests
 import pynetbox
 
 from diffsync.exceptions import ObjectAlreadyExists
@@ -61,11 +62,12 @@ class NetBoxAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynetbox and load all data from netbox in the local cache."""
-        self.netbox = pynetbox.api(
-            url=config.SETTINGS.netbox.address,
-            token=config.SETTINGS.netbox.token,
-            ssl_verify=config.SETTINGS.netbox.request_ssl_verify,
-        )
+        self.netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
+
+        if not config.SETTINGS.netbox.request_ssl_verify:
+            session = requests.Session()
+            session.verify = False
+            self.netbox.http_session = session
 
         sites = {}
         device_names = []
