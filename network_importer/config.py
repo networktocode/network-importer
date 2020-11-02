@@ -168,9 +168,7 @@ class InventorySettings(BaseSettings):
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""
 
-        fields = {
-            "inventory_filter": {"env": "INVENTORY_FILTER"}
-        }
+        fields = {"inventory_filter": {"env": "INVENTORY_FILTER"}}
 
 
 class Settings(BaseSettings):
