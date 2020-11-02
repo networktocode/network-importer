@@ -15,7 +15,6 @@ limitations under the License.
 
 import logging
 import os
-import json
 import yaml
 
 from nornir.core.task import Result, Task

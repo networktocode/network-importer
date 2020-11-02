@@ -65,7 +65,7 @@ class NetboxSettings(BaseSettings):
     token: Optional[str]
     verify_ssl: bool = True
 
-    """Define a list of supported platform, 
+    """Define a list of supported platform,
     if defined all devices without platform or with a different platforms will be removed from the inventory"""
     supported_platforms: List[str] = list()
 

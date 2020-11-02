@@ -41,7 +41,7 @@
       run_once: true
       tags: ["device_type"]
 
-    - name:  "15 CREATE DEVICE ROLE IN NETBOX"
+    - name: "15 CREATE DEVICE ROLE IN NETBOX"
       netbox.netbox.netbox_device_role:
         netbox_url: "{{ netbox_address }}"
         netbox_token: "{{ netbox_token }}"
