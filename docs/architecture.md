@@ -3,12 +3,11 @@
 
 Internally the network-importer is leveraging the [diffsync](https://github.com/networktocode/diffsync) library to compare the state of the network and the state of the Source of Truth. The diffsync library is designed to compare the state of 2 "adapters" based on a shared data-models.
 
-To communicate to the network devices, the network importer is leveraging `Nornir` and incorporate a concept of drivers to let the user define their own method to communicate to the devices.
+To communicate to the network devices, the network importer is leveraging `Nornir` and incorporate a concept of drivers to let the user define their own methods to communicate to the devices.
 By default the network-importer supports 3 main actions to execute against the network devices:
-- get_config
-- get_neighbors
-- get_vlans
-For each action, there is a specific Nornir processor define
+- `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
+- `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
+- `get_vlans`: Retrieve the list of vlans present on the device.
 
 ## Internal Datamodel
 
@@ -21,17 +20,19 @@ The internal/shared datamodel is defined in the [network_importer/models.py] fil
 - Vlan
 - Cable
 
-It's possible to extend the defualt models and add your own, please check the extensibility section of the doc
+> It's possible to extend the default models and add your own, please check the extensibility section of the documentation
 
 ## Adapters
 
-To operate the network importer needs 2 adapters. An adapter to read the information from the network and one to read/write information to Netbox via its Rest API are provided by default but it's possible to provide your own adapter or extend either of both default adapters.
+To operate the network-importer needs 2 adapters. An adapter to read the information from the network and one to read/write information to Netbox via its Rest API are provided by default but it's possible to provide your own adapter or extend either or both default adapters.
 
-The base adapter for Network-Importer is defined in `network_importer/XXX.py`. the main difference with a standard diffsync adapter is that a network-importer adapter needs to access a nornir inventory as parameters at init time (nornir).
+> The base adapter for Network-Importer is defined in `network_importer/adapters/base.py`. The main difference with a standard diffsync adapter is that a network-importer adapter needs to access a nornir inventory as parameters at init time (nornir).
 
 ### Netbox API Adapter
 
-The NetBox API adapter is defined to read the status of a netbox server over its rest API and update Netbox based on the status of the network.
+The NetBox API adapter is defined to read the status of a netbox server over its Rest API and update Netbox based on the status of the network.
+
+The table below present the capabilities in term of Read, Create, Update and Delete supported for each objects by the netbox_api adapter.
 
 | Model            | Inherit from | Create | Read   | Update | Delete |
 |------------------|--------------|--------|--------|--------|--------|
@@ -43,14 +44,42 @@ The NetBox API adapter is defined to read the status of a netbox server over its
 | NetboxVlan       | Vlan         | Yes    | Yes    | Yes    | No     | 
 | NetboxCable      | Cable        | Yes    | Yes    | No     | No     | 
 
+> It's possible to extend the default models and add your own, please check the extensibility section of the documentation
 
 ### Network Importer Adapter
 
-The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage nornir to read few additional information like the list of LLDP/neighbors or the list of vlans
+The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage nornir to read few additional information like the list of LLDP/neighbors or the list of vlans.
 
 ## Drivers
 
+The communicate with the network devices, the network importer is leveraging Nornir and support some drivers per platform to easily support more device type.
 
-- get_config
-- get_neighbors
-- get_vlans
+Each driver, can implement one or all of the following actions: 
+- `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
+- `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
+- `get_vlans`: Retrieve the list of vlans present on the device.
+
+By default, 4 drivers are available `default`, `default_cisco`, `juniper_junos` & `arista_eos` and the mapping between a platform and the specific driver can be defined in the configuration. By default the 5 most common platform are mapped to the following drivers.
+
+| Platform        | Driver         | 
+|-----------------|----------------|
+| all             | default        | 
+| cisco_nxos      | cisco_default  |
+| cisco_ios       | cisco_default  |
+| cisco_xr        | cisco_default  |
+| juniper_junos   | juniper_junos  |
+| arista_eos      | arista_eos     |
+
+> The name of the platform must match the name of the slug platform defined in Netbox for a given device
+
+### Drivers available by default
+
+Each driver can implement an action using the connection of its choice. The table below present how each driver shipping with the network improter are implemented.
+| Driver            | get_config   | get_neighbors   | get_vlans       |
+|-------------------|--------------|-----------------|-----------------|
+| default           | Napalm       | Napalm          | Not Supported   | 
+| default_cisco     | Netmiko      | Netmiko + Genie | Netmiko + Genie | 
+| juniper_junos     | default      | default         | Not Supported   | 
+| arista_eos        | default      | default         | Napalm + eAPI   |
+
+> The name of the Napalm driver for each device must be defined in Netbox as part of the platform definition.

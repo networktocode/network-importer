@@ -1,73 +1,137 @@
+# Configuration File
 
+By default the network importer will try to load a configuration file name `network_improter.toml`, this configuration file is not mandatory as long as the required information to connnect to netbox, batfish and/or the network devices are provided via environment variables.
 
-```
+It's possible to specify which configuration file should be used in cli with the option `--config`.
+
+The configuration file is organized in 8 sections detailled below. 
+
+## Main Section
+
+The main section included the main parameters to define what will be imported from the network and/or the SOT, where the configuration files are available/should be stored and how many number of tasks can be executed in parallel.
 
 ```toml
 [main]
-# import_ips = true 
-# import_prefixes = false
-# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
-# import_transceivers = false 
-# import_intf_status = true     # If set as False, interface status will be ignore all together
-# import_vlans="config"         # Valid options are ["cli", "config", true, false]
-# excluded_platforms_cabling = ["cisco_asa"]
-# nbr_workers= 25
+import_ips = true 
+import_prefixes = false
+import_intf_status = false
+import_vlans = "config"         # Valid options are ["cli", "config", "no", true, false]
+import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", "no", true, false]
+excluded_platforms_cabling = ["cisco_asa"]
 
-# Not fully fonctional right now, need to revisit this part
-# generate_hostvars = false 
-# hostvars_directory= "host_vars"
-
-# 
-# inventory_filter = ""
-# inventory_class = 
+# Number of nornir tasks to execute at the same tim
+nbr_workers= 25
 
 # Directory where the configuration can be find, organized in Batfish format
-# configs_directory= "configs"
+# configs_directory = "configs"
+```
 
-[batfish]
-address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
-# api_key= "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
-# network_name="network-importer"
-# snapshot_name="latest"
-# port_v1= 9997
-# port_v2= 9996
-# use_ssl= false
+# NetBox Section
 
+The `[netbox]` section regroup all parameters to connect to NetBox and it also include an optional list of supported platforms.
+
+```toml
 [netbox]
-# The information to connect to netbox needs to be provided, either in the config file or as environment variables
 address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
 verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
-cacert = "/tmp/netbox.crt"                          # Alternative Env Variable : NETBOX_CACERT
 
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
-# supported_platforms = [ "ios", "nxos" ]
+# supported_platforms = [ "cisco_ios", "cisco_nxos" ]
+```
 
-# Update device configuration on Netbox add the end of the execution
-# status_update = false 
-# status_on_pass = 1
-# status_on_fail = 4
-# status_on_unreachable = 0 
+## Batfish Section
 
+The `[batfish]` section regroup all parameters to connect to Batfish.
+```toml
+[batfish]
+address = "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
+# api_key = "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
+# network_name = "network-importer"
+# snapshot_name = "latest"
+# port_v1 = 9997
+# port_v2 = 9996
+# use_ssl = false
+# api_key = "XXXX"      # API KEY to connect to Batfish enterprise instance
+```
+
+## Network Section
+
+To be able to pull live information from the devices, the credential information needs to be provided either in the configuration file or as environment variables.
+
+It's also possible to define some connection parameters for Netmiko and define a list of expected FDQNs that can be found in the network.
+
+```toml
 [network]
-# To be able to pull live information from the devices, the credential information needs to be provided
-# either in the configuration file or as environment variables ( & NETWORK_DEVICE_PWD)
-login = "username"      # Alternative Env Variable : NETWORK_DEVICE_LOGIN
-password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
+login = "username"          # Alternative Env Variable : NETWORK_DEVICE_LOGIN
+password = "password"       # Alternative Env Variable : NETWORK_DEVICE_PWD
+enable = true               # Alternative Env Variable : NETWORK_DEVICE_ENABLE
 
+# Connection parameters for Netmiko 
+global_delay_factor = 5
+banner_timeout = 15
+conn_timeout = 5
+
+# List of valid FQDN that can be found in the network,
+# The FQDNs in this list will be automatically removed from all neighbords discovered from LLDP/CDP
+fqdns = [ ]
+```
+
+## Inventory Section
+
+Define what method should be used to connect to the network devices. 
+The default method is to use the primary IP defined in netbox but as an alternative it's possible to use the name of the device and provide your own FQDN.
+
+```toml
+[inventory]
+use_primary_ip = true  
+fqdn = []  
+
+# Optional filter to limit the scope of the inventory, takes a comma separated string of key value pair"
+inventory_filter = "site=XXX,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER
+
+# Configure what Inventory will be loaded bu the network importer.
+inventory_class = "network_importer.inventory.NetboxInventory"
+```
+
+## Adapters Section
+
+Configure what adapters will be loaded by the network importer.
+Please see the extensibility doc [ADD LINK] for more details on how to create your own adapter.
+
+```toml
+[adapters]
+network_class = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
+sot_class = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
+```
+
+## Drivers Section
+
+Configure what driver to use for a given platform.
+Please see the extensibility doc [ADD LINK] for more details on how to create your own driver.
+
+```toml
+[drivers.mapping]
+default = "network_importer.drivers.default
+cisco_nxos = "network_importer.drivers.cisco_default"
+cisco_ios = "network_importer.drivers.cisco_default"
+cisco_xr = "network_importer.drivers.cisco_default"
+juniper_junos = "network_importer.drivers.juniper_junos"
+arista_eos = "network_importer.drivers.arista_eos"
+```
+
+## Logs Section
+
+Control how the application is generating logs.
+
+```toml
 [logs]
-# Define log level, curently the logs are printed on the screen
-# level = "info" # "debug", "info", "warning"
+# Control the level of the logs printed to the console.
+level = "info"        # "debug", "info", "warning"
 
-# For each run, a performance log is generated by default to capture how long
+# For each run, a performance log can be generated to capture how long
 # some functions took to execute
-# performance_log = true
-# performance_log_directory = "performance_logs"
-            
-# When running in Apply mode, all the changes are logged in a changelog file
-# the supported format are text and jsonlines
-# change_log = true
-# change_log_format= "text"  # "jsonlines", "text"
-# change_log_filename= "changelog"
+performance_log = false
+performance_log_directory = "performance_logs"
 ```
