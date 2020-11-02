@@ -63,10 +63,15 @@ class NetboxSettings(BaseSettings):
 
     address: str = "http://localhost"
     token: Optional[str]
-    supported_platforms: List[str] = list()
-    cacert: Optional[str]
     verify_ssl: bool = True
-    request_ssl_verify: bool = False
+
+    """Define a list of supported platform, 
+    if defined all devices without platform or with a different platforms will be removed from the inventory"""
+    supported_platforms: List[str] = list()
+
+    # Currently not used in 2.x, need to add them back
+    # cacert: Optional[str]
+    # request_ssl_verify: bool = False
 
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""
@@ -74,7 +79,6 @@ class NetboxSettings(BaseSettings):
         fields = {
             "address": {"env": "NETBOX_ADDRESS"},
             "token": {"env": "NETBOX_TOKEN"},
-            "cacert": {"env": "NETBOX_CACERT"},
             "verify_ssl": {"env": "NETBOX_VERIFY_SSL"},
         }
 
@@ -104,8 +108,8 @@ class LogsSettings(BaseSettings):
     """Settings definition for the Log section of the configuration."""
 
     level: Literal["debug", "info", "warning"] = "info"
-    directory: str = "logs"
-    performance_log: bool = True
+    # directory: str = "logs"
+    performance_log: bool = False
     performance_log_directory: str = "performance_logs"
     # change_log: bool = True
     # change_log_format: Literal[
@@ -120,19 +124,18 @@ class MainSettings(BaseSettings):
     import_ips: bool = True
     import_prefixes: bool = False
     import_cabling: Union[bool, Literal["lldp", "cdp", "config", "no"]] = "lldp"
-    import_transceivers: bool = False
-    import_intf_status: bool = False
+    excluded_platforms_cabling: List[str] = list()
+
     import_vlans: Union[bool, Literal["config", "cli", "no"]] = "config"
+    import_intf_status: bool = False
+
+    nbr_workers: int = 25
+
+    configs_directory: str = "configs"
+
+    # NOT SUPPORTED CURRENTLY
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
-    nbr_workers: int = 25
-    inventory_class: str = "network_importer.inventory.NetboxInventory"
-    inventory_filter: str = ""
-    configs_directory: str = "configs"
-    data_directory: str = "data"
-    data_update_cache: bool = True
-    data_use_cache: bool = False
-    excluded_platforms_cabling: List[str] = list()
 
 
 class AdaptersSettings(BaseSettings):
@@ -158,6 +161,16 @@ class InventorySettings(BaseSettings):
 
     use_primary_ip: bool = True
     fqdn: Optional[str]
+
+    inventory_class: str = "network_importer.inventory.NetboxInventory"
+    inventory_filter: str = ""
+
+    class Config:
+        """Additional parameters to automatically map environment variable to some settings."""
+
+        fields = {
+            "inventory_filter": {"env": "INVENTORY_FILTER"}
+        }
 
 
 class Settings(BaseSettings):
