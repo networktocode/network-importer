@@ -153,7 +153,7 @@ class NetboxInterface(Interface):
         try:
             nb_params = item.translate_attrs_for_netbox(attrs)
             intf = diffsync.netbox.dcim.interfaces.create(**nb_params)
-            LOGGER.debug("Created interface %s (%s) in NetBox", intf.name, intf.id)
+            LOGGER.info("Created interface %s (%s) in NetBox", intf.name, intf.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning(
                 "Unable to create interface %s on %s in %s (%s)",
@@ -274,7 +274,7 @@ class NetboxIPAddress(IPAddress):
             LOGGER.warning("Unable to create the ip address %s in %s (%s)", ids["address"], diffsync.name, exc.error)
             return None
 
-        LOGGER.debug("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
+        LOGGER.info("Created IP %s (%s) in NetBox", ip_address.address, ip_address.id)
 
         item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
         item.remote_id = ip_address.id
@@ -333,7 +333,7 @@ class NetboxPrefix(Prefix):
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
         nb_params["site"] = site.remote_id
 
-        if "vlan" in attrs:
+        if "vlan" in attrs and attrs["vlan"]:
             vlan = self.diffsync.get(self.diffsync.vlan, identifier=attrs["vlan"])
             if vlan.remote_id:
                 nb_params["vlan"] = vlan.remote_id
@@ -352,7 +352,7 @@ class NetboxPrefix(Prefix):
 
         try:
             prefix = diffsync.netbox.ipam.prefixes.create(**nb_params)
-            LOGGER.debug("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
+            LOGGER.info("Created Prefix %s (%s) in NetBox", prefix.prefix, prefix.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Prefix %s in %s (%s)", ids["prefix"], diffsync.name, exc.error)
             return None
