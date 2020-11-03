@@ -13,8 +13,8 @@ The main use cases for the network importer:
 - [Supported Features and Architecture](docs/architecture.md)
 - [Extensibility](docs/extensibility.md)
 
-## How does it work
+## Questions
 
-The Network Importer is using different tools to collect information from the network devices: 
-- [batfish](https://github.com/batfish/batfish) to parse the configurations and extract a vendor neutral data model. 
-- [nornir], [napalm], [netmiko] and [ntc-templates] to extract some information from the device cli if available
+For any questions or comments, please feel free to open an issue or swing by the [networktocode slack channel](https://networktocode.slack.com/). (channel #networktocode)
+
+Sign up [here](http://slack.networktocode.com/)
