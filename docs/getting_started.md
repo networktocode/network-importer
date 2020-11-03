@@ -22,27 +22,33 @@ To operate, the Network Importer is dependents on the following items:
 A device inventory must be already available in NetBox, if you don't have your devices in NetBox yet you can use the [onboarding plugin for NetBox](https://github.com/networktocode/ntc-netbox-plugin-onboarding/) to easily import your devices. 
 
 To be able to connect to the device the following information needs to be defined in NetBox:
-- Primary ip address
+- Primary ip address (or valid fqdn)
 - Platform (must be a valid netmiko driver or have a valid napalm driver defined)
+
 > Connecting to the device is not mandatory but some features depends on it: configuration update, mostly cabling and potentially vlan update.
 
 #### Batfish
 
 The Network Importer requires to have access to a working batfish environment, you can easily start one using docker or use a Batfish Enterprise instance.
 
-You can start a local batfish instance with the following command : `docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.10.08.667`
+You can start a local batfish instance with the following command 
+```
+docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.10.08.667
+```
 
 #### Configuration file
 
 The information to connect to NetBox must be provided either via environment variables or via the configuration file.
-The configuration file below present the most standard options that can be provided to control the behavior of the Network Importer. Please check the [documentation of the configuration file](configuration.md) for the complete list of all options.
+The configuration file below present the most standard options that can be provided to control the behavior of the Network Importer. 
+
+Please check the [documentation of the configuration file](configuration.md) for the complete list of all options.
 
 ```toml
 [main]
 # import_ips = true 
 # import_prefixes = false
 # import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
-# import_intf_status = true     # If set as False, interface status will be ignore all together
+# import_intf_status = false     # If set as False, interface status will be ignore all together
 # import_vlans = "config"         # Valid options are ["cli", "config", true, false]
 # excluded_platforms_cabling = ["cisco_asa"]
 
@@ -72,7 +78,7 @@ login = "username"      # Alternative Env Variable : NETWORK_DEVICE_LOGIN
 password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
 
 [batfish]
-address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
+address= "localhost"    # Alternative Env Variable : BATFISH_ADDRESS
 # api_key = "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
 # use_ssl = false
 
@@ -83,7 +89,7 @@ address= "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
 
 ### Execute
 
-The network importer can run either in `check` mode or in `apply` mode. 
+The Network Importer can run either in `check` mode or in `apply` mode. 
  - In `check` mode, no modification will be made to the SOT, the differences will be printed on the screen
  - in `apply` mode, the SOT will be updated will all interfaces, IPs, vlans etc
 
@@ -100,19 +106,18 @@ This command will print on the screen a list of all changes that have been detec
 
 #### Apply Mode
 
-If you are confident with the changes reported in check mode, you can run the Network Importer in apply mode to update your SOT to align with your network. The network importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
+If you are confident with the changes reported in check mode, you can run the network importer in apply mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
 
 ```
 network-importer --apply [--update-configs] [--limit="site=nyc"]
 ```
 
-> Running in Apply mode may result in loss of data in your SOT, as the network importer will attempt to delete all Interfaces and Ip addresses that are not present in the network. 
+> !! Running in Apply mode may result in loss of data in your SOT, as the network importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
 > Before running in Apply mode, it's highly encouraged to do a backup of your database.
 
-
-
 ## Development
-In addition to the supplied Makefile you can also use `docker-compose` to bring up the required service stack. Like so:
+
+In addition to the supplied command you can also use `docker-compose` to bring up the required service stack. Like so:
 ```
 sudo docker-compose up -d
 sudo docker-compose exec network-importer bash

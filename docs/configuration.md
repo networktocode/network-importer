@@ -16,14 +16,14 @@ import_ips = true
 import_prefixes = false
 import_intf_status = false
 import_vlans = "config"         # Valid options are ["cli", "config", "no", true, false]
-import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", "no", true, false]
+import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
 # Number of nornir tasks to execute at the same tim
 nbr_workers= 25
 
 # Directory where the configuration can be find, organized in Batfish format
-# configs_directory = "configs"
+configs_directory = "configs"
 ```
 
 # NetBox Section
@@ -38,7 +38,7 @@ verify_ssl = true                                   # Alternative Env Variable :
 
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
-# supported_platforms = [ "cisco_ios", "cisco_nxos" ]
+supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 ```
 
 ## Batfish Section
@@ -47,13 +47,13 @@ The `[batfish]` section regroup all parameters to connect to Batfish.
 ```toml
 [batfish]
 address = "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
-# api_key = "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
-# network_name = "network-importer"
-# snapshot_name = "latest"
-# port_v1 = 9997
-# port_v2 = 9996
-# use_ssl = false
-# api_key = "XXXX"      # API KEY to connect to Batfish enterprise instance
+api_key = "XXXX"        # Alternative Env Variable : BATFISH_API_KEY
+network_name = "network-importer"
+snapshot_name = "latest"
+port_v1 = 9997
+port_v2 = 9996
+use_ssl = false
+api_key = "XXXX"       # API KEY to connect to Batfish enterprise instance
 ```
 
 ## Network Section
@@ -81,15 +81,16 @@ fqdns = [ ]
 ## Inventory Section
 
 Define what method should be used to connect to the network devices. 
-The default method is to use the primary IP defined in netbox but as an alternative it's possible to use the name of the device and provide your own FQDN.
 
 ```toml
 [inventory]
+# The default method is to use the primary IP defined in netbox 
+# As an alternative it's possible to use the name of the device and provide your own FQDN.
 use_primary_ip = true  
 fqdn = []  
 
 # Optional filter to limit the scope of the inventory, takes a comma separated string of key value pair"
-inventory_filter = "site=XXX,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER
+filter = "site=XXX,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER
 
 # Configure what Inventory will be loaded bu the network importer.
 inventory_class = "network_importer.inventory.NetboxInventory"
@@ -97,8 +98,8 @@ inventory_class = "network_importer.inventory.NetboxInventory"
 
 ## Adapters Section
 
-Configure what adapters will be loaded by the network importer.
-Please see the extensibility doc [ADD LINK] for more details on how to create your own adapter.
+Configure which adapters will be loaded by the network importer.
+Please see the [extensibility section](extensibility.md) of the documentation for more details on how to create your own adapter.
 
 ```toml
 [adapters]
@@ -108,12 +109,12 @@ sot_class = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
 
 ## Drivers Section
 
-Configure what driver to use for a given platform.
-Please see the extensibility doc [ADD LINK] for more details on how to create your own driver.
+Configure which driver to use for a given platform.
+Please see the [extensibility section](extensibility.md) of the documentation for more details on how to create your own driver.
 
 ```toml
 [drivers.mapping]
-default = "network_importer.drivers.default
+default = "network_importer.drivers.default"
 cisco_nxos = "network_importer.drivers.cisco_default"
 cisco_ios = "network_importer.drivers.cisco_default"
 cisco_xr = "network_importer.drivers.cisco_default"
