@@ -62,8 +62,8 @@ class NetworkImporter:
         # Extract additional query filters if defined and convert string to dict
         #  Filters can be defined at the configuration level or in CLI or both
         # ------------------------------------------------------------------------
-        if config.SETTINGS.inventory.inventory_filter:
-            csparams = config.SETTINGS.inventory.inventory_filter.split(",")
+        if config.SETTINGS.inventory.filter:
+            csparams = config.SETTINGS.inventory.filter.split(",")
             for csp in csparams:
                 if "=" not in csp:
                     continue

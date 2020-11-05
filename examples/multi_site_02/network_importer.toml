@@ -4,11 +4,13 @@
 import_ips = true
 import_prefixes = true
 import_cabling = "config"
-import_vlans = "config"
+import_vlans = false
+
+nbr_workers = 1
 
 [inventory]
 filter="region=ni_multi_site_02"
 
 [logs]
-level = "info"
+level = "debug"
 

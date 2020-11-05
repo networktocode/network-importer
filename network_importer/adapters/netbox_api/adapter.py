@@ -64,7 +64,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         """Initialize pynetbox and load all data from netbox in the local cache."""
         self.netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
 
-        if not config.SETTINGS.netbox.request_ssl_verify:
+        if not config.SETTINGS.netbox.verify_ssl:
             session = requests.Session()
             session.verify = False
             self.netbox.http_session = session

@@ -163,7 +163,7 @@ class InventorySettings(BaseSettings):
     fqdn: Optional[str]
 
     inventory_class: str = "network_importer.inventory.NetboxInventory"
-    inventory_filter: str = ""
+    filter: str = ""
 
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""

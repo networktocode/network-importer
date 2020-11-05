@@ -90,7 +90,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     enable_console_logging(verbosity=0)
 
     filters = {}
-    build_filter_params(config.SETTINGS.main.inventory_filter.split((",")), filters)
+    build_filter_params(config.SETTINGS.inventory.filter.split((",")), filters)
 
     ni = NetworkImporter()
 
