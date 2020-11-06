@@ -54,10 +54,10 @@ class NetboxInterface(Interface):
     connected_endpoint_type: Optional[str]
 
     def translate_attrs_for_netbox(self, attrs):  # pylint: disable=too-many-branches
-        """Translate interface parameters into Netbox format.
+        """Translate interface attributes into Netbox format.
 
         Args:
-            params (dict): Dictionnary of attributes/parameters of the object to translate
+            params (dict): Dictionnary of attributes of the object to translate
 
         Returns:
             dict: Netbox parameters
@@ -389,10 +389,10 @@ class NetboxPrefix(Prefix):
     remote_id: Optional[int]
 
     def translate_attrs_for_netbox(self, attrs):
-        """Translate prefix parameters into Netbox format.
+        """Translate prefix attributes into Netbox format.
 
         Args:
-            params (dict): Dictionnary of attributes/parameters of the object to translate
+            attrs (dict): Dictionnary of attributes of the object to translate
 
         Returns:
             dict: Netbox parameters
@@ -470,10 +470,10 @@ class NetboxVlan(Vlan):
     tag_prefix: str = "device="
 
     def translate_attrs_for_netbox(self, attrs):
-        """Translate vlan parameters into Netbox format.
+        """Translate vlan attributes into Netbox format.
 
         Args:
-            params (dict): Dictionnary of attributes/parameters of the object to translate
+            params (dict): Dictionnary of attributes of the object to translate
 
         Returns:
             dict: Netbox parameters
