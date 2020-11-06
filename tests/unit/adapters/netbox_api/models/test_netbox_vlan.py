@@ -22,13 +22,14 @@ from network_importer.adapters.netbox_api.models import NetboxVlan, NetboxDevice
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 FIXTURE_28 = "../fixtures/netbox_28"
+FIXTURE_29 = "../fixtures/netbox_29"
 
 
 def test_vlan_create_from_pynetbox(netbox_api_base):
 
     api = pynetbox.api(url="http://mock", token="1234567890")
 
-    data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_no_tag.json"))
+    data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_29}/vlan_101_no_tag.json"))
     pnb = pynetbox.core.response.Record(values=data, api=api, endpoint=1)
 
     item = NetboxVlan.create_from_pynetbox(diffsync=netbox_api_base, obj=pnb, site_name="nyc")
@@ -43,7 +44,7 @@ def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
 
     api = pynetbox.api(url="http://mock", token="1234567890")
 
-    data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_28}/vlan_101_tags_01.json"))
+    data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_29}/vlan_101_tags_01.json"))
     pnb = pynetbox.core.response.Record(values=data, api=api, endpoint=1)
 
     netbox_api_base.add(NetboxDevice(name="devA", site_name="nyc", remote_id=30))
@@ -82,6 +83,8 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
+    netbox_api_base.add(NetboxDevice(name="dev1", site_name="HQ", remote_id=32, device_tag_id=12))
+    netbox_api_base.add(NetboxDevice(name="dev2", site_name="HQ", remote_id=33, device_tag_id=13))
     params = vlan.translate_attrs_for_netbox({"name": "VOICE", "associated_devices": ["dev1", "dev2"]})
 
     assert "name" in params
@@ -89,7 +92,7 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
     assert "site" in params
     assert params["site"] == 10
     assert "tags" in params
-    assert params["tags"] == ["device=dev1", "device=dev2"]
+    assert sorted(params["tags"]) == [12, 13]
 
 
 def test_translate_attrs_for_netbox_missing_site(netbox_api_base):

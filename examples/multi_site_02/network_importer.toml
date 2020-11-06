@@ -4,7 +4,7 @@
 import_ips = true
 import_prefixes = true
 import_cabling = "config"
-import_vlans = false
+import_vlans = "config"
 
 nbr_workers = 1
 

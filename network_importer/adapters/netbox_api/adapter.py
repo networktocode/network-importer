@@ -32,6 +32,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxCable,
     NetboxPrefix,
     NetboxVlan,
+    NetboxVlanPre29,
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
 
@@ -78,6 +79,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         if self.netbox_version < VersionInfo.parse("2.9.0"):
             LOGGER.debug("Version %s of netbox detected, will update the ip_address model.", self.netbox_version)
             self.ip_address = NetboxIPAddressPre29
+            self.vlan = NetboxVlanPre29
 
     def load(self):
         """Initialize pynetbox and load all data from netbox in the local cache."""

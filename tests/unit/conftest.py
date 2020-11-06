@@ -235,3 +235,15 @@ def network_importer_base():
     diffsync.add(Vlan(vid=111, site_name="HQ"))
 
     return diffsync
+
+
+@pytest.fixture
+def empty_netbox_query():
+    """Return an empty list to a list query."""
+    value = {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": [],
+    }
+    return value

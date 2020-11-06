@@ -46,6 +46,28 @@ class NetboxDevice(Device):
     remote_id: Optional[int]
     primary_ip: Optional[str]
 
+    device_tag_id: Optional[int]
+
+    def get_device_tag_id(self):
+        """Get the Netbox id of the tag for this device.
+
+        If the ID is already present locally return it
+        If not try to retrieve it from netbox or create it in Netbox if needed
+
+        Returns:
+            device_tag_id (int)
+        """
+        if self.device_tag_id:
+            return self.device_tag_id
+
+        tag = self.diffsync.netbox.extras.tags.get(name=f"device={self.name}")
+
+        if not tag:
+            tag = self.diffsync.netbox.extras.tags.create(name=f"device={self.name}", slug=f"device__{self.name}")
+
+        self.device_tag_id = tag.id
+        return self.device_tag_id
+
 
 class NetboxInterface(Interface):
     """Extension of the Interface model."""
@@ -473,7 +495,7 @@ class NetboxVlan(Vlan):
         """Translate vlan attributes into Netbox format.
 
         Args:
-            params (dict): Dictionnary of attributes of the object to translate
+            attrs (dict): Dictionnary of attributes of the object to translate
 
         Returns:
             dict: Netbox parameters
@@ -492,7 +514,20 @@ class NetboxVlan(Vlan):
         nb_params["site"] = site.remote_id
 
         if "associated_devices" in attrs:
-            nb_params["tags"] = [f"device={device}" for device in attrs["associated_devices"]]
+            nb_params["tags"] = []
+            for device_name in attrs["associated_devices"]:
+                device = self.diffsync.get(self.diffsync.device, identifier=device_name)
+
+                if not device:
+                    LOGGER.error(
+                        "Found an associated device on Vlan %s that doesn't exist (%s)",
+                        self.get_unique_id(),
+                        device_name,
+                    )
+                    continue
+
+                tag_id = device.get_device_tag_id()
+                nb_params["tags"].append(tag_id)
 
         return nb_params
 
@@ -501,7 +536,9 @@ class NetboxVlan(Vlan):
         """Create a new NetboxVlan object from a pynetbox vlan object.
 
         Args:
-            pynetbox ([type]): Vlan object returned by Pynetbox
+            diffsync (DiffSync): Netbox API Adapter
+            obj (pynetbox.models.ipam.Vlans): Vlan object returned by Pynetbox
+            site_name (str): name of the site associated with this vlan
 
         Returns:
             NetboxVlan: DiffSync object
@@ -509,12 +546,16 @@ class NetboxVlan(Vlan):
         item = cls(vid=obj.vid, site_name=site_name, name=obj.name, remote_id=obj.id)
 
         # Check the existing tags to learn which device is already associated with this vlan
-        # Exclude all vlans that are not part of the inventory
-        if obj.tags:
-            all_devices = [tag.split(item.tag_prefix)[1] for tag in obj.tags if item.tag_prefix in tag]
-            for device in all_devices:
-                if diffsync.get(diffsync.device, identifier=device):
-                    item.add_device(device)
+        # Exclude all devices that are not part of the inventory
+        for tag in obj.tags:
+            if item.tag_prefix not in tag["name"]:
+                continue
+
+            device_name = tag["name"].split(item.tag_prefix)[1]
+            device = diffsync.get(diffsync.device, identifier=device_name)
+            if device:
+                item.add_device(device_name)
+                device.device_tag_id = tag["id"]
 
         return item
 
@@ -530,7 +571,7 @@ class NetboxVlan(Vlan):
             nb_params = item.translate_attrs_for_netbox(attrs)
             vlan = diffsync.netbox.ipam.vlans.create(**nb_params)
             item.remote_id = vlan.id
-            LOGGER.info("Created Vlan %s in %s (%s)", vlan.get_unique_id(), diffsync.name, vlan.id)
+            LOGGER.info("Created Vlan %s in %s (%s)", item.get_unique_id(), diffsync.name, vlan.id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, diffsync.name, exc.error)
             return None
@@ -548,12 +589,12 @@ class NetboxVlan(Vlan):
         # to ensure that we won't delete an existing tags
         if "tags" in nb_params and nb_params["tags"] and obj.tags:
             for tag in obj.tags:
-                if self.tag_prefix not in tag:
-                    nb_params["tags"].append(tag)
+                if self.tag_prefix not in tag["name"]:
+                    nb_params["tags"].append(tag["id"])
                 else:
-                    dev_name = tag.split(self.tag_prefix)[1]
+                    dev_name = tag["name"].split(self.tag_prefix)[1]
                     if not self.diffsync.get(self.diffsync.device, identifier=dev_name):
-                        nb_params["tags"].append(tag)
+                        nb_params["tags"].append(tag["id"])
 
         return nb_params
 
@@ -577,7 +618,7 @@ class NetboxVlan(Vlan):
         return super().update(attrs)
 
 
-class NetboxVlan28(Vlan):
+class NetboxVlanPre29(NetboxVlan):
     """Extension of the Vlan model."""
 
     remote_id: Optional[int]
@@ -612,10 +653,12 @@ class NetboxVlan28(Vlan):
 
     @classmethod
     def create_from_pynetbox(cls, diffsync: "DiffSync", obj, site_name):
-        """Create a new NetboxVlan object from a pynetbox vlan object.
+        """Create a new NetboxVlan object from a pynetbox vlan object for version of NetBox prior to 2.9.
 
         Args:
-            pynetbox ([type]): Vlan object returned by Pynetbox
+            diffsync (DiffSync): Netbox API Adapter
+            obj (pynetbox.models.ipam.Vlans): Vlan object returned by Pynetbox
+            site_name (str): name of the site associated with this vlan
 
         Returns:
             NetboxVlan: DiffSync object
@@ -629,25 +672,6 @@ class NetboxVlan28(Vlan):
             for device in all_devices:
                 if diffsync.get(diffsync.device, identifier=device):
                     item.add_device(device)
-
-        return item
-
-    @classmethod
-    def create(cls, diffsync: "DiffSync", ids: dict, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Create new Vlan in NetBox.
-
-        Returns:
-            NetboxVlan: DiffSync object
-        """
-        try:
-            item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
-            nb_params = item.translate_attrs_for_netbox(attrs)
-            vlan = diffsync.netbox.ipam.vlans.create(**nb_params)
-            item.remote_id = vlan.id
-            LOGGER.info("Created Vlan %s in %s (%s)", vlan.get_unique_id(), diffsync.name, vlan.id)
-        except pynetbox.core.query.RequestError as exc:
-            LOGGER.warning("Unable to create Vlan %s in %s (%s)", ids, diffsync.name, exc.error)
-            return None
 
         return item
 
@@ -670,25 +694,6 @@ class NetboxVlan28(Vlan):
                         nb_params["tags"].append(tag)
 
         return nb_params
-
-    def update(self, attrs: dict) -> Optional["DiffSyncModel"]:
-        """Update new Vlan in NetBox.
-
-        Returns:
-            NetboxVlan: DiffSync object
-        """
-        nb_params = self.translate_attrs_for_netbox(attrs)
-
-        try:
-            vlan = self.diffsync.netbox.ipam.vlans.get(self.remote_id)
-            clean_params = self.update_clean_tags(nb_params=nb_params, obj=vlan)
-            vlan.update(data=clean_params)
-            LOGGER.info("Updated Vlan %s (%s) in NetBox", self.get_unique_id(), self.remote_id)
-        except pynetbox.core.query.RequestError as exc:
-            LOGGER.warning("Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.diffsync.name, exc.error)
-            return None
-
-        return super().update(attrs)
 
 
 class NetboxCable(Cable):
