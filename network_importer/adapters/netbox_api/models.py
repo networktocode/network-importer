@@ -379,7 +379,7 @@ class NetboxIPAddressPre29(NetboxIPAddress):
         Returns:
             NetboxIPAddress: DiffSync object
         """
-        item = cls(address=obj.address, device_name=device_name, interface=obj.interface.name, remote_id=obj.id)
+        item = cls(address=obj.address, device_name=device_name, interface_name=obj.interface.name, remote_id=obj.id)
         return item
 
 

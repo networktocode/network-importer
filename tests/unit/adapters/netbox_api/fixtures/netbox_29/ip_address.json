@@ -1,29 +1,32 @@
 {
-    "id": 15,
+    "id": 416,
+    "url": "http://localhost/api/ipam/ip-addresses/416/",
     "family": {
       "value": 4,
       "label": "IPv4"
     },
-    "address": "10.63.0.2/31",
+    "address": "10.255.0.69/30",
     "vrf": null,
     "tenant": null,
     "status": {
       "value": "active",
-      "label": "Active",
-      "id": 1
+      "label": "Active"
     },
     "role": null,
-    "interface": {
-      "id": 302,
-      "url": "http://localhost/api/dcim/interfaces/302/",
+    "assigned_object_type": "dcim.interface",
+    "assigned_object_id": 771,
+    "assigned_object": {
+      "id": 771,
+      "url": "http://localhost/api/dcim/interfaces/771/",
       "device": {
-        "id": 29,
-        "url": "http://localhost/api/dcim/devices/29/",
+        "id": 50,
+        "url": "http://localhost/api/dcim/devices/50/",
         "name": "HQ-CORE-SW02",
         "display_name": "HQ-CORE-SW02"
       },
-      "virtual_machine": null,
-      "name": "TenGigabitEthernet1/0/1"
+      "name": "TenGigabitEthernet1/0/1",
+      "cable": null,
+      "connection_status": null
     },
     "nat_inside": null,
     "nat_outside": null,
@@ -31,6 +34,6 @@
     "description": "",
     "tags": [],
     "custom_fields": {},
-    "created": "2020-01-16",
-    "last_updated": "2020-01-16T06:03:16.986000Z"
-  }
+    "created": "2020-11-05",
+    "last_updated": "2020-11-05T22:59:40.561732Z"
+}
