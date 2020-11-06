@@ -27,10 +27,16 @@ class BaseAdapter(DiffSync):
     vlan = Vlan
     prefix = Prefix
 
-    def __init__(self, nornir):
+    def __init__(self, nornir, config):
         """Initialize the base adapter and store the nornir object locally."""
         super().__init__()
         self.nornir = nornir
+        self.config = self._validate_config(config)
+
+    @classmethod
+    def _validate_config(cls, config):
+        """Placeholder method that can be reimplemented by each adapter to validate if its config is valid."""
+        return config
 
     def load(self):
         """Load the local cache with data from the remove system."""

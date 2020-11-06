@@ -12,13 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
 from pydantic import BaseSettings
 
-# pylint: disable=too-few-public-methods
+# pylint: disable=too-few-public-methods,no-self-argument,no-self-use
 
 
 class AdapterSettings(BaseSettings):
     """Config settings for the netbox_api adapter. Not used currently."""
-
-    backend_version: str = "default"
