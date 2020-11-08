@@ -17,7 +17,7 @@ import warnings
 
 import requests
 import pynetbox
-from semver import VersionInfo
+from packaging.version import Version, InvalidVersion
 
 from diffsync.exceptions import ObjectAlreadyExists
 
@@ -71,12 +71,12 @@ class NetBoxAPIAdapter(BaseAdapter):
         Version specific models should be used to manage older version.
         """
         try:
-            self.netbox_version = VersionInfo.parse(f"{self.netbox.version}.0")
-        except ValueError:
+            self.netbox_version = Version(self.netbox.version)
+        except InvalidVersion:
             LOGGER.warning("Unable to identify the current version of Netbox from Pynetbox, using the default version.")
             return
 
-        if self.netbox_version < VersionInfo.parse("2.9.0"):
+        if self.netbox_version < Version("2.9"):
             LOGGER.debug("Version %s of netbox detected, will update the ip_address model.", self.netbox_version)
             self.ip_address = NetboxIPAddressPre29
             self.vlan = NetboxVlanPre29
