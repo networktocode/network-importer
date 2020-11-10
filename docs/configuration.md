@@ -1,6 +1,6 @@
 # Configuration File
 
-By default the network importer will try to load a configuration file name `network_improter.toml`, this configuration file is not mandatory as long as the required information to connnect to netbox, batfish and/or the network devices are provided via environment variables.
+By default the network importer will try to load a configuration file name `network_importer.toml`, this configuration file is not mandatory as long as the required information to connnect to netbox, batfish and/or the network devices are provided via environment variables.
 
 It's possible to specify which configuration file should be used in cli with the option `--config`.
 
@@ -15,7 +15,20 @@ The main section included the main parameters to define what will be imported fr
 import_ips = true 
 import_prefixes = false
 import_intf_status = false
+
+# Vlans (name, vlan-id) can be imported from the configuration, from the CLI or both 
+# - "config" will import the vlans just from the configuration
+# - "cli" will import the vlans from the cli using the action `get_vlans`
+# - "true" will import vlans from both cli and config
+# - no or false will not import any vlans
+# The association between interface and vlans will always be derived from the configuration.
 import_vlans = "config"         # Valid options are ["cli", "config", "no", true, false]
+
+# Cabling can be imported from LLDP, CDP or the configuration (for some point to point links)
+# - "lldp" or "cdp" will import the vlans from the cli using the action `get_neighbors`
+# - "config" will import the neighbors from the configuration (for point to point links)
+# - "true" will import neighbors from both cli and config 
+# - no or false will not import any neighbors
 import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 

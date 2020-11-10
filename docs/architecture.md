@@ -3,7 +3,7 @@
 
 Internally the network-importer is leveraging the [diffsync](https://github.com/networktocode/diffsync) library to compare the state of the network and the state of the Source of Truth. The diffsync library is designed to compare the state of 2 **adapters** based on a shared data-models.
 
-To communicate to the network devices, the network importer is leveraging `Nornir` and incorporate a concept of **drivers** to easily add support for more platforms if needed.
+To communicate to the network devices, the network importer is leveraging [Nornir](https://github.com/nornir-automation/nornir) and incorporate a concept of **drivers** to easily add support for more platforms if needed.
 By default the Network Importer supports 3 main actions to execute against the network devices:
 - `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
 - `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
@@ -11,7 +11,7 @@ By default the Network Importer supports 3 main actions to execute against the n
 
 ## Internal Datamodel
 
-The internal/shared datamodel is defined in the [network_importer/models.py] file. Currently the following models are defined
+The internal/shared datamodel is defined in the [network_importer/models.py](../network_importer/models.py) file. Currently the following models are defined
 - Site
 - Device 
 - Interface 
@@ -28,7 +28,7 @@ To operate the Network Importer needs 2 adapters.
 
 An adapter to read the information from the network and one to read/write information to Netbox via its Rest API are provided by default but it's possible to provide your own adapter or extend either or both default adapters.
 
-> The base adapter for Network Importer is defined in `network_importer/adapters/base.py`. The main difference with a standard diffsync adapter is that a Network Importer adapter needs to accept a nornir inventory as parameters at init time (nornir).
+> The base adapter for Network Importer is defined in [network_importer/adapters/base.py](../network_importer/adapters/base.py). The main difference with a standard diffsync adapter is that a Network Importer adapter needs to accept a nornir inventory as parameters at init time (nornir).
 
 ### Netbox API Adapter
 
@@ -61,7 +61,7 @@ Each driver, should support each of the following actions:
 - `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
 - `get_vlans`: Retrieve the list of vlans present on the device.
 
-By default, 4 drivers are available `default`, `default_cisco`, `juniper_junos` & `arista_eos` and the mapping between a platform and the specific driver can be defined in the configuration. By default the 5 most common platforms are mapped to the following drivers.
+By default, 4 drivers are available `default`, `cisco_default`, `juniper_junos` & `arista_eos` and the mapping between a platform and the specific driver can be defined in the configuration. By default the 5 most common platforms are mapped to the following drivers.
 
 | Platform        | Driver         | 
 |-----------------|----------------|

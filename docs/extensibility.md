@@ -144,9 +144,13 @@ from .models import MySite
 class MyOtherAdapter(NetworkAPIAdapter):
 
     site = MySite
+
+    def load(self):
+        super().load()
+        # Add your logic here to populate asn
 ```
 
-For this modification to take effect, the new adapter must be registered in the configuraiton file.
+For this modification to take effect, the new adapter must be registered in the configuration file.
 ```toml
 [adapters]
 sot_class = "my_python_package.adapters.MyOtherAdapter"
