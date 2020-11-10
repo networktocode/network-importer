@@ -22,7 +22,7 @@ from pybatfish.client.session import Session
 # pylint: disable=import-error
 import network_importer.config as config
 from network_importer.adapters.base import BaseAdapter
-from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
+
 from network_importer.inventory import reachable_devs, valid_and_reachable_devs
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
@@ -40,14 +40,6 @@ LOGGER = logging.getLogger("network-importer")
 
 class NetworkImporterAdapter(BaseAdapter):
     """Adapter to import data from a network based on Batfish."""
-
-    site = Site
-    device = Device
-    interface = Interface
-    ip_address = IPAddress
-    cable = Cable
-    vlan = Vlan
-    prefix = Prefix
 
     top_level = ["site", "device", "cable"]
 

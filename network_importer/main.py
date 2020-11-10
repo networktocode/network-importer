@@ -62,8 +62,8 @@ class NetworkImporter:
         # Extract additional query filters if defined and convert string to dict
         #  Filters can be defined at the configuration level or in CLI or both
         # ------------------------------------------------------------------------
-        if config.SETTINGS.main.inventory_filter:
-            csparams = config.SETTINGS.main.inventory_filter.split(",")
+        if config.SETTINGS.inventory.filter:
+            csparams = config.SETTINGS.inventory.filter.split(",")
             for csp in csparams:
                 if "=" not in csp:
                     continue
@@ -88,12 +88,12 @@ class NetworkImporter:
             core={"num_workers": config.SETTINGS.main.nbr_workers},
             logging={"enabled": False},
             inventory={
-                "plugin": "network_importer.inventory.NetboxInventory",
+                "plugin": config.SETTINGS.inventory.inventory_class,
                 "options": {
                     "nb_url": config.SETTINGS.netbox.address,
                     "nb_token": config.SETTINGS.netbox.token,
                     "filter_parameters": params,
-                    "ssl_verify": config.SETTINGS.netbox.request_ssl_verify,
+                    "ssl_verify": config.SETTINGS.netbox.verify_ssl,
                     "username": config.SETTINGS.network.login,
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
@@ -131,9 +131,6 @@ class NetworkImporter:
         ):
             os.makedirs(config.SETTINGS.main.hostvars_directory)
             LOGGER.debug("Directory %s was missing, created it", config.SETTINGS.main.hostvars_directory)
-
-        if not os.path.isdir(config.SETTINGS.main.data_directory):
-            os.mkdir(config.SETTINGS.main.data_directory)
 
         # --------------------------------------------------------
         # Initialize Adapters

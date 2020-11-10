@@ -13,10 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 from diffsync import DiffSync
+from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 
 
 class BaseAdapter(DiffSync):
     """Base Adapter for the network importer."""
+
+    site = Site
+    device = Device
+    interface = Interface
+    ip_address = IPAddress
+    cable = Cable
+    vlan = Vlan
+    prefix = Prefix
 
     def __init__(self, nornir):
         """Initialize the base adapter and store the nornir object locally."""

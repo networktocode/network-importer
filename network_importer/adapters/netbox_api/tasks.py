@@ -39,7 +39,7 @@ def query_device_info_from_netbox(task: Task) -> Result:
     """
     netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
 
-    if not config.SETTINGS.netbox.request_ssl_verify:
+    if not config.SETTINGS.netbox.verify_ssl:
         session = requests.Session()
         session.verify = False
         netbox.http_session = session

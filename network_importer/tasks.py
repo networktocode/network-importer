@@ -15,7 +15,6 @@ limitations under the License.
 
 import logging
 import os
-import json
 import yaml
 
 from nornir.core.task import Result, Task
@@ -24,61 +23,6 @@ from nornir.plugins.tasks.networking import tcp_ping
 import network_importer.config as config
 
 LOGGER = logging.getLogger("network-importer")  # pylint: disable=C0103
-
-
-def save_data_to_file(host, filename, content):
-    """Save content to a file in JSON format for a given host.
-
-    Args:
-      host (str): Name of the host
-      filename (str): Name of the output file where the data will be saved
-      content (dict or list): Content to save in the file
-    """
-    directory = config.SETTINGS.main.data_directory
-    filepath = f"{directory}/{host}/{filename}.json"
-
-    with open(filepath, "w") as file_:
-        json.dump(content, file_, indent=4, sort_keys=True)
-
-
-def get_data_from_file(host, filename):
-    """Get data from a JSON file for a given host.
-
-    Args:
-      host (str): Name of the host
-      filename (str): Name of the file to get data from
-
-    Returns:
-        bool, dict or list, depending on the content of the file
-    """
-    directory = config.SETTINGS.main.data_directory
-    filepath = f"{directory}/{host}/{filename}.json"
-
-    if not os.path.exists(filepath):
-        LOGGER.debug("%s | cache not available for %s", host, filename)
-        return False
-
-    try:
-        with open(filepath) as file_:
-            data = json.load(file_)
-    except:  # noqa: E722 # pylint: disable=bare-except
-        LOGGER.warning("%s | Unable to load the cache for %s", host, filename)
-        return False
-
-    return data
-
-
-def check_data_dir(host):
-    """Check if a directory exist of a given host, create it if it doesn't exist.
-
-    Args:
-      host (str): Name of the host
-    """
-    directory = config.SETTINGS.main.data_directory
-    host_dir = f"{directory}/{host}"
-
-    if not os.path.isdir(host_dir):
-        os.mkdir(host_dir)
 
 
 def device_save_hostvars(task: Task) -> Result:
