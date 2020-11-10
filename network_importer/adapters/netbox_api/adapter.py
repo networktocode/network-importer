@@ -17,6 +17,7 @@ import warnings
 
 import requests
 import pynetbox
+from packaging.version import Version, InvalidVersion
 
 from diffsync.exceptions import ObjectAlreadyExists
 
@@ -27,9 +28,11 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxDevice,
     NetboxInterface,
     NetboxIPAddress,
+    NetboxIPAddressPre29,
     NetboxCable,
     NetboxPrefix,
     NetboxVlan,
+    NetboxVlanPre29,
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
 
@@ -55,10 +58,28 @@ class NetBoxAPIAdapter(BaseAdapter):
     top_level = ["site", "device", "cable"]
 
     netbox = None
+    netbox_version = None
 
     type = "Netbox"
 
     query_device_info_from_netbox = query_device_info_from_netbox
+
+    def _check_netbox_version(self):
+        """Check the version of Netbox defined in the configuration and load the proper models as needed.
+
+        The default models should work with the latest version of Netbox
+        Version specific models should be used to manage older version.
+        """
+        try:
+            self.netbox_version = Version(self.netbox.version)
+        except InvalidVersion:
+            LOGGER.warning("Unable to identify the current version of Netbox from Pynetbox, using the default version.")
+            return
+
+        if self.netbox_version < Version("2.9"):
+            LOGGER.debug("Version %s of netbox detected, will update the ip_address model.", self.netbox_version)
+            self.ip_address = NetboxIPAddressPre29
+            self.vlan = NetboxVlanPre29
 
     def load(self):
         """Initialize pynetbox and load all data from netbox in the local cache."""
@@ -68,6 +89,8 @@ class NetBoxAPIAdapter(BaseAdapter):
             session = requests.Session()
             session.verify = False
             self.netbox.http_session = session
+
+        self._check_netbox_version()
 
         sites = {}
         device_names = []
@@ -276,16 +299,12 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         ips = self.netbox.ipam.ip_addresses.filter(device=device.name)
         for ipaddr in ips:
+            ip_address = self.ip_address.create_from_pynetbox(diffsync=self, obj=ipaddr, device_name=device.name)
+            ip_address, _ = self.get_or_add(ip_address)
 
-            ip_address = self.ip_address(
-                address=ipaddr.address,
-                device_name=device.name,
-                interface_name=ipaddr.interface.name,
-                remote_id=ipaddr.id,
+            interface = self.get(
+                self.interface, identifier=dict(device_name=device.name, name=ip_address.interface_name)
             )
-
-            self.get_or_add(ip_address)
-            interface = self.get(self.interface, identifier=dict(device_name=device.name, name=ipaddr.interface.name))
             interface.add_child(ip_address)
 
         LOGGER.debug("%s | Found %s ip addresses for %s", self.name, len(ips), device.name)

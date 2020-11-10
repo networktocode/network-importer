@@ -112,8 +112,8 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
         diff = ni.diff()
         print(diff.str())
 
+    perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
     if config.SETTINGS.logs.performance_log:
-        perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
         perf.TIME_TRACKER.print_all()
 
     LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)

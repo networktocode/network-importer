@@ -137,16 +137,18 @@ class NetworkImporter:
         # --------------------------------------------------------
         LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
+        sot_params = config.SETTINGS.adapters.sot_params
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
-        self.sot = sot_adapter(nornir=self.nornir)
+        self.sot = sot_adapter(nornir=self.nornir, config=sot_params)
         self.sot.load()
 
         LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
+        network_adapter_params = config.SETTINGS.adapters.network_params
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
-        self.network = network_adapter(nornir=self.nornir)
+        self.network = network_adapter(nornir=self.nornir, config=network_adapter_params)
         self.network.load()
 
         return True

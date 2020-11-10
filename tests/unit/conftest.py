@@ -204,7 +204,7 @@ def diff_children_nyc_dev1():
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None)
+    diffsync = NetBoxAPIAdapter(nornir=None, config={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     return diffsync
@@ -213,7 +213,7 @@ def netbox_api_empty():
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None)
+    diffsync = NetBoxAPIAdapter(nornir=None, config={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     diffsync.add(NetboxSite(name="HQ", remote_id=10))
@@ -227,7 +227,7 @@ def netbox_api_base():
 @pytest.fixture
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
-    diffsync = NetworkImporterAdapter(nornir=None)
+    diffsync = NetworkImporterAdapter(nornir=None, config={})
 
     diffsync.add(Site(name="HQ"))
     diffsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
@@ -235,3 +235,15 @@ def network_importer_base():
     diffsync.add(Vlan(vid=111, site_name="HQ"))
 
     return diffsync
+
+
+@pytest.fixture
+def empty_netbox_query():
+    """Return an empty list to a list query."""
+    value = {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": [],
+    }
+    return value
