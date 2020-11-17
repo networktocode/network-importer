@@ -107,7 +107,7 @@ class NetworkImporterAdapter(BaseAdapter):
             self.bfi.init_snapshot(snapshot_path, name=snapshot_name, overwrite=True)
         except BatfishException as exc:
             error = json.loads(str(exc).splitlines()[-1])
-            raise Exception(error['answerElements'][0]['answer'][0])
+            raise Exception(error["answerElements"][0]["answer"][0])
 
     def load_batfish(self):
         """Load all devices, interfaces and IP Addresses from Batfish."""
