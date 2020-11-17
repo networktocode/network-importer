@@ -107,7 +107,10 @@ class GetConfig(BaseProcessor):
             return
 
         if result[0].failed:
-            LOGGER.warning("%s | Something went wrong while trying to update the configuration ", task.host.name)
+            if result[0].exception:
+                LOGGER.warning("%s | %s", task.host.name, result[0].exception)
+            else:
+                LOGGER.warning("%s | Something went wrong while trying to update the configuration ", task.host.name)
             host.data["status"] = "fail-other"
             return
 

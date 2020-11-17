@@ -55,14 +55,14 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
         except NornirSubTaskError as exc:
             if isinstance(exc.result.exception, NetmikoAuthenticationException):
                 LOGGER.warning("Unable get the configuration because it can't connect to %s", task.host.name)
-                return Result(host=task.host, failed=True)
+                return Result(host=task.host, failed=True, exception=exc.result.exception)
 
             if isinstance(exc.result.exception, NetmikoTimeoutException):
                 LOGGER.warning("Unable get the configuration because the connection to %s timeout", task.host.name)
-                return Result(host=task.host, failed=True)
+                return Result(host=task.host, failed=True, exception=exc.result.exception)
 
-            LOGGER.debug("An exception occured while pulling the configuration", exc_info=True)
-            return Result(host=task.host, failed=True)
+            LOGGER.debug("An exception occurred while pulling the configuration", exc_info=True)
+            return Result(host=task.host, failed=True, exception=exc.result.exception)
 
         if result[0].failed:
             return result
