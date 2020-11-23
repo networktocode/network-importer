@@ -25,6 +25,7 @@ from pybatfish.exception import BatfishException
 import network_importer.config as config
 from network_importer.adapters.base import BaseAdapter
 
+from network_importer.exceptions import NetworkImportException
 from network_importer.inventory import reachable_devs, valid_and_reachable_devs
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
@@ -107,7 +108,8 @@ class NetworkImporterAdapter(BaseAdapter):
             self.bfi.init_snapshot(snapshot_path, name=snapshot_name, overwrite=True)
         except BatfishException as exc:
             error = json.loads(str(exc).splitlines()[-1])
-            raise Exception(error["answerElements"][0]["answer"][0])
+            error = re.sub(r'[^:]*:.', '', error["answerElements"][0]["answer"][0])
+            raise NetworkImportException('BatfishException', error)
 
     def load_batfish(self):
         """Load all devices, interfaces and IP Addresses from Batfish."""
