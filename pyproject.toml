@@ -25,7 +25,7 @@ netmiko = "^3.3.2"
 ntc-templates = "^1.6.0"
 structlog = "^20.1.0"
 diffsync = "^1.0.0"
-rich = "^9.0.0"
+rich = "^6.1.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"
