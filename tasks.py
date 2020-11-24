@@ -1,6 +1,7 @@
 """Tasks for use with Invoke."""
 import os
 import sys
+import time
 from invoke import task
 
 try:
@@ -221,6 +222,62 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
     """
     dev = f"docker run -it -v {PWD}:/local {name}:{image_ver} /bin/bash"
     context.run(f"{dev}", pty=True)
+
+
+def compose_netbox(context):
+    """Create Netbox instance for Travis testing."""
+    exec_cmd = """
+cd /tmp
+git clone -b release https://github.com/netbox-community/netbox-docker.git
+cd netbox-docker
+tee docker-compose.override.yml <<EOF
+version: '3.4'
+services:
+    nginx:
+        ports:
+        - 8000:8080
+EOF
+docker-compose pull
+docker-compose up -d
+    """
+    context.run(exec_cmd, pty=True)
+
+
+def compose_batfish(context):
+    """Create Batfish instance for Travis testing."""
+    exec_cmd = "docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish"
+    context.run(exec_cmd, pty=True)
+
+
+def configure_netbox(context, example_name):
+    """Configure Netbox instance with Ansible."""
+    exec_cmd = f"""
+        cd {PWD}/examples/{example_name} &&
+        ansible-playbook pb.netbox_setup.yaml
+    """
+    context.run(exec_cmd, pty=True)
+
+
+def run_network_importer(context, example_name):
+    """Run Network Importer."""
+    exec_cmd = f"""
+        cd {PWD}/examples/{example_name} &&
+        network-importer --apply
+    """
+    context.run(exec_cmd, pty=True)
+
+
+@task
+def travis_tests(context):
+    """Builds test environment for Travis-CI."""
+    examples = ["spine_leaf_01", "multi_site_02"]
+    compose_netbox(context)
+    tests(context)
+    compose_batfish(context)
+    time.sleep(35)
+    for example in examples:
+        configure_netbox(context, example)
+        run_network_importer(context, example)
 
 
 @task
