@@ -62,7 +62,6 @@ LOGGER = logging.getLogger("network-importer")
     "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
-@click.option("--inventory", is_flag=True, help="Display current network inventory.")
 def main(config_file, limit, diff, apply, check, debug, update_configs, inventory):
     """Main CLI command for the network_importer."""
     config.load(config_file_name=config_file)
@@ -105,10 +104,6 @@ def main(config_file, limit, diff, apply, check, debug, update_configs, inventor
 
     # # ------------------------------------------------------------------------------------
     # # Update Remote if apply is enabled
-    # # ------------------------------------------------------------------------------------
-    if inventory:
-        print("Inventory")
-
     if apply:
         ni.sync()
 
