@@ -124,7 +124,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs, inventor
 
         console = Console()
         console.print(table)
-    
+
     if apply:
         ni.sync()
 
