@@ -22,6 +22,9 @@ import click
 import urllib3
 from diffsync.logging import enable_console_logging
 
+from rich.console import Console
+from rich.table import Table
+
 import network_importer.config as config
 from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
@@ -62,7 +65,8 @@ LOGGER = logging.getLogger("network-importer")
     "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
-def main(config_file, limit, diff, apply, check, debug, update_configs):
+@click.option("--inventory", is_flag=True, help="Display network inventory")
+def main(config_file, limit, diff, apply, check, debug, update_configs, inventory):
     """Main CLI command for the network_importer."""
     config.load(config_file_name=config_file)
     perf.init()
@@ -105,6 +109,22 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     # # ------------------------------------------------------------------------------------
     # # Update Remote if apply is enabled
     # # ------------------------------------------------------------------------------------
+    if inventory:
+        if limit:
+            table = Table(title=f"Device Inventory (limit:{limit})")
+        else:
+            table = Table(title=f"Device Inventory (all)")
+
+        table.add_column("Device", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Groups", style="magenta")
+        table.add_column("Platform", style="green")
+
+        for hostname, host in ni.nornir.inventory.hosts.items():
+            table.add_row(hostname, ",".join(host.groups), host.platform)
+
+        console = Console()
+        console.print(table)
+    
     if apply:
         ni.sync()
 
