@@ -113,7 +113,7 @@ def main(config_file, limit, diff, apply, check, debug, update_configs, inventor
         if limit:
             table = Table(title=f"Device Inventory (limit:{limit})")
         else:
-            table = Table(title=f"Device Inventory (all)")
+            table = Table(title="Device Inventory (all)")
 
         table.add_column("Device", justify="right", style="cyan", no_wrap=True)
         table.add_column("Groups", style="magenta")
