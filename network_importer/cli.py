@@ -115,12 +115,21 @@ def main(config_file, limit, diff, apply, check, debug, update_configs, inventor
         else:
             table = Table(title="Device Inventory (all)")
 
-        table.add_column("Device", justify="right", style="cyan", no_wrap=True)
+        table.add_column("Device", style="cyan", no_wrap=True)
         table.add_column("Groups", style="magenta")
-        table.add_column("Platform", style="green")
+        table.add_column("Platform", style="magenta")
+        table.add_column("Reachable")
+        table.add_column("Reason")
 
         for hostname, host in ni.nornir.inventory.hosts.items():
-            table.add_row(hostname, ",".join(host.groups), host.platform)
+            if host.data['is_reachable']:
+                is_reachable = "[green]True"
+                reason = None
+            else:
+                is_reachable = "[red]False"
+                reason = f"[red]{host.data['not_reachable_reason']}"
+
+            table.add_row(hostname, ",".join(host.groups), host.data['vendor'], is_reachable, reason)
 
         console = Console()
         console.print(table)
