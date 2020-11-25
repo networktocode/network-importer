@@ -122,14 +122,14 @@ def main(config_file, limit, diff, apply, check, debug, update_configs, inventor
         table.add_column("Reason")
 
         for hostname, host in ni.nornir.inventory.hosts.items():
-            if host.data['is_reachable']:
+            if host.data["is_reachable"]:
                 is_reachable = "[green]True"
                 reason = None
             else:
                 is_reachable = "[red]False"
                 reason = f"[red]{host.data['not_reachable_reason']}"
 
-            table.add_row(hostname, ",".join(host.groups), host.data['vendor'], is_reachable, reason)
+            table.add_row(hostname, ",".join(host.groups), host.data["vendor"], is_reachable, reason)
 
         console = Console()
         console.print(table)
