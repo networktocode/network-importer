@@ -274,7 +274,7 @@ def travis_tests(context):
     compose_netbox(context)
     tests(context)
     compose_batfish(context)
-    time.sleep(35)
+    time.sleep(60)
     for example in examples:
         configure_netbox(context, example)
         run_network_importer(context, example)
