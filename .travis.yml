@@ -13,5 +13,5 @@ before_script:
 
 script:
   # TODO Update invoke to pass the version of python.
-  - invoke tests
-  - invoke integration-tests
+  - "invoke tests"
+  - "invoke integration-tests"
