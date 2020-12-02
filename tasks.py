@@ -29,7 +29,7 @@ INVOKE_LOCAL = os.getenv("INVOKE_LOCAL", False)  # pylint: disable=W1508
 
 # Environment Variables for Travis-CI
 TRAVIS_NETBOX_ADDRESS = "http://localhost:8000"
-TRAVIS_NETBOX_TOKEN = "0123456789abcdef0123456789abcdef01234567" # nosec - bandit ignore possible password
+TRAVIS_NETBOX_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
 TRAVIS_NETBOX_VERIFY_SSL = "false"
 TRAVIS_BATFISH_ADDRESS = "localhost"
 TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
