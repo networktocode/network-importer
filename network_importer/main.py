@@ -14,10 +14,12 @@ limitations under the License.
 """
 import logging
 import os
+import sys
 import warnings
 import importlib
 
 import network_importer.config as config
+from network_importer.exceptions import AdapterLoadFatalError
 from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
@@ -139,8 +141,13 @@ class NetworkImporter:
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
         sot_params = config.SETTINGS.adapters.sot_params
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
-        self.sot = sot_adapter(nornir=self.nornir, config=sot_params)
-        self.sot.load()
+
+        try:
+            self.sot = sot_adapter(nornir=self.nornir, config=sot_params)
+            self.sot.load()
+        except AdapterLoadFatalError as exc:
+            LOGGER.error("Unable to load the SOT Adapter : %s", exc)
+            sys.exit(1)
 
         LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
@@ -148,8 +155,12 @@ class NetworkImporter:
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
-        self.network = network_adapter(nornir=self.nornir, config=network_adapter_params)
-        self.network.load()
+        try:
+            self.network = network_adapter(nornir=self.nornir, config=network_adapter_params)
+            self.network.load()
+        except AdapterLoadFatalError as exc:
+            LOGGER.error("Unable to load the SOT Adapter : %s", exc)
+            sys.exit(1)
 
         return True
 

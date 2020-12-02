@@ -118,6 +118,8 @@ def apply(config_file, limit, debug, update_configs):
     if debug:
         pdb.set_trace()
 
+    ni.sync()
+
 
 @click.option(
     "--config",
