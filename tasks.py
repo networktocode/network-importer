@@ -235,11 +235,9 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
 
 def compose_netbox(context):
     """Create Netbox instance for Travis testing."""
-    context.run("cd /tmp", pty=True)
-    context.run("git clone -b release https://github.com/netbox-community/netbox-docker.git", pty=True)
-    context.run("cd netbox-docker", pty=True)
+    context.run("cd /tmp && git clone -b release https://github.com/netbox-community/netbox-docker.git", pty=True)
     context.run(
-        """tee docker-compose.override.yml <<EOF
+        """cd /tmp/netbox-docker && tee docker-compose.override.yml <<EOF
 version: '3.5'
 services:
     nginx:
@@ -248,8 +246,8 @@ services:
 EOF""",
         pty=True,
     )
-    context.run("docker-compose pull", pty=True)
-    context.run("docker-compose up -d", pty=True)
+    context.run("cd /tmp/netbox-docker && docker-compose pull", pty=True)
+    context.run("cd /tmp/netbox-docker && docker-compose up -d", pty=True)
 
 
 def compose_batfish(context):
@@ -260,14 +258,12 @@ def compose_batfish(context):
 
 def configure_netbox(context, example_name):
     """Configure Netbox instance with Ansible."""
-    context.run(f"cd {PWD}/examples/{example_name}", pty=True)
-    context.run("ansible-playbook pb.netbox_setup.yaml", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True)
 
 
 def run_network_importer(context, example_name):
     """Run Network Importer."""
-    context.run(f"cd {PWD}/examples/{example_name}", pty=True)
-    context.run("network-importer --apply", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer --apply", pty=True)
 
 
 @task
