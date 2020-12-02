@@ -5,12 +5,6 @@ services:
 python:
   - 3.7
 
-env:
-  - "NETBOX_ADDRESS=http://localhost:8000
-    NETBOX_TOKEN=0123456789abcdef0123456789abcdef01234567
-    NETBOX_VERIFY_SSL=false BATFISH_ADDRESS=localhost
-    ANSIBLE_PYTHON_INTERPRETER=$(which python)"
-
 before_script:
   - "pip install invoke toml poetry ansible pynetbox"
   - "ansible-galaxy collection install netbox.netbox"
@@ -19,4 +13,5 @@ before_script:
 
 script:
   # TODO Update invoke to pass the version of python.
-  - "invoke travis-tests"
+  - invoke tests
+  - invoke integration-tests
