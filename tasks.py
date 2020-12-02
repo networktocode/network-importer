@@ -238,11 +238,11 @@ def compose_netbox(context):
     context.run("cd /tmp && git clone -b release https://github.com/netbox-community/netbox-docker.git", pty=True)
     context.run(
         """cd /tmp/netbox-docker && tee docker-compose.override.yml <<EOF
-version: '3.5'
+version: '3.4'
 services:
-    nginx:
-        ports:
-        - 8000:8080
+  nginx:
+    ports:
+      - 8000:8080
 EOF""",
         pty=True,
     )
