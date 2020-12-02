@@ -6,6 +6,8 @@ services:
     build:
       context: "."
       dockerfile: "Dockerfile"
+      args:
+        PYTHON_VER: "3.7.7"
     stdin_open: true
     tty: true
     env_file:
