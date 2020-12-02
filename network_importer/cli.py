@@ -46,7 +46,7 @@ def main():
     pass
 
 
-def init(config_file, limit, update_configs):
+def init(config_file):
     """Init Network-Importer."""
     config.load(config_file_name=config_file)
     perf.init()
@@ -77,11 +77,6 @@ def init(config_file, limit, update_configs):
     build_filter_params(config.SETTINGS.inventory.filter.split((",")), filters)
 
     ni = NetworkImporter()
-    if update_configs:
-        ni.build_inventory(limit=limit)
-        ni.update_configurations()
-
-    ni.init(limit=limit)
     return ni
 
 
@@ -106,12 +101,13 @@ def init(config_file, limit, update_configs):
 @main.command()
 def apply(config_file, limit, debug, update_configs):
     """Save changes in Backend."""
-    ni = init(config_file, limit, update_configs)
+    ni = init(config_file)
 
     if update_configs:
         ni.build_inventory(limit=limit)
         ni.update_configurations()
 
+    ni.init(limit=limit)
     ni.sync()
 
     perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
@@ -144,12 +140,13 @@ def apply(config_file, limit, debug, update_configs):
 @main.command()
 def check(config_file, limit, debug, update_configs):
     """Display what are the differences but do not save them."""
-    ni = init(config_file, limit, update_configs)
+    ni = init(config_file)
 
     if update_configs:
         ni.build_inventory(limit=limit)
         ni.update_configurations()
 
+    ni.init(limit=limit)
     diff = ni.diff()
     print(diff.str())
 
@@ -183,7 +180,8 @@ def check(config_file, limit, debug, update_configs):
 @main.command()
 def inventory(config_file, limit, debug, update_configs):
     """Display inventory."""
-    ni = init(config_file, limit, update_configs)
+    ni = init(config_file)
+    ni.build_inventory(limit=limit)
 
     if limit:
         table = Table(title=f"Device Inventory (limit:{limit})")
