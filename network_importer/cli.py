@@ -22,6 +22,9 @@ import click
 import urllib3
 from diffsync.logging import enable_console_logging
 
+from rich.console import Console
+from rich.table import Table
+
 import network_importer.config as config
 from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
@@ -37,33 +40,14 @@ LOGGER = logging.getLogger("network-importer")
 # pylint: disable=too-many-arguments
 
 
-@click.command()
-@click.version_option()
-@click.option(
-    "--config",
-    "config_file",
-    default="network_importer.toml",
-    help="Network Importer Configuration file (TOML format)",
-    type=str,
-    show_default=True,
-)
-@click.option(
-    "--limit",
-    default=False,
-    help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
-    type=str,
-)
-@click.option("--diff", is_flag=True, help="Show the diff for all objects")
-@click.option("--apply", is_flag=True, help="Save changes in Backend")
-@click.option(
-    "--check", is_flag=True, help="Display what are the differences but do not save them",
-)
-@click.option(
-    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
-)
-@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
-def main(config_file, limit, diff, apply, check, debug, update_configs):
+@click.group()
+def main():
     """Main CLI command for the network_importer."""
+    pass
+
+
+def init(config_file):
+    """Init Network-Importer."""
     config.load(config_file_name=config_file)
     perf.init()
 
@@ -93,24 +77,38 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     build_filter_params(config.SETTINGS.inventory.filter.split((",")), filters)
 
     ni = NetworkImporter()
+    return ni
+
+
+@click.option(
+    "--config",
+    "config_file",
+    default="network_importer.toml",
+    help="Network Importer Configuration file (TOML format)",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "--limit",
+    default=False,
+    help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
+    type=str,
+)
+@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
+@click.option(
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
+)
+@main.command()
+def apply(config_file, limit, debug, update_configs):
+    """Save changes in Backend."""
+    ni = init(config_file)
 
     if update_configs:
         ni.build_inventory(limit=limit)
         ni.update_configurations()
-        if not check and not apply:
-            sys.exit(0)
 
     ni.init(limit=limit)
-
-    # ------------------------------------------------------------------------------------
-    # Update Remote if apply is enabled
-    # ------------------------------------------------------------------------------------
-    if apply:
-        ni.sync()
-
-    elif check:
-        diff = ni.diff()
-        print(diff.str())
+    ni.sync()
 
     perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
     if config.SETTINGS.logs.performance_log:
@@ -119,6 +117,96 @@ def main(config_file, limit, diff, apply, check, debug, update_configs):
     LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)
     if debug:
         pdb.set_trace()
+
+    ni.sync()
+
+
+@click.option(
+    "--config",
+    "config_file",
+    default="network_importer.toml",
+    help="Network Importer Configuration file (TOML format)",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "--limit",
+    default=False,
+    help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
+    type=str,
+)
+@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
+@click.option(
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
+)
+@main.command()
+def check(config_file, limit, debug, update_configs):
+    """Display what are the differences but do not save them."""
+    ni = init(config_file)
+
+    if update_configs:
+        ni.build_inventory(limit=limit)
+        ni.update_configurations()
+
+    ni.init(limit=limit)
+    diff = ni.diff()
+    print(diff.str())
+
+    perf.TIME_TRACKER.set_nbr_devices(len(ni.nornir.inventory.hosts.keys()))
+    if config.SETTINGS.logs.performance_log:
+        perf.TIME_TRACKER.print_all()
+
+    LOGGER.info("Execution finished, processed %s device(s)", perf.TIME_TRACKER.nbr_devices)
+    if debug:
+        pdb.set_trace()
+
+
+@click.option(
+    "--config",
+    "config_file",
+    default="network_importer.toml",
+    help="Network Importer Configuration file (TOML format)",
+    type=str,
+    show_default=True,
+)
+@click.option(
+    "--limit",
+    default=False,
+    help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
+    type=str,
+)
+@click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
+@click.option(
+    "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
+)
+@main.command()
+def inventory(config_file, limit, debug, update_configs):
+    """Display inventory."""
+    ni = init(config_file)
+    ni.build_inventory(limit=limit)
+
+    if limit:
+        table = Table(title=f"Device Inventory (limit:{limit})")
+    else:
+        table = Table(title="Device Inventory (all)")
+
+    table.add_column("Device", style="cyan", no_wrap=True)
+    table.add_column("Platform", style="magenta")
+    table.add_column("Reachable")
+    table.add_column("Reason")
+
+    for hostname, host in ni.nornir.inventory.hosts.items():
+        if host.data["is_reachable"]:
+            is_reachable = "[green]True"
+            reason = None
+        else:
+            is_reachable = "[red]False"
+            reason = f"[red]{host.data['not_reachable_reason']}"
+
+        table.add_row(hostname, host.data["vendor"], is_reachable, reason)
+
+    console = Console()
+    console.print(table)
 
 
 if __name__ == "__main__":

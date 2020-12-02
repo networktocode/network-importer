@@ -100,7 +100,7 @@ In check mode the Network Importer is working in read-only mode.
 The first time, it's encouraged to run the Network Importer in `--check` mode to garantee that no change will be made to the SOT.
 
 ```
-network-importer --check --diff [--update-configs] [--limit="site=nyc"]
+network-importer check [--update-configs] [--limit="site=nyc"]
 ```
 This command will print on the screen a list of all changes that have been detected between the Network and the SOT.
 
@@ -109,7 +109,7 @@ This command will print on the screen a list of all changes that have been detec
 If you are confident with the changes reported in check mode, you can run the network importer in apply mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
 
 ```
-network-importer --apply [--update-configs] [--limit="site=nyc"]
+network-importer apply [--update-configs] [--limit="site=nyc"]
 ```
 
 > !! Running in Apply mode may result in loss of data in your SOT, as the network importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
