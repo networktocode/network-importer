@@ -240,7 +240,7 @@ def compose_netbox(context):
     context.run("cd netbox-docker", pty=True)
     context.run(
         """tee docker-compose.override.yml <<EOF
-version: '3.4'
+version: '3.5'
 services:
     nginx:
         ports:
