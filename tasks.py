@@ -267,6 +267,7 @@ def run_network_importer(context, example_name):
     context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
     context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
 
+
 @task
 def integration_tests(context):
     """Builds test environment for Travis-CI."""
