@@ -278,7 +278,6 @@ def integration_tests(context):
     os.environ["NETBOX_VERIFY_SSL"] = TRAVIS_NETBOX_VERIFY_SSL
     os.environ["BATFISH_ADDRESS"] = TRAVIS_BATFISH_ADDRESS
     os.environ["ANSIBLE_PYTHON_INTERPRETER"] = TRAVIS_ANSIBLE_PYTHON_INTERPRETER
-    os.environ["EXAMPLES"] = TRAVIS_EXAMPLES
     compose_netbox(context)
     tests(context)
     compose_batfish(context)
