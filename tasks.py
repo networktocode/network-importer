@@ -1,6 +1,7 @@
 """Tasks for use with Invoke."""
 import os
 import sys
+import time
 from invoke import task
 
 try:
@@ -25,6 +26,15 @@ IMAGE_VER = os.getenv("IMAGE_VER", project_ver())
 PWD = os.getcwd()
 # Local or Docker execution provide "local" to run locally without docker execution
 INVOKE_LOCAL = os.getenv("INVOKE_LOCAL", False)  # pylint: disable=W1508
+
+# Environment Variables for Travis-CI
+TRAVIS_NETBOX_ADDRESS = "http://localhost:8000"
+TRAVIS_NETBOX_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
+TRAVIS_NETBOX_VERIFY_SSL = "false"
+TRAVIS_BATFISH_ADDRESS = "localhost"
+TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
+TRAVIS_EXAMPLES = ["spine_leaf_01", "multi_site_02"]
+TRAVIS_BATFISH_VERSION = "2020.10.08.667"
 
 
 def run_cmd(context, exec_cmd, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
@@ -221,6 +231,58 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
     """
     dev = f"docker run -it -v {PWD}:/local {name}:{image_ver} /bin/bash"
     context.run(f"{dev}", pty=True)
+
+
+def compose_netbox(context):
+    """Create Netbox instance for Travis testing."""
+    context.run("cd /tmp && git clone -b release https://github.com/netbox-community/netbox-docker.git", pty=True)
+    context.run(
+        """cd /tmp/netbox-docker && tee docker-compose.override.yml <<EOF
+version: '3.4'
+services:
+  nginx:
+    ports:
+      - 8000:8080
+EOF""",
+        pty=True,
+    )
+    context.run("cd /tmp/netbox-docker && docker-compose pull", pty=True)
+    context.run("cd /tmp/netbox-docker && docker-compose up -d", pty=True)
+
+
+def compose_batfish(context):
+    """Create Batfish instance for Travis testing."""
+    exec_cmd = f"docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:{TRAVIS_BATFISH_VERSION}"
+    context.run(exec_cmd, pty=True)
+
+
+def configure_netbox(context, example_name):
+    """Configure Netbox instance with Ansible."""
+    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True)
+
+
+def run_network_importer(context, example_name):
+    """Run Network Importer."""
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+
+
+@task
+def integration_tests(context):
+    """Builds test environment for Travis-CI."""
+    os.environ["NETBOX_ADDRESS"] = TRAVIS_NETBOX_ADDRESS
+    os.environ["NETBOX_TOKEN"] = TRAVIS_NETBOX_TOKEN
+    os.environ["NETBOX_VERIFY_SSL"] = TRAVIS_NETBOX_VERIFY_SSL
+    os.environ["BATFISH_ADDRESS"] = TRAVIS_BATFISH_ADDRESS
+    os.environ["ANSIBLE_PYTHON_INTERPRETER"] = TRAVIS_ANSIBLE_PYTHON_INTERPRETER
+    compose_netbox(context)
+    compose_batfish(context)
+    time.sleep(90)
+    for example in TRAVIS_EXAMPLES:
+        configure_netbox(context, example)
+        run_network_importer(context, example)
+    print("All integration tests have passed!")
 
 
 @task

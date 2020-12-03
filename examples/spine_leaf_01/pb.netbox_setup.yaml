@@ -1,7 +1,7 @@
 ---
 - name: "CREATE ALL OBJECTS REQUIRED FOR THE NETWORK IMPORTER IN NETBOX"
   hosts: ["all"]
-  gather_facts: no
+  gather_facts: false
   connection: "local"
   vars:
     device_roles: ["spine", "leaf"]
@@ -35,7 +35,7 @@
           manufacturer: "{{item.manufacturer}}"
           part_number: "{{item.name}}"
           u_height: 1
-          is_full_depth: False
+          is_full_depth: false
         state: "present"
       loop: "{{platforms}}"
       run_once: true
