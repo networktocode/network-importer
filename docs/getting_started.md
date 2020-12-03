@@ -6,7 +6,6 @@
 The Network Importer can be installed from pypi or from a wheel
 
 ```
-# NOT PUBLISHED YET
 pip install network-importer
 ```
 
