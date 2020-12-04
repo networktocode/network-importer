@@ -29,7 +29,7 @@ import_vlans = "config"         # Valid options are ["cli", "config", "no", true
 # - "config" will import the neighbors from the configuration (for point to point links)
 # - "true" will import neighbors from both cli and config 
 # - no or false will not import any neighbors
-import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
+import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", false]
 excluded_platforms_cabling = ["cisco_asa"]
 
 # Number of nornir tasks to execute at the same tim
