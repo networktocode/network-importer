@@ -1,13 +1,21 @@
 [tool.poetry]
 name = "network-importer"
-version = "2.0.0-beta2"
+version = "2.0.0-beta3"
 description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
-authors = ["Damien Garros <dgarros@gmail.com>"]
+authors = ["Network to Code, LLC <info@networktocode.com>"]
+homepage = "https://github.com/networktocode/network-importer"
+repository = "https://github.com/networktocode/network-importer"
+keywords = ["network", "source-of-truth", "netbox", "diffsync"]
 license = "Apache-2.0"
+readme = "README.md"
+include = [
+    "LICENSE",
+    "README.md",
+    "docs/*",
+]
 packages = [
     { include = "network_importer" },
 ]
-readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.7"
