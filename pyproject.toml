@@ -11,20 +11,18 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.7"
 pynetbox = "^5.0"
-jsonschema = {version = "^3.2.0" }
-toml = {version = "^0.10.0" }
+toml = "^0.10"
 nornir = "^2.4"
 termcolor = "^1.1"
 click = "^7.1.1"
 pydantic = "^1.6.1"
 pybatfish = "^2020.8.11"
-"genie.metaparser" = "^19.12"
 genie = "^20.9"
 pyats = "^20.9"
 netmiko = "^3.3.2"
 ntc-templates = "^1.6.0"
 structlog = "^20.1.0"
-diffsync = "^1.0.0"
+diffsync = "~1.0.0"
 rich = "^9.2.0"
 
 [tool.poetry.dev-dependencies]
