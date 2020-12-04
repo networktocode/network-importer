@@ -5,7 +5,6 @@ services:
 python:
   - 3.7
   - 3.8
-  - 3.9
 
 before_script:
   - "pip install invoke toml poetry ansible pynetbox"
