@@ -294,8 +294,8 @@ def run_network_importer(context, example_name):
         print("'network-importer check' do not return the same return when executed twice, please check")
         sys.exit(1)
 
-    output_apply = context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
-    output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
 
     # if "no diffs" not in output_last_check:
     #     print("'network-importer check' do not return the same return when executed twice, please check")
