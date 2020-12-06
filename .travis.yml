@@ -23,7 +23,7 @@ before_script:
   - "invoke build-image --nocache"
 script:
   - "invoke pytest"
-  
+
 jobs:
   include:
     - stage: "lint"
@@ -57,4 +57,3 @@ jobs:
       script:
         - "invoke integration-tests"
       python: 3.7
-
