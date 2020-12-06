@@ -31,6 +31,7 @@ def is_truthy(arg):
         return arg
     return bool(strtobool(arg))
 
+
 # Can be set to a separate Python version to be used for launching or building image
 PYTHON_VER = os.getenv("PYTHON_VER", os.getenv("TRAVIS_PYTHON_VERSION", "3.7"))
 # Name of the docker image/image
@@ -90,9 +91,7 @@ def build_image(
         forcerm (bool): Always remove intermediate containers
     """
     print(f"Building image {name}:{image_ver}")
-    command = (
-        f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile ."
-    )
+    command = f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile ."
 
     if nocache:
         command += " --no-cache"
@@ -288,9 +287,19 @@ def configure_netbox(context, example_name):
 
 def run_network_importer(context, example_name):
     """Run Network Importer."""
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    output_first_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    output_second_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+
+    if output_first_check != output_second_check:
+        print("'network-importer check' do not return the same return when executed twice, please check")
+        sys.exit(1)
+
+    output_apply = context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
+    output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+
+    # if "no diffs" not in output_last_check:
+    #     print("'network-importer check' do not return the same return when executed twice, please check")
+    #     sys.exit(1)
 
 
 @task
@@ -329,4 +338,3 @@ def tests(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     pytest(context, name, image_ver, local)
 
     print("All tests have passed!")
-
