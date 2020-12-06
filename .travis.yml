@@ -1,18 +1,60 @@
 ---
+# Add additional stages in the order of execution here, and then under the job:include: key
+dist: "focal"  # Ubuntu 20.04
+stages:
+  - name: "lint"
+  - name: "build"
+  - name: "test"
+  - name: "integration"
+  # - name: "deploy"
+  #   if: "branch = master"
+
 language: "python"
-services:
-  - "docker"
 python:
   - 3.7
   - 3.8
 
-before_script:
-  - "pip install invoke toml poetry ansible pynetbox"
-  - "ansible-galaxy collection install netbox.netbox"
-  - "poetry install"
-  - "invoke build-image -p $TRAVIS_PYTHON_VERSION"
+services:
+  - "docker"
 
+# Script & Before Script for test stage
+before_script:
+  - "pip install invoke"
+  - "invoke build-image --nocache"
 script:
-  # TODO Update invoke to pass the version of python.
-  - "invoke tests"
-  - "invoke integration-tests"
+  - "invoke pytest"
+  
+jobs:
+  include:
+    - stage: "lint"
+      env:
+        - "INVOKE_LOCAL=True"
+      before_script:
+        - "pip install invoke poetry toml"
+        - "poetry install --no-interaction --no-ansi --no-root"
+      script:
+        - "invoke black"
+        - "invoke bandit"  # Bandit fails to function on > Py3.8 https://github.com/PyCQA/bandit/issues/639
+        - "invoke pydocstyle"
+        - "invoke flake8"
+        - "invoke yamllint"
+        - "invoke pylint"
+      python: 3.7
+
+    - stage: "build"
+      before_script:
+        - "pip install invoke poetry toml"
+      script:
+        - "invoke build-image --nocache"
+        - "poetry build"
+      python: 3.7
+
+    - stage: "integration"
+      before_script:
+        - "pip install invoke toml poetry ansible pynetbox"
+        - "ansible-galaxy collection install netbox.netbox"
+        - "poetry install"
+      script:
+        - "invoke integration-tests"
+      python: 3.7
+
