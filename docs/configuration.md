@@ -22,17 +22,17 @@ import_intf_status = false
 # - "true" will import vlans from both cli and config
 # - no or false will not import any vlans
 # The association between interface and vlans will always be derived from the configuration.
-import_vlans = "config"         # Valid options are ["cli", "config", "no", true, false]
+import_vlans = false            # Valid options are ["cli", "config", "no", true, false]
 
 # Cabling can be imported from LLDP, CDP or the configuration (for some point to point links)
 # - "lldp" or "cdp" will import the vlans from the cli using the action `get_neighbors`
 # - "config" will import the neighbors from the configuration (for point to point links)
 # - "true" will import neighbors from both cli and config 
 # - no or false will not import any neighbors
-import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
+import_cabling = false         # Valid options are ["lldp", "cdp", "config", "no", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
-# Number of nornir tasks to execute at the same tim
+# Number of nornir tasks to execute at the same time
 nbr_workers= 25
 
 # Directory where the configuration can be find, organized in Batfish format

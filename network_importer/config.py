@@ -122,10 +122,10 @@ class MainSettings(BaseSettings):
 
     import_ips: bool = True
     import_prefixes: bool = False
-    import_cabling: Union[bool, Literal["lldp", "cdp", "config", "no"]] = "lldp"
+    import_cabling: Union[bool, Literal["lldp", "cdp", "config", "no"]] = False
     excluded_platforms_cabling: List[str] = list()
 
-    import_vlans: Union[bool, Literal["config", "cli", "no"]] = "config"
+    import_vlans: Union[bool, Literal["config", "cli", "no"]] = False
     import_intf_status: bool = False
 
     nbr_workers: int = 25

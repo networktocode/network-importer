@@ -42,13 +42,14 @@ The configuration file below present the most standard options that can be provi
 
 Please check the [documentation of the configuration file](configuration.md) for the complete list of all options.
 
+> By default, the Network Importer will only import the interfaces and the ip addresses but you can enable more information to be imported in the configuration file.
 ```toml
 [main]
 # import_ips = true 
 # import_prefixes = false
-# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
-# import_intf_status = false     # If set as False, interface status will be ignore all together
-# import_vlans = "config"         # Valid options are ["cli", "config", true, false]
+# import_cabling = false       # Valid options are ["lldp", "cdp", "config", false]
+# import_intf_status = false   # If set as False, interface status will be ignore all together
+# import_vlans = false         # Valid options are ["cli", "config", true, false]
 # excluded_platforms_cabling = ["cisco_asa"]
 
 # Directory where the configurations can be find, organized in Batfish format
@@ -90,13 +91,13 @@ address= "localhost"    # Alternative Env Variable : BATFISH_ADDRESS
 
 The Network Importer can run either in `check` mode or in `apply` mode. 
  - In `check` mode, no modification will be made to the SOT, the differences will be printed on the screen
- - in `apply` mode, the SOT will be updated will all interfaces, IPs, vlans etc
+ - in `apply` mode, the SOT will be updated with all interfaces and IPs by default.
 
 #### Check Mode
 
 In check mode the Network Importer is working in read-only mode.
 
-The first time, it's encouraged to run the Network Importer in `--check` mode to garantee that no change will be made to the SOT.
+The first time, it's encouraged to run the Network Importer in `check` mode to garantee that no change will be made to the SOT.
 
 ```
 network-importer check [--update-configs] [--limit="site=nyc"]
@@ -105,20 +106,20 @@ This command will print on the screen a list of all changes that have been detec
 
 #### Apply Mode
 
-If you are confident with the changes reported in check mode, you can run the network importer in apply mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
+If you are confident with the changes reported in check mode, you can run the Network Importer in apply mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
 
 ```
 network-importer apply [--update-configs] [--limit="site=nyc"]
 ```
 
-> !! Running in Apply mode may result in loss of data in your SOT, as the network importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
+> !! Running in Apply mode may result in loss of data in your SOT, as the Network Importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
 > Before running in Apply mode, it's highly encouraged to do a backup of your database.
 
 ## Development
 
 In addition to the supplied command you can also use `docker-compose` to bring up the required service stack. Like so:
 ```
-sudo docker-compose up -d
-sudo docker-compose exec network-importer bash
-sudo docker-compose down
+docker-compose up -d
+docker-compose exec network-importer bash
+docker-compose down
 ```
