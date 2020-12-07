@@ -53,7 +53,7 @@ class Device(DiffSyncModel):
     vendor: Optional[str]
 
 
-class Interface(DiffSyncModel):
+class Interface(DiffSyncModel):  # pylint: disable=too-many-instance-attributes
     """Interface Model based on DiffSyncModel.
 
     An interface must be attached to a device and the name must be unique per device.
