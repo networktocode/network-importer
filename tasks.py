@@ -287,19 +287,13 @@ def configure_netbox(context, example_name):
 
 def run_network_importer(context, example_name):
     """Run Network Importer."""
-    output_first_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
-    output_second_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
-
-    if output_first_check != output_second_check:
-        print("'network-importer check' do not return the same return when executed twice, please check")
-        sys.exit(1)
-
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
     context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
+    output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
 
-    # if "no diffs" not in output_last_check:
-    #     print("'network-importer check' do not return the same return when executed twice, please check")
-    #     sys.exit(1)
+    if "no diffs" not in output_last_check:
+        print("'network-importer check' didn't return 'no diff' after 'network-importer apply'")
+        sys.exit(1)
 
 
 @task
