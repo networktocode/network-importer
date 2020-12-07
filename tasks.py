@@ -291,8 +291,8 @@ def run_network_importer(context, example_name):
     context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
     output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
 
-    if "no diffs" not in output_last_check:
-        print("'network-importer check' didn't return 'no diff' after 'network-importer apply'")
+    if "no diffs" not in output_last_check.stdout:
+        print("'network-importer check' didn't return 'no diffs' after 'network-importer apply'")
         sys.exit(1)
 
 
