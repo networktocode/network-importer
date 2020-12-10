@@ -670,8 +670,11 @@ class NetboxVlanPre29(NetboxVlan):
         if obj.tags:
             all_devices = [tag.split(item.tag_prefix)[1] for tag in obj.tags if item.tag_prefix in tag]
             for device in all_devices:
-                if diffsync.get(diffsync.device, identifier=device):
+                try:
+                    diffsync.get(diffsync.device, identifier=device)
                     item.add_device(device)
+                except ObjectNotFound:
+                    pass
 
         return item
 
