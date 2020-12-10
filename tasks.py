@@ -1,7 +1,8 @@
 """Tasks for use with Invoke."""
+import time
 import os
 import sys
-import time
+from distutils.util import strtobool
 from invoke import task
 
 try:
@@ -16,8 +17,23 @@ def project_ver():
         return toml.load(file)["tool"]["poetry"].get("version", "latest")
 
 
+def is_truthy(arg):
+    """Convert "truthy" strings into Booleans.
+
+    Examples:
+        >>> is_truthy('yes')
+        True
+    Args:
+        arg (str): Truthy string (True values are y, yes, t, true, on and 1; false values are n, no,
+        f, false, off and 0. Raises ValueError if val is anything else.
+    """
+    if isinstance(arg, bool):
+        return arg
+    return bool(strtobool(arg))
+
+
 # Can be set to a separate Python version to be used for launching or building image
-PYTHON_VER = os.getenv("PYTHON_VER", "3.7")
+PYTHON_VER = os.getenv("PYTHON_VER", os.getenv("TRAVIS_PYTHON_VERSION", "3.7"))
 # Name of the docker image/image
 NAME = os.getenv("IMAGE_NAME", f"network-importer-py{PYTHON_VER}")
 # Tag for the image
@@ -25,7 +41,7 @@ IMAGE_VER = os.getenv("IMAGE_VER", project_ver())
 # Gather current working directory for Docker commands
 PWD = os.getcwd()
 # Local or Docker execution provide "local" to run locally without docker execution
-INVOKE_LOCAL = os.getenv("INVOKE_LOCAL", False)  # pylint: disable=W1508
+INVOKE_LOCAL = is_truthy(os.getenv("INVOKE_LOCAL", False))  # pylint: disable=W1508
 
 # Environment Variables for Travis-CI
 TRAVIS_NETBOX_ADDRESS = "http://localhost:8000"
@@ -50,18 +66,20 @@ def run_cmd(context, exec_cmd, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCA
     Returns:
         result (obj): Contains Invoke result from running task.
     """
-    if local:
+    if is_truthy(local):
         print(f"LOCAL - Running command {exec_cmd}")
         result = context.run(exec_cmd, pty=True)
     else:
         print(f"DOCKER - Running command: {exec_cmd} container: {name}:{image_ver}")
-        result = context.run(f"docker run -it -v {PWD}:/local {name}:{image_ver} {exec_cmd}", pty=True)
+        result = context.run(f"docker run -it -v {PWD}:/local {name}:{image_ver} sh -c '{exec_cmd}'", pty=True)
 
     return result
 
 
 @task
-def build_image(context, name=NAME, python_ver=PYTHON_VER, image_ver=IMAGE_VER):
+def build_image(
+    context, name=NAME, python_ver=PYTHON_VER, image_ver=IMAGE_VER, nocache=False, forcerm=False
+):  # pylint: disable=too-many-arguments
     """This will build an image with the provided name and python version.
 
     Args:
@@ -69,9 +87,18 @@ def build_image(context, name=NAME, python_ver=PYTHON_VER, image_ver=IMAGE_VER):
         name (str): Used to name the docker image
         python_ver (str): Define the Python version docker image to build from
         image_ver (str): Define image version
+        nocache (bool): Do not use cache when building the image
+        forcerm (bool): Always remove intermediate containers
     """
     print(f"Building image {name}:{image_ver}")
-    result = context.run(f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile .",)
+    command = f"docker build --tag {name}:{image_ver} --build-arg PYTHON_VER={python_ver} -f Dockerfile ."
+
+    if nocache:
+        command += " --no-cache"
+    if forcerm:
+        command += " --force-rm"
+
+    result = context.run(command, hide=False)
     if result.exited != 0:
         print(f"Failed to build image {name}:{image_ver}\nError: {result.stderr}")
 
@@ -165,10 +192,7 @@ def pylint(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     """
     # pty is set to true to properly run the docker commands due to the invocation process of docker
     # https://docs.pyinvoke.org/en/latest/api/runners.html - Search for pty for more information
-    if not local:
-        exec_cmd = "sh -c 'find . -name " "*.py" " | xargs pylint'"  # pylint: disable=W1404
-    else:
-        exec_cmd = "find . -name '*.py' | xargs pylint"
+    exec_cmd = 'find . -name "*.py" | xargs pylint'
     run_cmd(context, exec_cmd, name, image_ver, local)
 
 
@@ -265,7 +289,11 @@ def run_network_importer(context, example_name):
     """Run Network Importer."""
     context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
     context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+    output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+
+    if "no diffs" not in output_last_check.stdout:
+        print("'network-importer check' didn't return 'no diffs' after 'network-importer apply'")
+        sys.exit(1)
 
 
 @task

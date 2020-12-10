@@ -109,7 +109,7 @@ class NetworkImporterAdapter(BaseAdapter):
         except BatfishException as exc:
             error = json.loads(str(exc).splitlines()[-1])
             error = re.sub(r"[^:]*:.", "", error["answerElements"][0]["answer"][0])
-            raise AdapterLoadFatalError(error)
+            raise AdapterLoadFatalError(error) from exc
 
     def load_batfish(self):
         """Load all devices, interfaces and IP Addresses from Batfish."""
