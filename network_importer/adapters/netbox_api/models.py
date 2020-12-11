@@ -552,7 +552,10 @@ class NetboxVlan(Vlan):
                 continue
 
             device_name = tag["name"].split(item.tag_prefix)[1]
-            device = diffsync.get(diffsync.device, identifier=device_name)
+            try:
+                device = diffsync.get(diffsync.device, identifier=device_name)
+            except ObjectNotFound:
+                device = None
             if device:
                 item.add_device(device_name)
                 device.device_tag_id = tag["id"]
@@ -593,7 +596,11 @@ class NetboxVlan(Vlan):
                     nb_params["tags"].append(tag["id"])
                 else:
                     dev_name = tag["name"].split(self.tag_prefix)[1]
-                    if not self.diffsync.get(self.diffsync.device, identifier=dev_name):
+                    try:
+                        res = self.diffsync.get(self.diffsync.device, identifier=dev_name)
+                    except ObjectNotFound:
+                        res = None
+                    if not res:
                         nb_params["tags"].append(tag["id"])
 
         return nb_params
@@ -693,7 +700,11 @@ class NetboxVlanPre29(NetboxVlan):
                     nb_params["tags"].append(tag)
                 else:
                     dev_name = tag.split(self.tag_prefix)[1]
-                    if not self.diffsync.get(self.diffsync.device, identifier=dev_name):
+                    try:
+                        res = self.diffsync.get(self.diffsync.device, identifier=dev_name)
+                    except ObjectNotFound:
+                        res = None
+                    if not res:
                         nb_params["tags"].append(tag)
 
         return nb_params
