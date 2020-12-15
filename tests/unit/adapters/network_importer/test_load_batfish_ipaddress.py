@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import pytest
 from diffsync.exceptions import ObjectNotFound
 
 import network_importer.config as config
@@ -48,16 +48,10 @@ def test_load_batfish_ipaddress_wo_ip_wo_prefix(network_importer_base, site_sfo,
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
 
     assert isinstance(ipaddr, IPAddress)
-    try:
-        res = adapter.get(IPAddress, identifier=ipaddr.get_unique_id())
-    except ObjectNotFound:
-        res = None
-    assert res is None
-    try:
-        res = adapter.get(Prefix, identifier=prefix.get_unique_id())
-    except ObjectNotFound:
-        res = None
-    assert res is None
+    with pytest.raises(ObjectNotFound):
+        assert adapter.get(IPAddress, identifier=ipaddr.get_unique_id()) is None
+    with pytest.raises(ObjectNotFound):
+        assert adapter.get(Prefix, identifier=prefix.get_unique_id()) is None
 
 
 def test_load_batfish_ipaddress_w_ip_wo_prefix(network_importer_base, site_sfo, dev_spine1):
@@ -74,11 +68,8 @@ def test_load_batfish_ipaddress_w_ip_wo_prefix(network_importer_base, site_sfo, 
 
     assert isinstance(ipaddr, IPAddress)
     assert adapter.get(IPAddress, identifier=ipaddr.get_unique_id())
-    try:
-        res = adapter.get(Prefix, identifier=prefix.get_unique_id())
-    except ObjectNotFound:
-        res = None
-    assert res is None
+    with pytest.raises(ObjectNotFound):
+        assert adapter.get(Prefix, identifier=prefix.get_unique_id()) is None
 
 
 def test_load_batfish_ipaddress_wo_ip_w_prefix(network_importer_base, site_sfo, dev_spine1):
@@ -94,9 +85,6 @@ def test_load_batfish_ipaddress_wo_ip_w_prefix(network_importer_base, site_sfo, 
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
 
     assert isinstance(ipaddr, IPAddress)
-    try:
-        res = adapter.get(IPAddress, identifier=ipaddr.get_unique_id())
-    except ObjectNotFound:
-        res = None
-    assert res is None
+    with pytest.raises(ObjectNotFound):
+        assert adapter.get(IPAddress, identifier=ipaddr.get_unique_id()) is None
     assert adapter.get(Prefix, identifier=prefix.get_unique_id())
