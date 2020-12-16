@@ -51,6 +51,22 @@ def test_translate_attrs_for_netbox_wo_intf(netbox_api_base):
     assert "interface" not in params
 
 
+def test_translate_attrs_for_netbox_wrong_dev(netbox_api_base):
+
+    ipaddr = NetboxIPAddressPre29(
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=30
+    )
+    netbox_api_base.add(ipaddr)
+
+    params = ipaddr.translate_attrs_for_netbox(
+        attrs=dict(device_name="HQ-CORE-SW99", interface_name="TenGigabitEthernet1/0/1")
+    )
+
+    assert "address" in params
+    assert params["address"] == "10.10.10.1/24"
+    assert "interface" not in params
+
+
 def test_create_from_pynetbox(netbox_api_base):
 
     api = pynetbox.api(url="http://mock", token="1234567890")

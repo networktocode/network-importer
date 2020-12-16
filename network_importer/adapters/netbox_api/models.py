@@ -86,12 +86,22 @@ class NetboxInterface(Interface):
         """
 
         def convert_vlan_to_nid(vlan_uid):
+            if not vlan_uid:
+                return None
             try:
                 vlan = self.diffsync.get(self.diffsync.vlan, identifier=vlan_uid)
             except ObjectNotFound:
                 return None
 
             return vlan.remote_id
+
+        def convert_vlan_list_to_nids(vlan_uids):
+            resp = []
+            for uid in vlan_uids:
+                nid = convert_vlan_to_nid(uid)
+                if nid:
+                    resp.append(nid)
+            return resp
 
         nb_params = {}
 
@@ -126,10 +136,8 @@ class NetboxInterface(Interface):
         #     intf_properties["enabled"] = intf.active
 
         if config.SETTINGS.main.import_vlans not in [False, "no"]:
-            if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and attrs["access_vlan"]:
+            if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and "access_vlan" in attrs:
                 nb_params["untagged_vlan"] = convert_vlan_to_nid(attrs["access_vlan"])
-            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
-                nb_params["untagged_vlan"] = None
 
             if (
                 "mode" in attrs
@@ -137,7 +145,7 @@ class NetboxInterface(Interface):
                 and "allowed_vlans" in attrs
                 and attrs["allowed_vlans"]
             ):
-                nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in attrs["allowed_vlans"]]
+                nb_params["tagged_vlans"] = convert_vlan_list_to_nids(attrs["allowed_vlans"])
             elif (
                 "mode" in attrs
                 and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"]
@@ -145,7 +153,7 @@ class NetboxInterface(Interface):
             ):
                 nb_params["tagged_vlans"] = []
 
-        if "is_lag_member" in attrs and attrs["is_lag_member"]:
+        if "is_lag_member" in attrs and attrs["is_lag_member"] and "parent" in attrs:
             try:
                 parent_interface = self.diffsync.get(self.diffsync.interface, identifier=attrs["parent"])
                 if parent_interface and parent_interface.remote_id:
