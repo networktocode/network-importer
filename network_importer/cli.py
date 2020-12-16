@@ -43,7 +43,6 @@ LOGGER = logging.getLogger("network-importer")
 @click.group()
 def main():
     """Main CLI command for the network_importer."""
-    pass
 
 
 def init(config_file):
