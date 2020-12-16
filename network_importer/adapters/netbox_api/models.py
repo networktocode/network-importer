@@ -91,6 +91,9 @@ class NetboxInterface(Interface):
                 return vlan.remote_id
             return None
 
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
@@ -281,6 +284,9 @@ class NetboxIPAddress(IPAddress):
         Returns:
             dict: Netbox parameters
         """
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {"address": self.address}
 
         if "interface_name" in attrs and "device_name" in attrs:
@@ -378,6 +384,9 @@ class NetboxIPAddressPre29(NetboxIPAddress):
         Returns:
             dict: Netbox parameters
         """
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {"address": self.address}
 
         if "interface_name" in attrs and "device_name" in attrs:
@@ -419,6 +428,9 @@ class NetboxPrefix(Prefix):
         Returns:
             dict: Netbox parameters
         """
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {"prefix": self.prefix, "status": "active"}
 
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
@@ -500,6 +512,9 @@ class NetboxVlan(Vlan):
         Returns:
             dict: Netbox parameters
         """
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {"vid": self.vid}
 
         if "name" in attrs and attrs["name"]:
@@ -633,6 +648,9 @@ class NetboxVlanPre29(NetboxVlan):
         Returns:
             dict: Netbox parameters
         """
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {"vid": self.vid}
 
         if "name" in attrs and attrs["name"]:
