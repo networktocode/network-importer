@@ -94,6 +94,22 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
     assert sorted(params["tags"]) == [12, 13]
 
 
+def test_translate_attrs_for_netbox_with_missing_devices(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    netbox_api_base.add(NetboxDevice(name="dev1", site_name="HQ", remote_id=32, device_tag_id=12))
+    params = vlan.translate_attrs_for_netbox({"name": "VOICE", "associated_devices": ["dev1", "dev2"]})
+
+    assert "name" in params
+    assert params["name"] == "VOICE"
+    assert "site" in params
+    assert params["site"] == 10
+    assert "tags" in params
+    assert sorted(params["tags"]) == [12]
+
+
 def test_translate_attrs_for_netbox_missing_site(netbox_api_base):
 
     vlan = NetboxVlan(vid=100, site_name="NOTPRESENT", remote_id=30)
