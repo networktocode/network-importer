@@ -18,6 +18,8 @@ import json
 import logging
 from collections import defaultdict
 
+from diffsync.exceptions import ObjectNotFound
+
 from pybatfish.client.session import Session
 from pybatfish.exception import BatfishException
 
@@ -329,7 +331,10 @@ class NetworkImporterAdapter(BaseAdapter):
         if prefix.num_addresses == 1:
             return False
 
-        prefix_obj = self.get(self.prefix, identifier=dict(site_name=site.name, prefix=prefix))
+        try:
+            prefix_obj = self.get(self.prefix, identifier=dict(site_name=site.name, prefix=prefix))
+        except ObjectNotFound:
+            prefix_obj = None
 
         if not prefix_obj:
             prefix_obj = self.prefix(prefix=str(prefix), site_name=site.name, vlan=vlan)
@@ -498,14 +503,14 @@ class NetworkImporterAdapter(BaseAdapter):
             """
             dev_name, intf_name = cable.get_device_intf(side)
 
-            dev = self.get(self.device, identifier=dev_name)
-
-            if not dev:
+            try:
+                self.get(self.device, identifier=dev_name)
+            except ObjectNotFound:
                 return True
 
-            intf = self.get(self.interface, identifier=dict(name=intf_name, device_name=dev_name))
-
-            if not intf:
+            try:
+                intf = self.get(self.interface, identifier=dict(name=intf_name, device_name=dev_name))
+            except ObjectNotFound:
                 return True
 
             # if not dev:

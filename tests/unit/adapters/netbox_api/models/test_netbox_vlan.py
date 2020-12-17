@@ -33,7 +33,6 @@ def test_vlan_create_from_pynetbox(netbox_api_base):
     pnb = pynetbox.core.response.Record(values=data, api=api, endpoint=1)
 
     item = NetboxVlan.create_from_pynetbox(diffsync=netbox_api_base, obj=pnb, site_name="nyc")
-
     assert isinstance(item, NetboxVlan) is True
     assert item.remote_id == 1
     assert item.vid == 101
@@ -93,6 +92,22 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
     assert params["site"] == 10
     assert "tags" in params
     assert sorted(params["tags"]) == [12, 13]
+
+
+def test_translate_attrs_for_netbox_with_missing_devices(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    netbox_api_base.add(NetboxDevice(name="dev1", site_name="HQ", remote_id=32, device_tag_id=12))
+    params = vlan.translate_attrs_for_netbox({"name": "VOICE", "associated_devices": ["dev1", "dev2"]})
+
+    assert "name" in params
+    assert params["name"] == "VOICE"
+    assert "site" in params
+    assert params["site"] == 10
+    assert "tags" in params
+    assert sorted(params["tags"]) == [12]
 
 
 def test_translate_attrs_for_netbox_missing_site(netbox_api_base):

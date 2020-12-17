@@ -86,17 +86,27 @@ class NetboxInterface(Interface):
         """
 
         def convert_vlan_to_nid(vlan_uid):
-            vlan = self.diffsync.get(self.diffsync.vlan, identifier=vlan_uid)
-            if vlan:
-                return vlan.remote_id
-            return None
+            if not vlan_uid:
+                return None
+            try:
+                vlan = self.diffsync.get(self.diffsync.vlan, identifier=vlan_uid)
+            except ObjectNotFound:
+                return None
+
+            return vlan.remote_id
+
+        def convert_vlan_list_to_nids(vlan_uids):
+            resp = []
+            for uid in vlan_uids:
+                nid = convert_vlan_to_nid(uid)
+                if nid:
+                    resp.append(nid)
+            return resp
 
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
         device = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
-        if not device:
-            raise ObjectNotFound(f"device {self.device_name}, not found")
 
         if not device.remote_id:
             raise NetboxObjectNotValid(f"device {self.device_name}, is missing a remote_id")
@@ -126,10 +136,8 @@ class NetboxInterface(Interface):
         #     intf_properties["enabled"] = intf.active
 
         if config.SETTINGS.main.import_vlans not in [False, "no"]:
-            if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and attrs["access_vlan"]:
+            if "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and "access_vlan" in attrs:
                 nb_params["untagged_vlan"] = convert_vlan_to_nid(attrs["access_vlan"])
-            elif "mode" in attrs and attrs["mode"] in ["TRUNK", "ACCESS"] and not attrs["access_vlan"]:
-                nb_params["untagged_vlan"] = None
 
             if (
                 "mode" in attrs
@@ -137,7 +145,7 @@ class NetboxInterface(Interface):
                 and "allowed_vlans" in attrs
                 and attrs["allowed_vlans"]
             ):
-                nb_params["tagged_vlans"] = [convert_vlan_to_nid(vlan) for vlan in attrs["allowed_vlans"]]
+                nb_params["tagged_vlans"] = convert_vlan_list_to_nids(attrs["allowed_vlans"])
             elif (
                 "mode" in attrs
                 and attrs["mode"] in ["TRUNK", "L3_SUB_VLAN"]
@@ -145,11 +153,12 @@ class NetboxInterface(Interface):
             ):
                 nb_params["tagged_vlans"] = []
 
-        if "is_lag_member" in attrs and attrs["is_lag_member"]:
-            parent_interface = self.diffsync.get(self.diffsync.interface, identifier=attrs["parent"])
-            if parent_interface and parent_interface.remote_id:
-                nb_params["lag"] = parent_interface.remote_id
-            else:
+        if "is_lag_member" in attrs and attrs["is_lag_member"] and "parent" in attrs:
+            try:
+                parent_interface = self.diffsync.get(self.diffsync.interface, identifier=attrs["parent"])
+                if parent_interface and parent_interface.remote_id:
+                    nb_params["lag"] = parent_interface.remote_id
+            except ObjectNotFound:
                 LOGGER.warning("No Parent interface found for lag member %s %s", self.device_name, self.name)
                 nb_params["lag"] = None
 
@@ -284,13 +293,16 @@ class NetboxIPAddress(IPAddress):
         nb_params = {"address": self.address}
 
         if "interface_name" in attrs and "device_name" in attrs:
-            interface = self.diffsync.get(
-                self.diffsync.interface, identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"])
-            )
 
-            if interface:
+            try:
+                interface = self.diffsync.get(
+                    self.diffsync.interface,
+                    identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"]),
+                )
                 nb_params["assigned_object_type"] = "dcim.interface"
                 nb_params["assigned_object_id"] = interface.remote_id
+            except ObjectNotFound:
+                pass
 
         return nb_params
 
@@ -381,12 +393,14 @@ class NetboxIPAddressPre29(NetboxIPAddress):
         nb_params = {"address": self.address}
 
         if "interface_name" in attrs and "device_name" in attrs:
-            interface = self.diffsync.get(
-                self.diffsync.interface, identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"])
-            )
-
-            if interface:
+            try:
+                interface = self.diffsync.get(
+                    self.diffsync.interface,
+                    identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"]),
+                )
                 nb_params["interface"] = interface.remote_id
+            except ObjectNotFound:
+                pass
 
         return nb_params
 
@@ -425,9 +439,12 @@ class NetboxPrefix(Prefix):
         nb_params["site"] = site.remote_id
 
         if "vlan" in attrs and attrs["vlan"]:
-            vlan = self.diffsync.get(self.diffsync.vlan, identifier=attrs["vlan"])
-            if vlan.remote_id:
-                nb_params["vlan"] = vlan.remote_id
+            try:
+                vlan = self.diffsync.get(self.diffsync.vlan, identifier=attrs["vlan"])
+                if vlan.remote_id:
+                    nb_params["vlan"] = vlan.remote_id
+            except ObjectNotFound:
+                pass
 
         return nb_params
 
@@ -508,17 +525,14 @@ class NetboxVlan(Vlan):
             nb_params["name"] = f"vlan-{self.vid}"
 
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
-        if not site:
-            raise ObjectNotFound(f"Unable to find site {self.site_name}")
-
         nb_params["site"] = site.remote_id
 
         if "associated_devices" in attrs:
             nb_params["tags"] = []
             for device_name in attrs["associated_devices"]:
-                device = self.diffsync.get(self.diffsync.device, identifier=device_name)
-
-                if not device:
+                try:
+                    device = self.diffsync.get(self.diffsync.device, identifier=device_name)
+                except ObjectNotFound:
                     LOGGER.error(
                         "Found an associated device on Vlan %s that doesn't exist (%s)",
                         self.get_unique_id(),
@@ -552,7 +566,10 @@ class NetboxVlan(Vlan):
                 continue
 
             device_name = tag["name"].split(item.tag_prefix)[1]
-            device = diffsync.get(diffsync.device, identifier=device_name)
+            try:
+                device = diffsync.get(diffsync.device, identifier=device_name)
+            except ObjectNotFound:
+                device = None
             if device:
                 item.add_device(device_name)
                 device.device_tag_id = tag["id"]
@@ -593,7 +610,11 @@ class NetboxVlan(Vlan):
                     nb_params["tags"].append(tag["id"])
                 else:
                     dev_name = tag["name"].split(self.tag_prefix)[1]
-                    if not self.diffsync.get(self.diffsync.device, identifier=dev_name):
+                    try:
+                        res = self.diffsync.get(self.diffsync.device, identifier=dev_name)
+                    except ObjectNotFound:
+                        res = None
+                    if not res:
                         nb_params["tags"].append(tag["id"])
 
         return nb_params
@@ -641,9 +662,6 @@ class NetboxVlanPre29(NetboxVlan):
             nb_params["name"] = f"vlan-{self.vid}"
 
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
-        if not site:
-            raise ObjectNotFound(f"Unable to find site {self.site_name}")
-
         nb_params["site"] = site.remote_id
 
         if "associated_devices" in attrs:
@@ -670,8 +688,11 @@ class NetboxVlanPre29(NetboxVlan):
         if obj.tags:
             all_devices = [tag.split(item.tag_prefix)[1] for tag in obj.tags if item.tag_prefix in tag]
             for device in all_devices:
-                if diffsync.get(diffsync.device, identifier=device):
+                try:
+                    diffsync.get(diffsync.device, identifier=device)
                     item.add_device(device)
+                except ObjectNotFound:
+                    pass
 
         return item
 
@@ -690,7 +711,9 @@ class NetboxVlanPre29(NetboxVlan):
                     nb_params["tags"].append(tag)
                 else:
                     dev_name = tag.split(self.tag_prefix)[1]
-                    if not self.diffsync.get(self.diffsync.device, identifier=dev_name):
+                    try:
+                        self.diffsync.get(self.diffsync.device, identifier=dev_name)
+                    except ObjectNotFound:
                         nb_params["tags"].append(tag)
 
         return nb_params
@@ -712,14 +735,11 @@ class NetboxCable(Cable):
         """
         item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
 
-        interface_a = diffsync.get(
-            diffsync.interface, identifier=dict(device_name=ids["device_a_name"], name=ids["interface_a_name"])
-        )
-        interface_z = diffsync.get(
-            diffsync.interface, identifier=dict(device_name=ids["device_z_name"], name=ids["interface_z_name"])
-        )
-
-        if not interface_a:
+        try:
+            interface_a = diffsync.get(
+                diffsync.interface, identifier=dict(device_name=ids["device_a_name"], name=ids["interface_a_name"])
+            )
+        except ObjectNotFound:
             interface_a = diffsync.get_intf_from_netbox(
                 device_name=ids["device_a_name"], intf_name=ids["interface_a_name"]
             )
@@ -733,7 +753,11 @@ class NetboxCable(Cable):
                 )
                 return item
 
-        if not interface_z:
+        try:
+            interface_z = diffsync.get(
+                diffsync.interface, identifier=dict(device_name=ids["device_z_name"], name=ids["interface_z_name"])
+            )
+        except ObjectNotFound:
             interface_z = diffsync.get_intf_from_netbox(
                 device_name=ids["device_z_name"], intf_name=ids["interface_z_name"]
             )
