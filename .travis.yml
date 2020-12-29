@@ -55,7 +55,10 @@ jobs:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
         - "poetry install"
+      script:
+        - "invoke integration-tests"
       env: "NETBOX_VERSION=v2.10"
+      python: 3.7
 
     - stage: "integration"
       name: "Netbox v2.9"
@@ -63,7 +66,10 @@ jobs:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
         - "poetry install"
+      script:
+        - "invoke integration-tests"
       env: "NETBOX_VERSION=v2.9"
+      python: 3.7
 
     - stage: "integration"
       name: "Netbox v2.8"
@@ -71,8 +77,7 @@ jobs:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
         - "poetry install"
-      env: "NETBOX_VERSION=v2.8"
-
       script:
         - "invoke integration-tests"
+      env: "NETBOX_VERSION=v2.8"
       python: 3.7
