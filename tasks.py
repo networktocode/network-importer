@@ -315,7 +315,6 @@ def run_network_importer(context, example_name, var_envs):
 @task
 def integration_tests(context, netbox_ver=NETBOX_VERSION):
     """Builds test environment for Travis-CI."""
-
     envs = {
         "NETBOX_ADDRESS": TRAVIS_NETBOX_ADDRESS,
         "NETBOX_TOKEN": TRAVIS_NETBOX_TOKEN,
