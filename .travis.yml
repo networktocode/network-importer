@@ -52,8 +52,13 @@ jobs:
     - stage: "integration"
       before_script:
         - "pip install invoke toml poetry ansible pynetbox"
-        - "ansible-galaxy collection install netbox.netbox"
+        - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
         - "poetry install"
+      env:
+        - NETBOX_VERSION=v2.10
+      # - NETBOX_VERSION=v2.9
+      # - NETBOX_VERSION=v2.8
+
       script:
         - "invoke integration-tests"
       python: 3.7
