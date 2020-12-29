@@ -18,7 +18,7 @@ import yaml
 from network_importer.inventory import NetboxInventory
 
 HERE = path.abspath(path.dirname(__file__))
-FIXTURES = "config/fixtures/NBInventory"
+FIXTURES = "fixtures/inventory"
 
 
 def test_nb_inventory_all(requests_mock):
