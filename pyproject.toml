@@ -18,16 +18,16 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.6"
 pynetbox = "^5.0"
 toml = "^0.10"
 nornir = "^2.4"
 termcolor = "^1.1"
-click = "^7.1.1"
+click = "^7.1"
 pydantic = "^1.6.1"
-pybatfish = "^2020.8.11"
-genie = "^20.9"
-pyats = "^20.9"
+pybatfish = "~2020.12.23"
+genie = "^20.12"
+pyats = "^20.12"
 netmiko = "^3.3.2"
 ntc-templates = "^1.6.0"
 structlog = "^20.1.0"
