@@ -10,6 +10,12 @@ try:
 except ImportError:
     sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
 
+NETBOX_VERSIONS = {
+    "v2.10": {"netbox_version": "v2.10.2", "docker_version": "0.27.0"},
+    "v2.9": {"netbox_version": "v2.9.11", "docker_version": "0.26.2"},
+    "v2.8": {"netbox_version": "v2.8.9", "docker_version": "0.24.1"},
+}
+
 
 def project_ver():
     """Find version from pyproject.toml to use for docker image tagging."""
@@ -44,6 +50,7 @@ PWD = os.getcwd()
 INVOKE_LOCAL = is_truthy(os.getenv("INVOKE_LOCAL", False))  # pylint: disable=W1508
 
 # Environment Variables for Travis-CI
+NETBOX_VERSION = os.getenv("NETBOX_VERSION", "v2.9")
 TRAVIS_NETBOX_ADDRESS = "http://localhost:8000"
 TRAVIS_NETBOX_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
 TRAVIS_NETBOX_VERIFY_SSL = "false"
@@ -257,9 +264,21 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
     context.run(f"{dev}", pty=True)
 
 
-def compose_netbox(context):
-    """Create Netbox instance for Travis testing."""
-    context.run("cd /tmp && git clone -b release https://github.com/netbox-community/netbox-docker.git", pty=True)
+def compose_netbox(
+    context, var_envs, netbox_docker_ver="release",
+):
+    """Create Netbox instance for Travis testing.
+
+    Args:
+        context (obj): Used to run specific commands
+        var_envs (dict): Environment variables to pass to the command runner
+        netbox_docker_ver (str): Version of Netbox docker to use
+    """
+    context.run(
+        f"cd /tmp && git clone -b {netbox_docker_ver} https://github.com/netbox-community/netbox-docker.git",
+        pty=True,
+        env=var_envs,
+    )
     context.run(
         """cd /tmp/netbox-docker && tee docker-compose.override.yml <<EOF
 version: '3.4'
@@ -269,27 +288,47 @@ services:
       - 8000:8080
 EOF""",
         pty=True,
+        env=var_envs,
     )
-    context.run("cd /tmp/netbox-docker && docker-compose pull", pty=True)
-    context.run("cd /tmp/netbox-docker && docker-compose up -d", pty=True)
+    context.run("cd /tmp/netbox-docker && docker-compose pull", pty=True, env=var_envs)
+    context.run("cd /tmp/netbox-docker && docker-compose up -d", pty=True, env=var_envs)
 
 
-def compose_batfish(context):
-    """Create Batfish instance for Travis testing."""
+def compose_batfish(context, var_envs):
+    """Create Batfish instance for Travis testing.
+
+    Args:
+        context (obj): Used to run specific commands
+        var_envs (dict): Environment variables to pass to the command runner
+    """
     exec_cmd = f"docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:{TRAVIS_BATFISH_VERSION}"
-    context.run(exec_cmd, pty=True)
+    context.run(exec_cmd, pty=True, env=var_envs)
 
 
-def configure_netbox(context, example_name):
-    """Configure Netbox instance with Ansible."""
-    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True)
+def configure_netbox(context, example_name, var_envs):
+    """Configure Netbox instance with Ansible.
+
+    Args:
+        context (obj): Used to run specific commands
+        example_name (str): Name of the example directory to use
+        var_envs (dict): Environment variables to pass to the command runner
+    """
+    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True, env=var_envs)
 
 
-def run_network_importer(context, example_name):
-    """Run Network Importer."""
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True)
-    output_last_check = context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True)
+def run_network_importer(context, example_name, var_envs):
+    """Run Network Importer.
+
+    Args:
+        context (obj): Used to run specific commands
+        example_name (str): Name of the example directory to use
+        var_envs (dict): Environment variables to pass to the command runner
+    """
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True, env=var_envs)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True, env=var_envs)
+    output_last_check = context.run(
+        f"cd {PWD}/examples/{example_name} && network-importer check", pty=True, env=var_envs
+    )
 
     if "no diffs" not in output_last_check.stdout:
         print("'network-importer check' didn't return 'no diffs' after 'network-importer apply'")
@@ -297,20 +336,34 @@ def run_network_importer(context, example_name):
 
 
 @task
-def integration_tests(context):
-    """Builds test environment for Travis-CI."""
-    os.environ["NETBOX_ADDRESS"] = TRAVIS_NETBOX_ADDRESS
-    os.environ["NETBOX_TOKEN"] = TRAVIS_NETBOX_TOKEN
-    os.environ["NETBOX_VERIFY_SSL"] = TRAVIS_NETBOX_VERIFY_SSL
-    os.environ["BATFISH_ADDRESS"] = TRAVIS_BATFISH_ADDRESS
-    os.environ["ANSIBLE_PYTHON_INTERPRETER"] = TRAVIS_ANSIBLE_PYTHON_INTERPRETER
-    compose_netbox(context)
-    compose_batfish(context)
+def integration_tests(context, netbox_ver=NETBOX_VERSION):
+    """Builds test environment for Travis-CI.
+
+    Args:
+        context (obj): Used to run specific commands
+        netbox_ver (str): Major Netbox version to use for testing
+    """
+    docker_netbox_version = NETBOX_VERSIONS.get(netbox_ver, {}).get("docker_version", "release")
+    netbox_exact_version = NETBOX_VERSIONS.get(netbox_ver, {}).get("netbox_version", "latest")
+
+    envs = {
+        "VERSION": netbox_exact_version,
+        "NETBOX_ADDRESS": TRAVIS_NETBOX_ADDRESS,
+        "NETBOX_TOKEN": TRAVIS_NETBOX_TOKEN,
+        "NETBOX_VERIFY_SSL": TRAVIS_NETBOX_VERIFY_SSL,
+        "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
+        "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
+    }
+
+    compose_netbox(context, netbox_docker_ver=docker_netbox_version, var_envs=envs)
+    compose_batfish(context, var_envs=envs)
     time.sleep(90)
     for example in TRAVIS_EXAMPLES:
-        configure_netbox(context, example)
-        run_network_importer(context, example)
-    print("All integration tests have passed!")
+        configure_netbox(context, example, var_envs=envs)
+        run_network_importer(context, example, var_envs=envs)
+    print(
+        f"All integration tests have passed for Netbox {netbox_exact_version} / Netbox Docker {docker_netbox_version}!"
+    )
 
 
 @task
