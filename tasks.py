@@ -11,9 +11,9 @@ except ImportError:
     sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
 
 NETBOX_VERSIONS = {
-    "v2.10": {"netbox_version": "v2.10.2", "docker_version": "0.27.0",},
-    "v2.9": {"netbox_version": "v2.9.11", "docker_version": "0.26.2",},
-    "v2.8": {"netbox_version": "v2.8.9", "docker_version": "0.24.1",},
+    "v2.10": {"netbox_version": "v2.10.2", "docker_version": "0.27.0"},
+    "v2.9": {"netbox_version": "v2.9.11", "docker_version": "0.26.2"},
+    "v2.8": {"netbox_version": "v2.8.9", "docker_version": "0.24.1"},
 }
 
 
