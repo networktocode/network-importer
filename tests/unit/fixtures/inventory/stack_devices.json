@@ -198,7 +198,11 @@
         "primary_ip4": null,
         "primary_ip6": null,
         "cluster": null,
-        "virtual_chassis": null,
+        "virtual_chassis": {
+          "id": 1,
+          "url": "http://localhost:32768/api/dcim/virtual-chassis/1/",
+          "master": null
+        },
         "vc_position": null,
         "vc_priority": null,
         "comments": "",

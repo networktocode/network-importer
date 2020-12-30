@@ -129,7 +129,7 @@ class NetboxInventory(Inventory):
             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
             # Only add virtual chassis master as inventory element
-            if dev.virtual_chassis:
+            if dev.virtual_chassis and dev.virtual_chassis.master:
                 if dev.id != dev.virtual_chassis.master.id:
                     continue
                 host["data"]["virtual_chassis"] = True

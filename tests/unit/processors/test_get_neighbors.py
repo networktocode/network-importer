@@ -24,7 +24,7 @@ import network_importer.config as config
 from network_importer.processors.get_neighbors import GetNeighbors, Neighbor, Neighbors
 
 HERE = path.abspath(path.dirname(__file__))
-FIXTURES = "../config/fixtures/NBInventory"
+FIXTURES = "../fixtures/inventory"
 
 # pylint: disable=redefined-outer-name
 
