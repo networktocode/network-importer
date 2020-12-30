@@ -10,10 +10,10 @@ try:
 except ImportError:
     sys.exit("Please make sure to `pip install toml` or enable the Poetry shell and run `poetry install`.")
 
-NETBOX_TO_DOCKER_NETBOX = {
-    "v2.10": "0.27.0",
-    "v2.9": "0.26.2",
-    "v2.8": "0.24.1",
+NETBOX_VERSIONS = {
+    "v2.10": {"netbox_version": "v2.10.2", "docker_version": "0.27.0",},
+    "v2.9": {"netbox_version": "v2.9.11", "docker_version": "0.26.2",},
+    "v2.8": {"netbox_version": "v2.8.9", "docker_version": "0.24.1",},
 }
 
 
@@ -267,7 +267,13 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
 def compose_netbox(
     context, var_envs, netbox_docker_ver="release",
 ):
-    """Create Netbox instance for Travis testing."""
+    """Create Netbox instance for Travis testing.
+
+    Args:
+        context (obj): Used to run specific commands
+        var_envs (dict): Environment variables to pass to the command runner
+        netbox_docker_ver (str): Version of Netbox docker to use
+    """
     context.run(
         f"cd /tmp && git clone -b {netbox_docker_ver} https://github.com/netbox-community/netbox-docker.git",
         pty=True,
@@ -289,18 +295,35 @@ EOF""",
 
 
 def compose_batfish(context, var_envs):
-    """Create Batfish instance for Travis testing."""
+    """Create Batfish instance for Travis testing.
+
+    Args:
+        context (obj): Used to run specific commands
+        var_envs (dict): Environment variables to pass to the command runner
+    """
     exec_cmd = f"docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:{TRAVIS_BATFISH_VERSION}"
     context.run(exec_cmd, pty=True, env=var_envs)
 
 
 def configure_netbox(context, example_name, var_envs):
-    """Configure Netbox instance with Ansible."""
+    """Configure Netbox instance with Ansible.
+
+    Args:
+        context (obj): Used to run specific commands
+        example_name (str): Name of the example directory to use
+        var_envs (dict): Environment variables to pass to the command runner
+    """
     context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True, env=var_envs)
 
 
 def run_network_importer(context, example_name, var_envs):
-    """Run Network Importer."""
+    """Run Network Importer.
+
+    Args:
+        context (obj): Used to run specific commands
+        example_name (str): Name of the example directory to use
+        var_envs (dict): Environment variables to pass to the command runner
+    """
     context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True, env=var_envs)
     context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True, env=var_envs)
     output_last_check = context.run(
@@ -314,8 +337,17 @@ def run_network_importer(context, example_name, var_envs):
 
 @task
 def integration_tests(context, netbox_ver=NETBOX_VERSION):
-    """Builds test environment for Travis-CI."""
+    """Builds test environment for Travis-CI.
+
+    Args:
+        context (obj): Used to run specific commands
+        netbox_ver (str): Major Netbox version to use for testing
+    """
+    docker_netbox_version = NETBOX_VERSIONS.get(netbox_ver, {}).get("docker_version", "release")
+    netbox_exact_version = NETBOX_VERSIONS.get(netbox_ver, {}).get("netbox_version", "latest")
+
     envs = {
+        "VERSION": netbox_exact_version,
         "NETBOX_ADDRESS": TRAVIS_NETBOX_ADDRESS,
         "NETBOX_TOKEN": TRAVIS_NETBOX_TOKEN,
         "NETBOX_VERIFY_SSL": TRAVIS_NETBOX_VERIFY_SSL,
@@ -323,15 +355,15 @@ def integration_tests(context, netbox_ver=NETBOX_VERSION):
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
     }
 
-    docker_netbox_version = NETBOX_TO_DOCKER_NETBOX.get(netbox_ver, "release")
-
     compose_netbox(context, netbox_docker_ver=docker_netbox_version, var_envs=envs)
     compose_batfish(context, var_envs=envs)
     time.sleep(90)
     for example in TRAVIS_EXAMPLES:
         configure_netbox(context, example, var_envs=envs)
         run_network_importer(context, example, var_envs=envs)
-    print(f"All integration tests have passed for Netbox {netbox_ver} / Netbox Docker {docker_netbox_version}!")
+    print(
+        f"All integration tests have passed for Netbox {netbox_exact_version} / Netbox Docker {docker_netbox_version}!"
+    )
 
 
 @task
