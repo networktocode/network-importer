@@ -1,10 +1,10 @@
 # Configuration File
 
-By default the network importer will try to load a configuration file name `network_importer.toml`, this configuration file is not mandatory as long as the required information to connnect to netbox, batfish and/or the network devices are provided via environment variables.
+By default the network importer will try to load a configuration file name `network_importer.toml`, this configuration file is not mandatory as long as the required information to connect to NetBox, Batfish and/or the network devices are provided via environment variables.
 
 It's possible to specify which configuration file should be used in cli with the option `--config`.
 
-The configuration file is organized in 8 sections detailled below. 
+The configuration file is organized in 8 sections detailed below. 
 
 ## Main Section
 
@@ -32,7 +32,7 @@ import_vlans = "config"         # Valid options are ["cli", "config", "no", true
 import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
-# Number of nornir tasks to execute at the same tim
+# Number of Nornir tasks to execute at the same tim
 nbr_workers= 25
 
 # Directory where the configuration can be find, organized in Batfish format
@@ -87,7 +87,7 @@ banner_timeout = 15
 conn_timeout = 5
 
 # List of valid FQDN that can be found in the network,
-# The FQDNs in this list will be automatically removed from all neighbords discovered from LLDP/CDP
+# The FQDNs in this list will be automatically removed from all neighbors discovered from LLDP/CDP
 fqdns = [ ]
 ```
 
@@ -97,10 +97,10 @@ Define what method should be used to connect to the network devices.
 
 ```toml
 [inventory]
-# The default method is to use the primary IP defined in netbox 
+# The default method is to use the primary IP defined in NetBox.
 # As an alternative it's possible to use the name of the device and provide your own FQDN.
-use_primary_ip = true  
-fqdn = []  
+use_primary_ip = false (default: true)
+fqdn = "mydomain.com"
 
 # Optional filter to limit the scope of the inventory, takes a comma separated string of key value pair"
 filter = "site=XXX,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER

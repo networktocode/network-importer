@@ -22,7 +22,7 @@ A device inventory must be already available in NetBox, if you don't have your d
 
 To be able to connect to the device the following information needs to be defined in NetBox:
 - Primary ip address (or valid fqdn)
-- Platform (must be a valid netmiko driver or have a valid napalm driver defined)
+- Platform (must be a valid Netmiko driver or have a valid napalm driver defined)
 
 > Connecting to the device is not mandatory but some features depends on it: configuration update, mostly cabling and potentially vlan update.
 
@@ -65,7 +65,7 @@ Please check the [documentation of the configuration file](configuration.md) for
 # supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
 [netbox]
-# The information to connect to netbox needs to be provided, either in the config file or as environment variables
+# The information to connect to NetBox needs to be provided, either in the config file or as environment variables
 address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
 verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
@@ -82,7 +82,7 @@ address= "localhost"    # Alternative Env Variable : BATFISH_ADDRESS
 # use_ssl = false
 
 [logs]
-# Define log level, curently the logs are printed on the screen
+# Define log level, currently the logs are printed on the screen
 # level = "info" # "debug", "info", "warning"
 ```
 
@@ -96,7 +96,7 @@ The Network Importer can run either in `check` mode or in `apply` mode.
 
 In check mode the Network Importer is working in read-only mode.
 
-The first time, it's encouraged to run the Network Importer in `--check` mode to garantee that no change will be made to the SOT.
+The first time, it's encouraged to run the Network Importer in `--check` mode to guarantee that no change will be made to the SOT.
 
 ```
 network-importer check [--update-configs] [--limit="site=nyc"]

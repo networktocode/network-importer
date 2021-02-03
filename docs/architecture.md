@@ -30,7 +30,7 @@ An adapter to read the information from the network and one to read/write inform
 
 > The base adapter for Network Importer is defined in [network_importer/adapters/base.py](../network_importer/adapters/base.py). The main difference with a standard diffsync adapter is that a Network Importer adapter needs to accept a nornir inventory as parameters at init time (nornir).
 
-### Netbox API Adapter
+### NetBox API Adapter
 
 The NetBox API adapter is designed to read the status of a NetBox server over its Rest API and update NetBox based on the status of the network.
 
@@ -50,7 +50,7 @@ The table below present the capabilities in term of : Read, Create, Update and D
 
 ### Network Importer Adapter
 
-The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage nornir to gather some additional information like the list of LLDP/CPD neighbors or the list of vlans.
+The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage Nornir to gather some additional information like the list of LLDP/CPD neighbors or the list of vlans.
 
 ## Drivers
 
@@ -58,7 +58,7 @@ The communicate with the network devices, the network importer is leveraging Nor
 
 Each driver, should support each of the following actions: 
 - `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
-- `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
+- `get_neighbors`: Retrieve the list of all neighbors, either from LLDP or CDP (based on the configuration)
 - `get_vlans`: Retrieve the list of vlans present on the device.
 
 By default, 4 drivers are available `default`, `cisco_default`, `juniper_junos` & `arista_eos` and the mapping between a platform and the specific driver can be defined in the configuration. By default the 5 most common platforms are mapped to the following drivers.
