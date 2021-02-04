@@ -18,7 +18,10 @@ python:
 services:
   - "docker"
 
-# Script & Before Script for test stage
+# before_install, Script & before_script for test stage
+before_install: >
+  echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
+
 before_script:
   - "pip install invoke"
   - "invoke build-image --nocache"
