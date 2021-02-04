@@ -44,7 +44,7 @@ jobs:
 
     - stage: "build"
       before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1 
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
         - "pip install invoke poetry toml"
       script:
@@ -55,7 +55,7 @@ jobs:
     - stage: "integration"
       name: "Netbox v2.10"
       before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1 
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
@@ -68,7 +68,7 @@ jobs:
     - stage: "integration"
       name: "Netbox v2.9"
       before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1 
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
@@ -81,7 +81,7 @@ jobs:
     - stage: "integration"
       name: "Netbox v2.8"
       before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1 
+        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
         - "pip install invoke toml poetry ansible pynetbox"
         - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
