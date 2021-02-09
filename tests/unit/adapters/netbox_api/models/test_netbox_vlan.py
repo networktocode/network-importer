@@ -77,6 +77,22 @@ def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
     assert "tags" not in params
 
 
+def test_translate_attrs_for_netbox_with_partial_attrs(netbox_api_base):
+
+    vlan = NetboxVlan(vid=100, name="MYVLAN", site_name="HQ", remote_id=30)
+    netbox_api_base.add(vlan)
+
+    netbox_api_base.add(NetboxDevice(name="dev1", site_name="HQ", remote_id=32, device_tag_id=12))
+    netbox_api_base.add(NetboxDevice(name="dev2", site_name="HQ", remote_id=33, device_tag_id=13))
+    params = vlan.translate_attrs_for_netbox({"associated_devices": ["dev1", "dev2"]})
+
+    assert "name" not in params
+    assert "site" in params
+    assert params["site"] == 10
+    assert "tags" in params
+    assert sorted(params["tags"]) == [12, 13]
+
+
 def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
 
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)

@@ -103,6 +103,9 @@ class NetboxInterface(Interface):
                     resp.append(nid)
             return resp
 
+        complete_attrs = self.get_attrs()
+        complete_attrs.update(attrs)
+        attrs = complete_attrs
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
@@ -521,7 +524,7 @@ class NetboxVlan(Vlan):
 
         if "name" in attrs and attrs["name"]:
             nb_params["name"] = attrs["name"]
-        else:
+        elif not self.name:
             nb_params["name"] = f"vlan-{self.vid}"
 
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
@@ -658,7 +661,7 @@ class NetboxVlanPre29(NetboxVlan):
 
         if "name" in attrs and attrs["name"]:
             nb_params["name"] = attrs["name"]
-        else:
+        elif not self.name:
             nb_params["name"] = f"vlan-{self.vid}"
 
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
@@ -697,7 +700,7 @@ class NetboxVlanPre29(NetboxVlan):
         return item
 
     def update_clean_tags(self, nb_params, obj):
-        """Update list of vlan tags with additinal tags that already exists on the object in netbox.
+        """Update list of vlan tags with additional tags that already exists on the object in netbox.
 
         Args:
             nb_params (dict): dict of parameters in netbox format
