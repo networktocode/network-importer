@@ -52,7 +52,6 @@ class NetworkImporter:
     @timeit
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
-
         # Filters can be defined at the configuration level or in CLI or both
         params = {}
         build_filter_params(config.SETTINGS.inventory.filter.split((",")), params)

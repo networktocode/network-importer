@@ -26,7 +26,6 @@ from rich.console import Console
 from rich.table import Table
 
 import network_importer.config as config
-from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
