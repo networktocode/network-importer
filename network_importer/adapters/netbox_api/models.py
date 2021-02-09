@@ -103,9 +103,11 @@ class NetboxInterface(Interface):
                     resp.append(nid)
             return resp
 
+        # Reconstruct all attrs of the object in its expected state
         complete_attrs = self.get_attrs()
         complete_attrs.update(attrs)
         attrs = complete_attrs
+
         nb_params = {}
 
         # Identify the id of the device this interface is attached to
