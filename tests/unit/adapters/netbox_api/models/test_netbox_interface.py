@@ -66,7 +66,7 @@ def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
     assert params["name"] == "ge-0/0/0"
     assert params["device"] == 29
     assert params["type"] == "other"
-    assert params["lag"] == None
+    assert params["lag"] is None
     assert params["description"] == ""
 
 
