@@ -20,19 +20,13 @@ import importlib
 
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
-from network_importer.utils import patch_http_connection_pool
+from network_importer.utils import patch_http_connection_pool, build_filter_params
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
 from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
-from network_importer.inventory import (
-    # valid_devs,
-    # non_valid_devs,
-    reachable_devs,
-    # non_reachable_devs,
-    # valid_and_reachable_devs,
-)
+from network_importer.inventory import reachable_devs
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -58,34 +52,17 @@ class NetworkImporter:
     @timeit
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
+
+        # Filters can be defined at the configuration level or in CLI or both
         params = {}
-
-        # ------------------------------------------------------------------------
-        # Extract additional query filters if defined and convert string to dict
-        #  Filters can be defined at the configuration level or in CLI or both
-        # ------------------------------------------------------------------------
-        if config.SETTINGS.inventory.filter:
-            csparams = config.SETTINGS.inventory.filter.split(",")
-            for csp in csparams:
-                if "=" not in csp:
-                    continue
-
-                key, value = csp.split("=", 1)
-                params[key] = value
-
+        build_filter_params(config.SETTINGS.inventory.filter.split((",")), params)
         if limit:
             if "=" not in limit:
                 params["name"] = limit
-
             else:
-                csparams = limit.split(",")
-                for csp in csparams:
-                    if "=" not in csp:
-                        continue
-                    key, value = csp.split("=", 1)
-                    params[key] = value
+                build_filter_params(limit.split((",")), params)
 
-        # TODO Cleanup config file and allow user define inventory
+        # TODO Cleanup config file and allow user defined inventory
         self.nornir = InitNornir(
             core={"num_workers": config.SETTINGS.main.nbr_workers},
             logging={"enabled": False},
@@ -113,7 +90,7 @@ class NetworkImporter:
 
     @timeit
     def init(self, limit=None):
-        """Initilize NetworkImporter Object.
+        """Initialize NetworkImporter Object.
 
         Args:
           limit (str): (Default value = None)
@@ -165,7 +142,7 @@ class NetworkImporter:
         return True
 
     def sync(self):
-        """Syncronize the SOT adapter and the network adapter."""
+        """Synchronize the SOT adapter and the network adapter."""
         self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
 
     def diff(self):

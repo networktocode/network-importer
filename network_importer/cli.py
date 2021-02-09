@@ -72,9 +72,6 @@ def init(config_file):
     # Disable logging in console for DiffSync
     enable_console_logging(verbosity=0)
 
-    filters = {}
-    build_filter_params(config.SETTINGS.inventory.filter.split((",")), filters)
-
     ni = NetworkImporter()
     return ni
 
