@@ -62,12 +62,12 @@ def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
 
     params = intf.translate_attrs_for_netbox({})
 
-    assert "name" in params
+    assert sorted(list(params.keys())) == ["description", "device", "lag", "name", "type"]
     assert params["name"] == "ge-0/0/0"
-    assert "device" in params
     assert params["device"] == 29
     assert params["type"] == "other"
-    assert sorted(list(params.keys())) == ["device", "name", "type"]
+    assert params["lag"] is None
+    assert params["description"] == ""
 
 
 def test_translate_attrs_for_netbox_type(netbox_api_base):
@@ -97,7 +97,8 @@ def test_translate_attrs_for_netbox_description(netbox_api_base):
 
     params = intf.translate_attrs_for_netbox({})
     assert_baseline
-    assert "description" not in params
+    assert "description" in params
+    assert params["description"] == ""
 
     params = intf.translate_attrs_for_netbox({"description": "my_description"})
     assert_baseline
@@ -158,7 +159,7 @@ def test_translate_attrs_for_netbox_vlan(netbox_api_base):
     params = intf.translate_attrs_for_netbox({"switchport_mode": "ACCESS", "mode": "ACCESS"})
     assert_baseline
     assert params["mode"] == "access"
-    assert "untagged_vlan" not in params
+    assert params["untagged_vlan"] is None
 
     params = intf.translate_attrs_for_netbox(
         {"switchport_mode": "TRUNK", "mode": "TRUNK", "allowed_vlans": ["HQ__111", "HQ__100"]}
