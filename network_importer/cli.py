@@ -26,7 +26,6 @@ from rich.console import Console
 from rich.table import Table
 
 import network_importer.config as config
-from network_importer.utils import build_filter_params
 from network_importer.main import NetworkImporter
 
 import network_importer.performance as perf
@@ -71,9 +70,6 @@ def init(config_file):
 
     # Disable logging in console for DiffSync
     enable_console_logging(verbosity=0)
-
-    filters = {}
-    build_filter_params(config.SETTINGS.inventory.filter.split((",")), filters)
 
     ni = NetworkImporter()
     return ni

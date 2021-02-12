@@ -211,7 +211,7 @@ def build_filter_params(filter_params, params):
     """Update params dict() with filter args in required format for pynetbox.
 
     Args:
-      filter_params (str): split string from cli or config
+      filter_params (list): split string from cli or config
       params (dict): object to hold params
     """
     for param_value in filter_params:

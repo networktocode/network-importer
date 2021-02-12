@@ -18,6 +18,7 @@ from network_importer.utils import (
     is_interface_physical,
     is_interface_lag,
     is_mac_address,
+    build_filter_params,
 )
 
 
@@ -99,3 +100,34 @@ def test_is_mac_address():
     assert is_mac_address("F8f2.1e89.3c") is False
     assert is_mac_address("F8f2.1e89.3c66.67") is False
     assert is_mac_address("not a mac address") is False
+
+
+def test_build_filter_params():
+
+    # base implementation
+    params = {}
+    build_filter_params(["site=nyc", "device=dev"], params)
+    assert params == {"device": "dev", "site": "nyc"}
+
+    params = {}
+    build_filter_params(["device=dev"], params)
+    assert params == {"device": "dev"}
+
+    # multiple filter of the same type
+    params = {}
+    build_filter_params(["site=nyc", "site=jcy"], params)
+    assert params == {"site": ["nyc", "jcy"]}
+
+    params = {}
+    build_filter_params(["device=dev"], params)
+    assert params == {"device": "dev"}
+
+    # Existing keys in params should be preserved
+    params = {"site": "jcy"}
+    build_filter_params(["site=nyc", "device=dev"], params)
+    assert params == {"device": "dev", "site": ["jcy", "nyc"]}
+
+    # Invalid string (no =) will be ignored
+    params = {"site": "jcy"}
+    build_filter_params(["site", "device=dev"], params)
+    assert params == {"device": "dev", "site": "jcy"}
