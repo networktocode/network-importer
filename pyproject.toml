@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "network-importer"
-version = "2.0.0-beta3"
+version = "2.0.0-beta4"
 description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
 authors = ["Network to Code, LLC <info@networktocode.com>"]
 homepage = "https://github.com/networktocode/network-importer"
