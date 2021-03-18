@@ -121,15 +121,22 @@ class GetNeighbors(BaseProcessor):
                 del result[0].result["neighbors"][interface]
                 continue
 
-            if is_mac_address(neighbors[0]["hostname"]):
-                del result[0].result["neighbors"][interface]
-                continue
+            if neighbors:
+                if is_mac_address(neighbors[0]["hostname"]):
+                    del result[0].result["neighbors"][interface]
+                    continue
 
-            # Clean up hostname to remove full FQDN
-            result[0].result["neighbors"][interface][0]["hostname"] = self.clean_neighbor_name(neighbors[0]["hostname"])
+                # Clean up hostname to remove full FQDN
+                result[0].result["neighbors"][interface][0]["hostname"] = self.clean_neighbor_name(
+                    neighbors[0]["hostname"]
+                )
 
-            # Clean up the portname if genie incorrectly capitalized it
-            result[0].result["neighbors"][interface][0]["port"] = self.clean_neighbor_port_name(neighbors[0]["port"])
+                # Clean up the portname if genie incorrectly capitalized it
+                result[0].result["neighbors"][interface][0]["port"] = self.clean_neighbor_port_name(
+                    neighbors[0]["port"]
+                )
+            else:
+                LOGGER.info("%s | No neighbors found on interface %s", host.name, interface)
 
     @classmethod
     def clean_neighbor_name(cls, neighbor_name):

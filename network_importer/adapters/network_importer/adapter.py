@@ -18,8 +18,6 @@ import json
 import logging
 from collections import defaultdict
 
-from diffsync.exceptions import ObjectNotFound
-
 from pybatfish.client.session import Session
 from pybatfish.exception import BatfishException
 
@@ -111,7 +109,7 @@ class NetworkImporterAdapter(BaseAdapter):
         except BatfishException as exc:
             error = json.loads(str(exc).splitlines()[-1])
             error = re.sub(r"[^:]*:.", "", error["answerElements"][0]["answer"][0])
-            raise AdapterLoadFatalError(error) from exc
+            raise AdapterLoadFatalError(error)
 
     def load_batfish(self):
         """Load all devices, interfaces and IP Addresses from Batfish."""
@@ -331,10 +329,7 @@ class NetworkImporterAdapter(BaseAdapter):
         if prefix.num_addresses == 1:
             return False
 
-        try:
-            prefix_obj = self.get(self.prefix, identifier=dict(site_name=site.name, prefix=prefix))
-        except ObjectNotFound:
-            prefix_obj = None
+        prefix_obj = self.get(self.prefix, identifier=dict(site_name=site.name, prefix=prefix))
 
         if not prefix_obj:
             prefix_obj = self.prefix(prefix=str(prefix), site_name=site.name, vlan=vlan)
@@ -448,16 +443,19 @@ class NetworkImporterAdapter(BaseAdapter):
                 continue
 
             for interface, neighbors in items[1][0].result["neighbors"].items():
-                cable = self.cable(
-                    device_a_name=dev_name,
-                    interface_a_name=interface,
-                    device_z_name=neighbors[0]["hostname"],
-                    interface_z_name=neighbors[0]["port"],
-                    source="cli",
-                )
-                nbr_cables += 1
-                LOGGER.debug("%s | Added cable %s", dev_name, cable.get_unique_id())
-                self.get_or_add(cable)
+                if neighbors:
+                    cable = self.cable(
+                        device_a_name=dev_name,
+                        interface_a_name=interface,
+                        device_z_name=neighbors[0]["hostname"],
+                        interface_z_name=neighbors[0]["port"],
+                        source="cli",
+                    )
+                    nbr_cables += 1
+                    LOGGER.debug("%s | Added cable %s", dev_name, cable.get_unique_id())
+                    self.get_or_add(cable)
+                else:
+                    LOGGER.info("%s | No neighbor information found for interface %s", dev_name, interface)
 
         LOGGER.debug("Found %s cables from Cli", nbr_cables)
 
@@ -503,14 +501,14 @@ class NetworkImporterAdapter(BaseAdapter):
             """
             dev_name, intf_name = cable.get_device_intf(side)
 
-            try:
-                self.get(self.device, identifier=dev_name)
-            except ObjectNotFound:
+            dev = self.get(self.device, identifier=dev_name)
+
+            if not dev:
                 return True
 
-            try:
-                intf = self.get(self.interface, identifier=dict(name=intf_name, device_name=dev_name))
-            except ObjectNotFound:
+            intf = self.get(self.interface, identifier=dict(name=intf_name, device_name=dev_name))
+
+            if not intf:
                 return True
 
             # if not dev:
