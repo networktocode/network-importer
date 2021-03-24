@@ -229,8 +229,7 @@ class NetworkImporterAdapter(BaseAdapter):
             if intf["Encapsulation_VLAN"]:
                 interface.mode = "L3_SUB_VLAN"
                 vlan = self.vlan(vid=intf["Encapsulation_VLAN"], site_name=site.name)
-                if create_vlans:
-                    vlan, _ = self.get_or_create_vlan(vlan)
+                vlan, _ = self.get_or_create_vlan(vlan)
                 if import_vlans:
                     interface.allowed_vlans = [vlan.get_unique_id()]
             else:
