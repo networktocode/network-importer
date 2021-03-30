@@ -60,8 +60,7 @@ jobs:
       before_install: >
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
-        - "pip install invoke toml poetry ansible pynetbox"
-        - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
+        - "pip install invoke toml poetry pynetbox ansible==2.10.7"
         - "poetry install"
       script:
         - "invoke integration-tests"
@@ -73,8 +72,7 @@ jobs:
       before_install: >
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
-        - "pip install invoke toml poetry ansible pynetbox"
-        - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
+        - "pip install invoke toml poetry pynetbox ansible==2.10.7"
         - "poetry install"
       script:
         - "invoke integration-tests"
@@ -86,8 +84,7 @@ jobs:
       before_install: >
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
-        - "pip install invoke toml poetry ansible pynetbox"
-        - "ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v1.2.0"
+        - "pip install invoke toml poetry pynetbox ansible==2.10.7"
         - "poetry install"
       script:
         - "invoke integration-tests"
