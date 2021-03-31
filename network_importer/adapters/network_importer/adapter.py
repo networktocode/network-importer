@@ -229,10 +229,10 @@ class NetworkImporterAdapter(BaseAdapter):
             if intf["Encapsulation_VLAN"]:
                 interface.mode = "L3_SUB_VLAN"
                 vlan = self.vlan(vid=intf["Encapsulation_VLAN"], site_name=site.name)
-                if create_vlans:
-                    vlan, _ = self.get_or_create_vlan(vlan)
+                vlan, _ = self.get_or_create_vlan(vlan, site)
                 if import_vlans:
                     interface.allowed_vlans = [vlan.get_unique_id()]
+                    interface_vlans = interface.allowed_vlans
             else:
                 interface.mode = interface.switchport_mode
 
@@ -241,9 +241,11 @@ class NetworkImporterAdapter(BaseAdapter):
             for vid in vids:
                 vlan = self.vlan(vid=vid, site_name=site.name)
                 if create_vlans:
-                    vlan, _ = self.get_or_create_vlan(vlan)
+                    vlan, _ = self.get_or_create_vlan(vlan, site)
                 if import_vlans:
                     interface.allowed_vlans.append(vlan.get_unique_id())
+
+            interface_vlans = interface.allowed_vlans
 
             if intf["Native_VLAN"]:
                 native_vlan = self.vlan(vid=intf["Native_VLAN"], site_name=site.name)
@@ -251,13 +253,15 @@ class NetworkImporterAdapter(BaseAdapter):
                     native_vlan, _ = self.get_or_create_vlan(native_vlan)
                 if import_vlans:
                     interface.access_vlan = native_vlan.get_unique_id()
+                    interface_vlans = [interface.access_vlan]
 
         elif interface.mode == "ACCESS" and intf["Access_VLAN"]:
             vlan = self.vlan(vid=intf["Access_VLAN"], site_name=site.name)
             if create_vlans:
-                vlan, _ = self.get_or_create_vlan(vlan)
+                vlan, _ = self.get_or_create_vlan(vlan, site)
             if import_vlans:
                 interface.access_vlan = vlan.get_unique_id()
+                interface_vlans = [interface.access_vlan]
 
         if interface.is_lag is False and interface.is_lag_member is None and intf["Channel_Group"]:
             interface.parent = self.interface(name=intf["Channel_Group"], device_name=device.name).get_unique_id()
