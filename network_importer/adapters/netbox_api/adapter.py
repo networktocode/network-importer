@@ -305,7 +305,10 @@ class NetBoxAPIAdapter(BaseAdapter):
             interface = self.get(
                 self.interface, identifier=dict(device_name=device.name, name=ip_address.interface_name)
             )
-            interface.add_child(ip_address)
+            try:
+                interface.add_child(ip_address)
+            except ObjectAlreadyExists:
+                LOGGER.error("%s | Duplicate IP found for %s (%s) ; IP already imported.", self.name, ip_address, device.name)
 
         LOGGER.debug("%s | Found %s ip addresses for %s", self.name, len(ips), device.name)
 
