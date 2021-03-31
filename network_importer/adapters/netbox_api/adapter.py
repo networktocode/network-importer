@@ -308,7 +308,9 @@ class NetBoxAPIAdapter(BaseAdapter):
             try:
                 interface.add_child(ip_address)
             except ObjectAlreadyExists:
-                LOGGER.error("%s | Duplicate IP found for %s (%s) ; IP already imported.", self.name, ip_address, device.name)
+                LOGGER.error(
+                    "%s | Duplicate IP found for %s (%s) ; IP already imported.", self.name, ip_address, device.name
+                )
 
         LOGGER.debug("%s | Found %s ip addresses for %s", self.name, len(ips), device.name)
 
