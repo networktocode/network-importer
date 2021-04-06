@@ -18,7 +18,7 @@ import json
 import logging
 from collections import defaultdict
 
-from diffsync.exceptions import ObjectNotFound
+from diffsync.exceptions import ObjectNotFound, ObjectAlreadyExists
 
 from pybatfish.client.session import Session
 from pybatfish.exception import BatfishException
@@ -300,8 +300,13 @@ class NetworkImporterAdapter(BaseAdapter):
 
         if config.SETTINGS.main.import_ips:
             LOGGER.debug("%s | Import %s for %s::%s", self.name, ip_address.address, device.name, interface.name)
-            self.add(ip_address)
-            interface.add_child(ip_address)
+            try:
+                self.add(ip_address)
+                interface.add_child(ip_address)
+            except ObjectAlreadyExists:
+                LOGGER.error(
+                    "%s | Duplicate IP found for %s (%s) ; IP already imported.", self.name, ip_address, device.name
+                )
 
         if config.SETTINGS.main.import_prefixes:
             vlan = None
