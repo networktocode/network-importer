@@ -256,15 +256,23 @@ class NetboxInterface(Interface):
             NetboxInterface: DiffSync object
         """
         # Check if the interface has some Ips, check if it is the management interface
+
         if self.ips:
-            dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
-            if dev.primary_ip and dev.primary_ip in self.ips:
-                LOGGER.warning(
-                    "Unable to delete interface %s on %s, because it's currently the management interface",
-                    self.name,
-                    dev.name,
+            try:
+                dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
+                if dev.primary_ip and dev.primary_ip in self.ips:
+                    LOGGER.warning(
+                        "Unable to delete interface %s on %s, because it's currently the management interface",
+                        self.name,
+                        dev.name,
+                    )
+                    return self
+            except ObjectNotFound:
+                LOGGER.error(
+                    "Unable to delete interface %s on %s, because device is not present.", self.name, self.device_name,
                 )
-                return self
+                return None
+
         try:
             intf = self.diffsync.netbox.dcim.interfaces.get(self.remote_id)
             intf.delete()
@@ -354,15 +362,21 @@ class NetboxIPAddress(IPAddress):
             NetboxIPAddress: DiffSync object
         """
         if self.device_name:
-            dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
-            if dev.primary_ip == self.address:
-                LOGGER.warning(
-                    "Unable to delete IP Address %s on %s, because it's currently the management IP address",
-                    self.address,
-                    self.device_name,
+            try:
+                dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
+                if dev.primary_ip == self.address:
+                    LOGGER.warning(
+                        "Unable to delete IP Address %s on %s, because it's currently the management IP address",
+                        self.address,
+                        self.device_name,
+                    )
+                    return None
+
+            except ObjectNotFound:
+                LOGGER.error(
+                    "Unable to delete IP Address %s on %s, because device is not present.", self.name, self.device_name,
                 )
                 return None
-
         try:
             ipaddr = self.diffsync.netbox.ipam.ip_addresses.get(self.remote_id)
             ipaddr.delete()
@@ -632,14 +646,19 @@ class NetboxVlan(Vlan):
         """
         nb_params = self.translate_attrs_for_netbox(attrs)
 
-        try:
-            vlan = self.diffsync.netbox.ipam.vlans.get(self.remote_id)
-            clean_params = self.update_clean_tags(nb_params=nb_params, obj=vlan)
-            vlan.update(data=clean_params)
-            LOGGER.info("Updated Vlan %s (%s) in NetBox", self.get_unique_id(), self.remote_id)
-        except pynetbox.core.query.RequestError as exc:
-            LOGGER.warning("Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.diffsync.name, exc.error)
-            return None
+        if self.remote_id:
+            try:
+                # import pdb ; pdb.set_trace()
+                vlan = self.diffsync.netbox.ipam.vlans.get(self.remote_id)
+                # import pdb ; pdb.set_trace()
+                clean_params = self.update_clean_tags(nb_params=nb_params, obj=vlan)
+                vlan.update(data=clean_params)
+                LOGGER.info("Updated Vlan %s (%s) in NetBox", self.get_unique_id(), self.remote_id)
+            except pynetbox.core.query.RequestError as exc:
+                LOGGER.warning(
+                    "Unable to update Vlan %s in %s (%s)", self.get_unique_id(), self.diffsync.name, exc.error
+                )
+                return None
 
         return super().update(attrs)
 
