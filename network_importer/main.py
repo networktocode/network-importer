@@ -18,6 +18,8 @@ import sys
 import warnings
 import importlib
 
+from diffsync.enum import DiffSyncFlags
+
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
 from network_importer.utils import patch_http_connection_pool, build_filter_params
@@ -27,7 +29,6 @@ from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import reachable_devs
-from diffsync.enum import DiffSyncFlags
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
