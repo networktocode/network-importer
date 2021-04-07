@@ -27,6 +27,7 @@ from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import reachable_devs
+from diffsync.enum import DiffSyncFlags
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -142,7 +143,7 @@ class NetworkImporter:
 
     def sync(self):
         """Synchronize the SOT adapter and the network adapter."""
-        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
+        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff, flags=DiffSyncFlags.SKIP_UNMATCHED_DST)
 
     def diff(self):
         """Generate a diff of the SOT adapter and the network adapter."""
