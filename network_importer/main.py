@@ -18,8 +18,6 @@ import sys
 import warnings
 import importlib
 
-from diffsync.enum import DiffSyncFlags
-
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
 from network_importer.utils import patch_http_connection_pool, build_filter_params
@@ -144,7 +142,7 @@ class NetworkImporter:
 
     def sync(self):
         """Synchronize the SOT adapter and the network adapter."""
-        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff, flags=DiffSyncFlags.SKIP_UNMATCHED_DST)
+        self.sot.sync_from(self.network, diff_class=NetworkImporterDiff)
 
     def diff(self):
         """Generate a diff of the SOT adapter and the network adapter."""
