@@ -257,14 +257,22 @@ class NetboxInterface(Interface):
         """
         # Check if the interface has some Ips, check if it is the management interface
         if self.ips:
-            dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
-            if dev.primary_ip and dev.primary_ip in self.ips:
-                LOGGER.warning(
-                    "Unable to delete interface %s on %s, because it's currently the management interface",
+            try:
+                dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
+                if dev.primary_ip and dev.primary_ip in self.ips:
+                    LOGGER.warning(
+                        "Unable to delete interface %s on %s, because it's currently the management interface",
+                        self.name,
+                        dev.name,
+                    )
+                    return self
+            except ObjectNotFound:
+                LOGGER.debug(
+                    "Unable to delete interface %s on %s, because device is not present. See issue #188",
                     self.name,
-                    dev.name,
+                    self.device_name,
                 )
-                return self
+                return None
         try:
             intf = self.diffsync.netbox.dcim.interfaces.get(self.remote_id)
             intf.delete()
@@ -354,15 +362,22 @@ class NetboxIPAddress(IPAddress):
             NetboxIPAddress: DiffSync object
         """
         if self.device_name:
-            dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
-            if dev.primary_ip == self.address:
-                LOGGER.warning(
-                    "Unable to delete IP Address %s on %s, because it's currently the management IP address",
+            try:
+                dev = self.diffsync.get(self.diffsync.device, identifier=self.device_name)
+                if dev.primary_ip == self.address:
+                    LOGGER.warning(
+                        "Unable to delete IP Address %s on %s, because it's currently the management IP address",
+                        self.address,
+                        self.device_name,
+                    )
+                    return None
+            except ObjectNotFound:
+                LOGGER.debug(
+                    "Unable to delete IP Address %s on %s, because device is not present. See issue #188",
                     self.address,
                     self.device_name,
                 )
                 return None
-
         try:
             ipaddr = self.diffsync.netbox.ipam.ip_addresses.get(self.remote_id)
             ipaddr.delete()
