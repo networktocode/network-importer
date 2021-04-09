@@ -19,7 +19,7 @@ import requests
 import pynetbox
 from packaging.version import Version, InvalidVersion
 
-from diffsync.exceptions import ObjectAlreadyExists
+from diffsync.exceptions import ObjectAlreadyExists, ObjectNotFound
 
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.base import BaseAdapter  # pylint: disable=import-error
@@ -256,14 +256,18 @@ class NetBoxAPIAdapter(BaseAdapter):
 
         if site and intf.tagged_vlans and import_vlans:
             for vid in [v.vid for v in intf.tagged_vlans]:
-                vlan, _ = self.get_or_create_vlan(vlan=self.vlan(vid=vid, site_name=site.name), site=site)
-                interface.allowed_vlans.append(vlan.get_unique_id())
+                try:
+                    vlan = self.get(self.vlan, identifier=dict(vid=vid, site_name=site.name))
+                    interface.allowed_vlans.append(vlan.get_unique_id())
+                except ObjectNotFound:
+                    LOGGER.debug("%s | VLAN %s is not present for site %s", self.name, vid, site.name)
 
         if site and intf.untagged_vlan and import_vlans:
-            vlan, _ = self.get_or_create_vlan(
-                vlan=self.vlan(vid=intf.untagged_vlan.vid, site_name=site.name), site=site
-            )
-            interface.access_vlan = vlan.get_unique_id()
+            try:
+                vlan = self.get(self.vlan, identifier=dict(vid=intf.untagged_vlan.vid, site_name=site.name))
+                interface.access_vlan = vlan.get_unique_id()
+            except ObjectNotFound:
+                LOGGER.debug("%s | VLAN %s is not present for site %s", self.name, intf.untagged_vlan.vid, site.name)
 
         if intf.connected_endpoint_type:
             interface.connected_endpoint_type = intf.connected_endpoint_type
