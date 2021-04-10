@@ -104,12 +104,11 @@ class IPAddress(DiffSyncModel):
     """
 
     _modelname = "ip_address"
-    _identifiers = ("address",)
-    _attributes = ("device_name", "interface_name")
+    _identifiers = ("device_name", "interface_name", "address")
 
+    device_name: str
+    interface_name: str
     address: str
-    interface_name: Optional[str]
-    device_name: Optional[str]
 
 
 class Prefix(DiffSyncModel):

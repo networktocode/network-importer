@@ -23,13 +23,11 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 def test_translate_attrs_for_netbox_with_intf(netbox_api_base):
 
     ipaddr = NetboxIPAddressPre29(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=30
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1", remote_id=302
     )
     netbox_api_base.add(ipaddr)
 
-    params = ipaddr.translate_attrs_for_netbox(
-        attrs=dict(device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1")
-    )
+    params = ipaddr.translate_attrs_for_netbox()
 
     assert "address" in params
     assert params["address"] == "10.10.10.1/24"
@@ -44,7 +42,7 @@ def test_translate_attrs_for_netbox_wo_intf(netbox_api_base):
     )
     netbox_api_base.add(ipaddr)
 
-    params = ipaddr.translate_attrs_for_netbox(attrs={})
+    params = ipaddr.translate_attrs_for_netbox()
 
     assert "address" in params
     assert params["address"] == "10.10.10.1/24"
@@ -58,9 +56,7 @@ def test_translate_attrs_for_netbox_wrong_dev(netbox_api_base):
     )
     netbox_api_base.add(ipaddr)
 
-    params = ipaddr.translate_attrs_for_netbox(
-        attrs=dict(device_name="HQ-CORE-SW99", interface_name="TenGigabitEthernet1/0/1")
-    )
+    params = ipaddr.translate_attrs_for_netbox()
 
     assert "address" in params
     assert params["address"] == "10.10.10.1/24"

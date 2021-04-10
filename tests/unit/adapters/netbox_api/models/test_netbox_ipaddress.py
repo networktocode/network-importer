@@ -23,13 +23,10 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 def test_translate_attrs_for_netbox_with_intf(netbox_api_base):
 
     ipaddr = NetboxIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=30
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1", remote_id=302
     )
     netbox_api_base.add(ipaddr)
-
-    params = ipaddr.translate_attrs_for_netbox(
-        attrs=dict(device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1")
-    )
+    params = ipaddr.translate_attrs_for_netbox()
 
     assert "address" in params
     assert params["address"] == "10.10.10.1/24"
@@ -42,11 +39,10 @@ def test_translate_attrs_for_netbox_with_intf(netbox_api_base):
 def test_translate_attrs_for_netbox_wo_intf(netbox_api_base):
 
     ipaddr = NetboxIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=30
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=302
     )
     netbox_api_base.add(ipaddr)
-
-    params = ipaddr.translate_attrs_for_netbox(attrs={})
+    params = ipaddr.translate_attrs_for_netbox()
 
     assert "address" in params
     assert params["address"] == "10.10.10.1/24"
@@ -74,8 +70,8 @@ def test_create_ip_address_interface(requests_mock, netbox_api_base):
     requests_mock.post("http://mock/api/ipam/ip-addresses/", json=data, status_code=201)
     ip_address = NetboxIPAddress.create(
         diffsync=netbox_api_base,
-        ids=dict(address="10.63.0.2/31"),
-        attrs=dict(interface_name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"),
+        ids=dict(address="10.63.0.2/31", interface_name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"),
+        attrs=dict(),
     )
 
     assert isinstance(ip_address, NetboxIPAddress) is True
@@ -88,7 +84,11 @@ def test_create_ip_address_no_interface(requests_mock, netbox_api_base):
         data = yaml.safe_load(file)
 
     requests_mock.post("http://mock/api/ipam/ip-addresses/", json=data, status_code=201)
-    ip_address = NetboxIPAddress.create(diffsync=netbox_api_base, ids=dict(address="10.63.0.2/31"), attrs=dict())
+    ip_address = NetboxIPAddress.create(
+        diffsync=netbox_api_base,
+        ids=dict(address="10.63.0.2/31", interface_name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"),
+        attrs=dict(),
+    )
 
     assert isinstance(ip_address, NetboxIPAddress) is True
     assert ip_address.remote_id == 15
