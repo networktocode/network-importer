@@ -20,7 +20,9 @@ def test_add_prefix_from_ip_base(network_importer_base, site_sfo):
     adapter = network_importer_base
     adapter.add(site_sfo)
 
-    prefix = adapter.add_prefix_from_ip(ip_address=IPAddress(address="10.10.10.1/24"), site=site_sfo)
+    prefix = adapter.add_prefix_from_ip(
+        ip_address=IPAddress(address="10.10.10.1/24", device_name="device1", interface_name="Intf1"), site=site_sfo
+    )
 
     assert isinstance(prefix, Prefix)
     assert adapter.get(Prefix, identifier=prefix.get_unique_id())
@@ -31,7 +33,9 @@ def test_add_prefix_from_ip_mask_32(network_importer_base, site_sfo):
     adapter = network_importer_base
     adapter.add(site_sfo)
 
-    prefix = adapter.add_prefix_from_ip(ip_address=IPAddress(address="10.10.10.1/32"), site=site_sfo)
+    prefix = adapter.add_prefix_from_ip(
+        ip_address=IPAddress(address="10.10.10.1/32", device_name="device1", interface_name="Intf1"), site=site_sfo
+    )
 
     assert prefix is False
 
@@ -41,7 +45,9 @@ def test_add_prefix_from_ip_mask_31(network_importer_base, site_sfo):
     adapter = network_importer_base
     adapter.add(site_sfo)
 
-    prefix = adapter.add_prefix_from_ip(ip_address=IPAddress(address="10.10.10.1/31"), site=site_sfo)
+    prefix = adapter.add_prefix_from_ip(
+        ip_address=IPAddress(address="10.10.10.1/31", device_name="device1", interface_name="Intf1"), site=site_sfo
+    )
 
     assert isinstance(prefix, Prefix)
     assert adapter.get(Prefix, identifier=prefix.get_unique_id())

@@ -294,7 +294,7 @@ class NetboxIPAddress(IPAddress):
 
     remote_id: Optional[int]
 
-    def translate_attrs_for_netbox(self, attrs):
+    def translate_attrs_for_netbox(self, attrs=None):  # pylint: disable=unused-argument
         """Translate IP address attributes into NetBox format.
 
         Args:
@@ -305,17 +305,14 @@ class NetboxIPAddress(IPAddress):
         """
         nb_params = {"address": self.address}
 
-        if "interface_name" in attrs and "device_name" in attrs:
-
-            try:
-                interface = self.diffsync.get(
-                    self.diffsync.interface,
-                    identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"]),
-                )
-                nb_params["assigned_object_type"] = "dcim.interface"
-                nb_params["assigned_object_id"] = interface.remote_id
-            except ObjectNotFound:
-                pass
+        try:
+            interface = self.diffsync.get(
+                self.diffsync.interface, identifier=dict(device_name=self.device_name, name=self.interface_name),
+            )
+            nb_params["assigned_object_type"] = "dcim.interface"
+            nb_params["assigned_object_id"] = interface.remote_id
+        except ObjectNotFound:
+            pass
 
         return nb_params
 
@@ -401,26 +398,24 @@ class NetboxIPAddressPre29(NetboxIPAddress):
     The method to attach an ip address to an interface changed in 2.9, this class implement the old method
     """
 
-    def translate_attrs_for_netbox(self, attrs):
+    def translate_attrs_for_netbox(self, attrs=None):
         """Translate IP address attributes into NetBox 2.8 format.
 
         Args:
-            attrs (dict): Dictionnary of attributes of the object to translate
+            attrs (dict, Optional): Dictionnary of attributes of the object to translate
 
         Returns:
             dict: Netbox parameters
         """
         nb_params = {"address": self.address}
 
-        if "interface_name" in attrs and "device_name" in attrs:
-            try:
-                interface = self.diffsync.get(
-                    self.diffsync.interface,
-                    identifier=dict(device_name=attrs["device_name"], name=attrs["interface_name"]),
-                )
-                nb_params["interface"] = interface.remote_id
-            except ObjectNotFound:
-                pass
+        try:
+            interface = self.diffsync.get(
+                self.diffsync.interface, identifier=dict(device_name=self.device_name, name=self.interface_name),
+            )
+            nb_params["interface"] = interface.remote_id
+        except ObjectNotFound:
+            pass
 
         return nb_params
 
