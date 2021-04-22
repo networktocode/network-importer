@@ -330,6 +330,8 @@ class NetboxIPAddress(IPAddress):
         item = cls(
             address=obj.address, device_name=device_name, interface_name=obj.assigned_object.name, remote_id=obj.id
         )
+
+        item = diffsync.apply_model_flag(item, obj)
         return item
 
     @classmethod
@@ -431,6 +433,8 @@ class NetboxIPAddressPre29(NetboxIPAddress):
             NetboxIPAddress: DiffSync object
         """
         item = cls(address=obj.address, device_name=device_name, interface_name=obj.interface.name, remote_id=obj.id)
+        item = diffsync.apply_model_flag(item, obj)
+
         return item
 
 
@@ -589,6 +593,8 @@ class NetboxVlan(Vlan):
                 item.add_device(device_name)
                 device.device_tag_id = tag["id"]
 
+        item = diffsync.apply_model_flag(item, obj)
+
         return item
 
     @classmethod
@@ -708,6 +714,8 @@ class NetboxVlanPre29(NetboxVlan):
                     item.add_device(device)
                 except ObjectNotFound:
                     pass
+
+        item = diffsync.apply_model_flag(item, obj)
 
         return item
 
