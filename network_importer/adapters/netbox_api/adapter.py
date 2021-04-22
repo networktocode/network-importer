@@ -66,7 +66,6 @@ class NetBoxAPIAdapter(BaseAdapter):
     @staticmethod
     def _is_tag_present(netbox_obj):
         """Find if tag is present for a given object."""
-
         if isinstance(netbox_obj, dict) and netbox_obj.get("tags", None):  # pylint: disable=no-else-return
             return False
         elif not isinstance(netbox_obj, dict):  # pylint: disable=no-else-return
@@ -87,8 +86,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
     @staticmethod
     def apply_model_flag(diffsync_obj, netbox_obj):
-        """Helper function for DiffSync Flag assignment"""
-
+        """Helper function for DiffSync Flag assignment."""
         model_flag = config.SETTINGS.netbox.model_flag
 
         if model_flag and NetBoxAPIAdapter._is_tag_present(netbox_obj):
