@@ -1,0 +1,16 @@
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": 8,
+        "url": "http://0.0.0.0:8000/api/extras/tags/1/",
+        "name": "device=dev1",
+        "slug": "device_dev1",
+        "color": "9e9e9e",
+        "description": "",
+        "tagged_items": 1
+      }
+    ]
+  }

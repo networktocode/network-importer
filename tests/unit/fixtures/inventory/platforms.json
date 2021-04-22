@@ -1,0 +1,52 @@
+{
+    "count": 3,
+    "next": null,
+    "previous": null,
+    "results": [
+      {
+        "id": 4,
+        "name": "cisco_asa",
+        "slug": "cisco_asa",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost/api/dcim/manufacturers/1/",
+          "name": "Cisco",
+          "slug": "cisco"
+        },
+        "napalm_driver": "",
+        "napalm_args": null,
+        "device_count": 0,
+        "virtualmachine_count": null
+      },
+      {
+        "id": 2,
+        "name": "ios",
+        "slug": "ios",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost/api/dcim/manufacturers/1/",
+          "name": "Cisco",
+          "slug": "cisco"
+        },
+        "napalm_driver": "ios_naplam",
+        "napalm_args": null,
+        "device_count": 0,
+        "virtualmachine_count": null
+      },
+      {
+        "id": 3,
+        "name": "nxos",
+        "slug": "nxos",
+        "manufacturer": {
+          "id": 1,
+          "url": "http://localhost/api/dcim/manufacturers/1/",
+          "name": "Cisco",
+          "slug": "cisco"
+        },
+        "napalm_driver": "nxos_naplam",
+        "napalm_args": null,
+        "device_count": 0,
+        "virtualmachine_count": null
+      }
+    ]
+  }

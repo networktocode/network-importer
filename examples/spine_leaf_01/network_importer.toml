@@ -1,0 +1,13 @@
+
+
+[main]
+import_ips = true
+import_prefixes = true
+import_cabling = "config"
+import_vlans = "config"
+
+[inventory]
+filter = "site=ni_spine_leaf_01"
+
+[logs]
+level = "info"

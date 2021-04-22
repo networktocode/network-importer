@@ -1,0 +1,14 @@
+network_importer.egg-info
+.env
+*.zip
+*.log
+issues
+**/*.pyc
+**/*.pyo
+**/*.log
+.git/
+.gitignore
+Dockerfile
+docker-compose.yml
+.env
+docs/_build

@@ -1,0 +1,98 @@
+[tool.poetry]
+name = "network-importer"
+version = "2.0.0-beta4"
+description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
+authors = ["Network to Code, LLC <info@networktocode.com>"]
+homepage = "https://github.com/networktocode/network-importer"
+repository = "https://github.com/networktocode/network-importer"
+keywords = ["network", "source-of-truth", "netbox", "diffsync"]
+license = "Apache-2.0"
+readme = "README.md"
+include = [
+    "LICENSE",
+    "README.md",
+    "docs/*",
+]
+packages = [
+    { include = "network_importer" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+pynetbox = "^5.0"
+toml = "^0.10"
+nornir = "^2.4"
+termcolor = "^1.1"
+click = "^7.1"
+pydantic = "^1.6.1"
+pybatfish = "~2020.12.23"
+genie = "^20.12"
+pyats = "^20.12"
+netmiko = "^3.3.2"
+ntc-templates = "^1.6.0"
+structlog = "^20.1.0"
+diffsync = "~1.2.0"
+rich = "^9.2.0"
+
+[tool.poetry.dev-dependencies]
+bandit = "^1.6"
+pylint = "^2.4"
+pyment = "^0.3"
+pytest = "^5.4"
+pdbpp = "^0.10.2"
+requests_mock = "^1.7"
+pyyaml = "^5.3"
+black = "^19.10b0"
+pydocstyle = "^5.0.2"
+yamllint = "^1.20.0"
+invoke = "^1.4.1"
+flake8 = "^3.8.3"
+
+
+[tool.poetry.scripts]
+network-importer = 'network_importer.cli:main'
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+        /(
+          \.git
+        | \.tox
+        | \.venv
+        | env/
+        | _build
+        | build
+        | dist
+        )/
+    '''
+
+[tool.pylint.basic]
+# No docstrings required for private methods (pylint default) or for test_ functions.
+no-docstring-rgx="^(_|test_)"
+
+[tool.pylint.messages_control]
+# Line length is enforced by Black, so pylint doesn't need to check it.
+# Pylint and Black disagree about how to format multi-line arrays; Black wins.
+disable = """,
+    line-too-long,
+    bad-continuation,
+    duplicate-code
+    """
+
+[tool.pylint.miscellaneous]
+# Don't flag TODO as a failure, let us commit with things that still need to be done in the code
+notes = """,
+    FIXME,
+    XXX,
+    """
+    
+[tool.pytest.ini_options]
+testpaths = [
+    "tests"
+]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
+

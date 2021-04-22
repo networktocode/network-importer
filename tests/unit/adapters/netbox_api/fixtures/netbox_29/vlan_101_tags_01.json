@@ -1,0 +1,53 @@
+{
+    "id": 1,
+    "site": {
+      "id": 67,
+      "url": "http://localhost/api/dcim/sites/67/",
+      "name": "DC1",
+      "slug": "dc1"
+    },
+    "group": null,
+    "vid": 101,
+    "name": "R101",
+    "tenant": null,
+    "status": {
+      "value": "active",
+      "label": "Active",
+      "id": 1
+    },
+    "role": {
+      "id": 3,
+      "url": "http://localhost/api/ipam/roles/3/",
+      "name": "Access",
+      "slug": "access"
+    },
+    "description": "",
+    "tags": [
+        {
+            "id": 1,
+            "url": "http://0.0.0.0:8000/api/extras/tags/1/",
+            "name": "device=devA",
+            "slug": "device_devA",
+            "color": "9e9e9e"
+        },
+        {
+            "id": 2,
+            "url": "http://0.0.0.0:8000/api/extras/tags/2/",
+            "name": "notadevice",
+            "slug": "notadevice",
+            "color": "9e9e9e"
+        },
+        {
+            "id": 3,
+            "url": "http://0.0.0.0:8000/api/extras/tags/3/",
+            "name": "device=devB",
+            "slug": "device_devB",
+            "color": "9e9e9e"
+        }
+    ],
+    "display_name": "101 (R101)",
+    "custom_fields": {},
+    "created": "2019-11-27",
+    "last_updated": "2019-11-27T19:15:39.988000Z",
+    "prefix_count": 1
+  }

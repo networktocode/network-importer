@@ -1,0 +1,8 @@
+{
+    "id": 88,
+    "url": "http://0.0.0.0:8000/api/extras/tags/8/",
+    "name": "device=dev1",
+    "slug": "device__device1",
+    "color": "9e9e9e",
+    "description": ""
+  }
