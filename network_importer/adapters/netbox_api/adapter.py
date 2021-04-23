@@ -443,7 +443,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             return False
 
         intf = self.interface(name=intf_name, device_name=device_name, remote_id=intfs[0].id)
-        intf = self.apply_model_flag(intfs[0], intf)
+        intf = self.apply_model_flag(intf, intfs[0])
 
         if intfs[0].connected_endpoint_type:
             intf.connected_endpoint_type = intfs[0].connected_endpoint_type
