@@ -66,7 +66,7 @@ class NetBoxAPIAdapter(BaseAdapter):
     @staticmethod
     def _is_tag_present(netbox_obj):
         """Find if tag is present for a given object."""
-        if isinstance(netbox_obj, dict) and netbox_obj.get("tags", None):  # pylint: disable=no-else-return
+        if isinstance(netbox_obj, dict) and not netbox_obj.get("tags", None):  # pylint: disable=no-else-return
             return False
         elif not isinstance(netbox_obj, dict):  # pylint: disable=no-else-return
             try:
