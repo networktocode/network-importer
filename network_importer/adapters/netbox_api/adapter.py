@@ -70,7 +70,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             return False
         elif not isinstance(netbox_obj, dict):  # pylint: disable=no-else-return
             try:
-                pass
+                netbox_obj["tags"]
             except AttributeError:
                 return False
         elif not netbox_obj["tags"]:
