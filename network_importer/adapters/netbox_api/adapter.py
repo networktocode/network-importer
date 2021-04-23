@@ -20,7 +20,6 @@ import pynetbox
 from packaging.version import Version, InvalidVersion
 
 from diffsync.exceptions import ObjectAlreadyExists, ObjectNotFound
-
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.base import BaseAdapter  # pylint: disable=import-error
 from network_importer.adapters.netbox_api.models import (  # pylint: disable=import-error
@@ -63,6 +62,39 @@ class NetBoxAPIAdapter(BaseAdapter):
     type = "Netbox"
 
     query_device_info_from_netbox = query_device_info_from_netbox
+
+    @staticmethod
+    def _is_tag_present(netbox_obj):
+        """Find if tag is present for a given object."""
+        if isinstance(netbox_obj, dict) and not netbox_obj.get("tags", None):  # pylint: disable=no-else-return
+            return False
+        elif not isinstance(netbox_obj, dict):  # pylint: disable=no-else-return
+            try:
+                netbox_obj["tags"]
+            except AttributeError:
+                return False
+        elif not netbox_obj["tags"]:
+            return False
+
+        for tag in config.SETTINGS.netbox.model_flag_tags:
+            if tag in netbox_obj["tags"]:
+                LOGGER.debug(
+                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, netbox_obj,
+                )
+                return True
+        return False
+
+    @staticmethod
+    def apply_model_flag(diffsync_obj, netbox_obj):
+        """Helper function for DiffSync Flag assignment."""
+        model_flag = config.SETTINGS.netbox.model_flag
+
+        if model_flag and NetBoxAPIAdapter._is_tag_present(netbox_obj):
+            LOGGER.info(
+                "DiffSync model flag (%s) applied to object %s", model_flag, netbox_obj,
+            )
+            diffsync_obj.model_flags = model_flag
+        return diffsync_obj
 
     def _check_netbox_version(self):
         """Check the version of Netbox defined in the configuration and load the proper models as needed.
@@ -117,6 +149,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             if nb_device["primary_ip"]:
                 device.primary_ip = nb_device["primary_ip"].get("address")
 
+            device = self.apply_model_flag(device, nb_device)
             self.add(device)
 
         # Load Prefix and Vlan per site
@@ -159,6 +192,7 @@ class NetBoxAPIAdapter(BaseAdapter):
         for nb_prefix in prefixes:
 
             prefix = self.prefix(prefix=nb_prefix.prefix, site_name=site.name, remote_id=nb_prefix.id,)
+            prefix = self.apply_model_flag(prefix, nb_prefix)
 
             if nb_prefix.vlan:
                 prefix.vlan = self.vlan.create_unique_id(vid=nb_prefix.vlan.vid, site_name=site.name)
@@ -409,6 +443,7 @@ class NetBoxAPIAdapter(BaseAdapter):
             return False
 
         intf = self.interface(name=intf_name, device_name=device_name, remote_id=intfs[0].id)
+        intf = self.apply_model_flag(intf, intfs[0])
 
         if intfs[0].connected_endpoint_type:
             intf.connected_endpoint_type = intfs[0].connected_endpoint_type

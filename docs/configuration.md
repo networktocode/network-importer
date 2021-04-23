@@ -52,7 +52,19 @@ verify_ssl = true                                   # Alternative Env Variable :
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
 supported_platforms = [ "cisco_ios", "cisco_nxos" ]
+
+# Settings for applying diffsync flags to diffsync model objects, in order to alter 
+# the underlying sync behaviour. The model_flag is applied to any objects that have a 
+# tag assigned within model_flag_tags. Further details on model_flags can be found 
+# at: https://github.com/networktocode/diffsync/blob/269df51ce248beaef17d72374e96d19e6df95a13/diffsync/enum.py
+model_flag_tags = ["your_tag"]
+model_flag = 1 # flag enum int() representation
 ```
+
+
+    model_flag_tags: List[str] = list() # List of tags that defines what objects to assign the model_flag to.
+    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
+
 
 ## Batfish Section
 

@@ -22,6 +22,7 @@ from typing import List, Dict, Optional, Union
 import toml
 from pydantic import BaseSettings, ValidationError
 from typing_extensions import Literal
+from diffsync import DiffSyncModelFlags
 
 SETTINGS = None
 
@@ -63,6 +64,9 @@ class NetboxSettings(BaseSettings):
     address: str = "http://localhost"
     token: Optional[str]
     verify_ssl: bool = True
+
+    model_flag_tags: List[str] = list()  # List of tags that defines what objects to assign the model_flag to.
+    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
 
     """Define a list of supported platform,
     if defined all devices without platform or with a different platforms will be removed from the inventory"""
