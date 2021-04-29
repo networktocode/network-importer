@@ -187,6 +187,7 @@ def inventory(config_file, limit, debug, update_configs):
 
     table.add_column("Device", style="cyan", no_wrap=True)
     table.add_column("Platform", style="magenta")
+    table.add_column("Driver")
     table.add_column("Reachable")
     table.add_column("Reason")
 
@@ -198,7 +199,8 @@ def inventory(config_file, limit, debug, update_configs):
             is_reachable = "[red]False"
             reason = f"[red]{host.data['not_reachable_reason']}"
 
-        table.add_row(hostname, host.data["vendor"], is_reachable, reason)
+        driver = config.SETTINGS.drivers.mapping.get(host.platform, config.SETTINGS.drivers.mapping.get("default"))
+        table.add_row(hostname, host.platform, driver, is_reachable, reason)
 
     console = Console()
     console.print(table)
