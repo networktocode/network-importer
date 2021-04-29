@@ -61,7 +61,7 @@ class NetworkImporterAdapter(BaseAdapter):
         # Create all devices and site object from Nornir Inventory
         for hostname, host in self.nornir.inventory.hosts.items():
 
-            if len(self.bfi.q.nodeProperties(nodes=hostname).answer()) == 0:
+            if len(self.bfi.q.nodeProperties(nodes=f'"{hostname}"').answer()) == 0:
                 self.nornir.inventory.hosts[hostname].data["has_config"] = False
                 LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
                 continue
@@ -131,7 +131,7 @@ class NetworkImporterAdapter(BaseAdapter):
 
         interface_vlans_mapping = defaultdict(list)
         if config.SETTINGS.main.import_vlans:
-            bf_vlans = self.bfi.q.switchedVlanProperties(nodes=device.name).answer()
+            bf_vlans = self.bfi.q.switchedVlanProperties(nodes=f'"{device.name}"').answer()
             for bf_vlan in bf_vlans.frame().itertuples():
 
                 if config.SETTINGS.main.import_vlans in ["config", True]:
@@ -151,7 +151,7 @@ class NetworkImporterAdapter(BaseAdapter):
                         self.vlan.create_unique_id(vid=bf_vlan.VLAN_ID, site_name=site.name)
                     )
 
-        intfs = self.bfi.q.interfaceProperties(nodes=device.name).answer().frame()
+        intfs = self.bfi.q.interfaceProperties(nodes=f'"{device.name}"').answer().frame()
         for _, intf in intfs.iterrows():
             self.load_batfish_interface(
                 site=site,
