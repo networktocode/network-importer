@@ -3,7 +3,6 @@
 dist: "focal"  # Ubuntu 20.04
 stages:
   - name: "lint"
-  - name: "build"
   - name: "test"
   - name: "integration"
   # - name: "deploy"
@@ -14,6 +13,7 @@ python:
   - 3.6
   - 3.7
   - 3.8
+  - 3.9
 
 services:
   - "docker"
@@ -50,16 +50,6 @@ jobs:
         - "invoke flake8"
         - "invoke yamllint"
         - "invoke pylint"
-      python: 3.7
-
-    - stage: "build"
-      before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
-      before_script:
-        - "pip install invoke poetry toml"
-      script:
-        - "invoke build-image --nocache"
-        - "poetry build"
       python: 3.7
 
     - stage: "integration"
