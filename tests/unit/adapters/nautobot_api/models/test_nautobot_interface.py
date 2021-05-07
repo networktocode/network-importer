@@ -25,7 +25,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 # pylint: disable=pointless-statement
 
 
-@pytest.mark.skip()
 def assert_baseline(data):
     """Check that name and device are always present in the response."""
     assert "name" in data
@@ -34,7 +33,6 @@ def assert_baseline(data):
     assert data["device"] == 29
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_wrong_device(nautobot_api_base):
 
     intf = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/0")
@@ -44,7 +42,6 @@ def test_translate_attrs_for_nautobot_wrong_device(nautobot_api_base):
         intf.translate_attrs_for_nautobot({})
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_device_no_remote_id(nautobot_api_base):
 
     nautobot_api_base.add(NautobotDevice(name="HQ-CORE-SW01", site_name="nyc"))
@@ -55,7 +52,6 @@ def test_translate_attrs_for_nautobot_device_no_remote_id(nautobot_api_base):
         intf.translate_attrs_for_nautobot({})
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans=True)))
@@ -66,13 +62,12 @@ def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
 
     assert sorted(list(params.keys())) == ["description", "device", "lag", "name", "type"]
     assert params["name"] == "ge-0/0/0"
-    assert params["device"] == 29
+    assert params["device"] == "e0633a07-c3e2-41b0-a1df-4627392acf0a"
     assert params["type"] == "other"
     assert params["lag"] is None
     assert params["description"] == ""
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_type(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans=True)))
@@ -92,7 +87,6 @@ def test_translate_attrs_for_nautobot_type(nautobot_api_base):
     assert params["type"] == "other"
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_description(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans=True)))
@@ -114,7 +108,6 @@ def test_translate_attrs_for_nautobot_description(nautobot_api_base):
     assert isinstance(params["description"], str)
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_mode(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans=True)))
@@ -138,10 +131,9 @@ def test_translate_attrs_for_nautobot_mode(nautobot_api_base):
     assert "mode" not in params
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
 
-    vlan = NautobotVlan(vid=100, site_name="HQ", remote_id=30)
+    vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="601077ce-ac88-4b36-bbc7-23d655dc3958")
     nautobot_api_base.add(vlan)
 
     config.load(config_data=dict(main=dict(import_vlans=True)))
@@ -157,7 +149,7 @@ def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
     )
     assert_baseline
     assert params["mode"] == "access"
-    assert params["untagged_vlan"] == 23
+    assert params["untagged_vlan"] == "464a2de3-fd5e-4b65-a58d-e0a2a617c12e"
 
     params = intf.translate_attrs_for_nautobot({"switchport_mode": "ACCESS", "mode": "ACCESS", "access_vlan": None})
     assert_baseline
@@ -174,7 +166,7 @@ def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
     )
     assert_baseline
     assert params["mode"] == "tagged"
-    assert params["tagged_vlans"] == [23, 30]
+    assert params["tagged_vlans"] == ['464a2de3-fd5e-4b65-a58d-e0a2a617c12e', "601077ce-ac88-4b36-bbc7-23d655dc3958"]
 
     params = intf.translate_attrs_for_nautobot({"switchport_mode": "TRUNK", "mode": "TRUNK"})
     assert_baseline
@@ -187,7 +179,6 @@ def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
     assert params["tagged_vlans"] == []
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_vlan_false(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans=False)))
@@ -209,7 +200,6 @@ def test_translate_attrs_for_nautobot_vlan_false(nautobot_api_base):
     assert "untagged_vlan" not in params
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_vlan_no(nautobot_api_base):
 
     config.load(config_data=dict(main=dict(import_vlans="no")))
@@ -231,10 +221,9 @@ def test_translate_attrs_for_nautobot_vlan_no(nautobot_api_base):
     assert "untagged_vlan" not in params
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_lag_member(nautobot_api_base):
 
-    parent = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id=50)
+    parent = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id="ea085648-5684-4362-a8dd-edfa151faaec")
     nautobot_api_base.add(parent)
 
     config.load(config_data=dict(main=dict(import_vlans=False)))
@@ -244,7 +233,7 @@ def test_translate_attrs_for_nautobot_lag_member(nautobot_api_base):
     params = intf.translate_attrs_for_nautobot({"is_lag_member": True, "parent": "HQ-CORE-SW01__ge-0/0/4"})
     assert_baseline
     assert "lag" in params
-    assert params["lag"] == 50
+    assert params["lag"] == "ea085648-5684-4362-a8dd-edfa151faaec"
 
     params = intf.translate_attrs_for_nautobot({"is_lag_member": False, "parent": "HQ-CORE-SW01__ge-0/0/4"})
     assert_baseline
