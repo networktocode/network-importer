@@ -14,7 +14,6 @@ limitations under the License.
 import os
 import yaml
 import pynautobot
-import pytest
 
 from network_importer.adapters.nautobot_api.models import NautobotIPAddress
 import network_importer.config as config

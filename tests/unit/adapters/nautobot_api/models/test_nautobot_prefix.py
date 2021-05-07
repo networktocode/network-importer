@@ -13,7 +13,6 @@ limitations under the License.
 """
 import os
 import yaml
-import pytest
 
 from network_importer.adapters.nautobot_api.models import NautobotPrefix
 
