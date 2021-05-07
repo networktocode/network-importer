@@ -166,7 +166,7 @@ def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
     )
     assert_baseline
     assert params["mode"] == "tagged"
-    assert params["tagged_vlans"] == ['464a2de3-fd5e-4b65-a58d-e0a2a617c12e', "601077ce-ac88-4b36-bbc7-23d655dc3958"]
+    assert params["tagged_vlans"] == ["464a2de3-fd5e-4b65-a58d-e0a2a617c12e", "601077ce-ac88-4b36-bbc7-23d655dc3958"]
 
     params = intf.translate_attrs_for_nautobot({"switchport_mode": "TRUNK", "mode": "TRUNK"})
     assert_baseline
@@ -223,7 +223,9 @@ def test_translate_attrs_for_nautobot_vlan_no(nautobot_api_base):
 
 def test_translate_attrs_for_nautobot_lag_member(nautobot_api_base):
 
-    parent = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id="ea085648-5684-4362-a8dd-edfa151faaec")
+    parent = NautobotInterface(
+        device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id="ea085648-5684-4362-a8dd-edfa151faaec"
+    )
     nautobot_api_base.add(parent)
 
     config.load(config_data=dict(main=dict(import_vlans=False)))

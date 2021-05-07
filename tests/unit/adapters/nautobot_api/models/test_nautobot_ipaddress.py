@@ -25,7 +25,10 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
 
     ipaddr = NautobotIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1", remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
+        address="10.10.10.1/24",
+        device_name="HQ-CORE-SW02",
+        interface_name="TenGigabitEthernet1/0/1",
+        remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a",
     )
     nautobot_api_base.add(ipaddr)
     params = ipaddr.translate_attrs_for_nautobot()
@@ -41,7 +44,10 @@ def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
 def test_translate_attrs_for_nautobot_wo_intf(nautobot_api_base):
 
     ipaddr = NautobotIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
+        address="10.10.10.1/24",
+        device_name="HQ-CORE-SW02",
+        interface_name="TenGigabitEthernet1/0/2",
+        remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a",
     )
     nautobot_api_base.add(ipaddr)
     params = ipaddr.translate_attrs_for_nautobot()
