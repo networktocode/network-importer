@@ -58,6 +58,30 @@ class BatfishSettings(BaseSettings):
         }
 
 
+class NautobotSettings(BaseSettings):
+    """Settings definition for the Nautobot section of the configuration."""
+
+    address: str = "http://localhost"
+    token: Optional[str]
+    verify_ssl: bool = True
+
+    model_flag_tags: List[str] = list()  # List of tags that defines what objects to assign the model_flag to.
+    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
+
+    """Define a list of supported platform,
+    if defined all devices without platform or with a different platforms will be removed from the inventory"""
+    supported_platforms: List[str] = list()
+
+    class Config:
+        """Additional parameters to automatically map environment variable to some settings."""
+
+        fields = {
+            "address": {"env": "NAUTOBOT_ADDRESS"},
+            "token": {"env": "NAUTOBOT_TOKEN"},
+            "verify_ssl": {"env": "NAUTOBOT_VERIFY_SSL"},
+        }
+
+
 class NetboxSettings(BaseSettings):
     """Settings definition for the Netbox section of the configuration."""
 
@@ -183,6 +207,7 @@ class Settings(BaseSettings):
     """
 
     main: MainSettings = MainSettings()
+    nautobot: NautobotSettings = NautobotSettings()
     netbox: NetboxSettings = NetboxSettings()
     batfish: BatfishSettings = BatfishSettings()
     logs: LogsSettings = LogsSettings()
