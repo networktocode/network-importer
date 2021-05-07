@@ -17,15 +17,15 @@ import pynautobot
 import pytest
 
 from network_importer.adapters.nautobot_api.models import NautobotIPAddress
+import network_importer.config as config
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
 
     ipaddr = NautobotIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1", remote_id=302
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/1", remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
     )
     nautobot_api_base.add(ipaddr)
     params = ipaddr.translate_attrs_for_nautobot()
@@ -35,14 +35,13 @@ def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
     assert "assigned_object_type" in params
     assert params["assigned_object_type"] == "dcim.interface"
     assert "assigned_object_id" in params
-    assert params["assigned_object_id"] == 302
+    assert params["assigned_object_id"] == "fecc1d8f-99b1-491d-9bdf-1dcb394e27a1"
 
 
-@pytest.mark.skip()
 def test_translate_attrs_for_nautobot_wo_intf(nautobot_api_base):
 
     ipaddr = NautobotIPAddress(
-        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id=302
+        address="10.10.10.1/24", device_name="HQ-CORE-SW02", interface_name="TenGigabitEthernet1/0/2", remote_id="2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
     )
     nautobot_api_base.add(ipaddr)
     params = ipaddr.translate_attrs_for_nautobot()
@@ -53,11 +52,10 @@ def test_translate_attrs_for_nautobot_wo_intf(nautobot_api_base):
     assert "assigned_object_id" not in params
 
 
-@pytest.mark.skip()
 def test_create_from_pynautobot(nautobot_api_base):
-
+    config.load(config_data=dict())
     api = pynautobot.api(url="http://mock", token="1234567890")
-    data = yaml.safe_load(open(f"{ROOT}/../fixtures/nautobot_29/ip_address.json"))
+    data = yaml.safe_load(open(f"{ROOT}/../fixtures/ip_address.json"))
     pnb = pynautobot.core.response.Record(values=data, api=api, endpoint=1)
 
     ipaddr = NautobotIPAddress.create_from_pynautobot(diffsync=nautobot_api_base, obj=pnb, device_name="HQ-CORE-SW02")
@@ -66,13 +64,12 @@ def test_create_from_pynautobot(nautobot_api_base):
     assert ipaddr.device_name == "HQ-CORE-SW02"
 
 
-@pytest.mark.skip()
 def test_create_ip_address_interface(requests_mock, nautobot_api_base):
 
-    with open(f"{ROOT}/../fixtures/nautobot_28/ip_address.json") as file:
+    with open(f"{ROOT}/../fixtures/ip_address.json") as file:
         data = yaml.safe_load(file)
 
-    requests_mock.post("http://mock/api/ipam/ip-addresses/", json=data, status_code=201)
+    requests_mock.post("http://mock_nautobot/api/ipam/ip-addresses/", json=data, status_code=201)
     ip_address = NautobotIPAddress.create(
         diffsync=nautobot_api_base,
         ids=dict(address="10.63.0.2/31", interface_name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"),
@@ -80,16 +77,15 @@ def test_create_ip_address_interface(requests_mock, nautobot_api_base):
     )
 
     assert isinstance(ip_address, NautobotIPAddress) is True
-    assert ip_address.remote_id == 15
+    assert ip_address.remote_id == "2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
 
 
-@pytest.mark.skip()
 def test_create_ip_address_no_interface(requests_mock, nautobot_api_base):
 
-    with open(f"{ROOT}/../fixtures/nautobot_28/ip_address.json") as file:
+    with open(f"{ROOT}/../fixtures/ip_address.json") as file:
         data = yaml.safe_load(file)
 
-    requests_mock.post("http://mock/api/ipam/ip-addresses/", json=data, status_code=201)
+    requests_mock.post("http://mock_nautobot/api/ipam/ip-addresses/", json=data, status_code=201)
     ip_address = NautobotIPAddress.create(
         diffsync=nautobot_api_base,
         ids=dict(address="10.63.0.2/31", interface_name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"),
@@ -97,4 +93,4 @@ def test_create_ip_address_no_interface(requests_mock, nautobot_api_base):
     )
 
     assert isinstance(ip_address, NautobotIPAddress) is True
-    assert ip_address.remote_id == 15
+    assert ip_address.remote_id == "2c6f4d82-e8e4-48ca-a62f-abf8586ff82a"
