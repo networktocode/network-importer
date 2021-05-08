@@ -14,14 +14,12 @@ limitations under the License.
 import os
 import yaml
 
-# import pytest
-
 from network_importer.adapters.nautobot_api.models import NautobotDevice
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
-def test_nautobot_get_device_tag_id(nautobot_api_base):
+def test_nautobot_get_device_tag_id():
 
     device = NautobotDevice(
         name="dev12", site_name="HQ", remote_id=32, device_tag_id="eb697742-364d-4714-b585-a267c64d7720"

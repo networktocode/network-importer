@@ -12,15 +12,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import os
-import yaml
 
 import network_importer.config as config
-import pytest
-
 import pynautobot
-
+import pytest
+import yaml
 from diffsync.exceptions import ObjectNotFound
-from network_importer.adapters.nautobot_api.models import NautobotVlan, NautobotDevice
+from network_importer.adapters.nautobot_api.models import NautobotDevice, NautobotVlan
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
