@@ -15,7 +15,6 @@ limitations under the License.
 import logging
 import warnings
 
-import requests
 import pynautobot
 from packaging.version import Version, InvalidVersion
 

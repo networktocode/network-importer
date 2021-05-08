@@ -1,0 +1,28 @@
+{
+    "id": "71d0b310-f32b-4cc0-b940-afb8ab50b985",
+    "url": "https://demo.nautobot.com/api/ipam/prefixes/71d0b310-f32b-4cc0-b940-afb8ab50b985/",
+    "family": {
+        "value": 4,
+        "label": "IPv4"
+    },
+    "prefix": "10.0.0.0/24",
+    "site": null,
+    "vrf": null,
+    "tenant": null,
+    "vlan": {
+        "id": "6aad8891-a235-4eac-a685-f4b3012adab3",
+        "url": "https://demo.nautobot.com/api/ipam/vlans/6aad8891-a235-4eac-a685-f4b3012adab3/",
+        "vid": 1000,
+        "name": "atl-101-server",
+        "display": "atl-101-server (1000)"
+    },
+    "status": null,
+    "role": null,
+    "is_pool": false,
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2021-04-19",
+    "last_updated": "2021-04-19T15:26:48.443602",
+    "display": "10.0.0.0/24"
+}

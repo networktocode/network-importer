@@ -1,0 +1,20 @@
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "eb697742-364d-4714-b585-a267c64d7720",
+            "url": "https://nautobot_mock/api/extras/tags/eb697742-364d-4714-b585-a267c64d7720/",
+            "name": "device=dev1",
+            "slug": "device_dev1",
+            "color": "9e9e9e",
+            "description": "",
+            "tagged_items": 0,
+            "custom_fields": {},
+            "created": "2021-04-29",
+            "last_updated": "2021-04-29T18:53:09.097320Z",
+            "display": "device=dev1"
+        }
+    ]
+}

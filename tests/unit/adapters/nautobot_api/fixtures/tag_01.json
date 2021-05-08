@@ -1,0 +1,12 @@
+{
+    "id": "3fed3ac5-c623-493c-b029-87487830d159",
+    "url": "https://mock_nautobot/api/extras/tags/3fed3ac5-c623-493c-b029-87487830d159/",
+    "name": "device=dev2",
+    "slug": "device__device2",
+    "color": "9e9e9e",
+    "description": "",
+    "custom_fields": {},
+    "created": "2021-04-29",
+    "last_updated": "2021-04-29T19:57:15.377817Z",
+    "display": "device=dev2"
+}
