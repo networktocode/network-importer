@@ -16,14 +16,12 @@ limitations under the License.
 # pylint: disable=R0913,R0914,E1101,W0613
 
 import copy
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, List
 
-import requests
-import pynetbox
+# from nornir.core.deserializer.inventory import Inventory, HostsDict
+from nornir.core.inventory import Defaults, Group, Groups, Host, Hosts, Inventory, ParentGroups
+from nornir.core.plugins.inventory import InventoryPluginRegister
 
-from nornir.core.deserializer.inventory import Inventory, HostsDict
-
-# import network_importer.config as config
 
 # ------------------------------------------------------------
 # Network Importer Base Dict for device data
@@ -38,163 +36,174 @@ from nornir.core.deserializer.inventory import Inventory, HostsDict
 #   has_config: Indicate if the configuration is present and has been properly imported in Batfish
 # ------------------------------------------------------------
 
-BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False}
+# BASE_DATA = {"is_reachable": None, "status": "ok", "has_config": False}
 
 
-class NetboxInventory(Inventory):
-    """Netbox Inventory Class."""
+class NetworkImporterHost(Host):
+    """Network Importer Host Class."""
+    is_reacheable: Optional[bool]
+    status: Optional[str] = "ok"
+    has_config: Optional[bool] = False
+    not_reachable_reason: Optional[str]
 
-    # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
-    def __init__(
-        self,
-        nb_url: Optional[str] = None,
-        nb_token: Optional[str] = None,
-        ssl_verify: Union[bool, str] = True,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
-        enable: Optional[bool] = True,
-        use_primary_ip: Optional[bool] = True,
-        fqdn: Optional[str] = None,
-        supported_platforms: Optional[List[str]] = [],
-        filter_parameters: Optional[Dict[str, Any]] = None,
-        global_delay_factor: Optional[int] = 5,
-        banner_timeout: Optional[int] = 15,
-        conn_timeout: Optional[int] = 5,
-        **kwargs: Any,
-    ) -> None:
-        """Norning Inventory Plugin fir Netbox.
+class NetworkImporterInventory:
+    def __init__(self, params: Optional[Dict] = None):
+        pass
 
-        Hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py,
-        Need to see how to contribute back some of these modifications
+# class NetboxInventory(Inventory):
+#     """Netbox Inventory Class."""
 
-        Args:
-          filter_parameters: Key
-          nb_url: Optional[str]:  (Default value = None)
-          nb_token: Optional[str]:  (Default value = None)
-          ssl_verify: (Default value = True)
-          filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
-          username: Optional[str]
-          password: Optional[str]
-          enable: Optional[bool] = True,
-          use_primary_ip: Optional[bool] = True,
-          fqdn: Optional[str] = None,
-          supported_platforms: Optional[List[str]]
-          global_delay_factor: Optional[int] Global Delay factor for netmiko
-          banner_timeout: Optional[int] Banner Timeout for netmiko/paramiko
-          conn_timeout: Optional[int] Connection timeout for netmiko/paramiko
-          **kwargs: Any:
-        """
-        filter_parameters = filter_parameters or {}
+#     # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
+#     def __init__(
+#         self,
+#         nb_url: Optional[str] = None,
+#         nb_token: Optional[str] = None,
+#         ssl_verify: Union[bool, str] = True,
+#         username: Optional[str] = None,
+#         password: Optional[str] = None,
+#         enable: Optional[bool] = True,
+#         use_primary_ip: Optional[bool] = True,
+#         fqdn: Optional[str] = None,
+#         supported_platforms: Optional[List[str]] = [],
+#         filter_parameters: Optional[Dict[str, Any]] = None,
+#         global_delay_factor: Optional[int] = 5,
+#         banner_timeout: Optional[int] = 15,
+#         conn_timeout: Optional[int] = 5,
+#         **kwargs: Any,
+#     ) -> None:
+#         """Norning Inventory Plugin fir Netbox.
 
-        if "exclude" not in filter_parameters.keys():
-            filter_parameters["exclude"] = "config_context"
+#         Hard copy from https://github.com/nornir-automation/nornir/blob/develop/nornir/plugins/inventory/netbox.py,
+#         Need to see how to contribute back some of these modifications
 
-        # Instantiate netbox session using pynetbox
-        nb_session = pynetbox.api(url=nb_url, token=nb_token)
-        if not ssl_verify:
-            session = requests.Session()
-            session.verify = False
-            nb_session.http_session = session
+#         Args:
+#           filter_parameters: Key
+#           nb_url: Optional[str]:  (Default value = None)
+#           nb_token: Optional[str]:  (Default value = None)
+#           ssl_verify: (Default value = True)
+#           filter_parameters: Optional[Dict[str: Any]]:  (Default value = None)
+#           username: Optional[str]
+#           password: Optional[str]
+#           enable: Optional[bool] = True,
+#           use_primary_ip: Optional[bool] = True,
+#           fqdn: Optional[str] = None,
+#           supported_platforms: Optional[List[str]]
+#           global_delay_factor: Optional[int] Global Delay factor for netmiko
+#           banner_timeout: Optional[int] Banner Timeout for netmiko/paramiko
+#           conn_timeout: Optional[int] Connection timeout for netmiko/paramiko
+#           **kwargs: Any:
+#         """
+#         filter_parameters = filter_parameters or {}
 
-        # fetch devices from netbox
-        if filter_parameters:
-            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.filter(**filter_parameters)
-        else:
-            nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
+#         if "exclude" not in filter_parameters.keys():
+#             filter_parameters["exclude"] = "config_context"
 
-        # fetch all platforms from Netbox and build mapping:   platform:  napalm_driver
-        platforms = nb_session.dcim.platforms.all()
-        platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
+#         # Instantiate netbox session using pynetbox
+#         nb_session = pynetbox.api(url=nb_url, token=nb_token)
+#         if not ssl_verify:
+#             session = requests.Session()
+#             session.verify = False
+#             nb_session.http_session = session
 
-        hosts = {}
-        groups = {"global": {"connection_options": {"netmiko": {"extras": {}}, "napalm": {"extras": {}}}}}
+#         # fetch devices from netbox
+#         if filter_parameters:
+#             nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.filter(**filter_parameters)
+#         else:
+#             nb_devices: List[pynetbox.modules.dcim.Devices] = nb_session.dcim.devices.all()
 
-        # Pull the login and password from the NI config object if available
-        if username:
-            groups["global"]["username"] = username
+#         # fetch all platforms from Netbox and build mapping:   platform:  napalm_driver
+#         platforms = nb_session.dcim.platforms.all()
+#         platforms_mapping = {platform.slug: platform.napalm_driver for platform in platforms if platform.napalm_driver}
 
-        if password:
-            groups["global"]["password"] = password
-            if enable:
-                groups["global"]["connection_options"]["netmiko"]["extras"] = {
-                    "secret": password,
-                    "global_delay_factor": global_delay_factor,
-                    "banner_timeout": banner_timeout,
-                    "conn_timeout": conn_timeout,
-                }
-                groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
+#         hosts = {}
+#         groups = {"global": {"connection_options": {"netmiko": {"extras": {}}, "napalm": {"extras": {}}}}}
 
-        for dev in nb_devices:
+#         # Pull the login and password from the NI config object if available
+#         if username:
+#             groups["global"]["username"] = username
 
-            host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
+#         if password:
+#             groups["global"]["password"] = password
+#             if enable:
+#                 groups["global"]["connection_options"]["netmiko"]["extras"] = {
+#                     "secret": password,
+#                     "global_delay_factor": global_delay_factor,
+#                     "banner_timeout": banner_timeout,
+#                     "conn_timeout": conn_timeout,
+#                 }
+#                 groups["global"]["connection_options"]["napalm"]["extras"] = {"optional_args": {"secret": password}}
 
-            # Only add virtual chassis master as inventory element
-            if dev.virtual_chassis and dev.virtual_chassis.master:
-                if dev.id != dev.virtual_chassis.master.id:
-                    continue
-                host["data"]["virtual_chassis"] = True
+#         for dev in nb_devices:
 
-            else:
-                host["data"]["virtual_chassis"] = False
+#             host: HostsDict = {"data": copy.deepcopy(BASE_DATA)}
 
-            # If supported_platforms is provided
-            # skip all devices that do not match the list of supported platforms
-            # TODO need to see if we can filter when doing the query directly
-            if supported_platforms:
-                if not dev.platform:
-                    continue
+#             # Only add virtual chassis master as inventory element
+#             if dev.virtual_chassis and dev.virtual_chassis.master:
+#                 if dev.id != dev.virtual_chassis.master.id:
+#                     continue
+#                 host["data"]["virtual_chassis"] = True
 
-                if dev.platform.slug not in supported_platforms:
-                    continue
+#             else:
+#                 host["data"]["virtual_chassis"] = False
 
-            # Add value for IP address
-            if use_primary_ip and dev.primary_ip:
-                host["hostname"] = dev.primary_ip.address.split("/")[0]
-            elif use_primary_ip and not dev.primary_ip:
-                host["data"]["is_reachable"] = False
-                host["data"]["not_reachable_reason"] = "primary ip not defined in Netbox"
-            elif not use_primary_ip and fqdn:
-                host["hostname"] = f"{dev.name}.{fqdn}"
-            elif not use_primary_ip:
-                host["hostname"] = dev.name
+#             # If supported_platforms is provided
+#             # skip all devices that do not match the list of supported platforms
+#             # TODO need to see if we can filter when doing the query directly
+#             if supported_platforms:
+#                 if not dev.platform:
+#                     continue
 
-            host["data"]["serial"] = dev.serial
-            host["data"]["vendor"] = dev.device_type.manufacturer.slug
-            host["data"]["asset_tag"] = dev.asset_tag
-            host["data"]["custom_fields"] = dev.custom_fields
-            host["data"]["site"] = dev.site.slug
-            host["data"]["site_id"] = dev.site.id
-            host["data"]["device_id"] = dev.id
-            host["data"]["role"] = dev.device_role.slug
-            host["data"]["model"] = dev.device_type.slug
+#                 if dev.platform.slug not in supported_platforms:
+#                     continue
 
-            # Attempt to add 'platform' based of value in 'slug'
-            if dev.platform and dev.platform.slug in platforms_mapping:
-                host["connection_options"] = {"napalm": {"platform": platforms_mapping[dev.platform.slug]}}
+#             # Add value for IP address
+#             if use_primary_ip and dev.primary_ip:
+#                 host["hostname"] = dev.primary_ip.address.split("/")[0]
+#             elif use_primary_ip and not dev.primary_ip:
+#                 host["data"]["is_reachable"] = False
+#                 host["data"]["not_reachable_reason"] = "primary ip not defined in Netbox"
+#             elif not use_primary_ip and fqdn:
+#                 host["hostname"] = f"{dev.name}.{fqdn}"
+#             elif not use_primary_ip:
+#                 host["hostname"] = dev.name
 
-            if dev.platform:
-                host["platform"] = dev.platform.slug
-            else:
-                host["platform"] = None
+#             host["data"]["serial"] = dev.serial
+#             host["data"]["vendor"] = dev.device_type.manufacturer.slug
+#             host["data"]["asset_tag"] = dev.asset_tag
+#             host["data"]["custom_fields"] = dev.custom_fields
+#             host["data"]["site"] = dev.site.slug
+#             host["data"]["site_id"] = dev.site.id
+#             host["data"]["device_id"] = dev.id
+#             host["data"]["role"] = dev.device_role.slug
+#             host["data"]["model"] = dev.device_type.slug
 
-            host["groups"] = ["global", dev.site.slug, dev.device_role.slug]
+#             # Attempt to add 'platform' based of value in 'slug'
+#             if dev.platform and dev.platform.slug in platforms_mapping:
+#                 host["connection_options"] = {"napalm": {"platform": platforms_mapping[dev.platform.slug]}}
 
-            if dev.site.slug not in groups.keys():
-                groups[dev.site.slug] = {}
+#             if dev.platform:
+#                 host["platform"] = dev.platform.slug
+#             else:
+#                 host["platform"] = None
 
-            if dev.device_role.slug not in groups.keys():
-                groups[dev.device_role.slug] = {}
+#             host["groups"] = ["global", dev.site.slug, dev.device_role.slug]
 
-            if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
-                host["data"]["is_reachable"] = True
+#             if dev.site.slug not in groups.keys():
+#                 groups[dev.site.slug] = {}
 
-            # Assign temporary dict to outer dict
-            # Netbox allows devices to be unnamed, but the Nornir model does not allow this
-            # If a device is unnamed we will set the name to the id of the device in netbox
-            hosts[dev.name or dev.id] = host
+#             if dev.device_role.slug not in groups.keys():
+#                 groups[dev.device_role.slug] = {}
 
-        # Pass the data back to the parent class
-        super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
+#             if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
+#                 host["data"]["is_reachable"] = True
+
+#             # Assign temporary dict to outer dict
+#             # Netbox allows devices to be unnamed, but the Nornir model does not allow this
+#             # If a device is unnamed we will set the name to the id of the device in netbox
+#             hosts[dev.name or dev.id] = host
+
+#         # Pass the data back to the parent class
+#         super().__init__(hosts=hosts, groups=groups, defaults={}, **kwargs)
 
 
 # -----------------------------------------------------------------
