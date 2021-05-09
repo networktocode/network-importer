@@ -27,7 +27,6 @@ from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import reachable_devs
-from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -37,8 +36,6 @@ with warnings.catch_warnings():
     from nornir.core.plugins.inventory import InventoryPluginRegister
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
-
-InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
 
 
 LOGGER = logging.getLogger("network-importer")
@@ -58,7 +55,14 @@ class NetworkImporter:
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
 
-        # TODO Cleanup config file and allow user defined inventory
+        # Load build-in Inventories as needed
+        if config.SETTINGS.inventory.inventory_class == "NetboxAPIInventory":
+            from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
+            InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
+        elif config.SETTINGS.inventory.inventory_class == "NautobotAPIInventory":
+            from network_importer.adapters.nautobot_api.inventory import NautobotAPIInventory
+            InventoryPluginRegister.register("NautobotAPIInventory", NautobotAPIInventory)
+
         self.nornir = InitNornir(
             runner={"plugin": "threaded", "options": {"num_workers": config.SETTINGS.main.nbr_workers}},
             logging={"enabled": False},

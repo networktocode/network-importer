@@ -31,6 +31,7 @@ from network_importer.adapters.nautobot_api.models import (  # pylint: disable=i
     NautobotVlan,
 )
 from network_importer.adapters.nautobot_api.tasks import query_device_info_from_nautobot
+from .config import InventorySettings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -73,24 +74,26 @@ class NautobotAPIAdapter(BaseAdapter):
         elif not nautobot_obj["tags"]:
             return False
 
-        for tag in config.SETTINGS.nautobot.model_flag_tags:
-            if tag in nautobot_obj["tags"]:
-                LOGGER.debug(
-                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, nautobot_obj,
-                )
-                return True
+        # FIXME dgarros need to re-enable
+        # for tag in config.SETTINGS.nautobot.model_flag_tags:
+        #     if tag in nautobot_obj["tags"]:
+        #         LOGGER.debug(
+        #             "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, nautobot_obj,
+        #         )
+        #         return True
         return False
 
     @staticmethod
     def apply_model_flag(diffsync_obj, nautobot_obj):
         """Helper function for DiffSync Flag assignment."""
-        model_flag = config.SETTINGS.nautobot.model_flag
+        # FIXME dgarros need to re-enable
+        # model_flag = config.SETTINGS.nautobot.model_flag
 
-        if model_flag and NautobotAPIAdapter._is_tag_present(nautobot_obj):
-            LOGGER.info(
-                "DiffSync model flag (%s) applied to object %s", model_flag, nautobot_obj,
-            )
-            diffsync_obj.model_flags = model_flag
+        # if model_flag and NautobotAPIAdapter._is_tag_present(nautobot_obj):
+        #     LOGGER.info(
+        #         "DiffSync model flag (%s) applied to object %s", model_flag, nautobot_obj,
+        #     )
+        #     diffsync_obj.model_flags = model_flag
         return diffsync_obj
 
     def _check_nautobot_version(self):
@@ -109,9 +112,10 @@ class NautobotAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynautobot and load all data from nautobot in the local cache."""
-        self.nautobot = pynautobot.api(url=config.SETTINGS.nautobot.address, token=config.SETTINGS.nautobot.token)
+        inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
+        self.nautobot = pynautobot.api(url=inventory_params.address, token=inventory_params.token)
 
-        if not config.SETTINGS.nautobot.verify_ssl:
+        if not inventory_params.verify_ssl:
             self.nautobot.http_session.verify_ssl = False
         else:
             self.nautobot.http_session.verify_ssl = True

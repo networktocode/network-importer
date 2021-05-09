@@ -68,14 +68,14 @@ class NetworkImporterAdapter(BaseAdapter):
 
             self.nornir.inventory.hosts[hostname].has_config = True
 
-            if host.data["site"] not in sites.keys():
-                site = self.site(name=host.data["site"])
-                sites[host.data["site"]] = site
+            if host.site_name not in sites.keys():
+                site = self.site(name=host.site_name)
+                sites[host.site_name] = site
                 self.add(site)
             else:
-                site = sites[host.data["site"]]
+                site = sites[host.site_name]
 
-            device = self.device(name=hostname, site_name=host.data["site"])
+            device = self.device(name=hostname, site_name=host.site_name)
             self.add(device)
 
         if config.SETTINGS.main.import_cabling in ["lldp", "cdp"] or config.SETTINGS.main.import_vlans in [True, "cli"]:

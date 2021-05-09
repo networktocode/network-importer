@@ -18,6 +18,7 @@ import pynautobot
 from nornir.core.task import Result, Task
 
 import network_importer.config as config  # pylint: disable=import-error
+from .config import InventorySettings
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -36,11 +37,11 @@ def query_device_info_from_nautobot(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-    # Create a pynautobot instance for use later
-    nautobot = pynautobot.api(url=config.SETTINGS.nautobot.address, token=config.SETTINGS.nautobot.token)
+    inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
+    nautobot = pynautobot.api(url=inventory_params.address, token=inventory_params.token)
 
     # Check for SSL Verification, set it to false if not. Else set to true
-    if not config.SETTINGS.nautobot.verify_ssl:
+    if not inventory_params.verify_ssl:
         # No manual session is required for this, pynautobot will automatically create one
         nautobot.http_session.verify = False
     else:
@@ -70,5 +71,4 @@ def query_device_info_from_nautobot(task: Task) -> Result:
     # TODO move the logic to pull the interface and potentially IP here
     # interfaces = netbox.dcim.interfaces.filter(device=task.host.name)
     # results["interfaces"] = [ dict(intf) for intf in interfaces ]
-
     return Result(host=task.host, result=results)

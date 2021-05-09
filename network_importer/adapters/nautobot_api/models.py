@@ -344,6 +344,8 @@ class NautobotIPAddress(IPAddress):
         try:
             item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
             nb_params = item.translate_attrs_for_nautobot(attrs)
+            # Add status because it's a mandatory field.
+            nb_params["status"] = "active"
             ip_address = diffsync.nautobot.ipam.ip_addresses.create(**nb_params)
         except pynautobot.core.query.RequestError as exc:
             LOGGER.warning("Unable to create the ip address %s in %s (%s)", ids["address"], diffsync.name, exc.error)
