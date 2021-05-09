@@ -37,6 +37,7 @@ DEFAULT_DRIVERS_MAPPING = {
 
 # pylint: disable=too-few-public-methods,global-statement
 
+
 class BatfishSettings(BaseSettings):
     """Settings definition for the Batfish section of the configuration."""
 
@@ -55,6 +56,7 @@ class BatfishSettings(BaseSettings):
             "address": {"env": "BATFISH_ADDRESS"},
             "api_key": {"env": "BATFISH_API_KEY"},
         }
+
 
 class NetworkSettings(BaseSettings):
     """Settings definition for the Network section of the configuration."""

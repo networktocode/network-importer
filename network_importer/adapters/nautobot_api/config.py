@@ -19,6 +19,7 @@ from diffsync import DiffSyncModelFlags
 
 # pylint: disable=too-few-public-methods,no-self-argument,no-self-use
 
+
 class AdapterSettings(BaseSettings):
     """Config settings for the netbox_api adapter. Not used currently."""
 

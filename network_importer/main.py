@@ -58,9 +58,11 @@ class NetworkImporter:
         # Load build-in Inventories as needed
         if config.SETTINGS.inventory.inventory_class == "NetboxAPIInventory":
             from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
+
             InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
         elif config.SETTINGS.inventory.inventory_class == "NautobotAPIInventory":
             from network_importer.adapters.nautobot_api.inventory import NautobotAPIInventory
+
             InventoryPluginRegister.register("NautobotAPIInventory", NautobotAPIInventory)
 
         self.nornir = InitNornir(
