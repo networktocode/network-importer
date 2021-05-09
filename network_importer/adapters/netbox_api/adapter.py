@@ -34,6 +34,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxVlanPre29,
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
+from .config import InventorySettings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -76,24 +77,26 @@ class NetBoxAPIAdapter(BaseAdapter):
         elif not netbox_obj["tags"]:
             return False
 
-        for tag in config.SETTINGS.netbox.model_flag_tags:
-            if tag in netbox_obj["tags"]:
-                LOGGER.debug(
-                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, netbox_obj,
-                )
-                return True
+        # FIXME dgarros, need to reenable this one
+        # for tag in config.SETTINGS.netbox.model_flag_tags:
+        #     if tag in netbox_obj["tags"]:
+        #         LOGGER.debug(
+        #             "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, netbox_obj,
+        #         )
+        #         return True
         return False
 
     @staticmethod
     def apply_model_flag(diffsync_obj, netbox_obj):
         """Helper function for DiffSync Flag assignment."""
-        model_flag = config.SETTINGS.netbox.model_flag
+        # FIXME need to re-enable this one
+        # model_flag = config.SETTINGS.netbox.model_flag
 
-        if model_flag and NetBoxAPIAdapter._is_tag_present(netbox_obj):
-            LOGGER.info(
-                "DiffSync model flag (%s) applied to object %s", model_flag, netbox_obj,
-            )
-            diffsync_obj.model_flags = model_flag
+        # if model_flag and NetBoxAPIAdapter._is_tag_present(netbox_obj):
+        #     LOGGER.info(
+        #         "DiffSync model flag (%s) applied to object %s", model_flag, netbox_obj,
+        #     )
+        #     diffsync_obj.model_flags = model_flag
         return diffsync_obj
 
     def _check_netbox_version(self):
@@ -115,9 +118,10 @@ class NetBoxAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynetbox and load all data from netbox in the local cache."""
-        self.netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
+        inventory_settings = InventorySettings(**config.SETTINGS.inventory.inventory_params)
+        self.netbox = pynetbox.api(url=inventory_settings.address, token=inventory_settings.token)
 
-        if not config.SETTINGS.netbox.verify_ssl:
+        if not inventory_settings.verify_ssl:
             session = requests.Session()
             session.verify = False
             self.netbox.http_session = session

@@ -22,7 +22,7 @@ from typing import List, Dict, Optional, Union
 import toml
 from pydantic import BaseSettings, ValidationError
 from typing_extensions import Literal
-from diffsync import DiffSyncModelFlags
+
 
 SETTINGS = None
 
@@ -36,7 +36,6 @@ DEFAULT_DRIVERS_MAPPING = {
 }
 
 # pylint: disable=too-few-public-methods,global-statement
-
 
 class BatfishSettings(BaseSettings):
     """Settings definition for the Batfish section of the configuration."""
@@ -56,59 +55,6 @@ class BatfishSettings(BaseSettings):
             "address": {"env": "BATFISH_ADDRESS"},
             "api_key": {"env": "BATFISH_API_KEY"},
         }
-
-
-class NautobotSettings(BaseSettings):
-    """Settings definition for the Nautobot section of the configuration."""
-
-    address: str = "http://localhost"
-    token: Optional[str]
-    verify_ssl: bool = True
-
-    model_flag_tags: List[str] = list()  # List of tags that defines what objects to assign the model_flag to.
-    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
-
-    """Define a list of supported platform,
-    if defined all devices without platform or with a different platforms will be removed from the inventory"""
-    supported_platforms: List[str] = list()
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {
-            "address": {"env": "NAUTOBOT_ADDRESS"},
-            "token": {"env": "NAUTOBOT_TOKEN"},
-            "verify_ssl": {"env": "NAUTOBOT_VERIFY_SSL"},
-        }
-
-
-class NetboxSettings(BaseSettings):
-    """Settings definition for the Netbox section of the configuration."""
-
-    address: str = "http://localhost"
-    token: Optional[str]
-    verify_ssl: bool = True
-
-    model_flag_tags: List[str] = list()  # List of tags that defines what objects to assign the model_flag to.
-    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
-
-    """Define a list of supported platform,
-    if defined all devices without platform or with a different platforms will be removed from the inventory"""
-    supported_platforms: List[str] = list()
-
-    # Currently not used in 2.x, need to add them back
-    # cacert: Optional[str]
-    # request_ssl_verify: bool = False
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {
-            "address": {"env": "NETBOX_ADDRESS"},
-            "token": {"env": "NETBOX_TOKEN"},
-            "verify_ssl": {"env": "NETBOX_VERIFY_SSL"},
-        }
-
 
 class NetworkSettings(BaseSettings):
     """Settings definition for the Network section of the configuration."""
@@ -187,16 +133,10 @@ class InventorySettings(BaseSettings):
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
     """
 
-    use_primary_ip: bool = True
-    fqdn: Optional[str]
+    inventory_class: str = "NetboxAPIInventory"
+    inventory_params: Optional[dict]
 
-    inventory_class: str = "network_importer.inventory.NetboxInventory"
-    filter: str = ""
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {"inventory_filter": {"env": "INVENTORY_FILTER"}}
+    supported_platforms: List[str] = list()
 
 
 class Settings(BaseSettings):
@@ -207,8 +147,6 @@ class Settings(BaseSettings):
     """
 
     main: MainSettings = MainSettings()
-    nautobot: NautobotSettings = NautobotSettings()
-    netbox: NetboxSettings = NetboxSettings()
     batfish: BatfishSettings = BatfishSettings()
     logs: LogsSettings = LogsSettings()
     network: NetworkSettings = NetworkSettings()

@@ -103,7 +103,7 @@ class GetNeighbors(BaseProcessor):
 
         if result[0].failed:
             LOGGER.warning("%s | Something went wrong while trying to pull the neighbor information", host.name)
-            host.data["status"] = "fail-other"
+            host.status = "fail-other"
             return
 
         if not isinstance(result[0].result, dict) or "neighbors" not in result[0].result:

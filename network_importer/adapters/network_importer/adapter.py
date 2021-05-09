@@ -62,11 +62,11 @@ class NetworkImporterAdapter(BaseAdapter):
         for hostname, host in self.nornir.inventory.hosts.items():
 
             if len(self.bfi.q.nodeProperties(nodes=hostname).answer()) == 0:
-                self.nornir.inventory.hosts[hostname].data["has_config"] = False
+                self.nornir.inventory.hosts[hostname].has_config = False
                 LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
                 continue
 
-            self.nornir.inventory.hosts[hostname].data["has_config"] = True
+            self.nornir.inventory.hosts[hostname].has_config = True
 
             if host.data["site"] not in sites.keys():
                 site = self.site(name=host.data["site"])

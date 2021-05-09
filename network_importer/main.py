@@ -20,21 +20,26 @@ import importlib
 
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
-from network_importer.utils import patch_http_connection_pool, build_filter_params
+from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
 from network_importer.diff import NetworkImporterDiff
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.performance import timeit
 from network_importer.inventory import reachable_devs
+from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
+    from nornir.core.plugins.inventory import InventoryPluginRegister
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
+
+InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
+
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -52,35 +57,20 @@ class NetworkImporter:
     @timeit
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
-        # Filters can be defined at the configuration level or in CLI or both
-        params = {}
-        build_filter_params(config.SETTINGS.inventory.filter.split((",")), params)
-        if limit:
-            if "=" not in limit:
-                params["name"] = limit
-            else:
-                build_filter_params(limit.split((",")), params)
 
         # TODO Cleanup config file and allow user defined inventory
         self.nornir = InitNornir(
-            core={"num_workers": config.SETTINGS.main.nbr_workers},
+            runner={"plugin": "threaded", "options": {"num_workers": config.SETTINGS.main.nbr_workers}},
             logging={"enabled": False},
             inventory={
                 "plugin": config.SETTINGS.inventory.inventory_class,
                 "options": {
-                    "nb_url": config.SETTINGS.netbox.address,
-                    "nb_token": config.SETTINGS.netbox.token,
-                    "filter_parameters": params,
-                    "ssl_verify": config.SETTINGS.netbox.verify_ssl,
                     "username": config.SETTINGS.network.login,
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
-                    "use_primary_ip": config.SETTINGS.inventory.use_primary_ip,
-                    "fqdn": config.SETTINGS.inventory.fqdn,
-                    "supported_platforms": config.SETTINGS.netbox.supported_platforms,
-                    "global_delay_factor": config.SETTINGS.network.global_delay_factor,
-                    "banner_timeout": config.SETTINGS.network.banner_timeout,
-                    "conn_timeout": config.SETTINGS.network.conn_timeout,
+                    "supported_platforms": config.SETTINGS.inventory.supported_platforms,
+                    "limit": limit,
+                    "params": config.SETTINGS.inventory.inventory_params,
                 },
             },
         )

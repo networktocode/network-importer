@@ -20,6 +20,8 @@ from nornir.core.task import Result, Task
 
 import network_importer.config as config  # pylint: disable=import-error
 
+from .config import InventorySettings
+
 LOGGER = logging.getLogger("network-importer")
 
 
@@ -37,9 +39,10 @@ def query_device_info_from_netbox(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-    netbox = pynetbox.api(url=config.SETTINGS.netbox.address, token=config.SETTINGS.netbox.token)
+    inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
+    netbox = pynetbox.api(url=inventory_params.address, token=inventory_params.token)
 
-    if not config.SETTINGS.netbox.verify_ssl:
+    if not inventory_params.verify_ssl:
         session = requests.Session()
         session.verify = False
         netbox.http_session = session

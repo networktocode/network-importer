@@ -34,6 +34,9 @@ structlog = "^20.1.0"
 diffsync = "~1.2.0"
 rich = "^9.2.0"
 pynautobot = "^1.0.2"
+nornir-napalm = "^0.1.2"
+nornir-utils = "^0.1.2"
+nornir-netmiko = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"

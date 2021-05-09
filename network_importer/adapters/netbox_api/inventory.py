@@ -21,9 +21,11 @@ from pydantic import BaseSettings, ValidationError
 import requests
 import pynetbox
 
-from nornir.core.inventory import Defaults, Group, Groups, Host, Hosts, Inventory, ParentGroups
+from nornir.core.inventory import Defaults, Group, Groups, Host, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from network_importer.inventory import NetworkImporterInventory, NetworkImporterHost
+
+from .config import InventorySettings
 
 # ------------------------------------------------------------
 # Network Importer Base Dict for device data
@@ -38,20 +40,26 @@ from network_importer.inventory import NetworkImporterInventory, NetworkImporter
 #   has_config: Indicate if the configuration is present and has been properly imported in Batfish
 # ------------------------------------------------------------
 
-class NetboxAPIParams(BaseSettings):
-    url: Optional[str] = None
-    token: Optional[str] = None
-    ssl_verify: Union[bool, str] = True
-    username: Optional[str] = None
-    password: Optional[str] = None
-    enable: Optional[bool] = True
-    use_primary_ip: Optional[bool] = True
-    fqdn: Optional[str] = None
-    supported_platforms: Optional[List[str]] = []
-    filter_parameters: Optional[Dict[str, Any]] = None
-    global_delay_factor: Optional[int] = 5
-    banner_timeout: Optional[int] = 15
-    conn_timeout: Optional[int] = 5
+
+def build_filter_params(filter_params, params):
+    """Update params dict() with filter args in required format for pynetbox.
+
+    Args:
+      filter_params (list): split string from cli or config
+      params (dict): object to hold params
+    """
+    for param_value in filter_params:
+        if "=" not in param_value:
+            continue
+        key, value = param_value.split("=", 1)
+        existing_value = params.get(key)
+        if existing_value and isinstance(existing_value, list):
+            params[key].append(value)
+        elif existing_value and isinstance(existing_value, str):
+            params[key] = [existing_value, value]
+        else:
+            params[key] = value
+
 
 class NetboxAPIInventory(NetworkImporterInventory):
     """Netbox API Inventory Class."""
@@ -59,25 +67,41 @@ class NetboxAPIInventory(NetworkImporterInventory):
     # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
     def __init__(
         self,
-        params: NetboxAPIParams = NetboxAPIParams(),
+        username: Optional[str],
+        password: Optional[str],
+        enable: Optional[bool],
+        supported_platforms: Optional[List[str]],
+        limit=Optional[str],
+        params: InventorySettings = InventorySettings(),
         **kwargs: Any,
     ) -> None:
         """Nornir Inventory Plugin for Netbox API."""
 
-        self.params = params
-        self.filter_parameters = params.filter_parameters or {}
+        self.username = username
+        self.password = password
+        self.enable = enable
+        self.supported_platforms = supported_platforms
+
+        self.params = InventorySettings(**params)
+
+        # Build Filter based on inventory_params filter and on limit
+        self.filter_parameters = {}
+        build_filter_params(self.params.filter.split((",")), self.filter_parameters)
+        if limit:
+            if "=" not in limit:
+                self.filter_parameters["name"] = limit
+            else:
+                build_filter_params(limit.split((",")), self.filter_parameters)
 
         if "exclude" not in self.filter_parameters.keys():
             self.filter_parameters["exclude"] = "config_context"
 
         # Instantiate netbox session using pynetbox
-        self.session = pynetbox.api(url=params.url, token=params.token)
-        if not params.ssl_verify:
+        self.session = pynetbox.api(url=self.params.address, token=self.params.token)
+        if not self.params.verify_ssl:
             session = requests.Session()
             session.verify = False
             self.session.http_session = session
-
-        super().__init__(**kwargs)
 
     def load(self):
 
@@ -95,47 +119,48 @@ class NetboxAPIInventory(NetworkImporterInventory):
         groups = Groups()
         defaults = Defaults()
 
-        global_group_options = {"netmiko": {"extras": {}}, "napalm": {"extras": {}}}
-        global_group = Group(name="global")
-        
-        # Pull the login and password from the NI config object if available
-        if self.params.username:
-            global_group.username = self.params.username
+        global_group = Group(
+            name="global", connection_options={"netmiko": ConnectionOptions(), "napalm": ConnectionOptions()}
+        )
 
-        if self.params.password:
-            global_group.password = self.params.password
-            if self.params.enable:
-                global_group_options["netmiko"]["extras"] = {
-                    "secret": self.params.password,
+        # Pull the login and password from the NI config object if available
+        if self.username:
+            global_group.username = self.username
+
+        if self.password:
+            global_group.password = self.password
+            if self.enable:
+                global_group.connection_options["netmiko"].extras = {
+                    "secret": self.password,
                     "global_delay_factor": self.params.global_delay_factor,
                     "banner_timeout": self.params.banner_timeout,
                     "conn_timeout": self.params.conn_timeout,
                 }
-                global_group_options["napalm"]["extras"] = {"optional_args": {"secret": self.params.password}}
-
-        global_group.connection_options = global_group_options
+                global_group.connection_options["napalm"].extras = {"optional_args": {"secret": self.password}}
 
         for dev in devices:
-
-            host = NetworkImporterHost()
+            # Netbox allows devices to be unnamed, but the Nornir model does not allow this
+            # If a device is unnamed we will set the name to the id of the device in netbox
+            dev_name = dev.name or dev.id
+            host = NetworkImporterHost(name=dev_name, connection_options=ConnectionOptions())
 
             # Only add virtual chassis master as inventory element
             if dev.virtual_chassis and dev.virtual_chassis.master:
                 if dev.id != dev.virtual_chassis.master.id:
                     continue
-                host["data"]["virtual_chassis"] = True
+                host.data["virtual_chassis"] = True
 
             else:
-                host["data"]["virtual_chassis"] = False
+                host.data["virtual_chassis"] = False
 
             # If supported_platforms is provided
             # skip all devices that do not match the list of supported platforms
             # TODO need to see if we can filter when doing the query directly
-            if self.params.supported_platforms:
+            if self.supported_platforms:
                 if not dev.platform:
                     continue
 
-                if dev.platform.slug not in self.params.supported_platforms:
+                if dev.platform.slug not in self.supported_platforms:
                     continue
 
             # Add value for IP address
@@ -148,20 +173,23 @@ class NetboxAPIInventory(NetworkImporterInventory):
                 host.hostname = f"{dev.name}.{self.params.fqdn}"
             elif not self.params.use_primary_ip:
                 host.hostname = dev.name
+            else:
+                host.hostname = dev_name
 
-            host["data"]["serial"] = dev.serial
-            host["data"]["vendor"] = dev.device_type.manufacturer.slug
-            host["data"]["asset_tag"] = dev.asset_tag
-            host["data"]["custom_fields"] = dev.custom_fields
-            host["data"]["site"] = dev.site.slug
-            host["data"]["site_id"] = dev.site.id
-            host["data"]["device_id"] = dev.id
-            host["data"]["role"] = dev.device_role.slug
-            host["data"]["model"] = dev.device_type.slug
+            host.site_name = dev.site.slug
+
+            host.data["serial"] = dev.serial
+            host.data["vendor"] = dev.device_type.manufacturer.slug
+            host.data["asset_tag"] = dev.asset_tag
+            host.data["custom_fields"] = dev.custom_fields
+            host.data["site_id"] = dev.site.id
+            host.data["device_id"] = dev.id
+            host.data["role"] = dev.device_role.slug
+            host.data["model"] = dev.device_type.slug
 
             # Attempt to add 'platform' based of value in 'slug'
             if dev.platform and dev.platform.slug in platforms_mapping:
-                host.connection_options = {"napalm": {"platform": platforms_mapping[dev.platform.slug]}}
+                host.connection_options = {"napalm": ConnectionOptions(platform=platforms_mapping[dev.platform.slug])}
 
             if dev.platform:
                 host.platform = dev.platform.slug
@@ -176,16 +204,14 @@ class NetboxAPIInventory(NetworkImporterInventory):
             if dev.device_role.slug not in groups.keys():
                 groups[dev.device_role.slug] = {}
 
-            if "hostname" in host and host["hostname"] and "platform" in host and host["platform"]:
+            if host.hostname and host.platform:
                 host.is_reachable = True
 
             # Assign temporary dict to outer dict
-            # Netbox allows devices to be unnamed, but the Nornir model does not allow this
-            # If a device is unnamed we will set the name to the id of the device in netbox
-            hosts[dev.name or dev.id] = host
+
+            hosts[dev_name] = host
 
         return Inventory(hosts=hosts, groups=groups, defaults=defaults)
 
 
 InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
-
