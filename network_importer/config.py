@@ -117,9 +117,10 @@ class AdaptersSettings(BaseSettings):
     """Settings definition for the Adapters section of the configuration."""
 
     network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
+    network_settings: Optional[dict]
+
     sot_class: str = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
-    sot_params: Optional[dict]
-    network_params: Optional[dict]
+    sot_settings: Optional[dict]
 
 
 class DriversSettings(BaseSettings):

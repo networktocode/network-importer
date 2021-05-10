@@ -111,11 +111,11 @@ class NetworkImporter:
         # --------------------------------------------------------
         LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
-        sot_params = config.SETTINGS.adapters.sot_params
+        sot_settings = config.SETTINGS.adapters.sot_settings
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
 
         try:
-            self.sot = sot_adapter(nornir=self.nornir, config=sot_params)
+            self.sot = sot_adapter(nornir=self.nornir, settings=sot_settings)
             self.sot.load()
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)
@@ -123,12 +123,12 @@ class NetworkImporter:
 
         LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
-        network_adapter_params = config.SETTINGS.adapters.network_params
+        network_adapter_settings = config.SETTINGS.adapters.network_settings
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
         try:
-            self.network = network_adapter(nornir=self.nornir, config=network_adapter_params)
+            self.network = network_adapter(nornir=self.nornir, settings=network_adapter_settings)
             self.network.load()
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)
