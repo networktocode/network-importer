@@ -1,26 +1,10 @@
-"""Norning Inventory for netbox.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Base Inventory and Host class for Network Importer."""
 # Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
 # pylint: disable=R0913,R0914,E1101,W0613
 
-import copy
-from typing import Any, Dict, List, Optional, Union, List
+from typing import Dict, List, Optional
 
-# from nornir.core.deserializer.inventory import Inventory, HostsDict
-from nornir.core.inventory import Defaults, Group, Groups, Host, Hosts, Inventory, ParentGroups
-from nornir.core.plugins.inventory import InventoryPluginRegister
+from nornir.core.inventory import Host
 
 
 class NetworkImporterHost(Host):
@@ -36,7 +20,7 @@ class NetworkImporterHost(Host):
     """ Valid Statuses
         ok: device is reachable
         fail-ip: Primary IP address not reachable
-        fail-access: Unable to access the device management. 
+        fail-access: Unable to access the device management.
                      The IP is reachable, but SSH or API is not enabled or responding.
         fail-login: Unable to login authenticate with device
         fail-other:  Other general processing error (also catches traps/bug)
@@ -49,16 +33,25 @@ class NetworkImporterHost(Host):
 
 
 class NetworkImporterInventory:
+    """Base inventory class for the Network Importer."""
+
     def __init__(
         self,
-        username: Optional[str],
-        password: Optional[str],
-        enable: Optional[bool],
-        supported_platforms: Optional[List[str]],
-        limit: Optional[str],
-        params: Optional[Dict] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        enable: Optional[bool] = None,
+        supported_platforms: Optional[List[str]] = None,
+        limit: Optional[str] = None,
+        settings: Optional[Dict] = None,
     ):
-        pass
+        """Initialize class and store all top level arguments locally."""
+        self.username = username
+        self.password = password
+        self.enable = enable
+        self.supported_platforms = supported_platforms
+        self.limit = limit
+
+        self.settings = settings
 
 
 # -----------------------------------------------------------------

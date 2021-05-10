@@ -1,17 +1,4 @@
-"""BaseAdapter for the network importer.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""BaseAdapter for the network importer."""
 from diffsync import DiffSync
 from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 
@@ -27,16 +14,21 @@ class BaseAdapter(DiffSync):
     vlan = Vlan
     prefix = Prefix
 
-    def __init__(self, nornir, config):
-        """Initialize the base adapter and store the nornir object locally."""
+    settings_class = None
+    settings = None
+
+    def __init__(self, nornir, settings):
+        """Initialize the base adapter and store the Nornir object locally."""
         super().__init__()
         self.nornir = nornir
-        self.config = self._validate_config(config)
+        self.settings = self._validate_settings(settings)
 
-    @classmethod
-    def _validate_config(cls, config):
-        """Placeholder method that can be reimplemented by each adapter to validate if its config is valid."""
-        return config
+    def _validate_settings(self, settings):
+        """Load and validate the configuration based on the settings_class."""
+        if self.settings_class:
+            return self.settings_class(**settings)  # pylint: disable=not-callable
+
+        return settings
 
     def load(self):
         """Load the local cache with data from the remove system."""

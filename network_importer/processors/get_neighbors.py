@@ -32,8 +32,6 @@ LOGGER = logging.getLogger("network-importer")
 # Match the incorrectly capitalized interface names
 JUNOS_INTERFACE_PATTERN = re.compile(r"^(Xe|Ge|Et|Em|Sxe|Fte|Me|Fc|Xle)-\d+/\d+/\d+[.:]*\d*$")
 
-# pylint: disable=too-few-public-methods
-
 
 # -----------------------------------------------------------------
 # Inventory Filter functions

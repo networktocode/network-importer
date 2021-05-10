@@ -35,7 +35,7 @@ DEFAULT_DRIVERS_MAPPING = {
     "arista_eos": "network_importer.drivers.arista_eos",
 }
 
-# pylint: disable=too-few-public-methods,global-statement
+# pylint: disable=global-statement
 
 
 class BatfishSettings(BaseSettings):
@@ -136,7 +136,7 @@ class InventorySettings(BaseSettings):
     """
 
     inventory_class: str = "NetboxAPIInventory"
-    inventory_params: Optional[dict]
+    settings: Optional[dict]
 
     supported_platforms: List[str] = list()
 

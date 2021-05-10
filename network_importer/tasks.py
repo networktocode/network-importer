@@ -15,8 +15,10 @@ limitations under the License.
 
 import logging
 import os
-import yaml
+import socket
+from typing import Optional, List
 
+import yaml
 from nornir.core.task import Result, Task
 
 import network_importer.config as config
@@ -71,20 +73,14 @@ def device_save_hostvars(task: Task) -> Result:
     # # hostvars_str = template.render(dev_facts)
 
 
-import socket
-from typing import Optional, List
-
-from nornir.core.task import Result, Task
-
-
 def tcp_ping(task: Task, ports: List[int], timeout: int = 2, host: Optional[str] = None) -> Result:
-    """
-    Tests connection to a tcp port and tries to establish a three way
-    handshake. To be used for network discovery or testing.
+    """Tests connection to a tcp port and tries to establish a three way handshake.
+
     Arguments:
         ports (list of int): tcp ports to ping
         timeout (int, optional): defaults to 2
         host (string, optional): defaults to ``hostname``
+
     Returns:
         Result object with the following attributes set:
           * result (``dict``): Contains port numbers as keys with True/False as values
@@ -92,7 +88,6 @@ def tcp_ping(task: Task, ports: List[int], timeout: int = 2, host: Optional[str]
     Code copied from https://github.com/nornir-automation/nornir/blob/v2.5.0/nornir/plugins/tasks/networking/tcp_ping.py
     Need to open a PR to https://github.com/nornir-automation/nornir_utils
     """
-
     if isinstance(ports, int):
         ports = [ports]
 
@@ -107,18 +102,18 @@ def tcp_ping(task: Task, ports: List[int], timeout: int = 2, host: Optional[str]
 
     result = {}
     for port in ports:
-        s = socket.socket()
-        s.settimeout(timeout)
+        skt = socket.socket()
+        skt.settimeout(timeout)
         try:
-            status = s.connect_ex((host, port))
-            if status == 0:
+            status = skt.connect_ex((host, port))
+            if status == 0:  # pylint: disable=simplifiable-if-statement
                 connection = True
             else:
                 connection = False
         except (socket.gaierror, socket.timeout, socket.error):
             connection = False
         finally:
-            s.close()
+            skt.close()
         result[port] = connection
 
     return Result(host=task.host, result=result)

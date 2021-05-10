@@ -8,7 +8,7 @@ import_vlans = "config"
 
 nbr_workers = 1
 
-[inventory]
+[inventory.settings]
 filter="region=ni_multi_site_02"
 
 [logs]

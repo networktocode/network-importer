@@ -1,111 +1,49 @@
-"""Norning Inventory for netbox.
+"""Nornir Inventory for netbox."""
 
-(c) 2020 Network To Code
+# pylint: disable=no-member,too-many-arguments,unused-argument,too-many-branches,too-many-statements
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-# Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
-# pylint: disable=R0913,R0914,E1101,W0613
-
-import copy
-from typing import Any, Dict, List, Optional, Union
-from pydantic import BaseSettings, ValidationError
+from typing import Any, List
 import requests
 import pynetbox
 
-from nornir.core.inventory import Defaults, Group, Groups, Host, Hosts, Inventory, ParentGroups, ConnectionOptions
+from nornir.core.inventory import Defaults, Group, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from network_importer.inventory import NetworkImporterInventory, NetworkImporterHost
+from network_importer.utils import build_filter_params
 
-from .config import InventorySettings
-
-# ------------------------------------------------------------
-# Network Importer Base Dict for device data
-#   status:
-#     ok: device is reachable
-#     fail-ip: Primary IP address not reachable
-#     fail-access: Unable to access the device management. The IP is reachable, but SSH or API is not enabled or
-#                  responding.
-#     fail-login: Unable to login authenticate with device
-#     fail-other:  Other general processing error (also catches traps/bug)
-#   is_reachable: Global Flag to indicate if we are able to connect to a device
-#   has_config: Indicate if the configuration is present and has been properly imported in Batfish
-# ------------------------------------------------------------
-
-
-def build_filter_params(filter_params, params):
-    """Update params dict() with filter args in required format for pynetbox.
-
-    Args:
-      filter_params (list): split string from cli or config
-      params (dict): object to hold params
-    """
-    for param_value in filter_params:
-        if "=" not in param_value:
-            continue
-        key, value = param_value.split("=", 1)
-        existing_value = params.get(key)
-        if existing_value and isinstance(existing_value, list):
-            params[key].append(value)
-        elif existing_value and isinstance(existing_value, str):
-            params[key] = [existing_value, value]
-        else:
-            params[key] = value
+from network_importer.adapters.netbox_api.settings import InventorySettings
 
 
 class NetboxAPIInventory(NetworkImporterInventory):
     """Netbox API Inventory Class."""
 
-    # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
-    def __init__(
-        self,
-        username: Optional[str],
-        password: Optional[str],
-        enable: Optional[bool],
-        supported_platforms: Optional[List[str]],
-        limit=Optional[str],
-        params: InventorySettings = InventorySettings(),
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args, **kwargs: Any,) -> None:
         """Nornir Inventory Plugin for Netbox API."""
+        super().__init__(*args, **kwargs)
 
-        self.username = username
-        self.password = password
-        self.enable = enable
-        self.supported_platforms = supported_platforms
-
-        self.params = InventorySettings(**params)
+        self.settings = InventorySettings(**self.settings)
 
         # Build Filter based on inventory_params filter and on limit
         self.filter_parameters = {}
-        build_filter_params(self.params.filter.split((",")), self.filter_parameters)
-        if limit:
-            if "=" not in limit:
-                self.filter_parameters["name"] = limit
+        build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
+        if self.limit:
+            if "=" not in self.limit:
+                self.filter_parameters["name"] = self.limit
             else:
-                build_filter_params(limit.split((",")), self.filter_parameters)
+                build_filter_params(self.limit.split((",")), self.filter_parameters)
 
         if "exclude" not in self.filter_parameters.keys():
             self.filter_parameters["exclude"] = "config_context"
 
         # Instantiate netbox session using pynetbox
-        self.session = pynetbox.api(url=self.params.address, token=self.params.token)
-        if not self.params.verify_ssl:
+        self.session = pynetbox.api(url=self.settings.address, token=self.settings.token)
+        if not self.settings.verify_ssl:
             session = requests.Session()
             session.verify = False
             self.session.http_session = session
 
     def load(self):
-
-        # fetch devices from netbox
+        """Load inventory by fetching devices from netbox."""
         if self.filter_parameters:
             devices: List[pynetbox.modules.dcim.Devices] = self.session.dcim.devices.filter(**self.filter_parameters)
         else:
@@ -132,9 +70,9 @@ class NetboxAPIInventory(NetworkImporterInventory):
             if self.enable:
                 global_group.connection_options["netmiko"].extras = {
                     "secret": self.password,
-                    "global_delay_factor": self.params.global_delay_factor,
-                    "banner_timeout": self.params.banner_timeout,
-                    "conn_timeout": self.params.conn_timeout,
+                    "global_delay_factor": self.settings.global_delay_factor,
+                    "banner_timeout": self.settings.banner_timeout,
+                    "conn_timeout": self.settings.conn_timeout,
                 }
                 global_group.connection_options["napalm"].extras = {"optional_args": {"secret": self.password}}
 
@@ -164,14 +102,14 @@ class NetboxAPIInventory(NetworkImporterInventory):
                     continue
 
             # Add value for IP address
-            if self.params.use_primary_ip and dev.primary_ip:
+            if self.settings.use_primary_ip and dev.primary_ip:
                 host.hostname = dev.primary_ip.address.split("/")[0]
-            elif self.params.use_primary_ip and not dev.primary_ip:
+            elif self.settings.use_primary_ip and not dev.primary_ip:
                 host.is_reachable = False
                 host.not_reachable_reason = "primary ip not defined in Netbox"
-            elif not self.params.use_primary_ip and self.params.fqdn:
-                host.hostname = f"{dev.name}.{self.params.fqdn}"
-            elif not self.params.use_primary_ip:
+            elif not self.settings.use_primary_ip and self.settings.fqdn:
+                host.hostname = f"{dev.name}.{self.settings.fqdn}"
+            elif not self.settings.use_primary_ip:
                 host.hostname = dev.name
             else:
                 host.hostname = dev_name

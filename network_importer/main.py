@@ -54,7 +54,7 @@ class NetworkImporter:
     @timeit
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
-
+        # pylint: disable=import-outside-toplevel
         # Load build-in Inventories as needed
         if config.SETTINGS.inventory.inventory_class == "NetboxAPIInventory":
             from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
@@ -76,7 +76,7 @@ class NetworkImporter:
                     "enable": config.SETTINGS.network.enable,
                     "supported_platforms": config.SETTINGS.inventory.supported_platforms,
                     "limit": limit,
-                    "params": config.SETTINGS.inventory.inventory_params,
+                    "settings": config.SETTINGS.inventory.settings,
                 },
             },
         )

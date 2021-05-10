@@ -81,7 +81,8 @@ no-docstring-rgx="^(_|test_)"
 disable = """,
     line-too-long,
     bad-continuation,
-    duplicate-code
+    duplicate-code,
+    too-few-public-methods
     """
 
 [tool.pylint.miscellaneous]

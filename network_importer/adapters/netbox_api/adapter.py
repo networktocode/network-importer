@@ -1,17 +1,4 @@
-"""NetBoxAPIAdapter class.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""NetBoxAPIAdapter class."""
 import logging
 import warnings
 
@@ -34,7 +21,7 @@ from network_importer.adapters.netbox_api.models import (  # pylint: disable=imp
     NetboxVlanPre29,
 )
 from network_importer.adapters.netbox_api.tasks import query_device_info_from_netbox
-from .config import InventorySettings
+from network_importer.adapters.netbox_api.settings import InventorySettings, AdapterSettings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -60,12 +47,13 @@ class NetBoxAPIAdapter(BaseAdapter):
     netbox = None
     netbox_version = None
 
+    settings_class = AdapterSettings
+
     type = "Netbox"
 
     query_device_info_from_netbox = query_device_info_from_netbox
 
-    @staticmethod
-    def _is_tag_present(netbox_obj):
+    def _is_tag_present(self, netbox_obj):
         """Find if tag is present for a given object."""
         if isinstance(netbox_obj, dict) and not netbox_obj.get("tags", None):  # pylint: disable=no-else-return
             return False
@@ -77,26 +65,23 @@ class NetBoxAPIAdapter(BaseAdapter):
         elif not netbox_obj["tags"]:
             return False
 
-        # FIXME dgarros, need to reenable this one
-        # for tag in config.SETTINGS.netbox.model_flag_tags:
-        #     if tag in netbox_obj["tags"]:
-        #         LOGGER.debug(
-        #             "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, netbox_obj,
-        #         )
-        #         return True
+        for tag in self.settings.model_flag_tags:
+            if tag in netbox_obj["tags"]:
+                LOGGER.debug(
+                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, netbox_obj,
+                )
+                return True
         return False
 
-    @staticmethod
-    def apply_model_flag(diffsync_obj, netbox_obj):
+    def apply_model_flag(self, diffsync_obj, netbox_obj):
         """Helper function for DiffSync Flag assignment."""
-        # FIXME need to re-enable this one
-        # model_flag = config.SETTINGS.netbox.model_flag
+        model_flag = self.settings.model_flag
 
-        # if model_flag and NetBoxAPIAdapter._is_tag_present(netbox_obj):
-        #     LOGGER.info(
-        #         "DiffSync model flag (%s) applied to object %s", model_flag, netbox_obj,
-        #     )
-        #     diffsync_obj.model_flags = model_flag
+        if model_flag and self._is_tag_present(netbox_obj):
+            LOGGER.info(
+                "DiffSync model flag (%s) applied to object %s", model_flag, netbox_obj,
+            )
+            diffsync_obj.model_flags = model_flag
         return diffsync_obj
 
     def _check_netbox_version(self):

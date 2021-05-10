@@ -40,11 +40,11 @@ def nornir(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     nornir = InitNornir(
-        core={"num_workers": 1},
+        runner={"plugin": "threaded", "options": {"num_workers": 1}},
         logging={"enabled": False},
         inventory={
-            "plugin": "network_importer.inventory.NetboxInventory",
-            "options": {"nb_url": "http://mock", "nb_token": "12349askdnfanasdf"},
+            "plugin": "NetboxAPIInventory",
+            "options": {"settings": {"address": "http://mock", "token": "12349askdnfanasdf"}},
         },
     )
 

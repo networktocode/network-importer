@@ -1,17 +1,4 @@
-"""Collection of nornir tasks for the NetboxAPIAdapter.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Collection of nornir tasks for the NetboxAPIAdapter."""
 import logging
 
 import pynetbox
@@ -20,7 +7,7 @@ from nornir.core.task import Result, Task
 
 import network_importer.config as config  # pylint: disable=import-error
 
-from .config import InventorySettings
+from network_importer.adapters.netbox_api.settings import InventorySettings
 
 LOGGER = logging.getLogger("network-importer")
 
