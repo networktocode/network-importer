@@ -103,7 +103,7 @@ class NetBoxAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynetbox and load all data from netbox in the local cache."""
-        inventory_settings = InventorySettings(**config.SETTINGS.inventory.inventory_params)
+        inventory_settings = InventorySettings(**config.SETTINGS.inventory.settings)
         self.netbox = pynetbox.api(url=inventory_settings.address, token=inventory_settings.token)
 
         if not inventory_settings.verify_ssl:

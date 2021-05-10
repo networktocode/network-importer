@@ -97,10 +97,10 @@ class NautobotAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynautobot and load all data from nautobot in the local cache."""
-        inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
-        self.nautobot = pynautobot.api(url=inventory_params.address, token=inventory_params.token)
+        inventory_settings = InventorySettings(**config.SETTINGS.inventory.settings)
+        self.nautobot = pynautobot.api(url=inventory_settings.address, token=inventinventory_settingsory_params.token)
 
-        if not inventory_params.verify_ssl:
+        if not inventory_settings.verify_ssl:
             self.nautobot.http_session.verify_ssl = False
         else:
             self.nautobot.http_session.verify_ssl = True
