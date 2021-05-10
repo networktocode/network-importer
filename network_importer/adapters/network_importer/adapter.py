@@ -1,17 +1,4 @@
-"""Custom Exceptions for the NetworkImporterAdapter.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Custom Exceptions for the NetworkImporterAdapter."""
 import re
 import ipaddress
 import json
@@ -62,20 +49,20 @@ class NetworkImporterAdapter(BaseAdapter):
         for hostname, host in self.nornir.inventory.hosts.items():
 
             if len(self.bfi.q.nodeProperties(nodes=hostname).answer()) == 0:
-                self.nornir.inventory.hosts[hostname].data["has_config"] = False
+                self.nornir.inventory.hosts[hostname].has_config = False
                 LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
                 continue
 
-            self.nornir.inventory.hosts[hostname].data["has_config"] = True
+            self.nornir.inventory.hosts[hostname].has_config = True
 
-            if host.data["site"] not in sites.keys():
-                site = self.site(name=host.data["site"])
-                sites[host.data["site"]] = site
+            if host.site_name not in sites.keys():
+                site = self.site(name=host.site_name)
+                sites[host.site_name] = site
                 self.add(site)
             else:
-                site = sites[host.data["site"]]
+                site = sites[host.site_name]
 
-            device = self.device(name=hostname, site_name=host.data["site"])
+            device = self.device(name=hostname, site_name=host.site_name)
             self.add(device)
 
         if config.SETTINGS.main.import_cabling in ["lldp", "cdp"] or config.SETTINGS.main.import_vlans in [True, "cli"]:

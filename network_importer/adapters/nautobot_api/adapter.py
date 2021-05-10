@@ -1,17 +1,4 @@
-"""NautobotAPIAdapter class.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""NautobotAPIAdapter class."""
 import logging
 import warnings
 
@@ -31,6 +18,7 @@ from network_importer.adapters.nautobot_api.models import (  # pylint: disable=i
     NautobotVlan,
 )
 from network_importer.adapters.nautobot_api.tasks import query_device_info_from_nautobot
+from network_importer.adapters.nautobot_api.settings import InventorySettings, AdapterSettings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -56,12 +44,13 @@ class NautobotAPIAdapter(BaseAdapter):
     nautobot = None
     nautobot_version = None
 
+    settings_class = AdapterSettings
+
     type = "Nautobot"
 
     query_device_info_from_nautobot = query_device_info_from_nautobot
 
-    @staticmethod
-    def _is_tag_present(nautobot_obj):
+    def _is_tag_present(self, nautobot_obj):
         """Find if tag is present for a given object."""
         if isinstance(nautobot_obj, dict) and not nautobot_obj.get("tags", None):  # pylint: disable=no-else-return
             return False
@@ -73,7 +62,7 @@ class NautobotAPIAdapter(BaseAdapter):
         elif not nautobot_obj["tags"]:
             return False
 
-        for tag in config.SETTINGS.nautobot.model_flag_tags:
+        for tag in self.settings.model_flag_tags:
             if tag in nautobot_obj["tags"]:
                 LOGGER.debug(
                     "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, nautobot_obj,
@@ -81,12 +70,11 @@ class NautobotAPIAdapter(BaseAdapter):
                 return True
         return False
 
-    @staticmethod
-    def apply_model_flag(diffsync_obj, nautobot_obj):
+    def apply_model_flag(self, diffsync_obj, nautobot_obj):
         """Helper function for DiffSync Flag assignment."""
-        model_flag = config.SETTINGS.nautobot.model_flag
+        model_flag = self.settings.model_flag
 
-        if model_flag and NautobotAPIAdapter._is_tag_present(nautobot_obj):
+        if model_flag and self._is_tag_present(nautobot_obj):
             LOGGER.info(
                 "DiffSync model flag (%s) applied to object %s", model_flag, nautobot_obj,
             )
@@ -109,9 +97,10 @@ class NautobotAPIAdapter(BaseAdapter):
 
     def load(self):
         """Initialize pynautobot and load all data from nautobot in the local cache."""
-        self.nautobot = pynautobot.api(url=config.SETTINGS.nautobot.address, token=config.SETTINGS.nautobot.token)
+        inventory_settings = InventorySettings(**config.SETTINGS.inventory.settings)
+        self.nautobot = pynautobot.api(url=inventory_settings.address, token=inventory_settings.token)
 
-        if not config.SETTINGS.nautobot.verify_ssl:
+        if not inventory_settings.verify_ssl:
             self.nautobot.http_session.verify_ssl = False
         else:
             self.nautobot.http_session.verify_ssl = True

@@ -208,7 +208,7 @@ def expand_vlans_list(vlans: str) -> list:
 
 
 def build_filter_params(filter_params, params):
-    """Update params dict() with filter args in required format for pynetbox.
+    """Update params dict() with filter args in required format for pynetbox/pynautobot.
 
     Args:
       filter_params (list): split string from cli or config

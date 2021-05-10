@@ -15,7 +15,7 @@ limitations under the License.
 
 from os import path
 import yaml
-from network_importer.inventory import NetboxInventory
+from network_importer.adapters.netbox_api.inventory import NetBoxAPIInventory
 
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "fixtures/inventory"
@@ -38,7 +38,7 @@ def test_nb_inventory_all(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NetboxInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+    inv = NetBoxAPIInventory(settings=dict(address="http://mock", token="12349askdnfanasdf")).load()  # nosec
 
     assert len(inv.hosts.keys()) == 6
     assert "austin" in inv.hosts.keys()
@@ -68,11 +68,9 @@ def test_nb_inventory_filtered(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv_filtered = NetboxInventory(  # nosec
-        nb_url="http://mock",  # nosec
-        nb_token="12349askdnfanasdf",  # nosec
-        filter_parameters={"name": "el-paso"},  # nosec
-    )  # nosec
+    inv_filtered = NetBoxAPIInventory(
+        limit="el-paso", settings=dict(address="http://mock", token="12349askdnfanasdf",)  # nosec
+    ).load()  # nosec
 
     assert len(inv_filtered.hosts.keys()) == 1
     assert "el-paso" in inv_filtered.hosts.keys()
@@ -96,11 +94,9 @@ def test_nb_inventory_exclude(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NetboxInventory(  # nosec
-        nb_url="http://mock",  # nosec
-        nb_token="12349askdnfanasdf",  # nosec
-        filter_parameters={"exclude": "platform"},  # nosec
-    )  # nosec
+    inv = NetBoxAPIInventory(
+        settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",)  # nosec  # nosec
+    ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 6
 
@@ -122,7 +118,7 @@ def test_nb_inventory_virtual_chassis(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NetboxInventory(nb_url="http://mock", nb_token="12349askdnfanasdf")  # nosec
+    inv = NetBoxAPIInventory(settings=dict(address="http://mock", token="12349askdnfanasdf")).load()  # nosec
 
     assert len(inv.hosts.keys()) == 2
     assert "test_dev1_2" not in inv.hosts.keys()
@@ -148,19 +144,19 @@ def test_nb_inventory_supported_platforms(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NetboxInventory(  # nosec
-        nb_url="http://mock",  # nosec
-        nb_token="12349askdnfanasdf",  # nosec
+    inv = NetBoxAPIInventory(
         supported_platforms=["ios", "nxos"],  # nosec
-    )  # nosec
+        settings=dict(address="http://mock", token="12349askdnfanasdf")  # nosec  # nosec
+        # nosec
+    ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 2
     assert "austin" in inv.hosts.keys()
     assert "dallas" in inv.hosts.keys()
 
-    inv = NetboxInventory(  # nosec
-        nb_url="http://mock", nb_token="12349askdnfanasdf", supported_platforms=["ios"],  # nosec  # nosec  # nosec
-    )  # nosec
+    inv = NetBoxAPIInventory(  # nosec
+        supported_platforms=["ios"], settings=dict(address="http://mock", token="12349askdnfanasdf")  # nosec
+    ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 1
     assert "austin" in inv.hosts.keys()

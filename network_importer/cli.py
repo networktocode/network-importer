@@ -191,17 +191,23 @@ def inventory(config_file, limit, debug, update_configs):
     table.add_column("Reason")
 
     for hostname, host in ni.nornir.inventory.hosts.items():
-        if host.data["is_reachable"]:
+        if host.is_reachable:
             is_reachable = "[green]True"
             reason = None
         else:
             is_reachable = "[red]False"
-            reason = f"[red]{host.data['not_reachable_reason']}"
+            reason = f"[red]{host.not_reachable_reason}"
 
         table.add_row(hostname, host.data["vendor"], is_reachable, reason)
 
     console = Console()
     console.print(table)
+
+    if update_configs:
+        ni.update_configurations()
+
+    if debug:
+        pdb.set_trace()
 
 
 if __name__ == "__main__":

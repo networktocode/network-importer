@@ -20,7 +20,7 @@ import importlib
 
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
-from network_importer.utils import patch_http_connection_pool, build_filter_params
+from network_importer.utils import patch_http_connection_pool
 from network_importer.processors.get_config import GetConfig
 from network_importer.drivers import dispatcher
 from network_importer.diff import NetworkImporterDiff
@@ -33,8 +33,10 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     from nornir import InitNornir
+    from nornir.core.plugins.inventory import InventoryPluginRegister
 
 __author__ = "Damien Garros <damien.garros@networktocode.com>"
+
 
 LOGGER = logging.getLogger("network-importer")
 
@@ -52,35 +54,29 @@ class NetworkImporter:
     @timeit
     def build_inventory(self, limit=None):
         """Build the inventory for the Network Importer in Nornir format."""
-        # Filters can be defined at the configuration level or in CLI or both
-        params = {}
-        build_filter_params(config.SETTINGS.inventory.filter.split((",")), params)
-        if limit:
-            if "=" not in limit:
-                params["name"] = limit
-            else:
-                build_filter_params(limit.split((",")), params)
+        # pylint: disable=import-outside-toplevel
+        # Load build-in Inventories as needed
+        if config.SETTINGS.inventory.inventory_class == "NetBoxAPIInventory":
+            from network_importer.adapters.netbox_api.inventory import NetBoxAPIInventory
 
-        # TODO Cleanup config file and allow user defined inventory
+            InventoryPluginRegister.register("NetBoxAPIInventory", NetBoxAPIInventory)
+        elif config.SETTINGS.inventory.inventory_class == "NautobotAPIInventory":
+            from network_importer.adapters.nautobot_api.inventory import NautobotAPIInventory
+
+            InventoryPluginRegister.register("NautobotAPIInventory", NautobotAPIInventory)
+
         self.nornir = InitNornir(
-            core={"num_workers": config.SETTINGS.main.nbr_workers},
+            runner={"plugin": "threaded", "options": {"num_workers": config.SETTINGS.main.nbr_workers}},
             logging={"enabled": False},
             inventory={
                 "plugin": config.SETTINGS.inventory.inventory_class,
                 "options": {
-                    "nb_url": config.SETTINGS.netbox.address,
-                    "nb_token": config.SETTINGS.netbox.token,
-                    "filter_parameters": params,
-                    "ssl_verify": config.SETTINGS.netbox.verify_ssl,
                     "username": config.SETTINGS.network.login,
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
-                    "use_primary_ip": config.SETTINGS.inventory.use_primary_ip,
-                    "fqdn": config.SETTINGS.inventory.fqdn,
-                    "supported_platforms": config.SETTINGS.netbox.supported_platforms,
-                    "global_delay_factor": config.SETTINGS.network.global_delay_factor,
-                    "banner_timeout": config.SETTINGS.network.banner_timeout,
-                    "conn_timeout": config.SETTINGS.network.conn_timeout,
+                    "supported_platforms": config.SETTINGS.inventory.supported_platforms,
+                    "limit": limit,
+                    "settings": config.SETTINGS.inventory.settings,
                 },
             },
         )
@@ -115,11 +111,11 @@ class NetworkImporter:
         # --------------------------------------------------------
         LOGGER.info("Import SOT Model")
         sot_path = config.SETTINGS.adapters.sot_class.split(".")
-        sot_params = config.SETTINGS.adapters.sot_params
+        sot_settings = config.SETTINGS.adapters.sot_settings
         sot_adapter = getattr(importlib.import_module(".".join(sot_path[0:-1])), sot_path[-1])
 
         try:
-            self.sot = sot_adapter(nornir=self.nornir, config=sot_params)
+            self.sot = sot_adapter(nornir=self.nornir, settings=sot_settings)
             self.sot.load()
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)
@@ -127,12 +123,12 @@ class NetworkImporter:
 
         LOGGER.info("Import Network Model")
         network_adapter_path = config.SETTINGS.adapters.network_class.split(".")
-        network_adapter_params = config.SETTINGS.adapters.network_params
+        network_adapter_settings = config.SETTINGS.adapters.network_settings
         network_adapter = getattr(
             importlib.import_module(".".join(network_adapter_path[0:-1])), network_adapter_path[-1]
         )
         try:
-            self.network = network_adapter(nornir=self.nornir, config=network_adapter_params)
+            self.network = network_adapter(nornir=self.nornir, settings=network_adapter_settings)
             self.network.load()
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)

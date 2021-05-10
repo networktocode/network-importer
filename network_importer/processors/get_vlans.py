@@ -21,8 +21,6 @@ from network_importer.processors import BaseProcessor
 
 LOGGER = logging.getLogger("network-importer")
 
-# pylint: disable=too-few-public-methods
-
 
 # ------------------------------------------------------------
 # Standard model to return for get_vlans

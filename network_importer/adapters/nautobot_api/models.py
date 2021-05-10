@@ -1,17 +1,4 @@
-"""Extension of the base Models for the NautobotAPIAdapter.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Extension of the base Models for the NautobotAPIAdapter."""
 from typing import Optional
 import logging
 
@@ -344,6 +331,8 @@ class NautobotIPAddress(IPAddress):
         try:
             item = super().create(ids=ids, diffsync=diffsync, attrs=attrs)
             nb_params = item.translate_attrs_for_nautobot(attrs)
+            # Add status because it's a mandatory field.
+            nb_params["status"] = "active"
             ip_address = diffsync.nautobot.ipam.ip_addresses.create(**nb_params)
         except pynautobot.core.query.RequestError as exc:
             LOGGER.warning("Unable to create the ip address %s in %s (%s)", ids["address"], diffsync.name, exc.error)

@@ -208,7 +208,7 @@ def diff_children_nyc_dev1():
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, config={})
+    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     return diffsync
@@ -217,7 +217,7 @@ def netbox_api_empty():
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, config={})
+    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     diffsync.add(NetboxSite(name="HQ", remote_id=10))
@@ -231,7 +231,7 @@ def netbox_api_base():
 @pytest.fixture
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
-    diffsync = NetworkImporterAdapter(nornir=None, config={})
+    diffsync = NetworkImporterAdapter(nornir=None, settings={})
 
     diffsync.add(Site(name="HQ"))
     diffsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
@@ -256,7 +256,7 @@ def empty_netbox_query():
 @pytest.fixture
 def nautobot_api_base():
     """Provide an instance of NautobotAPIAdapter with pynautoboot initiliazed."""
-    diffsync = NautobotAPIAdapter(nornir=None, config={})
+    diffsync = NautobotAPIAdapter(nornir=None, settings={})
     diffsync.nautobot = pynautobot.api(url="http://mock_nautobot", token="1234567890")
 
     diffsync.add(NautobotSite(name="HQ", remote_id="a325e477-62fe-47f0-8b67-acf411b1868f"))
@@ -273,8 +273,8 @@ def nautobot_api_base():
 
 @pytest.fixture
 def nautobot_api_empty():
-    """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NautobotAPIAdapter(nornir=None, config={})
+    """Provide an instance of NautobotAPIAdapter with pynautobot initiliazed."""
+    diffsync = NautobotAPIAdapter(nornir=None, settings={})
     diffsync.nautobot = pynautobot.api(url="http://mock", token="1234567890")
 
     return diffsync

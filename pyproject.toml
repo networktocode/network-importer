@@ -21,7 +21,7 @@ packages = [
 python = "^3.6"
 pynetbox = "^5.0"
 toml = "^0.10"
-nornir = "^2.4"
+nornir = "^3.0"
 termcolor = "^1.1"
 click = "^7.1"
 pydantic = "^1.6.1"
@@ -34,6 +34,9 @@ structlog = "^20.1.0"
 diffsync = "~1.2.0"
 rich = "^9.2.0"
 pynautobot = "^1.0.2"
+nornir-napalm = "^0.1.2"
+nornir-utils = "^0.1.2"
+nornir-netmiko = "^0.1.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "^1.6"
@@ -78,7 +81,8 @@ no-docstring-rgx="^(_|test_)"
 disable = """,
     line-too-long,
     bad-continuation,
-    duplicate-code
+    duplicate-code,
+    too-few-public-methods
     """
 
 [tool.pylint.miscellaneous]

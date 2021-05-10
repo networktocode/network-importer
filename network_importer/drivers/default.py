@@ -13,7 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import logging
-from nornir.plugins.tasks.networking import napalm_get, netmiko_send_command
+
+from nornir_napalm.plugins.tasks import napalm_get
+from nornir_netmiko.tasks import netmiko_send_command
+
 from nornir.core.task import Result, Task
 from nornir.core.exceptions import NornirSubTaskError
 
