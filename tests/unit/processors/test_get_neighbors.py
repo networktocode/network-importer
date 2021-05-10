@@ -43,7 +43,7 @@ def nornir(requests_mock):
         runner={"plugin": "threaded", "options": {"num_workers": 1}},
         logging={"enabled": False},
         inventory={
-            "plugin": "NetboxAPIInventory",
+            "plugin": "NetBoxAPIInventory",
             "options": {"settings": {"address": "http://mock", "token": "12349askdnfanasdf"}},
         },
     )
