@@ -28,8 +28,8 @@ class BaseAdapter(DiffSync):
         if self.settings_class:
             if settings and isinstance(dict, settings):
                 return self.settings_class(**settings)  # pylint: disable=not-callable
-            else:
-                return self.settings_class()  # pylint: disable=not-callable
+
+            return self.settings_class()  # pylint: disable=not-callable
 
         return settings
 
