@@ -57,9 +57,7 @@ class NautobotAPIInventory(NetworkImporterInventory):
         # Instantiate nautobot session using pynautobot
         self.session = pynautobot.api(url=self.settings.address, token=self.settings.token)
         if not self.settings.verify_ssl:
-            session = requests.Session()
-            session.verify = False
-            self.session.http_session = session
+            self.session.http_session.verify = False
 
     def load(self):
         """Load inventory by fetching devices from nautobot."""
