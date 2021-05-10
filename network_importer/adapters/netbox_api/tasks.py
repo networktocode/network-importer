@@ -26,10 +26,10 @@ def query_device_info_from_netbox(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-    inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
-    netbox = pynetbox.api(url=inventory_params.address, token=inventory_params.token)
+    inventory_settings = InventorySettings(**config.SETTINGS.inventory.settings)
+    netbox = pynetbox.api(url=inventory_settings.address, token=inventory_settings.token)
 
-    if not inventory_params.verify_ssl:
+    if not inventory_settings.verify_ssl:
         session = requests.Session()
         session.verify = False
         netbox.http_session = session

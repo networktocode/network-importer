@@ -14,7 +14,7 @@ from network_importer.utils import build_filter_params
 from network_importer.adapters.netbox_api.settings import InventorySettings
 
 
-class NetboxAPIInventory(NetworkImporterInventory):
+class NetBoxAPIInventory(NetworkImporterInventory):
     """Netbox API Inventory Class."""
 
     def __init__(self, *args, **kwargs: Any,) -> None:
@@ -23,7 +23,7 @@ class NetboxAPIInventory(NetworkImporterInventory):
 
         self.settings = InventorySettings(**self.settings)
 
-        # Build Filter based on inventory_params filter and on limit
+        # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
         build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
         if self.limit:
@@ -152,4 +152,4 @@ class NetboxAPIInventory(NetworkImporterInventory):
         return Inventory(hosts=hosts, groups=groups, defaults=defaults)
 
 
-InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
+InventoryPluginRegister.register("NetBoxAPIInventory", NetBoxAPIInventory)

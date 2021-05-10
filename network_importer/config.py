@@ -136,7 +136,7 @@ class InventorySettings(BaseSettings):
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
     """
 
-    inventory_class: str = "NetboxAPIInventory"
+    inventory_class: str = "NetBoxAPIInventory"
     settings: Optional[dict]
 
     supported_platforms: List[str] = list()

@@ -42,7 +42,7 @@ class NautobotAPIInventory(NetworkImporterInventory):
 
         self.settings = self.settings_class(**settings)
 
-        # Build Filter based on inventory_params filter and on limit
+        # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
         build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
         if limit:

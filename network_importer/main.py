@@ -56,10 +56,10 @@ class NetworkImporter:
         """Build the inventory for the Network Importer in Nornir format."""
         # pylint: disable=import-outside-toplevel
         # Load build-in Inventories as needed
-        if config.SETTINGS.inventory.inventory_class == "NetboxAPIInventory":
-            from network_importer.adapters.netbox_api.inventory import NetboxAPIInventory
+        if config.SETTINGS.inventory.inventory_class == "NetBoxAPIInventory":
+            from network_importer.adapters.netbox_api.inventory import NetBoxAPIInventory
 
-            InventoryPluginRegister.register("NetboxAPIInventory", NetboxAPIInventory)
+            InventoryPluginRegister.register("NetBoxAPIInventory", NetBoxAPIInventory)
         elif config.SETTINGS.inventory.inventory_class == "NautobotAPIInventory":
             from network_importer.adapters.nautobot_api.inventory import NautobotAPIInventory
 

@@ -24,11 +24,11 @@ def query_device_info_from_nautobot(task: Task) -> Result:
     Returns:
         Result: Nornir Result object with the result in a dict format
     """
-    inventory_params = InventorySettings(**config.SETTINGS.inventory.inventory_params)
-    nautobot = pynautobot.api(url=inventory_params.address, token=inventory_params.token)
+    inventory_settings = InventorySettings(**config.SETTINGS.inventory.settings)
+    nautobot = pynautobot.api(url=inventory_settings.address, token=inventory_settings.token)
 
     # Check for SSL Verification, set it to false if not. Else set to true
-    if not inventory_params.verify_ssl:
+    if not inventory_settings.verify_ssl:
         # No manual session is required for this, pynautobot will automatically create one
         nautobot.http_session.verify = False
     else:
