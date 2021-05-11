@@ -1,0 +1,111 @@
+{
+    "count": 5,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "d89e745b-7eb3-4fbe-b3df-5aed8be7f8a5",
+            "url": "https://localhost/api/dcim/platforms/d89e745b-7eb3-4fbe-b3df-5aed8be7f8a5/",
+            "name": "Arista EOS",
+            "slug": "eos",
+            "manufacturer": {
+                "id": "eb3c3d44-8d1b-4940-acae-1374b2f2412b",
+                "url": "https://localhost/api/dcim/manufacturers/eb3c3d44-8d1b-4940-acae-1374b2f2412b/",
+                "name": "Arista",
+                "slug": "arista",
+                "display": "Arista"
+            },
+            "napalm_driver": "",
+            "napalm_args": null,
+            "description": "",
+            "device_count": 0,
+            "virtualmachine_count": 0,
+            "custom_fields": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-04T20:41:59.525963Z",
+            "display": "Arista EOS"
+        },
+        {
+            "id": "24763d85-f0bc-46f0-a7ab-22b404c3d715",
+            "url": "https://localhost/api/dcim/platforms/24763d85-f0bc-46f0-a7ab-22b404c3d715/",
+            "name": "cisco_ios",
+            "slug": "cisco_ios",
+            "manufacturer": null,
+            "napalm_driver": "ios",
+            "napalm_args": null,
+            "description": "",
+            "device_count": 1,
+            "virtualmachine_count": 0,
+            "custom_fields": {},
+            "created": "2021-04-29",
+            "last_updated": "2021-04-29T18:47:08.801821Z",
+            "display": "cisco_ios"
+        },
+        {
+            "id": "98525687-3f7c-4413-933d-1b5602f1fa7d",
+            "url": "https://localhost/api/dcim/platforms/98525687-3f7c-4413-933d-1b5602f1fa7d/",
+            "name": "Cisco IOS",
+            "slug": "ios",
+            "manufacturer": {
+                "id": "819ff875-95b2-4595-b09a-821420894312",
+                "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                "name": "Cisco",
+                "slug": "cisco",
+                "display": "Cisco"
+            },
+            "napalm_driver": "ios_napalm",
+            "napalm_args": null,
+            "description": "",
+            "device_count": 2,
+            "virtualmachine_count": 0,
+            "custom_fields": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-11T00:21:04.321809Z",
+            "display": "Cisco IOS"
+        },
+        {
+            "id": "4b68c8b7-9119-4fd1-8aaf-484e0ea98529",
+            "url": "https://localhost/api/dcim/platforms/4b68c8b7-9119-4fd1-8aaf-484e0ea98529/",
+            "name": "Cisco NXOS",
+            "slug": "nxos",
+            "manufacturer": {
+                "id": "819ff875-95b2-4595-b09a-821420894312",
+                "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                "name": "Cisco",
+                "slug": "cisco",
+                "display": "Cisco"
+            },
+            "napalm_driver": "nxos_napalm",
+            "napalm_args": null,
+            "description": "",
+            "device_count": 0,
+            "virtualmachine_count": 0,
+            "custom_fields": {},
+            "created": "2021-05-11",
+            "last_updated": "2021-05-11T01:12:42.847985Z",
+            "display": "Cisco NXOS"
+        },
+        {
+            "id": "fbeab173-ebfd-4a64-8876-bc36cfc4a51f",
+            "url": "https://localhost/api/dcim/platforms/fbeab173-ebfd-4a64-8876-bc36cfc4a51f/",
+            "name": "JUNOS",
+            "slug": "junos",
+            "manufacturer": {
+                "id": "58a880d4-4eb2-47db-af98-e48dfa46d98a",
+                "url": "https://localhost/api/dcim/manufacturers/58a880d4-4eb2-47db-af98-e48dfa46d98a/",
+                "name": "Juniper",
+                "slug": "juniper",
+                "display": "Juniper"
+            },
+            "napalm_driver": "",
+            "napalm_args": null,
+            "description": "",
+            "device_count": 0,
+            "virtualmachine_count": 0,
+            "custom_fields": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-04T20:42:01.023249Z",
+            "display": "JUNOS"
+        }
+    ]
+}

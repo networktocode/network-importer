@@ -1,0 +1,73 @@
+{
+    "count": 1,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "121cb69d-bbff-4867-81e4-cbb2ba1bd93f",
+            "url": "https://localhost/api/dcim/devices/121cb69d-bbff-4867-81e4-cbb2ba1bd93f/",
+            "name": "grb-rtr01",
+            "device_type": {
+                "id": "599a9bd7-0a32-484d-b815-d9557bcc86e6",
+                "url": "https://localhost/api/dcim/device-types/599a9bd7-0a32-484d-b815-d9557bcc86e6/",
+                "manufacturer": {
+                    "id": "819ff875-95b2-4595-b09a-821420894312",
+                    "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                    "name": "Cisco",
+                    "slug": "cisco",
+                    "display": "Cisco"
+                },
+                "model": "IOSv",
+                "slug": "iosv",
+                "display": "Cisco IOSv"
+            },
+            "device_role": {
+                "id": "a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6",
+                "url": "https://localhost/api/dcim/device-roles/a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6/",
+                "name": "Router",
+                "slug": "router",
+                "display": "Router"
+            },
+            "tenant": null,
+            "platform": {
+                "id": "98525687-3f7c-4413-933d-1b5602f1fa7d",
+                "url": "https://localhost/api/dcim/platforms/98525687-3f7c-4413-933d-1b5602f1fa7d/",
+                "name": "Cisco IOS",
+                "slug": "ios",
+                "display": "Cisco IOS"
+            },
+            "serial": "",
+            "asset_tag": null,
+            "site": {
+                "id": "ba9d7504-e17b-4b7a-b582-bc3800ebe680",
+                "url": "https://localhost/api/dcim/sites/ba9d7504-e17b-4b7a-b582-bc3800ebe680/",
+                "name": "GRB",
+                "slug": "grb",
+                "display": "GRB"
+            },
+            "rack": null,
+            "position": null,
+            "face": null,
+            "parent_device": null,
+            "status": {
+                "value": "active",
+                "label": "Active"
+            },
+            "primary_ip": null,
+            "primary_ip4": null,
+            "primary_ip6": null,
+            "cluster": null,
+            "virtual_chassis": null,
+            "vc_position": null,
+            "vc_priority": null,
+            "comments": "",
+            "local_context_data": null,
+            "tags": [],
+            "custom_fields": {},
+            "config_context": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-04T20:42:32.056461Z",
+            "display": "grb-rtr01"
+        }
+    ]
+}

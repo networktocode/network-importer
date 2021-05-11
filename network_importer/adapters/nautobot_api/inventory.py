@@ -3,7 +3,6 @@
 # pylint: disable=R0913,R0914,E1101,W0613
 
 from typing import Any, List, Optional
-import requests
 import pynautobot
 
 from nornir.core.inventory import Defaults, Group, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
@@ -25,7 +24,7 @@ class NautobotAPIInventory(NetworkImporterInventory):
         password: Optional[str],
         enable: Optional[bool],
         supported_platforms: Optional[List[str]],
-        limit=Optional[str],
+        limit: Optional[str],
         settings: InventorySettings = InventorySettings(),
         **kwargs: Any,
     ) -> None:
@@ -44,7 +43,9 @@ class NautobotAPIInventory(NetworkImporterInventory):
 
         # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
-        build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
+        if self.settings.filter is not None:
+            build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
+
         if limit:
             if "=" not in limit:
                 self.filter_parameters["name"] = limit
