@@ -16,7 +16,6 @@ limitations under the License.
 from os import path
 import yaml
 from network_importer.adapters.nautobot_api.inventory import NautobotAPIInventory
-import pytest
 
 HERE = path.abspath(path.dirname(__file__))
 FIXTURES = "fixtures/inventory"
@@ -112,7 +111,7 @@ def test_nb_inventory_exclude(requests_mock):
         enable="mock",
         supported_platforms=["cisco_ios", "nxos", "ios"],
         limit=None,
-        settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",)  # nosec  # nosec
+        settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",),  # nosec  # nosec
     ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 3
@@ -141,7 +140,8 @@ def test_nb_inventory_virtual_chassis(requests_mock):
         enable="mock",
         supported_platforms=["cisco_ios", "nxos", "ios"],
         limit=None,
-        settings=dict(address="http://mock", token="12349askdnfanasdf")).load()  # nosec
+        settings=dict(address="http://mock", token="12349askdnfanasdf"),
+    ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 4
     assert "stack01:2" not in inv.hosts.keys()
@@ -182,12 +182,13 @@ def test_nb_inventory_supported_platforms(requests_mock):
     assert "msp-rtr01" in inv.hosts.keys()
     assert "sw01" not in inv.hosts.keys()
 
-    inv = NautobotAPIInventory(   # nosec
+    inv = NautobotAPIInventory(  # nosec
         username="mock",
         password="mock",
         enable="mock",
         limit=None,
-        supported_platforms=["ios"], settings=dict(address="http://mock", token="12349askdnfanasdf")  # nosec
+        supported_platforms=["ios"],
+        settings=dict(address="http://mock", token="12349askdnfanasdf"),  # nosec
     ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 1
