@@ -1,10 +1,10 @@
 """Base Inventory and Host class for Network Importer."""
-# Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
-# pylint: disable=R0913,R0914,E1101,W0613
 
 from typing import Dict, List, Optional
 
-from nornir.core.inventory import Host
+from nornir.core.inventory import Host, Group, ConnectionOptions
+
+# pylint: disable=too-many-arguments,too-many-instance-attributes
 
 
 class NetworkImporterHost(Host):
@@ -41,6 +41,8 @@ class NetworkImporterInventory:
         password: Optional[str] = None,
         enable: Optional[bool] = None,
         supported_platforms: Optional[List[str]] = None,
+        netmiko_extras: Optional[Dict] = None,
+        napalm_extras: Optional[Dict] = None,
         limit: Optional[str] = None,
         settings: Optional[Dict] = None,
     ):
@@ -50,8 +52,43 @@ class NetworkImporterInventory:
         self.enable = enable
         self.supported_platforms = supported_platforms
         self.limit = limit
+        self.netmiko_extras = netmiko_extras
+        self.napalm_extras = napalm_extras
 
         self.settings = settings
+
+        # Define Global Group with Netmiko and Napalm Credentials if provided
+        self.global_group = Group(
+            name="global", connection_options={"netmiko": ConnectionOptions(), "napalm": ConnectionOptions()}
+        )
+
+        if self.netmiko_extras:
+            self.global_group.connection_options["netmiko"].extras = self.netmiko_extras
+
+        if self.napalm_extras:
+            self.global_group.connection_options["napalm"].extras = self.napalm_extras
+
+        # Pull the login and password from the NI config object if available
+        if self.username:
+            self.global_group.username = self.username
+
+        if self.password:
+            self.global_group.password = self.password
+            if self.enable:
+                if not self.global_group.connection_options["netmiko"].extras:
+                    self.global_group.connection_options["netmiko"].extras = dict()
+                elif "secret" not in self.global_group.connection_options["netmiko"].extras:
+                    self.global_group.connection_options["netmiko"].extras["secret"] = self.password
+
+                if not self.global_group.connection_options["napalm"].extras:
+                    self.global_group.connection_options["napalm"].extras = {"optional_args": {"secret": self.password}}
+                elif isinstance(dict, self.global_group.connection_options["napalm"].extras):
+                    if "optional_args" not in self.global_group.connection_options["napalm"].extras:
+                        self.global_group.connection_options["napalm"].extras["optional_args"] = {
+                            "secret": self.password
+                        }
+                    elif isinstance(dict, self.global_group.connection_options["napalm"].extras["optional_args"]):
+                        self.global_group.connection_options["napalm"].extras["optional_args"]["secret"] = self.password
 
 
 # -----------------------------------------------------------------

@@ -22,9 +22,6 @@ class InventorySettings(BaseSettings):
     use_primary_ip: Optional[bool] = True
     fqdn: Optional[str] = None
     filter: Optional[str] = ""
-    global_delay_factor: Optional[int] = 5
-    banner_timeout: Optional[int] = 15
-    conn_timeout: Optional[int] = 5
 
     class Config:
         """Additional parameters to automatically map environment variable to some settings."""
