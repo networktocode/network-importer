@@ -1,0 +1,219 @@
+{
+    "count": 3,
+    "next": null,
+    "previous": null,
+    "results": [
+        {
+            "id": "121cb69d-bbff-4867-81e4-cbb2ba1bd93f",
+            "url": "https://localhost/api/dcim/devices/121cb69d-bbff-4867-81e4-cbb2ba1bd93f/",
+            "name": "grb-rtr01",
+            "device_type": {
+                "id": "599a9bd7-0a32-484d-b815-d9557bcc86e6",
+                "url": "https://localhost/api/dcim/device-types/599a9bd7-0a32-484d-b815-d9557bcc86e6/",
+                "manufacturer": {
+                    "id": "819ff875-95b2-4595-b09a-821420894312",
+                    "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                    "name": "Cisco",
+                    "slug": "cisco",
+                    "display": "Cisco"
+                },
+                "model": "IOSv",
+                "slug": "iosv",
+                "display": "Cisco IOSv"
+            },
+            "device_role": {
+                "id": "a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6",
+                "url": "https://localhost/api/dcim/device-roles/a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6/",
+                "name": "Router",
+                "slug": "router",
+                "display": "Router"
+            },
+            "tenant": null,
+            "platform": {
+                "id": "98525687-3f7c-4413-933d-1b5602f1fa7d",
+                "url": "https://localhost/api/dcim/platforms/98525687-3f7c-4413-933d-1b5602f1fa7d/",
+                "name": "Cisco IOS",
+                "slug": "ios",
+                "display": "Cisco IOS"
+            },
+            "serial": "",
+            "asset_tag": null,
+            "site": {
+                "id": "ba9d7504-e17b-4b7a-b582-bc3800ebe680",
+                "url": "https://localhost/api/dcim/sites/ba9d7504-e17b-4b7a-b582-bc3800ebe680/",
+                "name": "GRB",
+                "slug": "grb",
+                "display": "GRB"
+            },
+            "rack": null,
+            "position": null,
+            "face": null,
+            "parent_device": null,
+            "status": {
+                "value": "active",
+                "label": "Active"
+            },
+            "primary_ip": null,
+            "primary_ip4": null,
+            "primary_ip6": null,
+            "cluster": null,
+            "virtual_chassis": null,
+            "vc_position": null,
+            "vc_priority": null,
+            "comments": "",
+            "local_context_data": null,
+            "tags": [],
+            "custom_fields": {},
+            "config_context": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-04T20:42:32.056461Z",
+            "display": "grb-rtr01"
+        },
+        {
+            "id": "07b4d653-c8fb-4473-8727-11eed93bfcbf",
+            "url": "https://localhost/api/dcim/devices/07b4d653-c8fb-4473-8727-11eed93bfcbf/",
+            "name": "msp-rtr01",
+            "device_type": {
+                "id": "fb72b94e-2872-4c50-aef4-fcb54d59d185",
+                "url": "https://localhost/api/dcim/device-types/fb72b94e-2872-4c50-aef4-fcb54d59d185/",
+                "manufacturer": {
+                    "id": "819ff875-95b2-4595-b09a-821420894312",
+                    "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                    "name": "Cisco",
+                    "slug": "cisco",
+                    "display": "Cisco"
+                },
+                "model": "nxosv",
+                "slug": "nxosv",
+                "display": "Cisco nxosv"
+            },
+            "device_role": {
+                "id": "a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6",
+                "url": "https://localhost/api/dcim/device-roles/a4027f8b-60a2-4c73-9de2-1d64c4ff4cb6/",
+                "name": "Router",
+                "slug": "router",
+                "display": "Router"
+            },
+            "tenant": null,
+            "platform": {
+                "id": "4b68c8b7-9119-4fd1-8aaf-484e0ea98529",
+                "url": "https://localhost/api/dcim/platforms/4b68c8b7-9119-4fd1-8aaf-484e0ea98529/",
+                "name": "Cisco NXOS",
+                "slug": "nxos",
+                "display": "Cisco NXOS"
+            },
+            "serial": "",
+            "asset_tag": null,
+            "site": {
+                "id": "e13825ac-6996-44ab-9a41-2f35a8b04466",
+                "url": "https://localhost/api/dcim/sites/e13825ac-6996-44ab-9a41-2f35a8b04466/",
+                "name": "MSP",
+                "slug": "msp",
+                "display": "MSP"
+            },
+            "rack": null,
+            "position": null,
+            "face": null,
+            "parent_device": null,
+            "status": {
+                "value": "active",
+                "label": "Active"
+            },
+            "primary_ip": null,
+            "primary_ip4": null,
+            "primary_ip6": null,
+            "cluster": null,
+            "virtual_chassis": null,
+            "vc_position": null,
+            "vc_priority": null,
+            "comments": "",
+            "local_context_data": null,
+            "tags": [],
+            "custom_fields": {},
+            "config_context": {},
+            "created": "2021-05-04",
+            "last_updated": "2021-05-11T01:13:34.799672Z",
+            "display": "msp-rtr01"
+        },
+        {
+            "id": "794d8dc0-ce43-4857-a70f-3020e8aa861b",
+            "url": "https://localhost/api/dcim/devices/794d8dc0-ce43-4857-a70f-3020e8aa861b/",
+            "name": "sw01",
+            "device_type": {
+                "id": "d6f5a5a9-93b8-4626-813d-247051887fb6",
+                "url": "https://localhost/api/dcim/device-types/d6f5a5a9-93b8-4626-813d-247051887fb6/",
+                "manufacturer": {
+                    "id": "819ff875-95b2-4595-b09a-821420894312",
+                    "url": "https://localhost/api/dcim/manufacturers/819ff875-95b2-4595-b09a-821420894312/",
+                    "name": "Cisco",
+                    "slug": "cisco",
+                    "display": "Cisco"
+                },
+                "model": "WS-C3750G-48PS",
+                "slug": "ws-c3750g-48ps",
+                "display": "Cisco WS-C3750G-48PS"
+            },
+            "device_role": {
+                "id": "d520822f-7841-480b-bb95-c449d26ca5d0",
+                "url": "https://localhost/api/dcim/device-roles/d520822f-7841-480b-bb95-c449d26ca5d0/",
+                "name": "network",
+                "slug": "network",
+                "display": "network"
+            },
+            "tenant": null,
+            "platform": {
+                "id": "24763d85-f0bc-46f0-a7ab-22b404c3d715",
+                "url": "https://localhost/api/dcim/platforms/24763d85-f0bc-46f0-a7ab-22b404c3d715/",
+                "name": "cisco_ios",
+                "slug": "cisco_ios",
+                "display": "cisco_ios"
+            },
+            "serial": "FOC0948Y2RB",
+            "asset_tag": null,
+            "site": {
+                "id": "e13825ac-6996-44ab-9a41-2f35a8b04466",
+                "url": "https://localhost/api/dcim/sites/e13825ac-6996-44ab-9a41-2f35a8b04466/",
+                "name": "MSP",
+                "slug": "msp",
+                "display": "MSP"
+            },
+            "rack": null,
+            "position": null,
+            "face": null,
+            "parent_device": null,
+            "status": {
+                "value": "active",
+                "label": "Active"
+            },
+            "primary_ip": {
+                "id": "4e829ee7-abae-435a-bd3c-d6a87a135269",
+                "url": "https://localhost/api/ipam/ip-addresses/4e829ee7-abae-435a-bd3c-d6a87a135269/",
+                "family": 4,
+                "address": "10.250.0.2/24",
+                "display": "10.250.0.2/24"
+            },
+            "primary_ip4": {
+                "id": "4e829ee7-abae-435a-bd3c-d6a87a135269",
+                "url": "https://localhost/api/ipam/ip-addresses/4e829ee7-abae-435a-bd3c-d6a87a135269/",
+                "family": 4,
+                "address": "10.250.0.2/24",
+                "display": "10.250.0.2/24"
+            },
+            "primary_ip6": null,
+            "cluster": null,
+            "virtual_chassis": null,
+            "vc_position": null,
+            "vc_priority": null,
+            "comments": "",
+            "local_context_data": null,
+            "tags": [],
+            "custom_fields": {},
+            "config_context": {
+                "ansible_network_os": "ios"
+            },
+            "created": "2021-04-29",
+            "last_updated": "2021-04-29T18:47:33.170873Z",
+            "display": "sw01"
+        }
+    ]
+}
