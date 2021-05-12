@@ -75,6 +75,8 @@ class NetworkImporter:
                     "password": config.SETTINGS.network.password,
                     "enable": config.SETTINGS.network.enable,
                     "supported_platforms": config.SETTINGS.inventory.supported_platforms,
+                    "netmiko_extras": config.SETTINGS.network.netmiko_extras,
+                    "napalm_extras": config.SETTINGS.network.napalm_extras,
                     "limit": limit,
                     "settings": config.SETTINGS.inventory.settings,
                 },

@@ -37,14 +37,7 @@ def test_nautobot_inventory_all(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NautobotAPIInventory(
-        settings=dict(address="http://mock", token="12349askdnfanasdf"),
-        username="mock",
-        password="mock",
-        enable="mock",
-        supported_platforms=["cisco_ios", "nxos", "ios"],
-        limit=None,
-    ).load()  # nosec
+    inv = NautobotAPIInventory(settings=dict(address="http://mock", token="12349askdnfanasdf"),).load()  # nosec
 
     assert len(inv.hosts.keys()) == 3
     assert "grb-rtr01" in inv.hosts.keys()
@@ -66,7 +59,6 @@ def test_nb_inventory_filtered(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/filtered_devices.json"))
     requests_mock.get("http://mock/api/dcim/devices/?name=grb-rtr01&exclude=config_context", json=data1)
@@ -75,12 +67,7 @@ def test_nb_inventory_filtered(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv_filtered = NautobotAPIInventory(
-        username="mock",
-        password="mock",
-        enable="mock",
-        supported_platforms=["cisco_ios", "nxos", "ios"],
-        limit="grb-rtr01",
-        settings=dict(address="http://mock", token="12349askdnfanasdf",),  # nosec
+        limit="grb-rtr01", settings=dict(address="http://mock", token="12349askdnfanasdf",),  # nosec
     ).load()  # nosec
 
     assert len(inv_filtered.hosts.keys()) == 1
@@ -97,7 +84,6 @@ def test_nb_inventory_exclude(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
     requests_mock.get("http://mock/api/dcim/devices/?exclude=platform", json=data1)
@@ -106,11 +92,6 @@ def test_nb_inventory_exclude(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NautobotAPIInventory(
-        username="mock",
-        password="mock",
-        enable="mock",
-        supported_platforms=["cisco_ios", "nxos", "ios"],
-        limit=None,
         settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",),  # nosec  # nosec
     ).load()  # nosec
 
@@ -126,7 +107,6 @@ def test_nb_inventory_virtual_chassis(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/stack_devices.json"))
     requests_mock.get("http://mock/api/dcim/devices/", json=data1)
@@ -159,7 +139,6 @@ def test_nb_inventory_supported_platforms(requests_mock):
         by pytest library, mocks requests get to external API so external API call is
         not needed for unit test.
     """
-
     # Load mock data fixtures
     data1 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/devices.json"))
     requests_mock.get("http://mock/api/dcim/devices/", json=data1)
@@ -168,11 +147,7 @@ def test_nb_inventory_supported_platforms(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NautobotAPIInventory(
-        username="mock",
-        password="mock",
-        enable="mock",
-        limit=None,
-        supported_platforms=["ios", "nxos"],  # nosec
+        supported_platforms=["ios", "nxos"],
         settings=dict(address="http://mock", token="12349askdnfanasdf")  # nosec  # nosec
         # nosec
     ).load()  # nosec

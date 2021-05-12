@@ -2,10 +2,10 @@
 # Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
 # pylint: disable=R0913,R0914,E1101,W0613
 
-from typing import Any, List, Optional
+from typing import Any, List
 import pynautobot
 
-from nornir.core.inventory import Defaults, Group, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
+from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
 from network_importer.inventory import NetworkImporterInventory, NetworkImporterHost
 from network_importer.utils import build_filter_params
@@ -15,42 +15,25 @@ from network_importer.adapters.nautobot_api.settings import InventorySettings
 class NautobotAPIInventory(NetworkImporterInventory):
     """Nautobot API Inventory Class."""
 
-    settings_class = InventorySettings
-
     # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
-    def __init__(
-        self,
-        username: Optional[str],
-        password: Optional[str],
-        enable: Optional[bool],
-        supported_platforms: Optional[List[str]],
-        limit: Optional[str],
-        settings: InventorySettings = InventorySettings(),
-        **kwargs: Any,
-    ) -> None:
+    def __init__(self, *args, **kwargs: Any,) -> None:
         """Nornir Inventory Plugin for Nautobot API."""
         super().__init__(
-            username=username,
-            password=password,
-            enable=enable,
-            limit=limit,
-            supported_platforms=supported_platforms,
-            settings=settings,
-            **kwargs,
+            *args, **kwargs,
         )
 
-        self.settings = self.settings_class(**settings)
+        self.settings = InventorySettings(**self.settings)
 
         # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
         if self.settings.filter is not None:
             build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
 
-        if limit:
-            if "=" not in limit:
-                self.filter_parameters["name"] = limit
+        if self.limit:
+            if "=" not in self.limit:
+                self.filter_parameters["name"] = self.limit
             else:
-                build_filter_params(limit.split((",")), self.filter_parameters)
+                build_filter_params(self.limit.split((",")), self.filter_parameters)
 
         if "exclude" not in self.filter_parameters.keys():
             self.filter_parameters["exclude"] = "config_context"
@@ -74,25 +57,6 @@ class NautobotAPIInventory(NetworkImporterInventory):
         hosts = Hosts()
         groups = Groups()
         defaults = Defaults()
-
-        global_group = Group(
-            name="global", connection_options={"netmiko": ConnectionOptions(), "napalm": ConnectionOptions()}
-        )
-
-        # Pull the login and password from the NI config object if available
-        if self.username:
-            global_group.username = self.username
-
-        if self.password:
-            global_group.password = self.password
-            if self.enable:
-                global_group.connection_options["netmiko"].extras = {
-                    "secret": self.password,
-                    "global_delay_factor": self.settings.global_delay_factor,
-                    "banner_timeout": self.settings.banner_timeout,
-                    "conn_timeout": self.settings.conn_timeout,
-                }
-                global_group.connection_options["napalm"].extras = {"optional_args": {"secret": self.password}}
 
         for dev in devices:
             # nautobot allows devices to be unnamed, but the Nornir model does not allow this
@@ -152,7 +116,7 @@ class NautobotAPIInventory(NetworkImporterInventory):
             else:
                 host.platform = None
 
-            host.groups = ParentGroups([global_group])
+            host.groups = ParentGroups([self.global_group])
 
             if dev.site.slug not in groups.keys():
                 groups[dev.site.slug] = {}
