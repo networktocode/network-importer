@@ -16,6 +16,7 @@ NETBOX_VERSIONS = {
     "v2.8": {"netbox_version": "v2.8.9", "docker_version": "0.24.1"},
 }
 
+NAUTOBOT_VER = "v1.0.1"
 
 def project_ver():
     """Find version from pyproject.toml to use for docker image tagging."""
@@ -58,6 +59,10 @@ TRAVIS_BATFISH_ADDRESS = "localhost"
 TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
 TRAVIS_EXAMPLES = ["spine_leaf_01", "multi_site_02"]
 TRAVIS_BATFISH_VERSION = "2020.10.08.667"
+TRAVIS_NAUTOBOT_ADDRESS = "http://localhost:8080"
+TRAVIS_NAUTOBOT_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
+TRAVIS_NAUTOBOT_VERIFY_SSL = "false"
+NAUTOBOT_VERSION = os.getenv("NAUTOBOT_VERSION", "v1.0.1")
 
 
 def run_cmd(context, exec_cmd, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
@@ -365,6 +370,61 @@ def integration_tests(context, netbox_ver=NETBOX_VERSION):
         f"All integration tests have passed for Netbox {netbox_exact_version} / Netbox Docker {docker_netbox_version}!"
     )
 
+def compose_nautobot(
+    context, var_envs
+):
+    """Create Netbox instance for Travis testing.
+
+    Args:
+        context (obj): Used to run specific commands
+        var_envs (dict): Environment variables to pass to the command runner
+        netbox_docker_ver (str): Version of Netbox docker to use
+    """
+    # Copy the file from tests/docker-compose.test.yml to the tmp directory to be executed from there
+    context.run(
+        f"cp tests/docker-compose.text.yml /tmp/docker-compose.yml",
+        pty=True,
+        env=var_envs,
+    )
+    context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
+    context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
+
+def configure_nautobot(context, example_name, var_envs):
+    """Configure Netbox instance with Ansible.
+
+    Args:
+        context (obj): Used to run specific commands
+        example_name (str): Name of the example directory to use
+        var_envs (dict): Environment variables to pass to the command runner
+    """
+    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml", pty=True, env=var_envs)
+
+@task
+def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
+    """Builds Nautobot test environment for Travis-CI.
+
+    Args:
+        context (obj): Used to run specific commands
+        nautobot_ver (str): Nautobot version to use for testing
+    """
+    envs = {
+        "VERSION": nautobot_ver,
+        "NAUTOBOT_ADDRESS": TRAVIS_NAUTOBOT_ADDRESS,
+        "NAUTOBOT_TOKEN": TRAVIS_NAUTOBOT_TOKEN,
+        "NAUTOBOT_VERIFY_SSL": TRAVIS_NAUTOBOT_VERIFY_SSL,
+        "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
+        "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
+    }
+
+    compose_nautobot(context, var_envs=envs)
+    compose_batfish(context, var_envs=envs)
+    time.sleep(90)
+    for example in TRAVIS_EXAMPLES:
+        configure_nautobot(context, example, var_envs=envs)
+        run_network_importer(context, example, var_envs=envs)
+    print(
+        f"All integration tests have passed for Nautobot {nautobot_ver}"
+    )
 
 @task
 def tests(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
