@@ -113,8 +113,8 @@ class MainSettings(BaseSettings):
     you must leave backend empty and define inventory.inventory_class and adapters.sot_class manually."""
 
     # NOT SUPPORTED CURRENTLY
-    # generate_hostvars: bool = False
-    # hostvars_directory: str = "host_vars"
+    generate_hostvars: bool = False
+    hostvars_directory: str = "host_vars"
 
 
 class AdaptersSettings(BaseSettings):
