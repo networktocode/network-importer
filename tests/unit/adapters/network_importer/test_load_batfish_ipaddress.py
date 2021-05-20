@@ -25,7 +25,7 @@ def test_load_batfish_ipaddress_w_ip_w_prefix_no_vlan(network_importer_base, sit
     adapter.add(dev_spine1)
     intf1 = Interface(name="et-0/0/0", device_name=dev_spine1.name)
 
-    config.load(config_data=dict(main=dict(import_ips=True, import_prefixes=True)))
+    config.load(config_data=dict(main=dict(backend="nautobot", import_ips=True, import_prefixes=True)))
 
     ipaddr = adapter.load_batfish_ip_address(site=site_sfo, device=dev_spine1, interface=intf1, address="10.10.10.1/24")
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
@@ -42,7 +42,7 @@ def test_load_batfish_ipaddress_wo_ip_wo_prefix(network_importer_base, site_sfo,
     adapter.add(dev_spine1)
     intf1 = Interface(name="et-0/0/0", device_name=dev_spine1.name)
 
-    config.load(config_data=dict(main=dict(import_ips=False, import_prefixes=False)))
+    config.load(config_data=dict(main=dict(backend="nautobot", import_ips=False, import_prefixes=False)))
 
     ipaddr = adapter.load_batfish_ip_address(site=site_sfo, device=dev_spine1, interface=intf1, address="10.10.10.1/24")
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
@@ -61,7 +61,7 @@ def test_load_batfish_ipaddress_w_ip_wo_prefix(network_importer_base, site_sfo, 
     adapter.add(dev_spine1)
     intf1 = Interface(name="et-0/0/0", device_name=dev_spine1.name)
 
-    config.load(config_data=dict(main=dict(import_ips=True, import_prefixes=False)))
+    config.load(config_data=dict(main=dict(backend="nautobot", import_ips=True, import_prefixes=False)))
 
     ipaddr = adapter.load_batfish_ip_address(site=site_sfo, device=dev_spine1, interface=intf1, address="10.10.10.1/24")
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
@@ -79,7 +79,7 @@ def test_load_batfish_ipaddress_wo_ip_w_prefix(network_importer_base, site_sfo, 
     adapter.add(dev_spine1)
     intf1 = Interface(name="et-0/0/0", device_name=dev_spine1.name)
 
-    config.load(config_data=dict(main=dict(import_ips=False, import_prefixes=True)))
+    config.load(config_data=dict(main=dict(backend="nautobot", import_ips=False, import_prefixes=True)))
 
     ipaddr = adapter.load_batfish_ip_address(site=site_sfo, device=dev_spine1, interface=intf1, address="10.10.10.1/24")
     prefix = Prefix(prefix="10.10.10.0/24", site_name="sfo")
