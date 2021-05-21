@@ -65,7 +65,7 @@ jobs:
         - "poetry config installer.parallel false"
         - "poetry install"
       script:
-        - "invoke nautobot_integration_tests"
+        - "invoke nautobot-integration-tests"
       env: "NAUTOBOT_VERSION=v1.0.1"
       python: 3.7
 
