@@ -1,17 +1,4 @@
-"""Settings definition for the network importer.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Settings definition for the network importer."""
 # pylint: disable=invalid-name,redefined-outer-name
 
 import os
@@ -23,6 +10,7 @@ import toml
 from pydantic import BaseSettings, ValidationError
 from typing_extensions import Literal
 
+from network_importer.exceptions import ConfigLoadFatalError
 
 SETTINGS = None
 
@@ -33,6 +21,17 @@ DEFAULT_DRIVERS_MAPPING = {
     "cisco_xr": "network_importer.drivers.cisco_default",
     "juniper_junos": "network_importer.drivers.juniper_junos",
     "arista_eos": "network_importer.drivers.arista_eos",
+}
+
+DEFAULT_BACKENDS = {
+    "netbox": {
+        "inventory": "NetBoxAPIInventory",
+        "adapter": "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter",
+    },
+    "nautobot": {
+        "inventory": "NautobotAPIInventory",
+        "adapter": "network_importer.adapters.nautobot_api.adapter.NautobotAPIAdapter",
+    },
 }
 
 # pylint: disable=global-statement
@@ -109,6 +108,10 @@ class MainSettings(BaseSettings):
 
     configs_directory: str = "configs"
 
+    backend: Optional[Literal["nautobot", "netbox"]]
+    """Only Netbox and Nautobot backend are included by default, if you want to use another backend
+    you must leave backend empty and define inventory.inventory_class and adapters.sot_class manually."""
+
     # NOT SUPPORTED CURRENTLY
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
@@ -120,7 +123,7 @@ class AdaptersSettings(BaseSettings):
     network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
     network_settings: Optional[dict]
 
-    sot_class: str = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
+    sot_class: Optional[str]
     sot_settings: Optional[dict]
 
 
@@ -137,7 +140,7 @@ class InventorySettings(BaseSettings):
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
     """
 
-    inventory_class: str = "NetBoxAPIInventory"
+    inventory_class: Optional[str]
     settings: Optional[dict]
 
     supported_platforms: List[str] = list()
@@ -159,33 +162,83 @@ class Settings(BaseSettings):
     inventory: InventorySettings = InventorySettings()
 
 
-def load(config_file_name="network_importer.toml", config_data=None):
-    """Load a configuration file in pyproject.toml format that contains the settings.
+def _configure_backend(settings: Settings):
+    """Configure the inventory and the SOT adapter for a given backend.
 
-    The settings for this app are expected to be in [tool.json_schema_testing] in TOML
-    if nothing is found in the config file or if the config file do not exist, the default values will be used.
+    The inventory and/or the adapter will be updated if:
+      - a backend provided is valid
+      - no value has been defined already
 
     Args:
-        config_file_name (str, optional): Name of the configuration file to load. Defaults to "pyproject.toml".
+        settings (Settings)
+
+    Returns:
+        Settings
+    """
+    if not settings.main.backend and (not settings.inventory.inventory_class or not settings.adapters.sot_class):
+        raise ConfigLoadFatalError(
+            "You must define a valid backend or assign inventory.inventory_class and adapters.sot_class manually."
+        )
+
+    if not settings.main.backend:
+        return settings
+
+    supported_backends = DEFAULT_BACKENDS.keys()
+    if settings.main.backend not in supported_backends:
+        raise ConfigLoadFatalError(f"backend value one of : {', '.join(supported_backends)}")
+
+    if not settings.inventory.inventory_class:
+        settings.inventory.inventory_class = DEFAULT_BACKENDS[settings.main.backend]["inventory"]
+
+    if not settings.adapters.sot_class:
+        settings.adapters.sot_class = DEFAULT_BACKENDS[settings.main.backend]["adapter"]
+
+    return settings
+
+
+def load(config_file_name="network_importer.toml", config_data=None):
+    """Load configuration.
+
+    Configuration is loaded from a file in network_importer.toml format that contains the settings,
+    or from a dictionary of those settings passed in as "config_data"
+
+    Args:
+        config_file_name (str, optional): Name of the configuration file to load. Defaults to "network_importer.toml".
         config_data (dict, optional): dict to load as the config file instead of reading the file. Defaults to None.
     """
     global SETTINGS
 
     if config_data:
-        SETTINGS = Settings(**config_data)
+        SETTINGS = _configure_backend(Settings(**config_data))
         return
 
     if os.path.exists(config_file_name):
         config_string = Path(config_file_name).read_text()
         config_tmp = toml.loads(config_string)
-
-        try:
-            SETTINGS = Settings(**config_tmp)
-            return
-        except ValidationError as e:
-            print(f"Configuration not valid, found {len(e.errors())} error(s)")
-            for error in e.errors():
-                print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
-            sys.exit(1)
+        SETTINGS = _configure_backend(Settings(**config_tmp))
+        return
 
     SETTINGS = Settings()
+
+
+def load_and_exit(config_file_name="network_importer.toml", config_data=None):
+    """Calls load, but wraps it in a try except block.
+
+    This is done to handle a ValidationError which is raised when settings are specified but invalid.
+    In such cases, a message is printed to the screen indicating the settings which don't pass validation.
+
+    Args:
+        config_file_name (str, optional): [description]. Defaults to "network_importer.toml".
+        config_data (dict, optional): [description]. Defaults to None.
+    """
+    try:
+        load(config_file_name=config_file_name, config_data=config_data)
+    except ValidationError as err:
+        print(f"Configuration not valid, found {len(err.errors())} error(s)")
+        for error in err.errors():
+            print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+        sys.exit(1)
+    except ConfigLoadFatalError as err:
+        print("Configuration not valid")
+        print(f"  {err}")
+        sys.exit(1)

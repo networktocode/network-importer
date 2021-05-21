@@ -112,7 +112,7 @@ def test_load_batfish_interface_loopback(network_importer_base, site_sfo, dev_sp
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=LOOPBACK_1)
 
@@ -128,7 +128,7 @@ def test_load_batfish_interface_phy_intf_ether_std(network_importer_base, site_s
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=ETHERNET_1)
 
@@ -144,7 +144,7 @@ def test_load_batfish_interface_intf_ether_sub(network_importer_base, site_sfo, 
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=L3_SUB_INTF_1)
 
@@ -163,7 +163,7 @@ def test_load_batfish_interface_intf_lag_member(network_importer_base, site_sfo,
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=LAG_MEMBER_1)
 
@@ -180,7 +180,7 @@ def test_load_batfish_interface_intf_lag(network_importer_base, site_sfo, dev_sp
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=LAG_1)
 
@@ -197,7 +197,7 @@ def test_add_batfish_interface_intf_serial(network_importer_base, site_sfo, dev_
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=SERIAL_1)
 
@@ -216,7 +216,7 @@ def test_load_batfish_interface_description(network_importer_base, site_sfo, dev
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     data = LOOPBACK_1
     data["description"] = "  intf1 description  "
@@ -234,7 +234,7 @@ def test_load_batfish_intf_no_import_vlans_sub_intf(network_importer_base, site_
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load(config_data=dict(main=dict(import_vlans=False)))
+    config.load(config_data=dict(main=dict(import_vlans=False, backend="nautobot")))
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=L3_SUB_INTF_1)
 
     assert isinstance(intf, Interface)
@@ -248,7 +248,7 @@ def test_load_batfish_intf_no_import_vlans_lag(network_importer_base, site_sfo, 
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load(config_data=dict(main=dict(import_vlans=False)))
+    config.load(config_data=dict(main=dict(import_vlans=False, backend="nautobot")))
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=LAG_1)
 
     assert isinstance(intf, Interface)
@@ -262,7 +262,7 @@ def test_load_batfish_intf_no_import_vlans_lag_members(network_importer_base, si
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
 
-    config.load(config_data=dict(main=dict(import_vlans=False)))
+    config.load(config_data=dict(main=dict(import_vlans=False, backend="nautobot")))
     intf = adapter.load_batfish_interface(site=site_sfo, device=dev_spine1, intf=LAG_MEMBER_1)
 
     assert isinstance(intf, Interface)

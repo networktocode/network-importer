@@ -46,7 +46,7 @@ def main():
 
 def init(config_file):
     """Init Network-Importer."""
-    config.load(config_file_name=config_file)
+    config.load_and_exit(config_file_name=config_file)
     perf.init()
 
     # ------------------------------------------------------------

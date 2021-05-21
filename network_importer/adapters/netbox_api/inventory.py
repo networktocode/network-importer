@@ -2,9 +2,11 @@
 
 # pylint: disable=no-member,too-many-arguments,unused-argument,too-many-branches,too-many-statements
 
+import sys
 from typing import Any, List
 import requests
 import pynetbox
+from pydantic import ValidationError
 
 from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -21,7 +23,13 @@ class NetBoxAPIInventory(NetworkImporterInventory):
         """Nornir Inventory Plugin for Netbox API."""
         super().__init__(*args, **kwargs)
 
-        self.settings = InventorySettings(**self.settings)
+        try:
+            self.settings = InventorySettings(**self.settings)
+        except ValidationError as exc:
+            print(f"Inventory Settings are not valid, found {len(exc.errors())} error(s)")
+            for error in exc.errors():
+                print(f"  inventory/{'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+            sys.exit(1)
 
         # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
