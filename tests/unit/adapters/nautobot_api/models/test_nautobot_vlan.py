@@ -12,7 +12,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def test_vlan_create_from_pynautobot(nautobot_api_base):
-    config.load(config_data=dict())
     api = pynautobot.api(url="http://mock_nautobot", token="1234567890")
 
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/vlan_101_no_tag.json"))
