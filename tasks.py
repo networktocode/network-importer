@@ -386,7 +386,7 @@ def compose_nautobot(context, var_envs):
     """
     # Copy the file from tests/docker-compose.test.yml to the tmp directory to be executed from there
     context.run(
-        f"cp tests/docker-compose.text.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
+        "cp tests/docker-compose.text.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
     )
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
     context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
