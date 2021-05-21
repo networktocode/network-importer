@@ -5,7 +5,6 @@ import pynautobot
 import pytest
 import yaml
 from diffsync.exceptions import ObjectNotFound
-import network_importer.config as config
 from network_importer.adapters.nautobot_api.models import NautobotDevice, NautobotVlan
 
 ROOT = os.path.abspath(os.path.dirname(__file__))

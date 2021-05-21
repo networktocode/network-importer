@@ -4,7 +4,6 @@ import yaml
 import pynautobot
 
 from network_importer.adapters.nautobot_api.models import NautobotIPAddress
-import network_importer.config as config
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
