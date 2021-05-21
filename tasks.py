@@ -321,7 +321,7 @@ def configure_netbox(context, example_name, var_envs):
     context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.netbox_setup.yaml", pty=True, env=var_envs)
 
 
-def run_network_importer(context, example_name, var_envs):
+def run_network_importer(context, example_name, var_envs, config_file="network_importer.toml"):
     """Run Network Importer.
 
     Args:
@@ -329,10 +329,10 @@ def run_network_importer(context, example_name, var_envs):
         example_name (str): Name of the example directory to use
         var_envs (dict): Environment variables to pass to the command runner
     """
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer check", pty=True, env=var_envs)
-    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply", pty=True, env=var_envs)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer check  --config {config_file}", pty=True, env=var_envs)
+    context.run(f"cd {PWD}/examples/{example_name} && network-importer apply --config {config_file}", pty=True, env=var_envs)
     output_last_check = context.run(
-        f"cd {PWD}/examples/{example_name} && network-importer check", pty=True, env=var_envs
+        f"cd {PWD}/examples/{example_name} && network-importer check --config {config_file}", pty=True, env=var_envs
     )
 
     if "no diffs" not in output_last_check.stdout:
@@ -414,6 +414,31 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "NAUTOBOT_VERIFY_SSL": TRAVIS_NAUTOBOT_VERIFY_SSL,
         "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
+        # Nautobot Environments
+        "NAUTOBOT_HIDE_RESTRICTED_UI": "True",
+        "NAUTOBOT_CREATE_SUPERUSER": "true",
+        "NAUTOBOT_SUPERUSER_NAME": "admin",
+        "NAUTOBOT_SUPERUSER_EMAIL": "admin@example.com",
+        "NAUTOBOT_SUPERUSER_PASSWORD": "admin",
+        "NAUTOBOT_SUPERUSER_API_TOKEN": "0123456789abcdef0123456789abcdef01234567",
+        "NAUTOBOT_ALLOWED_HOSTS": "*"
+        "NAUTOBOT_CHANGELOG_RETENTION": "0"
+        "NAUTOBOT_CONFIG": "/opt/nautobot/nautobot_config.py"
+        "NAUTOBOT_DB_HOST": "postgres"
+        "NAUTOBOT_DB_NAME": "nautobot"
+        "NAUTOBOT_DB_PASSWORD": "decinablesprewad"
+        "NAUTOBOT_DB_USER": "nautobot"
+        "NAUTOBOT_MAX_PAGE_SIZE": "0"
+        "NAUTOBOT_NAPALM_TIMEOUT": "5"
+        "NAUTOBOT_REDIS_HOST": "redis-queue"
+        "NAUTOBOT_REDIS_PASSWORD": "decinablesprewad"
+        "NAUTOBOT_CACHEOPS_REDIS": "redis://:decinablesprewad@redis-cacheops:6379/0"
+        "NAUTOBOT_REDIS_PORT": "6379"
+        "NAUTOBOT_SECRET_KEY": "012345678901234567890123456789012345678901234567890123456789"
+        "PGPASSWORD": "decinablesprewad"
+        "POSTGRES_DB": "nautobot"
+        "POSTGRES_PASSWORD": "decinablesprewad"
+        "POSTGRES_USER": "nautobot"
     }
 
     compose_nautobot(context, var_envs=envs)
@@ -421,7 +446,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
     time.sleep(90)
     for example in TRAVIS_EXAMPLES:
         configure_nautobot(context, example, var_envs=envs)
-        run_network_importer(context, example, var_envs=envs)
+        run_network_importer(context, example, var_envs=envs, config_file="network_importer_nautobot.toml")
     print(
         f"All integration tests have passed for Nautobot {nautobot_ver}"
     )
