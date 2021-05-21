@@ -329,6 +329,7 @@ def run_network_importer(context, example_name, var_envs, config_file="network_i
         context (obj): Used to run specific commands
         example_name (str): Name of the example directory to use
         var_envs (dict): Environment variables to pass to the command runner
+        config_file (str): Name of the configuration file. Optional, defaults to `network_importer.toml`
     """
     context.run(
         f"cd {PWD}/examples/{example_name} && network-importer check  --config {config_file}", pty=True, env=var_envs
