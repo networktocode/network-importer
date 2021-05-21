@@ -65,7 +65,7 @@ def dispatch_get_neighbors(task, **kwargs):
 
 def test_base(nornir):
     """Validate that the processor is working as expected with standard inputs."""
-    config.load()
+    config.load(config_data=dict(main=dict(backend="nautobot")))
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea", port="intfa"))
@@ -84,7 +84,7 @@ def test_base(nornir):
 
 def test_cleanup_fqdn(nornir):
     """Validate that we are cleaning up the FQDN from device name."""
-    config.load(config_data={"network": {"fqdns": ["test.com"]}})
+    config.load(config_data=dict(main=dict(backend="nautobot"), network=dict(fqdns=["test.com"])))
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea.test.com", port="intfa"))
@@ -103,7 +103,7 @@ def test_cleanup_fqdn(nornir):
 
 def test_cleanup_mac_address(nornir):
     """Validate that we are removing neighbor with a mac address name."""
-    config.load(config_data={"network": {"fqdns": ["test.com"]}})
+    config.load(config_data=dict(main=dict(backend="nautobot"), network=dict(fqdns=["test.com"])))
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea.test.com", port="intfa"))
@@ -122,7 +122,7 @@ def test_cleanup_mac_address(nornir):
 
 def test_cleanup_port(nornir):
     """Validate that we are cleaning up the port from port name."""
-    config.load(config_data={"network": {"fqdns": ["test.com"]}})
+    config.load(config_data=dict(main=dict(backend="nautobot"), network=dict(fqdns=["test.com"])))
 
     neighbors = Neighbors()
     neighbors.neighbors["intfa"].append(Neighbor(hostname="devicea", port="HundredGigE0/0/0/0"))

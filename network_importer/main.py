@@ -1,22 +1,11 @@
-"""main class for the network importer.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""main class for the network importer."""
 import logging
 import os
 import sys
 import warnings
 import importlib
+
+from pydantic import ValidationError
 
 import network_importer.config as config
 from network_importer.exceptions import AdapterLoadFatalError
@@ -119,6 +108,11 @@ class NetworkImporter:
         try:
             self.sot = sot_adapter(nornir=self.nornir, settings=sot_settings)
             self.sot.load()
+        except ValidationError as exc:
+            print(f"Configuration not valid, found {len(exc.errors())} error(s)")
+            for error in exc.errors():
+                print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+            sys.exit(1)
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)
             sys.exit(1)
@@ -132,6 +126,11 @@ class NetworkImporter:
         try:
             self.network = network_adapter(nornir=self.nornir, settings=network_adapter_settings)
             self.network.load()
+        except ValidationError as exc:
+            print(f"Configuration not valid, found {len(exc.errors())} error(s)")
+            for error in exc.errors():
+                print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+            sys.exit(1)
         except AdapterLoadFatalError as exc:
             LOGGER.error("Unable to load the SOT Adapter : %s", exc)
             sys.exit(1)

@@ -2,8 +2,10 @@
 # Disable too-many-arguments and too-many-locals pylint tests for this file. These are both necessary
 # pylint: disable=R0913,R0914,E1101,W0613
 
+import sys
 from typing import Any, List
 import pynautobot
+from pydantic import ValidationError
 
 from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -22,7 +24,13 @@ class NautobotAPIInventory(NetworkImporterInventory):
             *args, **kwargs,
         )
 
-        self.settings = InventorySettings(**self.settings)
+        try:
+            self.settings = InventorySettings(**self.settings)
+        except ValidationError as exc:
+            print(f"Inventory Settings are not valid, found {len(exc.errors())} error(s)")
+            for error in exc.errors():
+                print(f"  inventory/{'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+            sys.exit(1)
 
         # Build Filter based on inventory_settings filter and on limit
         self.filter_parameters = {}
