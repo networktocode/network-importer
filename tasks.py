@@ -392,6 +392,9 @@ def compose_nautobot(context, var_envs):
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
     context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
 
+    # Print out the ports listening to verify it is running
+    context.run("ss -ltn")
+
 
 def configure_nautobot(context, example_name, var_envs):
     """Configure Netbox instance with Ansible.
