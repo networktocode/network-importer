@@ -404,7 +404,9 @@ def configure_nautobot(context, example_name, var_envs):
         example_name (str): Name of the example directory to use
         var_envs (dict): Environment variables to pass to the command runner
     """
-    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv", pty=True, env=var_envs)
+    context.run(
+        f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv", pty=True, env=var_envs
+    )
 
 
 @task
