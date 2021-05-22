@@ -389,6 +389,9 @@ def compose_nautobot(context, var_envs):
     context.run(
         f"cp  {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
     )
+    context.run(
+        f"cp  {PWD}/tests/.creds.tests.env /tmp/.creds.tests.env", pty=True, env=var_envs, 
+    )
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
     context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
 
@@ -424,31 +427,6 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "NAUTOBOT_VERIFY_SSL": TRAVIS_NAUTOBOT_VERIFY_SSL,
         "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
-        # Nautobot Environments
-        "NAUTOBOT_HIDE_RESTRICTED_UI": "True",
-        "NAUTOBOT_CREATE_SUPERUSER": "true",
-        "NAUTOBOT_SUPERUSER_NAME": "admin",
-        "NAUTOBOT_SUPERUSER_EMAIL": "admin@example.com",
-        "NAUTOBOT_SUPERUSER_PASSWORD": "admin",
-        "NAUTOBOT_SUPERUSER_API_TOKEN": TRAVIS_NAUTOBOT_ADDRESS,
-        "NAUTOBOT_ALLOWED_HOSTS": "*",
-        "NAUTOBOT_CHANGELOG_RETENTION": "0",
-        "NAUTOBOT_CONFIG": "/opt/nautobot/nautobot_config.py",
-        "NAUTOBOT_DB_HOST": "postgres",
-        "NAUTOBOT_DB_NAME": "nautobot",
-        "NAUTOBOT_DB_PASSWORD": "decinablesprewad",
-        "NAUTOBOT_DB_USER": "nautobot",
-        "NAUTOBOT_MAX_PAGE_SIZE": "0",
-        "NAUTOBOT_NAPALM_TIMEOUT": "5",
-        "NAUTOBOT_REDIS_HOST": "redis-queue",
-        "NAUTOBOT_REDIS_PASSWORD": "decinablesprewad",
-        "NAUTOBOT_CACHEOPS_REDIS": "redis://:decinablesprewad@redis-cacheops:6379/0",
-        "NAUTOBOT_REDIS_PORT": "6379",
-        "NAUTOBOT_SECRET_KEY": "012345678901234567890123456789012345678901234567890123456789",
-        "PGPASSWORD": "decinablesprewad",
-        "POSTGRES_DB": "nautobot",
-        "POSTGRES_PASSWORD": "decinablesprewad",
-        "POSTGRES_USER": "nautobot",
     }
 
     compose_nautobot(context, var_envs=envs)
