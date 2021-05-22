@@ -390,7 +390,7 @@ def compose_nautobot(context, var_envs):
         f"cp {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
     )
     context.run(
-        f"cp {PWD}/tests/.creds.tests.env /tmp/.creds.tests.env", pty=True, env=var_envs,
+        f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
     )
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
     context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
