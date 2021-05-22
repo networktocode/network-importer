@@ -66,7 +66,7 @@ jobs:
         - "poetry install"
       script:
         - "invoke nautobot-integration-tests"
-      env: "NAUTOBOT_VERSION=v1.0.1"
+      env: "NAUTOBOT_VERSION=1.0.1"
       python: 3.7
 
     - stage: "integration"
