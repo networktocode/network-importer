@@ -404,7 +404,7 @@ def configure_nautobot(context, example_name, var_envs):
         example_name (str): Name of the example directory to use
         var_envs (dict): Environment variables to pass to the command runner
     """
-    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml", pty=True, env=var_envs)
+    context.run(f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv", pty=True, env=var_envs)
 
 
 @task
@@ -428,7 +428,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "NAUTOBOT_SUPERUSER_NAME": "admin",
         "NAUTOBOT_SUPERUSER_EMAIL": "admin@example.com",
         "NAUTOBOT_SUPERUSER_PASSWORD": "admin",
-        "NAUTOBOT_SUPERUSER_API_TOKEN": "0123456789abcdef0123456789abcdef01234567",
+        "NAUTOBOT_SUPERUSER_API_TOKEN": TRAVIS_NAUTOBOT_ADDRESS,
         "NAUTOBOT_ALLOWED_HOSTS": "*",
         "NAUTOBOT_CHANGELOG_RETENTION": "0",
         "NAUTOBOT_CONFIG": "/opt/nautobot/nautobot_config.py",

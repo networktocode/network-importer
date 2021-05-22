@@ -18,6 +18,11 @@
     nautobottoken: "{{ lookup('env','NAUTOBOT_SUPERUSER_API_TOKEN') }}"
 
   tasks:
+    - name: "00 DEBUG VARIABLES"
+      debug:
+        msg:
+          - "Nautobot URL: {{ nautobot_address }}"
+
     - name: "01 CREATE REGION IN NAUTOBOT"
       networktocode.nautobot.region:
         url: "{{ nautobot_address }}"

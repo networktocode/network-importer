@@ -14,6 +14,12 @@
     nautobot_token: "{{ lookup('env','NAUTOBOT_SUPERUSER_API_TOKEN') }}"
 
   tasks:
+  tasks:
+    - name: "00 DEBUG VARIABLES"
+      debug:
+        msg:
+          - "Nautobot URL: {{ nautobot_address }}"
+
     - name: "05 CREATE MANUFACTURER IN NAUTOBOT"
       networktocode.nautobot.manufacturer:
         url: "{{ nautobot_address }}"
