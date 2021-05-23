@@ -11,7 +11,7 @@
       - {name: "eos", manufacturer: "arista"}
     site: "ni_spine_leaf_01"
     nautobot_address: "{{ lookup('env','NAUTOBOT_ADDRESS') }}"
-    nautobot_token: "{{ lookup('env','NAUTOBOT_SUPERUSER_API_TOKEN') }}"
+    nautobot_token: "{{ lookup('env','NAUTOBOT_TOKEN') }}"
 
   tasks:
     - name: "00 DEBUG VARIABLES"
