@@ -390,6 +390,9 @@ def compose_nautobot(context, var_envs):
         f"cp {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
     )
     context.run(
+        f"cp {PWD}/tests/ansible.cfg /tmp/ansible.cfg", pty=True, env=var_envs,
+    )
+    context.run(
         f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
     )
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
@@ -408,7 +411,7 @@ def configure_nautobot(context, example_name, var_envs):
         var_envs (dict): Environment variables to pass to the command runner
     """
     context.run(
-        f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv", pty=True, env=var_envs
+        f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
     )
 
 
@@ -427,6 +430,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "NAUTOBOT_VERIFY_SSL": TRAVIS_NAUTOBOT_VERIFY_SSL,
         "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
+        "ANSIBLE_CONFIG": "/tmp/ansible.cfg",
     }
 
     compose_nautobot(context, var_envs=envs)
