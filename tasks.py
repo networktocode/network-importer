@@ -430,7 +430,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "NAUTOBOT_VERIFY_SSL": TRAVIS_NAUTOBOT_VERIFY_SSL,
         "BATFISH_ADDRESS": TRAVIS_BATFISH_ADDRESS,
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
-        "ANSIBLE_CONFIG": "/tmp/ansible.cfg",
+        "ANSIBLE_CONFIG": "/tmp/ansible.cfg",  # nosec
     }
 
     compose_nautobot(context, var_envs=envs)
