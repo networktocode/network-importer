@@ -66,6 +66,8 @@ jobs:
         - "poetry install"
       script:
         - "invoke nautobot-integration-tests"
+      after_script:
+        - "cd /tmp && docker-compose logs"
       env: "NAUTOBOT_VERSION=1.0.1"
       python: 3.7
 
