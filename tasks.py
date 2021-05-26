@@ -407,6 +407,10 @@ def configure_nautobot(context, example_name, var_envs):
         example_name (str): Name of the example directory to use
         var_envs (dict): Environment variables to pass to the command runner
     """
+    # Sleep for a minute to allow all systems to be up and running
+    context.run(
+        f"sleep 60", pty=True, env=var_envs
+    )
     context.run(
         f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
     )
