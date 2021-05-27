@@ -60,7 +60,7 @@ jobs:
         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
       before_script:
         - "pip install --upgrade pip wheel"
-        - "pip install invoke toml poetry pynautobot ansible-core==2.11.1"
+        - "pip install invoke toml poetry pynautobot ansible==2.10.7"
         - "ansible-galaxy collection install networktocode.nautobot"
         - "poetry config virtualenvs.create false"
         - "poetry config installer.parallel false"
