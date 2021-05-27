@@ -2,7 +2,7 @@
 version: "3.7"
 services:
   nginx:
-    image: nginx:1.19
+    image: "nginx:1.19"
     ports:
       - "8000:8080"  # Configured in F5 Load balancer to foward to port 8080 over HTTPS
     volumes:
