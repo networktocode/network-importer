@@ -60,7 +60,7 @@ TRAVIS_BATFISH_ADDRESS = "localhost"
 TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
 TRAVIS_EXAMPLES = ["spine_leaf_01", "multi_site_02"]
 TRAVIS_BATFISH_VERSION = "2020.10.08.667"
-TRAVIS_NAUTOBOT_ADDRESS = "https://localhost:8443"
+TRAVIS_NAUTOBOT_ADDRESS = "http://localhost:8080"
 TRAVIS_NAUTOBOT_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
 TRAVIS_NAUTOBOT_VERIFY_SSL = "false"
 NAUTOBOT_VERSION = os.getenv("NAUTOBOT_VERSION", "v1.0.1")
@@ -393,6 +393,7 @@ def compose_nautobot(context, var_envs):
         f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
     )
     context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
+    context.run("cd /tmp && docker-compose down", pty=True, env=var_envs)
     context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
 
     # Print out the ports listening to verify it is running
