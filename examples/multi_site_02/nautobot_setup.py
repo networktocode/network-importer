@@ -36,6 +36,7 @@ SITE_LIST = ["hou", "nyc", "sjc"]
 
 DEVICE_ROLES = ["spine", "leaf", "router"]
 
+
 def get_or_create(object_endpoint, search_key, search_term, **kwargs):
     created = False
     search = {search_key: search_term}
@@ -56,10 +57,7 @@ def main():
     # Create region
     for region in ["ni_multi_site_02"]:
         region_obj, _ = get_or_create(
-            object_endpoint=nautobot.dcim.regions,
-            search_key="name",
-            search_term=region,
-            slug=region.lower()
+            object_endpoint=nautobot.dcim.regions, search_key="name", search_term=region, slug=region.lower()
         )
 
     mfg_map = dict()
@@ -87,7 +85,7 @@ def main():
             slug=item["name"],
             manufacturer=mfg.id,
         )
-        
+
         device_type_map[item["name"]] = device_type
         if created:
             print(f"Create Device Type: {item['name']}")
@@ -99,10 +97,7 @@ def main():
     # Create device role
     for dev_role in DEVICE_ROLES:
         device_role_obj, created = get_or_create(
-            object_endpoint=nautobot.dcim.device_roles,
-            search_key="name",
-            search_term=dev_role,
-            slug=dev_role,
+            object_endpoint=nautobot.dcim.device_roles, search_key="name", search_term=dev_role, slug=dev_role,
         )
 
         if created:
@@ -119,11 +114,7 @@ def main():
     for site in SITE_LIST:
         # Check if the device is created
         site_obj, created = get_or_create(
-            object_endpoint=nautobot.dcim.sites,
-            search_key="name",
-            search_term=site,
-            slug=site.lower(),
-            status="Active"
+            object_endpoint=nautobot.dcim.sites, search_key="name", search_term=site, slug=site.lower(), status="Active"
         )
 
         if created:
