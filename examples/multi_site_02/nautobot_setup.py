@@ -64,7 +64,7 @@ def get_or_create(object_endpoint, search_key, search_term, **kwargs):
 def main():
     """Main code execution block."""
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-    nautobot = pynautobot.api(url=os.getenv("NAUTOBOT_ADDRESS"), token=os.getenv("NAUTOBOT_SUPERUSER_API_TOKEN"))
+    nautobot = pynautobot.api(url=os.getenv("NAUTOBOT_ADDRESS"), token=os.getenv("NAUTOBOT_TOKEN"))
     nautobot.http_session.verify = False
 
     # Create region
