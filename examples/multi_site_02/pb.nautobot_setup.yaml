@@ -37,6 +37,7 @@
           run_once: true
           tags: ["region"]
           retries: 5
+          delay: 3
 
         - name: "05 CREATE MANUFACTURER IN NAUTOBOT"
           networktocode.nautobot.manufacturer:
@@ -49,6 +50,7 @@
           run_once: true
           tags: ["manufacturer", "device_type"]
           retries: 5
+          delay: 3
 
         - name: "10 CREATE DEVICE TYPE IN NAUTOBOT"
           networktocode.nautobot.device_type:
@@ -67,6 +69,7 @@
           run_once: true
           tags: ["device_type"]
           retries: 5
+          delay: 3
 
         - name: "15 CREATE DEVICE ROLE IN NAUTOBOT"
           networktocode.nautobot.device_role:
@@ -81,6 +84,7 @@
           run_once: true
           tags: ["device_role"]
           retries: 5
+          delay: 3
 
         - name: "20 CREATE SITE IN NAUTOBOT"
           networktocode.nautobot.site:
@@ -96,6 +100,7 @@
           run_once: true
           tags: ["device_site"]
           retries: 5
+          delay: 3
 
         - name: "25 CREATE DEVICES IN NAUTOBOT"
           networktocode.nautobot.device:
@@ -111,3 +116,4 @@
             validate_certs: False
           tags: ["device"]
           retries: 5
+          delay: 3
