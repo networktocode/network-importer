@@ -37,8 +37,8 @@ services:
       - "/tmp/.creds.tests.env"
   postgres:
     image: "postgres:10"
-    volumes:
-      - "postgres_data:/var/lib/postgresql/data"
+    # volumes:
+    #  - "postgres_data:/var/lib/postgresql/data"
     restart: "unless-stopped"
     env_file:
       - "/tmp/.creds.tests.env"
