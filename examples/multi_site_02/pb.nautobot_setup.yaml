@@ -33,6 +33,7 @@
             data:
               name: "{{ region }}"
             state: "present"
+            validate_certs: False
           run_once: true
           tags: ["region"]
           retries: 5
@@ -61,6 +62,7 @@
               u_height: 1
               is_full_depth: false
             state: "present"
+            validate_certs: False
           loop: "{{ platforms }}"
           run_once: true
           tags: ["device_type"]
@@ -74,6 +76,7 @@
               name: "{{ item }}"
               color: "0000FF"
             state: "present"
+            validate_certs: False
           loop: "{{ device_roles }}"
           run_once: true
           tags: ["device_role"]
@@ -88,6 +91,7 @@
               region: "{{ region }}"
               status: "Active"
             state: "present"
+            validate_certs: False
           loop: "{{ sites }}"
           run_once: true
           tags: ["device_site"]
@@ -104,5 +108,6 @@
               site: "{{ site_prefix}}_{{site }}"
               status: "Active"
             state: "present"
+            validate_certs: False
           tags: ["device"]
           retries: 5
