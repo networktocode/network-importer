@@ -4,6 +4,9 @@ import urllib3
 
 import pynautobot
 
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-branches
+
 PLATFORMS = [
     {"name": "junos", "manufacturer": "juniper"},
     {"name": "iosxr", "manufacturer": "cisco"},
@@ -25,6 +28,16 @@ DEVICE_ROLES = ["spine", "leaf"]
 
 
 def get_or_create(object_endpoint, search_key, search_term, **kwargs):
+    """Get or create object with pynautobot.
+
+    Args:
+        object_endpoint (pynautobot Endpoint): Endpoint to make get and post requests to
+        search_key (str): Key to use within the get request, such as name or model
+        search_term (str): What is being searched for
+
+    Returns:
+        obj (pynautobot object), created (bool): Object being created, and whether or not it was created
+    """
     created = False
     search = {search_key: search_term}
     obj = object_endpoint.get(**search)
@@ -43,9 +56,14 @@ def main():
 
     # Create region
     for region in ["ni_multi_site_02"]:
-        region_obj, _ = get_or_create(
+        _, created = get_or_create(
             object_endpoint=nautobot.dcim.regions, search_key="name", search_term=region, slug=region.lower()
         )
+
+        if created:
+            print(f"Created region: {region}")
+        else:
+            print(f"Region already exists: {region}")
 
     mfg_map = dict()
     device_type_map = dict()
@@ -113,7 +131,7 @@ def main():
 
     # Create Devices
     for dev in DEVICE_LIST:
-        device, created = get_or_create(
+        _, created = get_or_create(
             object_endpoint=nautobot.dcim.devices,
             search_key="name",
             search_term=dev["name"],
