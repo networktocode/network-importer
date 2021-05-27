@@ -34,7 +34,7 @@ services:
   postgres:
     image: "postgres:10"
     volumes:
-     - "postgres_data:/var/lib/postgresql/data"
+      - "postgres_data:/var/lib/postgresql/data"
     env_file:
       - "/tmp/.creds.tests.env"
 volumes:
