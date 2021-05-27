@@ -388,6 +388,7 @@ class NautobotAPIAdapter(BaseAdapter):
                 device_z_name=nb_cable.termination_b.device.name,
                 interface_z_name=nb_cable.termination_b.name,
                 remote_id=nb_cable.id,
+                status="active"
             )
 
             try:
