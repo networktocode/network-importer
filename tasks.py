@@ -60,7 +60,7 @@ TRAVIS_BATFISH_ADDRESS = "localhost"
 TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
 TRAVIS_EXAMPLES = ["spine_leaf_01", "multi_site_02"]
 TRAVIS_BATFISH_VERSION = "2020.10.08.667"
-TRAVIS_NAUTOBOT_ADDRESS = "http://localhost:8080"
+TRAVIS_NAUTOBOT_ADDRESS = "http://localhost:8000"
 TRAVIS_NAUTOBOT_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
 TRAVIS_NAUTOBOT_VERIFY_SSL = "false"
 NAUTOBOT_VERSION = os.getenv("NAUTOBOT_VERSION", "v1.0.1")
@@ -388,6 +388,9 @@ def compose_nautobot(context, var_envs):
     # Copy the file from tests/docker-compose.test.yml to the tmp directory to be executed from there
     context.run(
         f"cp {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
+    )
+    context.run(
+        f"cp {PWD}/tests/nginx.conf /tmp/nginx.conf", pty=True, env=var_envs,
     )
     context.run(
         f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
