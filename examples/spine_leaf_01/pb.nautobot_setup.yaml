@@ -64,6 +64,7 @@
         token: "{{ nautobot_token }}"
         data:
           name: "{{ site }}"
+          status: "Active"
         state: "present"
       run_once: true
       tags: ["device_site"]
@@ -77,5 +78,6 @@
           device_type: "{{ platform }}"
           device_role: "{{ role }}"
           site: "{{ site }}"
+          status: "Active"
         state: "present"
       tags: ["device"]
