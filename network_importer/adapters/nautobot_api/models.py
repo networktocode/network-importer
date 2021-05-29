@@ -681,7 +681,7 @@ class NautobotCable(Cable):
                 termination_b_type="dcim.interface",
                 termination_a_id=interface_a.remote_id,
                 termination_b_id=interface_z.remote_id,
-                status="connected"
+                status="connected",
             )
         except pynautobot.core.query.RequestError as exc:
             LOGGER.warning("Unable to create Cable %s in %s (%s)", ids, diffsync.name, exc.error)
