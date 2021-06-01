@@ -491,6 +491,9 @@ class NautobotVlan(Vlan):
         site = self.diffsync.get(self.diffsync.site, identifier=self.site_name)
         nb_params["site"] = site.remote_id
 
+        # Add Status
+        nb_params["status"] = "Active"
+
         if "associated_devices" in attrs:
             nb_params["tags"] = []
             for device_name in attrs["associated_devices"]:
