@@ -7,16 +7,10 @@ The extensibility principles leverages Python object extensibility. It's recomme
 You can use [setuptools](https://python-packaging-tutorial.readthedocs.io/en/latest/setup_py.html) or [Poetry](http://blog.networktocode.com/post/upgrade-your-python-project-with-poetry/) to quickly create a new python package.
 
 There are different ways the Network Importer can be extended depending on what you are trying to achieve:
-- [Extensibility](#extensibility)
   - [Extend the default drivers](#extend-the-default-drivers)
   - [Extend an existing adapter or provide your own](#extend-an-existing-adapter-or-provide-your-own)
-    - [Extend an existing Adapter](#extend-an-existing-adapter)
-    - [Create a new adapter](#create-a-new-adapter)
-    - [Use your own adapter](#use-your-own-adapter)
+  - [Extend the default inventory](#extend-the-default-inventory)
   - [Extend the default models](#extend-the-default-models)
-    - [Extend the default site model (hidden attributes)](#extend-the-default-site-model-hidden-attributes)
-      - [Create a custom adapter to attach your custom model](#create-a-custom-adapter-to-attach-your-custom-model)
-    - [Extend the default site model (main attributes)](#extend-the-default-site-model-main-attributes)
 
 ## Extend the default drivers
 
@@ -127,6 +121,14 @@ Once your custom adapter is installed, you need to update your configuration fil
 network_class = "my_python_package.adapters.MyAdapter"
 sot_class = "my_python_package.adapters.MyOtherAdapter"
 ```
+
+## Extend the default inventory
+
+It's possible to extend the default inventory or provide your own inventory.
+
+A Network Importer inventory must be a valid Nornir 3.x inventory and it must be based of the NetworkImporterInventory class.
+
+Once you have created your own inventory, you need to register it with Nornir in order fpr Nornir to successfully load it. You than need to define your inventory name in [inventory.inventory_class]
 
 ## Extend the default models
 

@@ -32,23 +32,23 @@ You can validate the status of your inventory with the command `network-importer
 
 ```
 # network-importer inventory
-                    Device Inventory (all)
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┓
-┃ Device                     ┃ Platform ┃ Reachable ┃ Reason ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━┩
-│ jcy-bb-01.infra.ntc.com    │ cisco    │ True      │        │
-│ jcy-rtr-01.infra.ntc.com   │ cisco    │ True      │        │
-│ jcy-rtr-02.infra.ntc.com   │ cisco    │ True      │        │
-│ jcy-spine-01.infra.ntc.com │ cisco    │ True      │        │
-│ jcy-spine-02.infra.ntc.com │ cisco    │ True      │        │
-│ nyc-bb-01.infra.ntc.com    │ juniper  │ True      │        │
-│ nyc-leaf-01.infra.ntc.com  │ arista   │ True      │        │
-│ nyc-leaf-02.infra.ntc.com  │ arista   │ True      │        │
-│ nyc-rtr-01.infra.ntc.com   │ juniper  │ True      │        │
-│ nyc-rtr-02.infra.ntc.com   │ juniper  │ True      │        │
-│ nyc-spine-01.infra.ntc.com │ arista   │ True      │        │
-│ nyc-spine-02.infra.ntc.com │ arista   │ True      │        │
-└────────────────────────────┴──────────┴───────────┴────────┘
+                                           Device Inventory (all)
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┓
+┃ Device                     ┃ Platform      ┃ Driver                                 ┃ Reachable ┃ Reason ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━┩
+│ jcy-bb-01.infra.ntc.com    │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
+│ jcy-rtr-01.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
+│ jcy-rtr-02.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
+│ jcy-spine-01.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │        │
+│ jcy-spine-02.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │        │
+│ nyc-bb-01.infra.ntc.com    │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
+│ nyc-leaf-01.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
+│ nyc-leaf-02.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
+│ nyc-rtr-01.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
+│ nyc-rtr-02.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
+│ nyc-spine-01.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
+│ nyc-spine-02.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
+└────────────────────────────┴───────────────┴────────────────────────────────────────┴───────────┴────────┘
 ```
 
 #### Batfish
@@ -79,21 +79,20 @@ Please check the [documentation of the configuration file](configuration.md) for
 # Directory where the configurations can be find, organized in Batfish format
 # configs_directory= "configs"
 
-[inventory]
-# Limit the scope of the inventory to a subset of devices
-# Accept any parameters supported by NetBox devices API
-# filter = "site=nyc,role=router"
-# filter = ""
+backend = "nautobot"            # Valid options are ["nautobot", "netbox"]
 
+[inventory]
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
 # supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
-[netbox]
-# The information to connect to NetBox needs to be provided, either in the config file or as environment variables
-address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
-token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
-verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
+[inventory.settings]
+# The information to connect to Nautobot needs to be provided, either in the config file or as environment variables
+# These settings are specific to the Nautobot inventory, please check the documentation of your inventory for the 
+# exist list of of available settings.
+address = "http://localhost:8080"                   # Alternative Env Variable : NAUTOBOT_ADDRESS
+token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NAUTOBOT_TOKEN
+verify_ssl = true                                   # Alternative Env Variable : NAUTOBOT_VERIFY_SSL
 
 [network]
 # To be able to pull live information from the devices, the credential information needs to be provided
