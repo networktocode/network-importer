@@ -12,19 +12,44 @@ pip install network-importer
 ### Pre-requisite
 
 To operate, the Network Importer is dependents on the following items:
-- A device inventory (defined in NetBox for now)
+- A device inventory (defined in Nautobot or NetBox for now)
 - Batfish 
 - A valid configuration file
 
 #### Inventory
 
-A device inventory must be already available in NetBox, if you don't have your devices in NetBox yet you can use the [onboarding plugin for NetBox](https://github.com/networktocode/ntc-netbox-plugin-onboarding/) to easily import your devices. 
+A device inventory must be already available in Nautobot or NetBox, if you don't have your devices in Nautobot or NetBox yet you can use the [onboarding plugin for Nautobot](https://github.com/nautobot/nautobot-plugin-device-onboarding) or the [onboarding plugin for NetBox](https://github.com/networktocode/ntc-netbox-plugin-onboarding/) to easily import your devices. 
 
-To be able to connect to the device the following information needs to be defined in NetBox:
+To be able to connect to the device the following information needs to be defined :
 - Primary ip address (or valid fqdn)
-- Platform (must be a valid Netmiko driver or have a valid napalm driver defined)
+- Platform (must be a valid Netmiko driver or have a valid Napalm driver defined)
 
 > Connecting to the device is not mandatory but some features depends on it: configuration update, mostly cabling and potentially vlan update.
+
+##### Validate your inventory
+
+You can validate the status of your inventory with the command `network-importer inventory`
+
+```
+# network-importer inventory
+                    Device Inventory (all)
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┓
+┃ Device                     ┃ Platform ┃ Reachable ┃ Reason ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━┩
+│ jcy-bb-01.infra.ntc.com    │ cisco    │ True      │        │
+│ jcy-rtr-01.infra.ntc.com   │ cisco    │ True      │        │
+│ jcy-rtr-02.infra.ntc.com   │ cisco    │ True      │        │
+│ jcy-spine-01.infra.ntc.com │ cisco    │ True      │        │
+│ jcy-spine-02.infra.ntc.com │ cisco    │ True      │        │
+│ nyc-bb-01.infra.ntc.com    │ juniper  │ True      │        │
+│ nyc-leaf-01.infra.ntc.com  │ arista   │ True      │        │
+│ nyc-leaf-02.infra.ntc.com  │ arista   │ True      │        │
+│ nyc-rtr-01.infra.ntc.com   │ juniper  │ True      │        │
+│ nyc-rtr-02.infra.ntc.com   │ juniper  │ True      │        │
+│ nyc-spine-01.infra.ntc.com │ arista   │ True      │        │
+│ nyc-spine-02.infra.ntc.com │ arista   │ True      │        │
+└────────────────────────────┴──────────┴───────────┴────────┘
+```
 
 #### Batfish
 

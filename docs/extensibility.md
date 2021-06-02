@@ -7,9 +7,16 @@ The extensibility principles leverages Python object extensibility. It's recomme
 You can use [setuptools](https://python-packaging-tutorial.readthedocs.io/en/latest/setup_py.html) or [Poetry](http://blog.networktocode.com/post/upgrade-your-python-project-with-poetry/) to quickly create a new python package.
 
 There are different ways the Network Importer can be extended depending on what you are trying to achieve:
-- [Add support for new device platform by extending the default drivers](#extend-the-default-drivers)
-- [Add support for new features buy extending the adapters](#extend-an-existing-adapter-or-provide-your-own)
-- [Add support for new data by extending the models](#extend-the-default-models)
+- [Extensibility](#extensibility)
+  - [Extend the default drivers](#extend-the-default-drivers)
+  - [Extend an existing adapter or provide your own](#extend-an-existing-adapter-or-provide-your-own)
+    - [Extend an existing Adapter](#extend-an-existing-adapter)
+    - [Create a new adapter](#create-a-new-adapter)
+    - [Use your own adapter](#use-your-own-adapter)
+  - [Extend the default models](#extend-the-default-models)
+    - [Extend the default site model (hidden attributes)](#extend-the-default-site-model-hidden-attributes)
+      - [Create a custom adapter to attach your custom model](#create-a-custom-adapter-to-attach-your-custom-model)
+    - [Extend the default site model (main attributes)](#extend-the-default-site-model-main-attributes)
 
 ## Extend the default drivers
 
@@ -40,7 +47,8 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             Result: Nornir Result object with a dict as a result containing the running configuration
                 { "config: <running configuration> }
         """
-        pass 
+        pass
+
     @staticmethod
     def get_neighbors(task: Task) -> Result:
         """Get a list of neighbors from the device.
@@ -99,7 +107,7 @@ class MyAdapter(NetworkImporterAdapter):
 
 ### Create a new adapter
 
-All adapters must implement the `load` method. The load method is called during the initilization process and is expected to load all the data from the remote system into the local cache, following the Models defined.
+All adapters must implement the `load` method. The load method is called during the initialization process and is expected to load all the data from the remote system into the local cache, following the Models defined.
 
 ```python
 from network_importer.adapters.base import BaseAdapter
