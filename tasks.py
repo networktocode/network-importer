@@ -377,7 +377,7 @@ def integration_tests(context, netbox_ver=NETBOX_VERSION):
     )
 
 
-def compose_nautobot(context, var_envs):
+def compose_nautobot(context):
     """Create Netbox instance for Travis testing.
 
     Args:
@@ -400,19 +400,16 @@ def compose_nautobot(context, var_envs):
     # context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
 
     # Clone the repo so the latest data is present
-    context.run("cd /tmp && git clone https://github.com/nautobot/nautobot-lab.git")
-
-    # Build the container
-    context.run("cd /tmp/nautobot-lab && docker build -t nautobot-lab-ni:latest .")
+    context.run("docker pull networktocode/nautobot-lab:latest ", pty=True)
 
     # Start the container
-    context.run("docker run -itd --rm --name nautobot -p 8000:8000 nautobot-lab-ni")
+    context.run("docker run -itd --rm --name nautobot -p 8000:8000 networktocode/nautobot-lab:latest", pty=True)
 
     # Execute the load demo data
-    context.run("sleep 5 && docker exec -it nautobot load-mock-data")
+    context.run("sleep 5 && docker exec -it nautobot load-mock-data", pty=True)
 
     # Print out the ports listening to verify it is running
-    context.run("ss -ltn")
+    context.run("ss -ltn", pty=True)
 
 
 def configure_nautobot(context, example_name, var_envs):
@@ -448,7 +445,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
         "ANSIBLE_PYTHON_INTERPRETER": TRAVIS_ANSIBLE_PYTHON_INTERPRETER,
     }
 
-    compose_nautobot(context, var_envs=envs)
+    compose_nautobot(context)
     compose_batfish(context, var_envs=envs)
     time.sleep(90)
     for example in TRAVIS_EXAMPLES:
