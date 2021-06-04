@@ -401,7 +401,7 @@ def compose_nautobot(context, var_envs):
 
     # Clone the repo so the latest data is present
     context.run("cd /tmp && git clone https://github.com/nautobot/nautobot-lab.git")
-    
+
     # Build the container
     context.run("cd /tmp/nautobot-lab && docker build -t nautobot-lab-ni:latest .")
 
