@@ -45,6 +45,7 @@
             token: "{{ nautobot_token }}"
             data:
               name: "{{ item.manufacturer }}"
+            validate_certs: False
             state: "present"
           loop: "{{ platforms }}"
           run_once: true

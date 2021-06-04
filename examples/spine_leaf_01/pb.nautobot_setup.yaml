@@ -25,6 +25,7 @@
         token: "{{ nautobot_token }}"
         data:
           name: "{{ item.manufacturer }}"
+        validate_certs: False
         state: "present"
       loop: "{{ platforms }}"
       run_once: true
@@ -41,6 +42,7 @@
           part_number: "{{ item.name }}"
           u_height: 1
           is_full_depth: false
+        validate_certs: False
         state: "present"
       loop: "{{ platforms }}"
       run_once: true
@@ -53,6 +55,7 @@
         data:
           name: "{{ item }}"
           color: "0000FF"
+        validate_certs: False
         state: "present"
       loop: "{{ device_roles }}"
       run_once: true
@@ -65,6 +68,7 @@
         data:
           name: "{{ site }}"
           status: "Active"
+        validate_certs: False
         state: "present"
       run_once: true
       tags: ["device_site"]
@@ -79,5 +83,6 @@
           device_role: "{{ role }}"
           site: "{{ site }}"
           status: "Active"
+        validate_certs: False
         state: "present"
       tags: ["device"]
