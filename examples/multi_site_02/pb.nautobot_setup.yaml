@@ -15,7 +15,7 @@
     region: "ni_multi_site_02"
     sites: ["hou", "nyc", "sjc"]
     nautobot_address: "{{ lookup('env','NAUTOBOT_ADDRESS') }}"
-    nautobot_token: "{{ lookup('env','NAUTOBOT_SUPERUSER_API_TOKEN') }}"
+    nautobot_token: "{{ lookup('env','NAUTOBOT_TOKEN') }}"
 
   tasks:
     - name: "DELEGATE TO LOCALHOST BLOCK"

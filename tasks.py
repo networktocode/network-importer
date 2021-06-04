@@ -61,7 +61,7 @@ TRAVIS_ANSIBLE_PYTHON_INTERPRETER = "$(which python)"
 TRAVIS_EXAMPLES = ["spine_leaf_01", "multi_site_02"]
 TRAVIS_BATFISH_VERSION = "2020.10.08.667"
 TRAVIS_NAUTOBOT_ADDRESS = "http://localhost:8000"
-TRAVIS_NAUTOBOT_TOKEN = "0123456789abcdef0123456789abcdef01234567"  # nosec - bandit ignore possible password
+TRAVIS_NAUTOBOT_TOKEN = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # nosec - bandit ignore possible password
 TRAVIS_NAUTOBOT_VERIFY_SSL = "false"
 NAUTOBOT_VERSION = os.getenv("NAUTOBOT_VERSION", "v1.0.1")
 
@@ -386,18 +386,30 @@ def compose_nautobot(context, var_envs):
         netbox_docker_ver (str): Version of Netbox docker to use
     """
     # Copy the file from tests/docker-compose.test.yml to the tmp directory to be executed from there
-    context.run(
-        f"cp {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
-    )
-    context.run(
-        f"cp {PWD}/tests/nginx.conf /tmp/nginx.conf", pty=True, env=var_envs,
-    )
-    context.run(
-        f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
-    )
-    context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
-    context.run("cd /tmp && docker-compose down", pty=True, env=var_envs)
-    context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
+    # context.run(
+    #     f"cp {PWD}/tests/nautobot-docker-compose.test.yml /tmp/docker-compose.yml", pty=True, env=var_envs,
+    # )
+    # context.run(
+    #     f"cp {PWD}/tests/nginx.conf /tmp/nginx.conf", pty=True, env=var_envs,
+    # )
+    # context.run(
+    #     f"cp {PWD}/tests/.creds.env.test /tmp/.creds.tests.env", pty=True, env=var_envs,
+    # )
+    # context.run("cd /tmp && docker-compose pull", pty=True, env=var_envs)
+    # context.run("cd /tmp && docker-compose down", pty=True, env=var_envs)
+    # context.run("cd /tmp && docker-compose up -d", pty=True, env=var_envs)
+
+    # Clone the repo so the latest data is present
+    context.run("cd /tmp && git clone https://github.com/nautobot/nautobot-lab.git")
+    
+    # Build the container
+    context.run("cd /tmp/nautobot-lab && docker build -t nautobot-lab-ni:latest .")
+
+    # Start the container
+    context.run("docker run -itd --rm --name nautobot -p 8000:8000 nautobot-lab-ni")
+
+    # Execute the load demo data
+    context.run("sleep 5 && docker exec -it nautobot load-mock-data")
 
     # Print out the ports listening to verify it is running
     context.run("ss -ltn")
