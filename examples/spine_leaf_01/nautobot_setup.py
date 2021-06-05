@@ -155,7 +155,7 @@ def main():
             site=site_map["ni_spine_leaf_01"].id,
             device_type=device_type_map[dev["type"]].id,
             device_role=device_role_map[dev["role"]].id,
-            just_create_device=True
+            just_create_device=True,
         )
 
         if created:
