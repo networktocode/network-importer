@@ -69,6 +69,7 @@ def main():
 
     # Create region
     for region in ["ni_multi_site_02"]:
+        print(f"Checking on region: {region}")
         _, created = get_or_create(
             object_endpoint=nautobot.dcim.regions, search_key="name", search_term=region, slug=region.lower()
         )
@@ -82,10 +83,12 @@ def main():
     device_type_map = dict()
 
     for item in PLATFORMS:
+        print(f"Checking on platform: {item}")
         mfg, created = get_or_create(
             object_endpoint=nautobot.dcim.manufacturers,
-            search_key="name",
+            search_key="slug",
             search_term=item["manufacturer"],
+            name=item["manufacturer"].capitalize(),
             slug=item["manufacturer"].lower(),
         )
 
@@ -114,6 +117,7 @@ def main():
 
     # Create device role
     for dev_role in DEVICE_ROLES:
+        print(f"Checking on device role: {dev_role}")
         device_role_obj, created = get_or_create(
             object_endpoint=nautobot.dcim.device_roles, search_key="name", search_term=dev_role, slug=dev_role,
         )
@@ -130,6 +134,7 @@ def main():
 
     # Iterate over the sites
     for site in SITE_LIST:
+        print(f"Checking on site: {site}")
         # Check if the device is created
         site_obj, created = get_or_create(
             object_endpoint=nautobot.dcim.sites, search_key="name", search_term=site, slug=site.lower(), status="Active"
@@ -144,15 +149,17 @@ def main():
 
     # Create Devices
     for dev in DEVICE_LIST:
+        print(f"Creating device: {dev}")
         _, created = get_or_create(
             object_endpoint=nautobot.dcim.devices,
             search_key="name",
             search_term=dev["name"],
             slug=dev["name"].lower(),
             status="Active",
-            site=site_map[dev["name"][0:3]].id,
+            site=site_map["ni_spine_leaf_01"].id,
             device_type=device_type_map[dev["type"]].id,
             device_role=device_role_map[dev["role"]].id,
+            just_create_device=True
         )
 
         if created:

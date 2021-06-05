@@ -422,10 +422,10 @@ def configure_nautobot(context, example_name, var_envs):
     """
     # Sleep for a minute to allow all systems to be up and running
     context.run("sleep 60", pty=True, env=var_envs)
-    # context.run(f"cd {PWD}/examples/{example_name} && python3 nautobot_setup.py", pty=True, env=var_envs)
-    context.run(
-        f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
-    )
+    context.run(f"cd {PWD}/examples/{example_name} && python3 nautobot_setup.py", pty=True, env=var_envs)
+    # context.run(
+    #     f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
+    # )
 
 
 @task
