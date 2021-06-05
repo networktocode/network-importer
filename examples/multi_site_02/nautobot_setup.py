@@ -53,6 +53,15 @@ def get_or_create(object_endpoint, search_key, search_term, **kwargs):
     """
     created = False
     search = {search_key: search_term}
+    if kwargs.get("just_create_device"):
+        try:
+            print("Just creating device")
+            obj = object_endpoint.create(**search, **kwargs)
+            created = True
+            return obj, created
+        except: # pylint: disable=bare-except
+            return None, True
+
     obj = object_endpoint.get(**search)
     if obj is None:
         obj = object_endpoint.create(**search, **kwargs)
