@@ -59,7 +59,7 @@ def get_or_create(object_endpoint, search_key, search_term, **kwargs):
             obj = object_endpoint.create(**search, **kwargs)
             created = True
             return obj, created
-        except: # pylint: disable=bare-except
+        except: # pylint: disable=bare-except # noqa: E722, E261
             return None, True
 
     obj = object_endpoint.get(**search)
