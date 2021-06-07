@@ -4,7 +4,6 @@ import yaml
 import pynautobot
 
 from network_importer.adapters.nautobot_api.models import NautobotIPAddress
-import network_importer.config as config
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -46,7 +45,6 @@ def test_translate_attrs_for_nautobot_wo_intf(nautobot_api_base):
 
 
 def test_create_from_pynautobot(nautobot_api_base):
-    config.load(config_data=dict())
     api = pynautobot.api(url="http://mock", token="1234567890")
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/ip_address.json"))
     pnb = pynautobot.core.response.Record(values=data, api=api, endpoint=1)

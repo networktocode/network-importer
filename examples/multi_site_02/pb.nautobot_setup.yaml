@@ -1,0 +1,120 @@
+---
+- name: "CREATE ALL OBJECTS REQUIRED FOR THE NETWORK IMPORTER IN NAUTOBOT"
+  hosts: ["all"]
+  gather_facts: false
+  connection: "local"
+  vars:
+    device_roles: ["spine", "leaf", "router"]
+    platforms:
+      - {name: "junos", manufacturer: "juniper"}
+      - {name: "iosxr", manufacturer: "cisco"}
+      - {name: "ios", manufacturer: "cisco"}
+      - {name: "nxos", manufacturer: "cisco"}
+      - {name: "eos", manufacturer: "arista"}
+    site_prefix: "ni_02"
+    region: "ni_multi_site_02"
+    sites: ["hou", "nyc", "sjc"]
+    nautobot_address: "{{ lookup('env','NAUTOBOT_ADDRESS') }}"
+    nautobot_token: "{{ lookup('env','NAUTOBOT_TOKEN') }}"
+
+  tasks:
+    - name: "DELEGATE TO LOCALHOST BLOCK"
+      delegate_to: "localhost"
+      block:
+        - name: "00 DEBUG VARIABLES"
+          debug:
+            msg:
+              - "Nautobot URL: {{ nautobot_address }}"
+
+        - name: "01 CREATE REGION IN NAUTOBOT"
+          networktocode.nautobot.region:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              name: "{{ region }}"
+            state: "present"
+            validate_certs: False
+          run_once: true
+          tags: ["region"]
+          retries: 5
+          delay: 3
+
+        - name: "05 CREATE MANUFACTURER IN NAUTOBOT"
+          networktocode.nautobot.manufacturer:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              name: "{{ item.manufacturer }}"
+            validate_certs: False
+            state: "present"
+          loop: "{{ platforms }}"
+          run_once: true
+          tags: ["manufacturer", "device_type"]
+          retries: 5
+          delay: 3
+
+        - name: "10 CREATE DEVICE TYPE IN NAUTOBOT"
+          networktocode.nautobot.device_type:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              slug: "{{ item.name }}"
+              model: "{{ item.name }}"
+              manufacturer: "{{ item.manufacturer }}"
+              part_number: "{{ item.name }}"
+              u_height: 1
+              is_full_depth: false
+            state: "present"
+            validate_certs: False
+          loop: "{{ platforms }}"
+          run_once: true
+          tags: ["device_type"]
+          retries: 5
+          delay: 3
+
+        - name: "15 CREATE DEVICE ROLE IN NAUTOBOT"
+          networktocode.nautobot.device_role:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              name: "{{ item }}"
+              color: "0000FF"
+            state: "present"
+            validate_certs: False
+          loop: "{{ device_roles }}"
+          run_once: true
+          tags: ["device_role"]
+          retries: 5
+          delay: 3
+
+        - name: "20 CREATE SITE IN NAUTOBOT"
+          networktocode.nautobot.site:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              name: "{{ site_prefix}}_{{item }}"
+              region: "{{ region }}"
+              status: "Active"
+            state: "present"
+            validate_certs: False
+          loop: "{{ sites }}"
+          run_once: true
+          tags: ["device_site"]
+          retries: 5
+          delay: 3
+
+        - name: "25 CREATE DEVICES IN NAUTOBOT"
+          networktocode.nautobot.device:
+            url: "{{ nautobot_address }}"
+            token: "{{ nautobot_token }}"
+            data:
+              name: "{{ inventory_hostname }}"
+              device_type: "{{ platform }}"
+              device_role: "{{ role }}"
+              site: "{{ site_prefix}}_{{site }}"
+              status: "Active"
+            state: "present"
+            validate_certs: False
+          tags: ["device"]
+          retries: 5
+          delay: 3

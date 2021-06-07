@@ -1,0 +1,47 @@
+---
+version: "3.7"
+services:
+  nginx:
+    image: "nginx:1.19"
+    ports:
+      - "8000:8080"  # Configured in F5 Load balancer to foward to port 8080 over HTTPS
+    volumes:
+      - "./nginx.conf:/etc/nginx/nginx.conf"
+  nautobot:
+    image: "networktocode/nautobot:${NAUTOBOT_VERSION}"
+    ports:
+      - "8443:8443"
+      - "8080:8080"
+    env_file:
+      - "/tmp/.creds.tests.env"
+  nautobot-worker:
+    image: "networktocode/nautobot:${NAUTOBOT_VERSION}"
+    entrypoint: "nautobot-server rqworker"
+    depends_on:
+      - "nautobot"
+    env_file:
+      - "/tmp/.creds.tests.env"
+  redis-cacheops:
+    image: "redis:alpine"
+    command:
+      - "sh"
+      - "-c"  # this is to evaluate the $REDIS_PASSWORD from the env
+      - "redis-server --appendonly yes --requirepass $$NAUTOBOT_REDIS_PASSWORD"  ## $$ because of docker-compose
+    env_file:
+      - "/tmp/.creds.tests.env"
+  redis-queue:
+    image: "redis:alpine"
+    command:
+      - "sh"
+      - "-c"  # this is to evaluate the $REDIS_PASSWORD from the env
+      - "redis-server --appendonly yes --requirepass $$NAUTOBOT_REDIS_PASSWORD"  ## $$ because of docker-compose
+    env_file:
+      - "/tmp/.creds.tests.env"
+  postgres:
+    image: "postgres:10"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+    env_file:
+      - "/tmp/.creds.tests.env"
+volumes:
+  postgres_data:
