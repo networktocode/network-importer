@@ -54,23 +54,23 @@ jobs:
         - "invoke pylint"
       python: 3.7
 
-    - stage: "integration"
-      name: "Nautobot v1.0.1"
-      before_install: >
-        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
-      before_script:
-        - "pip install --upgrade pip wheel"
-        - "pip install invoke toml poetry pynautobot ansible==2.10.7"
-        - "ansible-galaxy collection install networktocode.nautobot"
-        - "poetry config virtualenvs.create false"
-        - "poetry config installer.parallel false"
-        - "poetry install"
-      script:
-        - "invoke nautobot-integration-tests"
-      after_script:
-        - "cd /tmp && docker-compose logs"
-      env: "NAUTOBOT_VERSION=1.0.1"
-      python: 3.7
+    # - stage: "integration"
+    #   name: "Nautobot v1.0.1"
+    #   before_install: >
+    #     echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin || travis_terminate 1
+    #   before_script:
+    #     - "pip install --upgrade pip wheel"
+    #     - "pip install invoke toml poetry pynautobot ansible==2.10.7"
+    #     - "ansible-galaxy collection install networktocode.nautobot"
+    #     - "poetry config virtualenvs.create false"
+    #     - "poetry config installer.parallel false"
+    #     - "poetry install"
+    #   script:
+    #     - "invoke nautobot-integration-tests"
+    #   after_script:
+    #     - "cd /tmp && docker-compose logs"
+    #   env: "NAUTOBOT_VERSION=1.0.1"
+    #   python: 3.7
 
     - stage: "integration"
       name: "Netbox v2.10"
