@@ -4,7 +4,7 @@ By default the network importer will try to load a configuration file name `netw
 
 It's possible to specify which configuration file should be used in cli with the option `--config`.
 
-The configuration file is organized in 8 sections detailed below. 
+The configuration file is organized in 7 sections detailed below. 
 
 ## Main Section
 
@@ -46,7 +46,7 @@ backend = "nautobot"
 
 # Inventory Section
 
-The `[inventory]` section regroup all parameters to connect to NetBox and it also include an optional list of supported platforms.
+The `[inventory]` section regroup all parameters related to the inventory and also includes an optional list of supported platforms. network-importer supports multiple inventories, you can define your own inventory by defining `inventory_class` and each inventory can define its own list of settings which will need to be configurated under `[inventory.settings]`. The settings for the [nautobot inventory](backend/nautobot.md) and for the [netbox inventory](backend/netbox.md) are available in their respective documentation.
 
 ```toml
 [inventory]
@@ -106,6 +106,7 @@ fqdns = [ ]
 
 Configure which adapters will be loaded by the network importer.
 Please see the [extensibility section](extensibility.md) of the documentation for more details on how to create your own adapter.
+The settings for the [nautobot adapter](backend/nautobot.md) and for the [netbox adapter](backend/netbox.md) are available in their respective documentation.
 
 ```toml
 [adapters]

@@ -12,6 +12,7 @@ The main use cases for the network importer:
 - [Configuration file](docs/configuration.md)
 - [Supported Features and Architecture](docs/architecture.md)
 - [Extensibility](docs/extensibility.md)
+- [Upgrade procedure](docs/upgrade.md)
 
 ## Questions
 
