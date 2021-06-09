@@ -1,16 +1,19 @@
+---
 version: 2.1
 orbs:
-  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration files
+  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration
+  # files
   # Orb commands and jobs help you with common scripting around a language/tool
   # so you dont have to copy and paste it everywhere.
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
   python: "circleci/python@1.2"
 workflows:
   lint:  # This is the name of the workflow, feel free to change it to better match your workflow.
-    # Inside the workflow, you define the jobs you want to run. 
-    # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
+    # Inside the workflow, you define the jobs you want to run.
+    # For more details on extending your workflow, see the configuration docs:
+    # https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
-      - linting
+      - "linting"
 jobs:
   linting:
     docker:
@@ -24,7 +27,7 @@ jobs:
       - run:
           command: "pip install --upgrade wheel pip"
           name: "Upgrade Pip"
-      
+
       - run:
           command: "pip install invoke poetry toml"
           name: "Install pip packages"
