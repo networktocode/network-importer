@@ -128,7 +128,7 @@ It's possible to extend the default inventory or provide your own inventory.
 
 A Network Importer inventory must be a valid Nornir 3.x inventory and it must be based of the NetworkImporterInventory class.
 
-Once you have created your own inventory, you need to register it with Nornir in order fpr Nornir to successfully load it. You than need to define your inventory name in [inventory.inventory_class]
+Once you have created your own inventory, you need to register it with Nornir in order for Nornir to successfully load it. You than need to define your inventory name in [inventory.inventory_class]
 
 ## Extend the default models
 

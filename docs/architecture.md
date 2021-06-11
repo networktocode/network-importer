@@ -27,7 +27,7 @@ The internal/shared datamodel is defined in the [network_importer/models.py](../
 To operate the Network Importer needs 1 inventory and 2 adapters:
 - An inventory to get the list of devices to analyze and get the minimum information to connect to them (platform, address, cred
 entials ..)
-- An adapter to read the information from the network and one to read/write information to the Source of Truth backend.
+- One adapter to read the information from the network and one to read/write information to the Source of Truth backend.
 
 Since the inventory is usually leveraging the SOT, the SOT adapter and the inventory are packaged into a **backend**. Both Nautobot and Netbox are supported as backend systems. When a specific backend is selected it will update both the SOT adapter and the inventory.
 With or without leveraging the default backends, it's possible to provide your own adapter or extend one of the default adapters.

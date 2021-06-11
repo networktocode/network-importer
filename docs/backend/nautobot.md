@@ -1,7 +1,7 @@
 
 # Nautobot Backend
 
-The Nautobot backend is composed of an inventory and a SOT adapter designed to work with NetBox 2.8+.
+The Nautobot backend is composed of an inventory and a SOT adapter designed to work with Nautobot 1.0+.
 Both the inventory and the SOT adapter can accept some specific settings as described below.
 
 ## Inventory
