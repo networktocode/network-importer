@@ -26,7 +26,7 @@ class BaseAdapter(DiffSync):
     def _validate_settings(self, settings):
         """Load and validate the configuration based on the settings_class."""
         if self.settings_class:
-            if settings and isinstance(dict, settings):
+            if settings and isinstance(settings, dict):
                 return self.settings_class(**settings)  # pylint: disable=not-callable
 
             return self.settings_class()  # pylint: disable=not-callable
