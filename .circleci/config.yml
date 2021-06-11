@@ -1,0 +1,63 @@
+---
+version: 2.1
+orbs:
+  # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration
+  # files
+  # Orb commands and jobs help you with common scripting around a language/tool
+  # so you dont have to copy and paste it everywhere.
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: "circleci/python@1.2"
+workflows:
+  lint:  # This is the name of the workflow, feel free to change it to better match your workflow.
+    # Inside the workflow, you define the jobs you want to run.
+    # For more details on extending your workflow, see the configuration docs:
+    # https://circleci.com/docs/2.0/configuration-reference/#workflows
+    jobs:
+      - "linting"
+jobs:
+  linting:
+    docker:
+      - image: "circleci/python:3.7.10"  # primary container for the build job
+        environment:
+          INVOKE_LOCAL: "True"
+    steps:
+      - "checkout"
+      # - python/install-packages:
+      #     pkg-manager: poetry
+      - run:
+          command: "pip install --upgrade wheel pip"
+          name: "Upgrade Pip"
+
+      - run:
+          command: "pip install invoke poetry toml"
+          name: "Install pip packages"
+
+      - run:
+          command: "poetry config virtualenvs.create false"
+          name: "Poetry config virtual envs"
+
+      - run:
+          command: "poetry config installer.parallel false"
+          name: "Poetry config parallel"
+
+      - run:
+          command: "poetry install --no-interaction --no-ansi --no-root"
+          name: "Install application"
+
+      - run:
+          command: "invoke black"
+
+      - run:
+          command: "invoke bandit"
+
+      - run:
+          command: "invoke pydocstyle"
+
+      - run:
+          command: "invoke flake8"
+
+      - run:
+          command: "invoke yamllint"
+
+      - run:
+          command: "invoke pylint"
