@@ -1,10 +1,10 @@
 # Configuration File
 
-By default the network importer will try to load a configuration file name `network_importer.toml`, this configuration file is not mandatory as long as the required information to connect to NetBox, Batfish and/or the network devices are provided via environment variables.
+By default the network importer will try to load a configuration file name `network_importer.toml`, this configuration file is not mandatory as long as the required information to connect to the SOT, Batfish and/or the network devices are provided via environment variables.
 
 It's possible to specify which configuration file should be used in cli with the option `--config`.
 
-The configuration file is organized in 8 sections detailed below. 
+The configuration file is organized in 7 sections detailed below. 
 
 ## Main Section
 
@@ -32,39 +32,35 @@ import_vlans = "config"         # Valid options are ["cli", "config", "no", true
 import_cabling = "lldp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
-# Number of Nornir tasks to execute at the same tim
-nbr_workers= 25
+# Number of Nornir tasks to execute at the same time
+nbr_workers = 25
 
 # Directory where the configuration can be find, organized in Batfish format
 configs_directory = "configs"
+
+# Valid Backend
+# Only Netbox and Nautobot backend are included by default, if you want to use another backend
+# you must leave backend empty and define inventory.inventory_class and adapters.sot_class manually.
+backend = "nautobot"
 ```
 
-# NetBox Section
+# Inventory Section
 
-The `[netbox]` section regroup all parameters to connect to NetBox and it also include an optional list of supported platforms.
+The `[inventory]` section regroup all parameters related to the inventory and also includes an optional list of supported platforms. network-importer supports multiple inventories, you can define your own inventory by defining `inventory_class` and each inventory can define its own list of settings which will need to be configurated under `[inventory.settings]`. The settings for the [nautobot inventory](backend/nautobot.md) and for the [netbox inventory](backend/netbox.md) are available in their respective documentation.
 
 ```toml
-[netbox]
-address = "http://localhost:8080"                   # Alternative Env Variable : NETBOX_ADDRESS
-token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NETBOX_TOKEN
-verify_ssl = true                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
+[inventory]
 
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
 supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
-# Settings for applying diffsync flags to diffsync model objects, in order to alter 
-# the underlying sync behaviour. The model_flag is applied to any objects that have a 
-# tag assigned within model_flag_tags. Further details on model_flags can be found 
-# at: https://github.com/networktocode/diffsync/blob/269df51ce248beaef17d72374e96d19e6df95a13/diffsync/enum.py
-model_flag_tags = ["your_tag"]
-model_flag = 1 # flag enum int() representation
+# Configure which Inventory will be loaded by the network importer.
+inventory_class = "network_importer.inventory.NetboxInventory"
+
+[inventory.settings]
+# Inventory specific settings, please refer to the documentation of each backend/inventory.
 ```
-
-
-    model_flag_tags: List[str] = list() # List of tags that defines what objects to assign the model_flag to.
-    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
-
 
 ## Batfish Section
 
@@ -93,43 +89,40 @@ login = "username"          # Alternative Env Variable : NETWORK_DEVICE_LOGIN
 password = "password"       # Alternative Env Variable : NETWORK_DEVICE_PWD
 enable = true               # Alternative Env Variable : NETWORK_DEVICE_ENABLE
 
-# Connection parameters for Netmiko 
-global_delay_factor = 5
-banner_timeout = 15
-conn_timeout = 5
-
 # List of valid FQDN that can be found in the network,
 # The FQDNs in this list will be automatically removed from all neighbors discovered from LLDP/CDP
 fqdns = [ ]
-```
 
-## Inventory Section
+[network.netmiko_extras]
+# Any additional parameters for Netmiko defined in this section will be automatically configured 
+# as part of the Nornir inventory.
 
-Define what method should be used to connect to the network devices. 
-
-```toml
-[inventory]
-# The default method is to use the primary IP defined in NetBox.
-# As an alternative it's possible to use the name of the device and provide your own FQDN.
-use_primary_ip = false (default: true)
-fqdn = "mydomain.com"
-
-# Optional filter to limit the scope of the inventory, takes a comma separated string of key value pair"
-filter = "site=XXX,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER
-
-# Configure what Inventory will be loaded bu the network importer.
-inventory_class = "network_importer.inventory.NetboxInventory"
+[network.napalm_extras]
+# Any additional parameters for Napalm defined in this section will be automatically configured 
+# as part of the Nornir inventory.
 ```
 
 ## Adapters Section
 
 Configure which adapters will be loaded by the network importer.
 Please see the [extensibility section](extensibility.md) of the documentation for more details on how to create your own adapter.
+The settings for the [nautobot adapter](backend/nautobot.md) and for the [netbox adapter](backend/netbox.md) are available in their respective documentation.
 
 ```toml
 [adapters]
 network_class = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
+
+
 sot_class = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
+
+[adapters.network_settings]
+# Network Adapter specific settings, any settings defined in this section will be passed to the Network Adapter. 
+# The default network adapter doesn't accept additional settings, nonetheless this section remains available if you want to
+# customize the default Network Adapter
+
+[adapters.sot_settings]
+# SOT Adapter specific settings, any settings defined in this section will be passed to the SOT Adapter. 
+# Please refer to the documentation of each adapter to see what settings are required/supported.
 ```
 
 ## Drivers Section
