@@ -28,7 +28,7 @@ To be able to connect to the device the following information needs to be define
 
 ##### Validate your inventory
 
-You can validate the status of your inventory with the command `network-importer inventory`
+You can validate the status of your inventory with the command `network-importer inventory --check-connectivity`
 
 ```
 # network-importer inventory
@@ -50,6 +50,8 @@ You can validate the status of your inventory with the command `network-importer
 │ nyc-spine-02.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
 └────────────────────────────┴───────────────┴────────────────────────────────────────┴───────────┴────────┘
 ```
+
+> the option `--check-connectivity` will try to connect to all devices on port 22 (tcp_ping)
 
 #### Batfish
 
