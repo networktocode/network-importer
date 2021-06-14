@@ -27,6 +27,8 @@ from rich.table import Table
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
+from network_importer.inventory import reachable_devs
+from network_importer.tasks import check_if_reachable
 
 import network_importer.performance as perf
 
@@ -170,15 +172,22 @@ def check(config_file, limit, debug, update_configs):
     help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
     type=str,
 )
+@click.option("--check-connectivity", is_flag=True, help="Check if the devices are reachable on port 22")
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 @click.option(
     "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @main.command()
-def inventory(config_file, limit, debug, update_configs):
+def inventory(config_file, limit, debug, check_connectivity, update_configs):
     """Display inventory."""
     ni = init(config_file)
     ni.build_inventory(limit=limit)
+
+    if check_connectivity:
+        ni.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
+
+    if update_configs:
+        ni.update_configurations()
 
     if limit:
         table = Table(title=f"Device Inventory (limit:{limit})")
@@ -204,9 +213,6 @@ def inventory(config_file, limit, debug, update_configs):
 
     console = Console()
     console.print(table)
-
-    if update_configs:
-        ni.update_configurations()
 
     if debug:
         pdb.set_trace()
