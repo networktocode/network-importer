@@ -33,22 +33,22 @@ You can validate the status of your inventory with the command `network-importer
 ```
 # network-importer inventory
                                            Device Inventory (all)
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━┓
-┃ Device                     ┃ Platform      ┃ Driver                                 ┃ Reachable ┃ Reason ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━┩
-│ jcy-bb-01.infra.ntc.com    │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
-│ jcy-rtr-01.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
-│ jcy-rtr-02.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │        │
-│ jcy-spine-01.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │        │
-│ jcy-spine-02.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │        │
-│ nyc-bb-01.infra.ntc.com    │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
-│ nyc-leaf-01.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
-│ nyc-leaf-02.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
-│ nyc-rtr-01.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
-│ nyc-rtr-02.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │        │
-│ nyc-spine-01.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
-│ nyc-spine-02.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ True      │        │
-└────────────────────────────┴───────────────┴────────────────────────────────────────┴───────────┴────────┘
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Device                     ┃ Platform      ┃ Driver                                 ┃ Reachable ┃ Reason                          ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ jcy-bb-01.infra.ntc.com    │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │                                 │
+│ jcy-rtr-01.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │                                 │
+│ jcy-rtr-02.infra.ntc.com   │ cisco_ios     │ network_importer.drivers.cisco_default │ True      │                                 │
+│ jcy-spine-01.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │                                 │
+│ jcy-spine-02.infra.ntc.com │ cisco_nxos    │ network_importer.drivers.cisco_default │ True      │                                 │
+│ nyc-bb-01.infra.ntc.com    │ juniper_junos │ network_importer.drivers.juniper_junos │ True      │                                 │
+│ nyc-leaf-01.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ False     │ device not reachable on port 22 │
+│ nyc-leaf-02.infra.ntc.com  │ arista_eos    │ network_importer.drivers.arista_eos    │ False     │ device not reachable on port 22 │
+│ nyc-rtr-01.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ False     │ device not reachable on port 22 │
+│ nyc-rtr-02.infra.ntc.com   │ juniper_junos │ network_importer.drivers.juniper_junos │ False     │ device not reachable on port 22 │
+│ nyc-spine-01.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ False     │ device not reachable on port 22 │
+│ nyc-spine-02.infra.ntc.com │ arista_eos    │ network_importer.drivers.arista_eos    │ False     │ device not reachable on port 22 │
+└────────────────────────────┴───────────────┴────────────────────────────────────────┴───────────┴─────────────────────────────────┘
 ```
 
 > the option `--check-connectivity` will try to connect to all devices on port 22 (tcp_ping)
