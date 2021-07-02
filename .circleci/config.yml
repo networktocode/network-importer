@@ -17,9 +17,13 @@ workflows:
     # For more details on extending your workflow, see the configuration docs:
     # https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
-      # - "linting"
-      # - "test"
-      - "integration"
+      - "linting"
+      - "test"
+      - "integration_nautobot"
+      - "integration_netbox28"
+      - "integration_netbox29"
+      - "integration_netbox210"
+
 jobs:
   linting:
     docker:
@@ -78,7 +82,7 @@ jobs:
       - run:
           name: "Run Unit Tests"
           command: "invoke pytest"
-  integration:
+  integration_nautobot:
     machine:
       image: "ubuntu-2004:202104-01"
     steps:
@@ -99,4 +103,51 @@ jobs:
             invoke nautobot-integration-tests
           environment: 
             NAUTOBOT_VERSION: "1.0.1"
-        
+  integration_netbox210:
+    machine:
+      image: "ubuntu-2004:202104-01"
+    steps:
+      - "checkout"
+      - run:
+          name: "NetBox 2.10 Test"
+          command: |
+            pip install invoke toml poetry pynetbox ansible==2.10.7
+            ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
+            poetry config virtualenvs.create false
+            poetry config installer.parallel false
+            poetry install
+            invoke integration-tests
+          environment:
+            NETBOX_VERSION: "v2.10"
+  integration_netbox29:
+    machine:
+      image: "ubuntu-2004:202104-01"
+    steps:
+      - "checkout"
+      - run:
+          name: "NetBox 2.9 Test"
+          command: |
+            pip install invoke toml poetry pynetbox ansible==2.10.7
+            ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
+            poetry config virtualenvs.create false
+            poetry config installer.parallel false
+            poetry install
+            invoke integration-tests
+          environment:
+            NETBOX_VERSION: "v2.9"
+  integration_netbox28:
+    machine:
+      image: "ubuntu-2004:202104-01"
+    steps:
+      - "checkout"
+      - run:
+          name: "NetBox 2.8 Test"
+          command: |
+            pip install invoke toml poetry pynetbox ansible==2.10.7
+            ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
+            poetry config virtualenvs.create false
+            poetry config installer.parallel false
+            poetry install
+            invoke integration-tests
+          environment:
+            NETBOX_VERSION: "v2.8"
