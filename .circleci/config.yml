@@ -63,7 +63,11 @@ jobs:
       - "checkout"
       - run:
           name: "Change to Python 3.7 package on system"
-          command: "sudo -H -i -u ${CIRCLECI_USER} pyenv global 3.7.0"
+          command: |
+            pyenv versions
+            pyenv global 3.7.0
+            which pip
+            pip -V
       - run:
           name: "Install python packages"
           command: "pip install --upgrade wheel pip toml invoke"
