@@ -421,11 +421,11 @@ def configure_nautobot(context, example_name, var_envs):
         var_envs (dict): Environment variables to pass to the command runner
     """
     # Sleep for a minute to allow all systems to be up and running
-    context.run("sleep 60", pty=True, env=var_envs)
-    context.run(f"cd {PWD}/examples/{example_name} && python3 nautobot_setup.py", pty=True, env=var_envs)
-    # context.run(
-    #     f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
-    # )
+    # context.run("sleep 60", pty=True, env=var_envs)
+    # context.run(f"cd {PWD}/examples/{example_name} && python3 nautobot_setup.py", pty=True, env=var_envs)
+    context.run(
+        f"cd {PWD}/examples/{example_name} && ansible-playbook pb.nautobot_setup.yaml -vv ", pty=True, env=var_envs
+    )
 
 
 @task
@@ -447,7 +447,7 @@ def nautobot_integration_tests(context, nautobot_ver=NAUTOBOT_VER):
 
     compose_nautobot(context)
     compose_batfish(context, var_envs=envs)
-    time.sleep(90)
+    time.sleep(45)
     for example in TRAVIS_EXAMPLES:
         configure_nautobot(context, example, var_envs=envs)
         run_network_importer(context, example, var_envs=envs, config_file="network_importer_nautobot.toml")
