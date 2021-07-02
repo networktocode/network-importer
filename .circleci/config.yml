@@ -66,7 +66,7 @@ jobs:
           command: "pip install --upgrade wheel pip toml invoke"
       - run:
           name: "Build Test Image"
-          command: "invoke build-image --no-cache"
+          command: "invoke build-image --nocache"
       - run:
           name: "Run Unit Tests"
           command: "invoke pytest"
