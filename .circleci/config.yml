@@ -111,6 +111,10 @@ jobs:
       - run:
           name: "NetBox 2.10 Test"
           command: |
+            pyenv versions
+            pyenv global 3.9.4
+            which pip
+            pip -V
             pip install invoke toml poetry pynetbox ansible==2.10.7
             ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
             poetry config virtualenvs.create false
@@ -127,6 +131,10 @@ jobs:
       - run:
           name: "NetBox 2.9 Test"
           command: |
+            pyenv versions
+            pyenv global 3.9.4
+            which pip
+            pip -V
             pip install invoke toml poetry pynetbox ansible==2.10.7
             ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
             poetry config virtualenvs.create false
@@ -143,6 +151,10 @@ jobs:
       - run:
           name: "NetBox 2.8 Test"
           command: |
+            pyenv versions
+            pyenv global 3.9.4
+            which pip
+            pip -V
             pip install invoke toml poetry pynetbox ansible==2.10.7
             ansible-galaxy collection install git+https://github.com/netbox-community/ansible_modules.git,v3.0.0
             poetry config virtualenvs.create false
