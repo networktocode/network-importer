@@ -1,5 +1,11 @@
 ---
 version: 2.1
+aliases:
+  - &linting_and_unit_tests
+    - "linting"
+    - "test"
+  - &linting_test
+    - "linting"
 executors:
   linux:
     docker:
@@ -18,11 +24,16 @@ workflows:
     # https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
       - "linting"
-      - "test"
-      - "integration_nautobot"
-      - "integration_netbox28"
-      - "integration_netbox29"
-      - "integration_netbox210"
+      - test:
+          requires: *linting_test
+      - "integration_nautobot":
+          requires: *linting_and_unit_tests
+      - "integration_netbox28":
+          requires: *linting_and_unit_tests
+      - "integration_netbox29":
+          requires: *linting_and_unit_tests
+      - "integration_netbox210":
+          requires: *linting_and_unit_tests
 
 jobs:
   linting:
@@ -101,7 +112,7 @@ jobs:
             poetry config installer.parallel false
             poetry install
             invoke nautobot-integration-tests
-          environment: 
+          environment:
             NAUTOBOT_VERSION: "1.0.1"
   integration_netbox210:
     machine:
