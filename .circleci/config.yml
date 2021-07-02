@@ -65,7 +65,7 @@ jobs:
           name: "Change to Python 3.7 package on system"
           command: |
             pyenv versions
-            pyenv global 3.8.3
+            pyenv global 3.9.4
             which pip
             pip -V
       - run:
