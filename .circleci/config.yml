@@ -12,14 +12,12 @@ orbs:
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
   python: "circleci/python@1.2"
 workflows:
-  lint:  # This is the name of the workflow, feel free to change it to better match your workflow.
+  TestFlow:  # This is the name of the workflow, feel free to change it to better match your workflow.
     # Inside the workflow, you define the jobs you want to run.
     # For more details on extending your workflow, see the configuration docs:
     # https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
-      - "linting"
-  test:
-    jobs:
+      # - "linting"
       - "test"
 jobs:
   linting:
@@ -65,7 +63,7 @@ jobs:
       - "checkout"
       - run:
           name: "Install python packages"
-          command: "pip install --upgrade wheel pip invoke"
+          command: "pip install --upgrade wheel pip toml invoke"
       - run:
           name: "Build Test Image"
           command: "invoke build-image --no-cache"
