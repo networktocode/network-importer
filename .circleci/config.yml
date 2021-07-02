@@ -18,7 +18,8 @@ workflows:
     # https://circleci.com/docs/2.0/configuration-reference/#workflows
     jobs:
       # - "linting"
-      - "test"
+      # - "test"
+      - "integration"
 jobs:
   linting:
     docker:
@@ -77,3 +78,24 @@ jobs:
       - run:
           name: "Run Unit Tests"
           command: "invoke pytest"
+  integration:
+    machine:
+      image: "ubuntu-2004:202104-01"
+    steps:
+      - run:
+          name: "Nautobot Test"
+          command: |
+            pyenv versions
+            pyenv global 3.9.4
+            which pip
+            pip -V
+            pip install --upgrade pip wheel
+            pip install invoke toml poetry pynautobot ansible==2.10.7
+            ansible-galaxy collection install networktocode.nautobot
+            poetry config virtualenvs.create false
+            poetry config installer.parallel false
+            poetry install
+            invoke nautobot-integration-tests
+          environment: 
+            NAUTOBOT_VERSION: "1.0.1"
+        
