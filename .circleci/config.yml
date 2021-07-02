@@ -58,14 +58,14 @@ jobs:
           command: "invoke pylint"
   test:
     machine:
-      image: "ubuntu-1604:202007-01"
+      image: "ubuntu-2004:202104-01"
     steps:
       - "checkout"
       - run:
           name: "Change to Python 3.7 package on system"
           command: |
             pyenv versions
-            pyenv global 3.7.0
+            pyenv global 3.8.3
             which pip
             pip -V
       - run:
