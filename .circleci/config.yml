@@ -1,5 +1,9 @@
 ---
 version: 2.1
+executors:
+  linux:
+    docker:
+      - image: "circleci/python:3.7.10"
 orbs:
   # The python orb contains a set of prepackaged CircleCI configuration you can use repeatedly in your configuration
   # files
@@ -27,37 +31,41 @@ jobs:
       - run:
           command: "pip install --upgrade wheel pip"
           name: "Upgrade Pip"
-
       - run:
           command: "pip install invoke poetry toml"
           name: "Install pip packages"
-
       - run:
           command: "poetry config virtualenvs.create false"
           name: "Poetry config virtual envs"
-
       - run:
           command: "poetry config installer.parallel false"
           name: "Poetry config parallel"
-
       - run:
           command: "poetry install --no-interaction --no-ansi --no-root"
           name: "Install application"
-
       - run:
           command: "invoke black"
-
       - run:
           command: "invoke bandit"
-
       - run:
           command: "invoke pydocstyle"
-
       - run:
           command: "invoke flake8"
-
       - run:
           command: "invoke yamllint"
-
       - run:
           command: "invoke pylint"
+  test:
+    docker:
+      - image: "circleci/python:3.7.10"  # primary container for the build job
+    steps:
+      - "checkout"
+      - run:
+          name: "Install python packages"
+          command: "pip install --upgrade wheel pip invoke"
+      - run:
+          name: "Build Test Image"
+          command: "invoke build-image --no-cache"
+      - run:
+          name: "Run Unit Tests"
+          command: "invoke pytest"
