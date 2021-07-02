@@ -6,6 +6,8 @@ aliases:
     - "test"
   - &linting_test
     - "linting"
+  - &unit_test
+    - "test"
 executors:
   linux:
     docker:
@@ -27,13 +29,13 @@ workflows:
       - test:
           requires: *linting_test
       - "integration_nautobot":
-          requires: *linting_and_unit_tests
+          requires: *unit_test
       - "integration_netbox28":
-          requires: *linting_and_unit_tests
+          requires: *unit_test
       - "integration_netbox29":
-          requires: *linting_and_unit_tests
+          requires: *unit_test
       - "integration_netbox210":
-          requires: *linting_and_unit_tests
+          requires: *unit_test
 
 jobs:
   linting:
