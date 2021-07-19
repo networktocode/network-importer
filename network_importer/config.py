@@ -53,7 +53,12 @@ class BatfishSettings(BaseSettings):
 
         fields = {
             "address": {"env": "BATFISH_ADDRESS"},
+            "network_name": {"env": "BATFISH_NETWORK_NAME"},
+            "snapshot_name": {"env": "BATFISH_SNAPSHOT_NAME"},
             "api_key": {"env": "BATFISH_API_KEY"},
+            "port_v1": {"env": "BATFISH_PORT_V1"},
+            "port_v2": {"env": "BATFISH_PORT_V2"},
+            "use_ssl": {"env": "BATFISH_USE_SSL"},
         }
 
 

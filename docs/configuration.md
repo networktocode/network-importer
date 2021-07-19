@@ -67,14 +67,13 @@ inventory_class = "network_importer.inventory.NetboxInventory"
 The `[batfish]` section regroup all parameters to connect to Batfish.
 ```toml
 [batfish]
-address = "localhost"   # Alternative Env Variable : BATFISH_ADDRESS
-api_key = "XXXX"        # Alternative Env Variable : BATFISH_API_KEY
-network_name = "network-importer"
-snapshot_name = "latest"
-port_v1 = 9997
-port_v2 = 9996
-use_ssl = false
-api_key = "XXXX"       # API KEY to connect to Batfish enterprise instance
+address = "localhost"               # Alternative Env Variable : BATFISH_ADDRESS
+api_key = "XXXX"                    # Alternative Env Variable : BATFISH_API_KEY
+network_name = "network-importer"   # Alternative Env Variable : BATFISH_NETWORK_NAME
+snapshot_name = "latest"            # Alternative Env Variable : BATFISH_SNAPSHOT_NAME
+port_v1 = 9997                      # Alternative Env Variable : BATFISH_PORT_V1
+port_v2 = 9996                      # Alternative Env Variable : BATFISH_PORT_V2
+use_ssl = false                     # Alternative Env Variable : BATFISH_USE_SSL
 ```
 
 ## Network Section
