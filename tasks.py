@@ -404,7 +404,7 @@ def compose_nautobot(context):
 
     # Start the container
     context.run(
-        "docker run -itd --rm --name nautobot -v ./uwsgi.ini:/opt/nautobot/uwsgi.ini -p 8000:8000 networktocode/nautobot-lab:latest",
+        "docker run -itd --rm --name nautobot -v $(pwd)/uwsgi.ini:/opt/nautobot/uwsgi.ini -p 8000:8000 networktocode/nautobot-lab:latest",
         pty=True,
     )
 
