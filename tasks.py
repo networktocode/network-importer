@@ -403,7 +403,7 @@ def compose_nautobot(context):
     context.run("docker pull networktocode/nautobot-lab:latest ", pty=True)
 
     # Start the container
-    context.run("docker run -itd --rm --name nautobot -p 8000:8000 networktocode/nautobot-lab:latest", pty=True)
+    context.run("docker run -itd --rm --name nautobot -v ./uwsgi.ini:/opt/nautobot/uwsgi.ini -p 8000:8000 networktocode/nautobot-lab:latest", pty=True)
 
     # Execute the load demo data
     context.run("sleep 5 && docker exec -it nautobot load-mock-data", pty=True)
