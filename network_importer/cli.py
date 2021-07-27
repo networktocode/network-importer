@@ -27,6 +27,8 @@ from rich.table import Table
 
 import network_importer.config as config
 from network_importer.main import NetworkImporter
+from network_importer.inventory import reachable_devs
+from network_importer.tasks import check_if_reachable
 
 import network_importer.performance as perf
 
@@ -46,7 +48,7 @@ def main():
 
 def init(config_file):
     """Init Network-Importer."""
-    config.load(config_file_name=config_file)
+    config.load_and_exit(config_file_name=config_file)
     perf.init()
 
     # ------------------------------------------------------------
@@ -170,15 +172,22 @@ def check(config_file, limit, debug, update_configs):
     help="limit the execution on a specific device or group of devices --limit=device1 or --limit='site=sitea' ",
     type=str,
 )
+@click.option("--check-connectivity", is_flag=True, help="Check if the devices are reachable on port 22")
 @click.option("--update-configs", is_flag=True, help="Pull the latest configs from the devices")
 @click.option(
     "--debug", is_flag=True, help="Keep the script in interactive mode once finished for troubleshooting", hidden=True
 )
 @main.command()
-def inventory(config_file, limit, debug, update_configs):
+def inventory(config_file, limit, debug, check_connectivity, update_configs):
     """Display inventory."""
     ni = init(config_file)
     ni.build_inventory(limit=limit)
+
+    if check_connectivity:
+        ni.nornir.filter(filter_func=reachable_devs).run(task=check_if_reachable, on_failed=True)
+
+    if update_configs:
+        ni.update_configurations()
 
     if limit:
         table = Table(title=f"Device Inventory (limit:{limit})")
@@ -192,18 +201,21 @@ def inventory(config_file, limit, debug, update_configs):
     table.add_column("Reason")
 
     for hostname, host in ni.nornir.inventory.hosts.items():
-        if host.data["is_reachable"]:
+        if host.is_reachable:
             is_reachable = "[green]True"
             reason = None
         else:
             is_reachable = "[red]False"
-            reason = f"[red]{host.data['not_reachable_reason']}"
+            reason = f"[red]{host.not_reachable_reason}"
 
         driver = config.SETTINGS.drivers.mapping.get(host.platform, config.SETTINGS.drivers.mapping.get("default"))
         table.add_row(hostname, host.platform, driver, is_reachable, reason)
 
     console = Console()
     console.print(table)
+
+    if debug:
+        pdb.set_trace()
 
 
 if __name__ == "__main__":

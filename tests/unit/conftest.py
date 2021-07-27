@@ -2,6 +2,7 @@
 import pytest
 
 import pynetbox
+import pynautobot
 from diffsync import DiffSync
 from diffsync.diff import DiffElement
 
@@ -13,6 +14,9 @@ from network_importer.adapters.network_importer.adapter import NetworkImporterAd
 
 from network_importer.adapters.netbox_api.adapter import NetBoxAPIAdapter
 from network_importer.adapters.netbox_api.models import NetboxSite, NetboxDevice, NetboxInterface, NetboxVlan
+
+from network_importer.adapters.nautobot_api.adapter import NautobotAPIAdapter
+from network_importer.adapters.nautobot_api.models import NautobotSite, NautobotDevice, NautobotInterface, NautobotVlan
 
 
 @pytest.fixture
@@ -204,7 +208,7 @@ def diff_children_nyc_dev1():
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, config={})
+    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     return diffsync
@@ -213,7 +217,7 @@ def netbox_api_empty():
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, config={})
+    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
     diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
     diffsync.add(NetboxSite(name="HQ", remote_id=10))
@@ -227,7 +231,7 @@ def netbox_api_base():
 @pytest.fixture
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
-    diffsync = NetworkImporterAdapter(nornir=None, config={})
+    diffsync = NetworkImporterAdapter(nornir=None, settings={})
 
     diffsync.add(Site(name="HQ"))
     diffsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
@@ -239,6 +243,45 @@ def network_importer_base():
 
 @pytest.fixture
 def empty_netbox_query():
+    """Return an empty list to a list query."""
+    value = {
+        "count": 0,
+        "next": None,
+        "previous": None,
+        "results": [],
+    }
+    return value
+
+
+@pytest.fixture
+def nautobot_api_base():
+    """Provide an instance of NautobotAPIAdapter with pynautoboot initiliazed."""
+    diffsync = NautobotAPIAdapter(nornir=None, settings={})
+    diffsync.nautobot = pynautobot.api(url="http://mock_nautobot", token="1234567890")
+
+    diffsync.add(NautobotSite(name="HQ", remote_id="a325e477-62fe-47f0-8b67-acf411b1868f"))
+    diffsync.add(NautobotDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id="e0633a07-c3e2-41b0-a1df-4627392acf0a"))
+    diffsync.add(
+        NautobotInterface(
+            name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id="fecc1d8f-99b1-491d-9bdf-1dcb394e27a1"
+        )
+    )
+    diffsync.add(NautobotVlan(vid=111, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e"))
+
+    return diffsync
+
+
+@pytest.fixture
+def nautobot_api_empty():
+    """Provide an instance of NautobotAPIAdapter with pynautobot initiliazed."""
+    diffsync = NautobotAPIAdapter(nornir=None, settings={})
+    diffsync.nautobot = pynautobot.api(url="http://mock", token="1234567890")
+
+    return diffsync
+
+
+@pytest.fixture
+def empty_nautobot_query():
     """Return an empty list to a list query."""
     value = {
         "count": 0,

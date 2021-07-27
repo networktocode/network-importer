@@ -1,12 +1,12 @@
 
 # Architecture
 
-Internally the network-importer is leveraging the [diffsync](https://github.com/networktocode/diffsync) library to compare the state of the network and the state of the Source of Truth. The diffsync library is designed to compare the state of 2 **adapters** based on a shared data-models.
+Internally the network-importer is leveraging the [diffsync](https://github.com/networktocode/diffsync) library to compare the state of the network and the state of the Source of Truth. [The diffsync library is designed to compare the state of 2 **adapters** based on a shared data-models](https://blog.networktocode.com/post/intro-to-diffing-and-syncing-data-with-diffsync/).
 
 To communicate to the network devices, the network importer is leveraging [Nornir](https://github.com/nornir-automation/nornir) and incorporate a concept of **drivers** to easily add support for more platforms if needed.
 By default the Network Importer supports 3 main actions to execute against the network devices:
 - `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
-- `get_neighbors`: Retrieve the list of all neighbors, eiher from LLDP or CDP (based on the configuration)
+- `get_neighbors`: Retrieve the list of all neighbors, either from LLDP or CDP (based on the configuration)
 - `get_vlans`: Retrieve the list of vlans present on the device.
 
 ## Internal Datamodel
@@ -22,13 +22,35 @@ The internal/shared datamodel is defined in the [network_importer/models.py](../
 
 > It's possible to extend the default models and add your own, please check the [extensibility section](extensibility.md) of the documentation
 
-## Adapters
+## Backend, Adapters & Inventory
 
-To operate the Network Importer needs 2 adapters. 
+To operate the Network Importer needs 1 inventory and 2 adapters:
+- An inventory to get the list of devices to analyze and get the minimum information to connect to them (platform, address, cred
+entials ..)
+- One adapter to read the information from the network and one to read/write information to the Source of Truth backend.
 
-An adapter to read the information from the network and one to read/write information to Netbox via its Rest API are provided by default but it's possible to provide your own adapter or extend either or both default adapters.
+Since the inventory is usually leveraging the SOT, the SOT adapter and the inventory are packaged into a **backend**. Both Nautobot and Netbox are supported as backend systems. When a specific backend is selected it will update both the SOT adapter and the inventory.
+With or without leveraging the default backends, it's possible to provide your own adapter or extend one of the default adapters.
 
-> The base adapter for Network Importer is defined in [network_importer/adapters/base.py](../network_importer/adapters/base.py). The main difference with a standard diffsync adapter is that a Network Importer adapter needs to accept a nornir inventory as parameters at init time (nornir).
+> The base adapter for Network Importer is defined in [network_importer/adapters/base.py](../network_importer/adapters/base.py). The main difference with a standard diffsync adapter is that a Network Importer adapter needs to accept a NetworkImporter inventory (based on a Nornir inventory) as parameters at init time (nornir).
+
+### Nautobot API Adapter
+
+The Nautobot API adapter is designed to read the status of a Nautobot server over its Rest API and update Nautobot based on the status of the network.
+
+The table below present the capabilities in term of : Read, Create, Update and Delete supported for each model by the netbox_api adapter.
+
+| Model              | Inherit from | Create | Read   | Update | Delete |
+|--------------------|--------------|--------|--------|--------|--------|
+| NautobotSite       | Site         | No     | Yes    | No     | No     | 
+| NautobotDevice     | Device       | No     | Yes    | No     | No     | 
+| NautobotInterface  | Interface    | Yes    | Yes    | Yes    | Yes    | 
+| NautobotIPAddress  | IPAddress    | Yes    | Yes    | Yes    | Yes    | 
+| NautobotPrefix     | Prefix       | Yes    | Yes    | Yes    | No     | 
+| NautobotVlan       | Vlan         | Yes    | Yes    | Yes    | No     | 
+| NautobotCable      | Cable        | Yes    | Yes    | No     | No     | 
+
+> It's possible to extend the default models and add your own, please check the [extensibility section](extensibility.md) of the documentation
 
 ### NetBox API Adapter
 
@@ -54,7 +76,7 @@ The Network Importer Adapter is designed to read the status of the network prima
 
 ## Drivers
 
-The communicate with the network devices, the network importer is leveraging Nornir and support some drivers per platform to easily support more device type.
+The communicate with the network devices, the network-importer is leveraging Nornir and support some drivers per platform to easily support more device type.
 
 Each driver, should support each of the following actions: 
 - `get_config`: Retrieve the running configuration and store it in the `config_directory` folder.
@@ -72,7 +94,7 @@ By default, 4 drivers are available `default`, `cisco_default`, `juniper_junos` 
 | juniper_junos   | juniper_junos  |
 | arista_eos      | arista_eos     |
 
-> The name of the platform must match the name of the slug platform defined in NetBox for a given device
+> The name of the platform must match the name of the slug platform defined in the inventory for a given device
 
 ### Drivers available by default
 

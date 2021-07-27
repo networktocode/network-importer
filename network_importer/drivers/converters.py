@@ -144,7 +144,7 @@ def convert_cisco_genie_vlans(device_name: str, data: dict) -> Vlans:
             continue
 
         if vlan_data.get("state", None) == "unsupport":
-            LOGGER.warning("%s | Unsupported VLAN found, VLAN %s", device_name, vid)
+            LOGGER.debug("%s | Unsupported VLAN found, VLAN %s", device_name, vid)
             continue
 
         results.vlans.append(Vlan(name=vlan_data["name"], vid=int(vlan_data["vlan_id"])))

@@ -6,9 +6,11 @@ import_prefixes = true
 import_cabling = "config"
 import_vlans = "config"
 
-nbr_workers = 1
+nbr_workers = 5
 
-[inventory]
+backend = "netbox"
+
+[inventory.settings]
 filter="region=ni_multi_site_02"
 
 [logs]

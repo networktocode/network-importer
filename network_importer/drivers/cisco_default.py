@@ -14,7 +14,7 @@ limitations under the License.
 """
 import logging
 
-from nornir.plugins.tasks.networking import netmiko_send_command
+from nornir_netmiko.tasks import netmiko_send_command
 from nornir.core.task import Result, Task
 from nornir.core.exceptions import NornirSubTaskError
 

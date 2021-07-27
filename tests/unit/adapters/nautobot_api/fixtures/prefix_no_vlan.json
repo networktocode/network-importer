@@ -1,0 +1,37 @@
+{
+    "id": "3e1d0bf7-43de-493e-901e-661647aac2af",
+    "url": "https://localhost/api/ipam/prefixes/3e1d0bf7-43de-493e-901e-661647aac2af/",
+    "family": {
+        "value": 4,
+        "label": "IPv4"
+    },
+    "prefix": "10.0.0.0/16",
+    "site": {
+        "id": "f54adca8-79a8-40e8-900f-d5dfe48c64eb",
+        "url": "https://localhost/api/dcim/sites/f54adca8-79a8-40e8-900f-d5dfe48c64eb/",
+        "name": "atl",
+        "slug": "atl",
+        "display": "atl"
+    },
+    "vrf": null,
+    "tenant": null,
+    "vlan": null,
+    "status": {
+        "value": "container",
+        "label": "Container"
+    },
+    "role": {
+        "id": "8fc01502-3a94-436b-96d9-a0a4dd1dd8d8",
+        "url": "https://localhost/api/ipam/roles/8fc01502-3a94-436b-96d9-a0a4dd1dd8d8/",
+        "name": "pop",
+        "slug": "pop",
+        "display": "pop"
+    },
+    "is_pool": false,
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2021-04-19",
+    "last_updated": "2021-04-19T15:26:43.578526",
+    "display": "10.0.0.0/16"
+}

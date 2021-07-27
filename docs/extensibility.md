@@ -7,9 +7,10 @@ The extensibility principles leverages Python object extensibility. It's recomme
 You can use [setuptools](https://python-packaging-tutorial.readthedocs.io/en/latest/setup_py.html) or [Poetry](http://blog.networktocode.com/post/upgrade-your-python-project-with-poetry/) to quickly create a new python package.
 
 There are different ways the Network Importer can be extended depending on what you are trying to achieve:
-- [Add support for new device platform by extending the default drivers](#extend-the-default-drivers)
-- [Add support for new features buy extending the adapters](#extend-an-existing-adapter-or-provide-your-own)
-- [Add support for new data by extending the models](#extend-the-default-models)
+  - [Extend the default drivers](#extend-the-default-drivers)
+  - [Extend an existing adapter or provide your own](#extend-an-existing-adapter-or-provide-your-own)
+  - [Extend the default inventory](#extend-the-default-inventory)
+  - [Extend the default models](#extend-the-default-models)
 
 ## Extend the default drivers
 
@@ -40,7 +41,8 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             Result: Nornir Result object with a dict as a result containing the running configuration
                 { "config: <running configuration> }
         """
-        pass 
+        pass
+
     @staticmethod
     def get_neighbors(task: Task) -> Result:
         """Get a list of neighbors from the device.
@@ -99,7 +101,7 @@ class MyAdapter(NetworkImporterAdapter):
 
 ### Create a new adapter
 
-All adapters must implement the `load` method. The load method is called during the initilization process and is expected to load all the data from the remote system into the local cache, following the Models defined.
+All adapters must implement the `load` method. The load method is called during the initialization process and is expected to load all the data from the remote system into the local cache, following the Models defined.
 
 ```python
 from network_importer.adapters.base import BaseAdapter
@@ -119,6 +121,14 @@ Once your custom adapter is installed, you need to update your configuration fil
 network_class = "my_python_package.adapters.MyAdapter"
 sot_class = "my_python_package.adapters.MyOtherAdapter"
 ```
+
+## Extend the default inventory
+
+It's possible to extend the default inventory or provide your own inventory.
+
+A Network Importer inventory must be a valid Nornir 3.x inventory and it must be based of the NetworkImporterInventory class.
+
+Once you have created your own inventory, you need to register it with Nornir in order for Nornir to successfully load it. You than need to define your inventory name in [inventory.inventory_class]
 
 ## Extend the default models
 

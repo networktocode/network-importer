@@ -1,17 +1,4 @@
-"""Settings definition for the network importer.
-
-(c) 2020 Network To Code
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-  http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+"""Settings definition for the network importer."""
 # pylint: disable=invalid-name,redefined-outer-name
 
 import os
@@ -22,7 +9,8 @@ from typing import List, Dict, Optional, Union
 import toml
 from pydantic import BaseSettings, ValidationError
 from typing_extensions import Literal
-from diffsync import DiffSyncModelFlags
+
+from network_importer.exceptions import ConfigLoadFatalError
 
 SETTINGS = None
 
@@ -35,7 +23,18 @@ DEFAULT_DRIVERS_MAPPING = {
     "arista_eos": "network_importer.drivers.arista_eos",
 }
 
-# pylint: disable=too-few-public-methods,global-statement
+DEFAULT_BACKENDS = {
+    "netbox": {
+        "inventory": "NetBoxAPIInventory",
+        "adapter": "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter",
+    },
+    "nautobot": {
+        "inventory": "NautobotAPIInventory",
+        "adapter": "network_importer.adapters.nautobot_api.adapter.NautobotAPIAdapter",
+    },
+}
+
+# pylint: disable=global-statement
 
 
 class BatfishSettings(BaseSettings):
@@ -54,35 +53,12 @@ class BatfishSettings(BaseSettings):
 
         fields = {
             "address": {"env": "BATFISH_ADDRESS"},
+            "network_name": {"env": "BATFISH_NETWORK_NAME"},
+            "snapshot_name": {"env": "BATFISH_SNAPSHOT_NAME"},
             "api_key": {"env": "BATFISH_API_KEY"},
-        }
-
-
-class NetboxSettings(BaseSettings):
-    """Settings definition for the Netbox section of the configuration."""
-
-    address: str = "http://localhost"
-    token: Optional[str]
-    verify_ssl: bool = True
-
-    model_flag_tags: List[str] = list()  # List of tags that defines what objects to assign the model_flag to.
-    model_flag: Optional[DiffSyncModelFlags]  # The model flag that will be applied to objects based on tag.
-
-    """Define a list of supported platform,
-    if defined all devices without platform or with a different platforms will be removed from the inventory"""
-    supported_platforms: List[str] = list()
-
-    # Currently not used in 2.x, need to add them back
-    # cacert: Optional[str]
-    # request_ssl_verify: bool = False
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {
-            "address": {"env": "NETBOX_ADDRESS"},
-            "token": {"env": "NETBOX_TOKEN"},
-            "verify_ssl": {"env": "NETBOX_VERIFY_SSL"},
+            "port_v1": {"env": "BATFISH_PORT_V1"},
+            "port_v2": {"env": "BATFISH_PORT_V2"},
+            "use_ssl": {"env": "BATFISH_USE_SSL"},
         }
 
 
@@ -92,9 +68,10 @@ class NetworkSettings(BaseSettings):
     login: Optional[str]
     password: Optional[str]
     enable: bool = True
-    global_delay_factor: int = 5
-    banner_timeout: int = 15
-    conn_timeout: int = 5
+
+    netmiko_extras: Optional[dict]
+    napalm_extras: Optional[dict]
+
     fqdns: List[str] = list()  # List of valid FQDN that can be found in the network
 
     class Config:
@@ -136,6 +113,10 @@ class MainSettings(BaseSettings):
 
     configs_directory: str = "configs"
 
+    backend: Optional[Literal["nautobot", "netbox"]]
+    """Only Netbox and Nautobot backend are included by default, if you want to use another backend
+    you must leave backend empty and define inventory.inventory_class and adapters.sot_class manually."""
+
     # NOT SUPPORTED CURRENTLY
     generate_hostvars: bool = False
     hostvars_directory: str = "host_vars"
@@ -145,9 +126,10 @@ class AdaptersSettings(BaseSettings):
     """Settings definition for the Adapters section of the configuration."""
 
     network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
-    sot_class: str = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
-    sot_params: Optional[dict]
-    network_params: Optional[dict]
+    network_settings: Optional[dict]
+
+    sot_class: Optional[str]
+    sot_settings: Optional[dict]
 
 
 class DriversSettings(BaseSettings):
@@ -163,16 +145,10 @@ class InventorySettings(BaseSettings):
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
     """
 
-    use_primary_ip: bool = True
-    fqdn: Optional[str]
+    inventory_class: Optional[str]
+    settings: Optional[dict]
 
-    inventory_class: str = "network_importer.inventory.NetboxInventory"
-    filter: str = ""
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {"inventory_filter": {"env": "INVENTORY_FILTER"}}
+    supported_platforms: List[str] = list()
 
 
 class Settings(BaseSettings):
@@ -183,7 +159,6 @@ class Settings(BaseSettings):
     """
 
     main: MainSettings = MainSettings()
-    netbox: NetboxSettings = NetboxSettings()
     batfish: BatfishSettings = BatfishSettings()
     logs: LogsSettings = LogsSettings()
     network: NetworkSettings = NetworkSettings()
@@ -192,33 +167,83 @@ class Settings(BaseSettings):
     inventory: InventorySettings = InventorySettings()
 
 
-def load(config_file_name="network_importer.toml", config_data=None):
-    """Load a configuration file in pyproject.toml format that contains the settings.
+def _configure_backend(settings: Settings):
+    """Configure the inventory and the SOT adapter for a given backend.
 
-    The settings for this app are expected to be in [tool.json_schema_testing] in TOML
-    if nothing is found in the config file or if the config file do not exist, the default values will be used.
+    The inventory and/or the adapter will be updated if:
+      - a backend provided is valid
+      - no value has been defined already
 
     Args:
-        config_file_name (str, optional): Name of the configuration file to load. Defaults to "pyproject.toml".
+        settings (Settings)
+
+    Returns:
+        Settings
+    """
+    if not settings.main.backend and (not settings.inventory.inventory_class or not settings.adapters.sot_class):
+        raise ConfigLoadFatalError(
+            "You must define a valid backend or assign inventory.inventory_class and adapters.sot_class manually."
+        )
+
+    if not settings.main.backend:
+        return settings
+
+    supported_backends = DEFAULT_BACKENDS.keys()
+    if settings.main.backend not in supported_backends:
+        raise ConfigLoadFatalError(f"backend value one of : {', '.join(supported_backends)}")
+
+    if not settings.inventory.inventory_class:
+        settings.inventory.inventory_class = DEFAULT_BACKENDS[settings.main.backend]["inventory"]
+
+    if not settings.adapters.sot_class:
+        settings.adapters.sot_class = DEFAULT_BACKENDS[settings.main.backend]["adapter"]
+
+    return settings
+
+
+def load(config_file_name="network_importer.toml", config_data=None):
+    """Load configuration.
+
+    Configuration is loaded from a file in network_importer.toml format that contains the settings,
+    or from a dictionary of those settings passed in as "config_data"
+
+    Args:
+        config_file_name (str, optional): Name of the configuration file to load. Defaults to "network_importer.toml".
         config_data (dict, optional): dict to load as the config file instead of reading the file. Defaults to None.
     """
     global SETTINGS
 
     if config_data:
-        SETTINGS = Settings(**config_data)
+        SETTINGS = _configure_backend(Settings(**config_data))
         return
 
     if os.path.exists(config_file_name):
         config_string = Path(config_file_name).read_text()
         config_tmp = toml.loads(config_string)
-
-        try:
-            SETTINGS = Settings(**config_tmp)
-            return
-        except ValidationError as e:
-            print(f"Configuration not valid, found {len(e.errors())} error(s)")
-            for error in e.errors():
-                print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
-            sys.exit(1)
+        SETTINGS = _configure_backend(Settings(**config_tmp))
+        return
 
     SETTINGS = Settings()
+
+
+def load_and_exit(config_file_name="network_importer.toml", config_data=None):
+    """Calls load, but wraps it in a try except block.
+
+    This is done to handle a ValidationError which is raised when settings are specified but invalid.
+    In such cases, a message is printed to the screen indicating the settings which don't pass validation.
+
+    Args:
+        config_file_name (str, optional): [description]. Defaults to "network_importer.toml".
+        config_data (dict, optional): [description]. Defaults to None.
+    """
+    try:
+        load(config_file_name=config_file_name, config_data=config_data)
+    except ValidationError as err:
+        print(f"Configuration not valid, found {len(err.errors())} error(s)")
+        for error in err.errors():
+            print(f"  {'/'.join(error['loc'])} | {error['msg']} ({error['type']})")
+        sys.exit(1)
+    except ConfigLoadFatalError as err:
+        print("Configuration not valid")
+        print(f"  {err}")
+        sys.exit(1)

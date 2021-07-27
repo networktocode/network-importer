@@ -1,0 +1,39 @@
+{
+    "id": "2c6f4d82-e8e4-48ca-a62f-abf8586ff82a",
+    "url": "http://localhost/api/ipam/ip-addresses/2c6f4d82-e8e4-48ca-a62f-abf8586ff82a/",
+    "family": {
+        "value": 4,
+        "label": "IPv4"
+    },
+    "address": "10.255.0.69/30",
+    "vrf": null,
+    "tenant": null,
+    "status": {
+        "value": "active",
+        "label": "Active"
+    },
+    "role": null,
+    "assigned_object_type": "dcim.interface",
+    "assigned_object_id": "3f5c0760-54ec-4081-9b27-afbe49e824aa",
+    "assigned_object": {
+        "id": "3f5c0760-54ec-4081-9b27-afbe49e824aa",
+        "url": "http://localhost/api/dcim/interfaces/3f5c0760-54ec-4081-9b27-afbe49e824aa/",
+        "device": {
+            "id": "044c4bc9-c88c-4d8b-abb7-9dc1835696d4",
+            "url": "http://localhost/api/dcim/devices/e0633a07-c3e2-41b0-a1df-4627392acf0a/",
+            "name": "HQ-CORE-SW02",
+            "display_name": "HQ-CORE-SW02"
+        },
+        "name": "TenGigabitEthernet1/0/1",
+        "cable": null,
+        "connection_status": null
+    },
+    "nat_inside": null,
+    "nat_outside": null,
+    "dns_name": "",
+    "description": "",
+    "tags": [],
+    "custom_fields": {},
+    "created": "2020-11-05",
+    "last_updated": "2020-11-05T22:59:40.561732Z"
+}

@@ -111,21 +111,21 @@ class GetConfig(BaseProcessor):
                 LOGGER.warning("%s | %s", task.host.name, result[0].exception)
             else:
                 LOGGER.warning("%s | Something went wrong while trying to update the configuration ", task.host.name)
-            host.data["status"] = "fail-other"
+            host.status = "fail-other"
             return
 
         conf = result[0].result.get("config", None)
 
         if not conf:
             LOGGER.warning("%s | No configuration return ", task.host.name)
-            host.data["status"] = "fail-other"
+            host.status = "fail-other"
             return
 
         # Count the number of lines in the config file, if less than 10 report an error
         # mostlikely something went wrong while pulling the config
         if conf.count("\n") < 10:
             LOGGER.warning("%s | Less than 10 configuration lines returned", task.host.name)
-            host.data["status"] = "fail-other"
+            host.status = "fail-other"
             return
 
         if host.name in self.existing_config_hostnames:
@@ -135,7 +135,7 @@ class GetConfig(BaseProcessor):
         with open(self.config_filename[host.name], "w") as config_:
             config_.write(conf)
 
-        host.data["has_config"] = True
+        host.has_config = True
 
         self.current_md5[host.name] = hashlib.md5(conf.encode("utf-8")).hexdigest()
         # changed = False
