@@ -1,0 +1,213 @@
+---
+name: "CI"
+on:
+  - "push"
+  - "pull_request"
+jobs:
+  black:
+    env:
+      INVOKE_LOCAL: "True"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install --upgrade pip wheel invoke toml black"
+      - name: "Linting: Black"
+        run: "invoke black"
+  bandit:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install --upgrade pip wheel invoke toml bandit"
+      - name: "Linting: Bandit"
+        run: "invoke bandit"
+    needs:
+      - "black"
+  pydocstyle:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install --upgrade pip wheel invoke toml pydocstyle"
+      - name: "Linting: pydocstyle"
+        run: "invoke pydocstyle"
+    needs:
+      - "black"
+  flake8:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install --upgrade pip wheel invoke toml flake8"
+      - name: "Linting: flake8"
+        run: "invoke flake8"
+    needs:
+      - "black"
+  yamllint:
+    runs-on: "ubuntu-20.04"
+    env:
+      INVOKE_LOCAL: "True"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install --upgrade pip wheel invoke toml yamllint"
+      - name: "Linting: yamllint"
+        run: "invoke yamllint"
+    needs:
+      - "black"
+  build:
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Setup"
+        run: "pip install invoke poetry toml"
+      - name: "Build Container"
+        run: "invoke build"
+    needs:
+      - "bandit"
+      - "pydocstyle"
+      - "flake8"
+      - "yamllint"
+  pylint:
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install invoke poetry toml"
+      - name: "Build Container"
+        run: "invoke build"
+      - name: "Linting: Pylint"
+        run: "invoke pylint"
+    needs:
+      - "build"
+  pytest:
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+    runs-on: "ubuntu-20.04"
+    env:
+      PYTHON_VER: "${{ matrix.python-version }}"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Linting"
+        run: "pip install invoke poetry toml"
+      - name: "Build Container"
+        run: "invoke build"
+      - name: "Run Tests"
+        run: "invoke pytest"
+    needs:
+      - "pylint"
+  integration_nautobot:
+    name: "Integration Test - Nautobot"
+    runs-on: "ubuntu-20.04"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Run Install"
+        run: |
+          which pip
+          pip -V
+          pip install --upgrade pip wheel
+          pip install invoke toml poetry pynautobot ansible==2.10.7
+          ansible-galaxy collection install networktocode.nautobot
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install
+          invoke nautobot-integration-tests
+    env:
+      NAUTOBOT_VERSION: "1.0.1"
+  publish_gh:
+    name: "Publish to GitHub"
+    runs-on: "ubuntu-20.04"
+    if: "startsWith(github.ref, 'refs/tags/v')"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Set up Python"
+        uses: "actions/setup-python@v2"
+        with:
+          python-version: "3.9"
+      - name: "Install Python Packages for Publishing"
+        run: "pip install invoke poetry toml"
+      - name: "Set env"
+        run: "echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})"
+      - name: "Run Poetry Version"
+        run: "poetry version $RELEASE_VERSION"
+      - name: "Run Poetry Build"
+        run: "poetry build"
+      - name: "Upload binaries to release"
+        uses: "svenstaro/upload-release-action@v2"
+        with:
+          repo_token: "${{ secrets.NTC_GITHUB_TOKEN }}"
+          file: "dist/*"
+          tag: "$RELEASE_VERSION"
+          overwrite: true
+          file_glob: true
+    needs:
+      - "pytest"
+  publish_pypi:
+    name: "Push Package to PyPI"
+    runs-on: "ubuntu-20.04"
+    if: "startsWith(github.ref, 'refs/tags/v')"
+    steps:
+      - name: "Check out repository code"
+        uses: "actions/checkout@v2"
+      - name: "Push to PyPI"
+        uses: "pypa/gh-action-pypi-publish@release/v1"
+        with:
+          user: "__token__"
+          password: "${{ secrets.PYPI_API_TOKEN }}"
+    needs:
+      - "pytest"
