@@ -19,6 +19,7 @@ jobs:
         run: "pip install --upgrade pip wheel invoke toml"
       - name: "Install Poetry Packages"
         run: |
+          pip install poetry
           poetry config virtualenvs.create false
           poetry config installer.parallel false
           poetry install --no-interaction --no-ansi --no-root
