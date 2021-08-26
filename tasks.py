@@ -221,7 +221,7 @@ def yamllint(context, name=NAME, image_ver=IMAGE_VER, local=INVOKE_LOCAL):
     """
     # pty is set to true to properly run the docker commands due to the invocation process of docker
     # https://docs.pyinvoke.org/en/latest/api/runners.html - Search for pty for more information
-    exec_cmd = "yamllint ."
+    exec_cmd = "yamllint . --format parsable"
     run_cmd(context, exec_cmd, name, image_ver, local)
 
 
