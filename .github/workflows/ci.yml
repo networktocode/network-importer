@@ -16,7 +16,12 @@ jobs:
         with:
           python-version: "3.9"
       - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml black"
+        run: "pip install --upgrade pip wheel invoke toml"
+      - name: "Install Poetry Packages"
+        run: |
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install --no-interaction --no-ansi --no-root
       - name: "Linting: Black"
         run: "invoke black"
   bandit:
@@ -168,6 +173,8 @@ jobs:
           invoke nautobot-integration-tests
     env:
       NAUTOBOT_VERSION: "1.0.1"
+    needs:
+      - "pytest"
   publish_gh:
     name: "Publish to GitHub"
     runs-on: "ubuntu-20.04"
