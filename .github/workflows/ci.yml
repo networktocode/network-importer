@@ -37,7 +37,13 @@ jobs:
         with:
           python-version: "3.9"
       - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml bandit"
+        run: "pip install --upgrade pip wheel invoke toml"
+      - name: "Install Poetry Packages"
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install --no-interaction --no-ansi --no-root
       - name: "Linting: Bandit"
         run: "invoke bandit"
     needs:
@@ -54,7 +60,13 @@ jobs:
         with:
           python-version: "3.9"
       - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml pydocstyle"
+        run: "pip install --upgrade pip wheel invoke toml"
+      - name: "Install Poetry Packages"
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install --no-interaction --no-ansi --no-root
       - name: "Linting: pydocstyle"
         run: "invoke pydocstyle"
     needs:
@@ -71,7 +83,13 @@ jobs:
         with:
           python-version: "3.9"
       - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml flake8"
+        run: "pip install --upgrade pip wheel invoke toml"
+      - name: "Install Poetry Packages"
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install --no-interaction --no-ansi --no-root
       - name: "Linting: flake8"
         run: "invoke flake8"
     needs:
@@ -88,7 +106,13 @@ jobs:
         with:
           python-version: "3.9"
       - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml yamllint"
+        run: "pip install --upgrade pip wheel invoke toml"
+      - name: "Install Poetry Packages"
+        run: |
+          pip install poetry
+          poetry config virtualenvs.create false
+          poetry config installer.parallel false
+          poetry install --no-interaction --no-ansi --no-root
       - name: "Linting: yamllint"
         run: "invoke yamllint"
     needs:
