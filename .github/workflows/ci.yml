@@ -129,7 +129,7 @@ jobs:
       - name: "Install Python Packages for Setup"
         run: "pip install invoke poetry toml"
       - name: "Build Container"
-        run: "invoke build"
+        run: "invoke build-image"
     needs:
       - "bandit"
       - "pydocstyle"
