@@ -147,7 +147,7 @@ jobs:
       - name: "Install Python Packages for Linting"
         run: "pip install invoke poetry toml"
       - name: "Build Container"
-        run: "invoke build"
+        run: "invoke build-image"
       - name: "Linting: Pylint"
         run: "invoke pylint"
     needs:
@@ -170,7 +170,7 @@ jobs:
       - name: "Install Python Packages for Linting"
         run: "pip install invoke poetry toml"
       - name: "Build Container"
-        run: "invoke build"
+        run: "invoke build-image"
       - name: "Run Tests"
         run: "invoke pytest"
     needs:
