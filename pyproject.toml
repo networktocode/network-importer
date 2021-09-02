@@ -88,6 +88,7 @@ disable = """,
     use-dict-literal,
     consider-using-from-import,
     use-list-literal,
+    consider-using-dict-items,
     """
 
 [tool.pylint.miscellaneous]
