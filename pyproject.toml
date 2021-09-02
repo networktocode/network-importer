@@ -82,7 +82,12 @@ disable = """,
     line-too-long,
     bad-continuation,
     duplicate-code,
-    too-few-public-methods
+    too-few-public-methods,
+    consider-using-with,
+    unspecified-encoding,
+    use-dict-literal,
+    consider-using-from-import,
+    use-list-literal,
     """
 
 [tool.pylint.miscellaneous]
