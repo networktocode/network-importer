@@ -111,8 +111,8 @@ def convert_cisco_genie_cdp_neighbors_details(device_name, data):
         results.neighbors[intf_name].append(neighbor)
 
         # Ensure each interface no not have more than 1 neighbor
-        for intf_name in results.neighbors.keys():
-            if len(results.neighbors[intf_name]) == 1:
+        for intf_name, value in results.neighbors.items():
+            if len(value) == 1:
                 continue
 
             LOGGER.warning(
