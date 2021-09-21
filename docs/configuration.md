@@ -46,7 +46,7 @@ backend = "nautobot"
 
 # Inventory Section
 
-The `[inventory]` section regroup all parameters related to the inventory and also includes an optional list of supported platforms. network-importer supports multiple inventories, you can define your own inventory by defining `inventory_class` and each inventory can define its own list of settings which will need to be configurated under `[inventory.settings]`. The settings for the [nautobot inventory](backend/nautobot.md) and for the [netbox inventory](backend/netbox.md) are available in their respective documentation.
+The `[inventory]` section regroup all parameters related to the inventory and also includes an optional list of supported platforms. network-importer supports multiple inventories, you can define your own inventory by defining `inventory_class` and each inventory can define its own list of settings which will need to be configured under `[inventory.settings]`. The settings for the [nautobot inventory](backend/nautobot.md) and for the [netbox inventory](backend/netbox.md) are available in their respective documentation.
 
 ```toml
 [inventory]
@@ -56,7 +56,7 @@ The `[inventory]` section regroup all parameters related to the inventory and al
 supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
 # Configure which Inventory will be loaded by the network importer.
-inventory_class = "network_importer.inventory.NetboxInventory"
+backend = "nautobot"
 
 [inventory.settings]
 # Inventory specific settings, please refer to the documentation of each backend/inventory.
@@ -101,7 +101,7 @@ fqdns = [ ]
 # as part of the Nornir inventory.
 ```
 
-## Adapters Section
+<!-- ## Adapters Section
 
 Configure which adapters will be loaded by the network importer.
 Please see the [extensibility section](extensibility.md) of the documentation for more details on how to create your own adapter.
@@ -122,7 +122,7 @@ sot_class = "network_importer.adapters.netbox_api.adapter.NetBoxAPIAdapter"
 [adapters.sot_settings]
 # SOT Adapter specific settings, any settings defined in this section will be passed to the SOT Adapter. 
 # Please refer to the documentation of each adapter to see what settings are required/supported.
-```
+``` -->
 
 ## Drivers Section
 
