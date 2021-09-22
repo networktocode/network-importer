@@ -1,107 +1,45 @@
 [main]
-inventory_source = "nautobot"
 import_ips = true 
-import_prefixes = false
-import_intf_status = false
-
-# Vlans (name, vlan-id) can be imported from the configuration, from the CLI or both 
-# - "config" will import the vlans just from the configuration
-# - "cli" will import the vlans from the cli using the action `get_vlans`
-# - "true" will import vlans from both cli and config
-# - no or false will not import any vlans
-# The association between interface and vlans will always be derived from the configuration.
-import_vlans = "cli"         # Valid options are ["cli", "config", "no", true, false]
-
-# Cabling can be imported from LLDP, CDP or the configuration (for some point to point links)
-# - "lldp" or "cdp" will import the vlans from the cli using the action `get_neighbors`
-# - "config" will import the neighbors from the configuration (for point to point links)
-# - "true" will import neighbors from both cli and config 
-# - no or false will not import any neighbors
-import_cabling = "cdp"         # Valid options are ["lldp", "cdp", "config", "no", true, false]
+import_prefixes = true
+# import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
+# import_intf_status = false     # If set as False, interface status will be ignore all together
+# import_vlans = "config"         # Valid options are ["cli", "config", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
-# Number of Nornir tasks to execute at the same tim
-nbr_workers= 25
+# Directory where the configurations can be find, organized in Batfish format
+# configs_directory= "configs"
 
-# Directory where the configuration can be find, organized in Batfish format
-configs_directory = "configs"
-
-# [netbox]
-# address = "https://nautobot8"                   # Alternative Env Variable : NETBOX_ADDRESS
-# token = "6fd167451be23bc5104bc07995fa9f4185c33d48"  # Alternative Env Variable : NETBOX_TOKEN
-# verify_ssl = false                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
-
-# # Define a list of supported platform, 
-# # if defined all devices without platform or with a different platforms will be removed from the inventory
-# supported_platforms = [ "cisco_ios", "cisco_nxos" ]
-
-# # Settings for applying diffsync flags to diffsync model objects, in order to alter 
-# # the underlying sync behaviour. The model_flag is applied to any objects that have a 
-# # tag assigned within model_flag_tags. Further details on model_flags can be found 
-# # at: https://github.com/networktocode/diffsync/blob/269df51ce248beaef17d72374e96d19e6df95a13/diffsync/enum.py
-# model_flag_tags = ["your_tag"]
-# model_flag = 1 # flag enum int() representation
-
-[batfish]
-address = "dockerrunner"   # Alternative Env Variable : BATFISH_ADDRESS
-network_name = "network-importer"
-snapshot_name = "latest"
-port_v1 = 9997
-port_v2 = 9996
-use_ssl = false
-
-[network]
-login = "cisco"          # Alternative Env Variable : NETWORK_DEVICE_LOGIN
-password = "Cisco123!"       # Alternative Env Variable : NETWORK_DEVICE_PWD
-enable = true               # Alternative Env Variable : NETWORK_DEVICE_ENABLE
-
-# Connection parameters for Netmiko 
-global_delay_factor = 5
-banner_timeout = 15
-conn_timeout = 5
-
-# List of valid FQDN that can be found in the network,
-# The FQDNs in this list will be automatically removed from all neighbors discovered from LLDP/CDP
-fqdns = [ ]
+backend = "nautobot"            # Valid options are ["nautobot", "netbox"]
 
 [inventory]
-# The default method is to use the primary IP defined in NetBox.
-# As an alternative it's possible to use the name of the device and provide your own FQDN.
-use_primary_ip = false # (default: true)
-fqdn = "joshv.com"
-
-# Optional filter to limit the scope of the inventory, takes a comma separated string of key value pair"
-filter = "device=sw01" # ,site=YYY,status=active"    # Alternative Env Variable : INVENTORY_FILTER
-
-# Configure what Inventory will be loaded bu the network importer.
-inventory_class = "network_importer.inventory.NetboxInventory"
-
-[nautobot]
-address = "https://nautobot8:443"                   # Alternative Env Variable : NETBOX_ADDRESS
-token = "6fd167451be23bc5104bc07995fa9f4185c33d48"  # Alternative Env Variable : NETBOX_TOKEN
-verify_ssl = false                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
-
 # Define a list of supported platform, 
 # if defined all devices without platform or with a different platforms will be removed from the inventory
-supported_platforms = [ "cisco_ios", "cisco_nxos" ]
+# supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
-# Settings for applying diffsync flags to diffsync model objects, in order to alter 
-# the underlying sync behaviour. The model_flag is applied to any objects that have a 
-# tag assigned within model_flag_tags. Further details on model_flags can be found 
-# at: https://github.com/networktocode/diffsync/blob/269df51ce248beaef17d72374e96d19e6df95a13/diffsync/enum.py
-model_flag_tags = ["your_tag"]
-model_flag = 1 # flag enum int() representation
+[inventory.settings]
+# The information to connect to Nautobot needs to be provided, either in the config file or as environment variables
+# These settings are specific to the Nautobot inventory, please check the documentation of your inventory for the 
+# exist list of of available settings.
+# address = ""                   # Alternative Env Variable : NAUTOBOT_ADDRESS
+# token = ""  # Alternative Env Variable : NAUTOBOT_TOKEN
+# verify_ssl = true                                   # Alternative Env Variable : NAUTOBOT_VERIFY_SSL
 
-[netbox]
-address = "https://nautobot8"
-token = "6fd167451be23bc5104bc07995fa9f4185c33d48"  # Alternative Env Variable : NETBOX_TOKEN
-verify_ssl = false                                   # Alternative Env Variable : NETBOX_VERIFY_SSL
+[network]
+# To be able to pull live information from the devices, the credential information needs to be provided
+# either in the configuration file or as environment variables ( & NETWORK_DEVICE_PWD)
+# login = "username"      # Alternative Env Variable : NETWORK_DEVICE_LOGIN
+# password = "password"   # Alternative Env Variable : NETWORK_DEVICE_PWD
 
-# Define a list of supported platform, 
-# if defined all devices without platform or with a different platforms will be removed from the inventory
-supported_platforms = [ "cisco_ios", "cisco_nxos" ]
+[batfish]
+#################################################################################
+# Note: If using docker-compose right from repository use the environment var for
+#       BATFISH_ADDRESS=batfish-test
+# This will use the container name to connect to the host.
+#################################################################################
+# address= "localhost"    # Alternative Env Variable : BATFISH_ADDRESS
+# api_key = "XXXX"      # Alternative Env Variable : BATFISH_API_KEY
+# use_ssl = false
 
-# Settings for applying diffsync flags to diffsync model objects, in order to alter 
-# the underlying sync behaviour. The model_flag is applied to any objects that have a 
-# tag assigned within model_flag_tags. Further details on model_flags can be found 
-# at: https://github.com/networktocode/diffsync/blob/269df51ce248beaef17d72374e96d19e6df95a13/diffsync/enum.py
+[logs]
+# Define log level, currently the logs are printed on the screen
+# level = "info" # "debug", "info", "warning"

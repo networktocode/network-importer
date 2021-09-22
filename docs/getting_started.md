@@ -122,7 +122,7 @@ The Network Importer can run either in `check` mode or in `apply` mode.
 
 In check mode the Network Importer is working in read-only mode.
 
-The first time, it's encouraged to run the Network Importer in `--check` mode to guarantee that no change will be made to the SOT.
+The first time, it's encouraged to run the Network Importer in `check` mode to guarantee that no change will be made to the SOT.
 
 ```
 network-importer check [--update-configs] [--limit="site=nyc"]

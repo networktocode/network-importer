@@ -71,9 +71,9 @@ poetry install
 
 ### Execute
 
-First run the network importer in check mode to see the differences between the SOT and the network : `network-importer --check`
+First run the network importer in check mode to see the differences between the SOT and the network : `network-importer check`
 The first time this command will return a list of all devices and all interfaces because none of them exist in the SOT yet.
 
-Next you can import everything by running : `network-importer --apply`. This will create all interfaces, IP addresses,  prefixes and cables in Netbox.
+Next you can import everything by running : `network-importer apply`. This will create all interfaces, IP addresses,  prefixes and cables in Netbox.
 
-At this point the network and the SOT are in sync and you can start "playing" with it. you can make some changes either to the configuration or to the SOT, like Adding or deleting an interface in NetBox, and observe the behavior when running the network importer in `--check` or `--apply` mode.
+At this point the network and the SOT are in sync and you can start "playing" with it. you can make some changes either to the configuration or to the SOT, like Adding or deleting an interface in NetBox, and observe the behavior when running the network importer in `check` or `apply` mode.
