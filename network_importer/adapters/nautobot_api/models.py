@@ -368,7 +368,15 @@ class NautobotIPAddress(IPAddress):
                 return None
         try:
             ipaddr = self.diffsync.nautobot.ipam.ip_addresses.get(self.remote_id)
-            ipaddr.delete()
+            if ipaddr:
+                ipaddr.delete()
+            else:
+                LOGGER.warning(
+                    "Unable to delete IP address %s on %s in %s because IP address object cannot be located",
+                    self.address,
+                    self.device_name,
+                    self.diffsync.name,
+                )
         except pynautobot.core.query.RequestError as exc:
             LOGGER.warning(
                 "Unable to delete IP Address %s on %s in %s (%s)",
