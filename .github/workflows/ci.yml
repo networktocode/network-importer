@@ -11,18 +11,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml"
-      - name: "Install Poetry Packages"
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry config installer.parallel false
-          poetry install --no-interaction --no-ansi --no-root
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: Black"
         run: "invoke black"
   bandit:
@@ -32,18 +22,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml"
-      - name: "Install Poetry Packages"
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry config installer.parallel false
-          poetry install --no-interaction --no-ansi --no-root
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: Bandit"
         run: "invoke bandit"
     needs:
@@ -55,18 +35,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml"
-      - name: "Install Poetry Packages"
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry config installer.parallel false
-          poetry install --no-interaction --no-ansi --no-root
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: pydocstyle"
         run: "invoke pydocstyle"
     needs:
@@ -101,18 +71,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install --upgrade pip wheel invoke toml"
-      - name: "Install Poetry Packages"
-        run: |
-          pip install poetry
-          poetry config virtualenvs.create false
-          poetry config installer.parallel false
-          poetry install --no-interaction --no-ansi --no-root
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Linting: yamllint"
         run: "invoke yamllint"
     needs:
@@ -122,12 +82,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Setup"
-        run: "pip install invoke poetry toml"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Build Container"
         run: "invoke build-image"
     needs:
@@ -140,12 +96,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install invoke poetry toml"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Build Container"
         run: "invoke build-image"
       - name: "Linting: Pylint"
@@ -163,12 +115,8 @@ jobs:
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
-      - name: "Set up Python"
-        uses: "actions/setup-python@v2"
-        with:
-          python-version: "3.9"
-      - name: "Install Python Packages for Linting"
-        run: "pip install invoke poetry toml"
+      - name: "Setup environment"
+        uses: "networktocode/gh-action-setup-poetry-environment@v2"
       - name: "Build Container"
         run: "invoke build-image"
       - name: "Run Tests"
