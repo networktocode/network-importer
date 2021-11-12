@@ -145,6 +145,6 @@ network-importer apply [--update-configs] [--limit="site=nyc"]
 In addition to the supplied command you can also use `docker-compose` to bring up the required service stack. Like so:
 ```
 sudo docker-compose up -d
-sudo docker-compose exec network-importer bash
+sudo docker-compose exec network_importer bash
 sudo docker-compose down
 ```
