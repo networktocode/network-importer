@@ -153,3 +153,38 @@ level = "info"        # "debug", "info", "warning"
 performance_log = false
 performance_log_directory = "performance_logs"
 ```
+
+
+## Environment variables
+
+| Environment Variable  | config section         | config file entry          |
+| --------------------- | ---------------------- | -------------------------- |
+|                       | main                   | backend                    |
+|                       | main                   | import_ips                 |
+|                       | main                   | import_prefixes            |
+|                       | main                   | import_intf_status         |
+|                       | main                   | import_vlans               |
+|                       | main                   | import_cabling             |
+|                       | main                   | excluded_platforms_cabling | 
+|                       | main                   | nbr_workers                |
+|                       | main                   | configs_directory          |
+| BATFISH_ADDRESS       | batfish                | address                    |
+| BATFISH_NETWORK_NAME  | batfish                | network_name               |
+| BATFISH_SNAPSHOT_NAME | batfish                | snapshot_name              |
+| BATFISH_API_KEY       | batfish                | api_key                    |
+| BATFISH_PORT_V1       | batfish                | port_v1                    |
+| BATFISH_PORT_V2       | batfish                | port_v2                    |
+| BATFISH_USE_SSL       | batfish                | use_ssl                    |
+|                       | drivers.mapping        | <should this be made into ENV variables?> |
+|                       | inventory              | supported_platforms        |
+|                       | inventory              | backend (duplicate of main.backend?) |
+|                       | inventory.settings     | <TODO>                     |
+|                       | logs                   | level                      |
+|                       | logs                   | performance_log            |
+|                       | logs                   | performance_log_directory  |
+| NETWORK_DEVICE_LOGIN  | network                | login                      |
+| NETWORK_DEVICE_PWD    | network                | password                   |
+| NETWORK_DEVICE_ENABLE | network                | enable                     |
+|                       | network                | fqdns                      |
+|                       | network.netmiko_extras | <TODO>                     |
+|                       | network.napalm_extras  | <TODO>                     |
