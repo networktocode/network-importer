@@ -3,9 +3,11 @@ import logging
 import warnings
 
 import pynautobot
-from packaging.version import Version, InvalidVersion
-
 from diffsync.exceptions import ObjectAlreadyExists, ObjectNotFound
+from packaging.version import Version, InvalidVersion
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.base import BaseAdapter  # pylint: disable=import-error
 from network_importer.adapters.nautobot_api.models import (  # pylint: disable=import-error
@@ -17,8 +19,8 @@ from network_importer.adapters.nautobot_api.models import (  # pylint: disable=i
     NautobotPrefix,
     NautobotVlan,
 )
-from network_importer.adapters.nautobot_api.tasks import query_device_info_from_nautobot
 from network_importer.adapters.nautobot_api.settings import InventorySettings, AdapterSettings
+from network_importer.adapters.nautobot_api.tasks import query_device_info_from_nautobot
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -103,6 +105,14 @@ class NautobotAPIAdapter(BaseAdapter):
             self.nautobot.http_session.verify = False
         else:
             self.nautobot.http_session.verify = True
+
+        if inventory_settings.http_retries:
+            retries = Retry(total=inventory_settings.http_retries,
+                            backoff_factor=0.5,
+                            status_forcelist=[429, 500, 502, 503, 504, ],
+                            allowed_methods=False
+                            )
+            self.nautobot.http_session.mount(self.nautobot.base_url, HTTPAdapter(max_retries=retries))
 
         self._check_nautobot_version()
 
