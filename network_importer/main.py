@@ -160,7 +160,9 @@ class NetworkImporter:
         self.nornir.filter(filter_func=reachable_devs).run(task=warning_not_reachable, on_failed=True)
 
         self.nornir.filter(filter_func=reachable_devs).with_processors([GetConfig()]).run(
-            task=dispatcher, method="get_config", on_failed=True,
+            task=dispatcher,
+            method="get_config",
+            on_failed=True,
         )
 
         return True

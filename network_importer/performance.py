@@ -50,16 +50,16 @@ def print_from_ms(msec) -> str:
     millis = msec - (ms_per_min * minutes) - (ms_per_sec * seconds)
 
     if minutes == 0 and seconds == 0:
-        return "%dms" % (millis)
+        return f"{millis}ms"
     if minutes == 0:
-        return "%ds %dms" % (seconds, millis)
+        return f"{seconds}s {millis}ms"
 
-    return "%dm %ds %dms" % (minutes, seconds, millis)
+    return f"{minutes}m {seconds}s {millis}ms"
 
 
 def timeit(method):
     """Decorator to record the execution time of a function."""
-    global TIME_TRACKER
+    global TIME_TRACKER  # pylint: disable=global-variable-not-assigned
 
     def timed(*args, **kw):
         """Decorator to record the execution time of a function and store the result in TIME_TRACKER."""

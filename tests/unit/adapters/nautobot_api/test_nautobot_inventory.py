@@ -25,7 +25,9 @@ def test_nautobot_inventory_all(requests_mock):
     data2 = yaml.safe_load(open(f"{HERE}/{FIXTURES}/platforms.json"))
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
-    inv = NautobotAPIInventory(settings=dict(address="http://mock", token="12349askdnfanasdf"),).load()  # nosec
+    inv = NautobotAPIInventory(
+        settings=dict(address="http://mock", token="12349askdnfanasdf"),
+    ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 3
     assert "grb-rtr01" in inv.hosts.keys()
@@ -55,7 +57,11 @@ def test_nb_inventory_filtered(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv_filtered = NautobotAPIInventory(
-        limit="grb-rtr01", settings=dict(address="http://mock", token="12349askdnfanasdf",),  # nosec
+        limit="grb-rtr01",
+        settings=dict(
+            address="http://mock",
+            token="12349askdnfanasdf",
+        ),  # nosec
     ).load()  # nosec
 
     assert len(inv_filtered.hosts.keys()) == 1
@@ -80,7 +86,11 @@ def test_nb_inventory_exclude(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NautobotAPIInventory(
-        settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",),  # nosec  # nosec
+        settings=dict(
+            address="http://mock",
+            token="12349askdnfanasdf",
+            filter="exclude=platform",
+        ),  # nosec  # nosec
     ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 3

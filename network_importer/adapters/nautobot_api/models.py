@@ -294,7 +294,8 @@ class NautobotIPAddress(IPAddress):
 
         try:
             interface = self.diffsync.get(
-                self.diffsync.interface, identifier=dict(device_name=self.device_name, name=self.interface_name),
+                self.diffsync.interface,
+                identifier=dict(device_name=self.device_name, name=self.interface_name),
             )
             nb_params["assigned_object_type"] = "dcim.interface"
             nb_params["assigned_object_id"] = interface.remote_id
@@ -467,7 +468,10 @@ class NautobotPrefix(Prefix):
             LOGGER.info("Updated Prefix %s (%s) in Nautobot", self.prefix, self.remote_id)
         except pynautobot.core.query.RequestError as exc:
             LOGGER.warning(
-                "Unable to update perfix %s in %s (%s)", self.prefix, self.diffsync.name, exc.error,
+                "Unable to update perfix %s in %s (%s)",
+                self.prefix,
+                self.diffsync.name,
+                exc.error,
             )
             return None
 

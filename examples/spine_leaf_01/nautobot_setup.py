@@ -115,7 +115,10 @@ def main():
     for dev_role in DEVICE_ROLES:
         print(f"Checking on device role: {dev_role}")
         device_role_obj, created = get_or_create(
-            object_endpoint=nautobot.dcim.device_roles, search_key="name", search_term=dev_role, slug=dev_role,
+            object_endpoint=nautobot.dcim.device_roles,
+            search_key="name",
+            search_term=dev_role,
+            slug=dev_role,
         )
 
         if created:

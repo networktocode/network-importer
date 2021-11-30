@@ -46,7 +46,7 @@ pytest = "^5.4"
 pdbpp = "^0.10.2"
 requests_mock = "^1.7"
 pyyaml = "^5.3"
-black = "^19.10b0"
+black = {version="21.10b0", python="^3.6.2"}
 pydocstyle = "^5.0.2"
 yamllint = "^1.20.0"
 invoke = "^1.4.1"

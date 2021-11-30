@@ -43,7 +43,10 @@ def device_save_hostvars(task: Task) -> Result:
         os.makedirs(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}")
         LOGGER.debug("Directory %s/%s was missing, created it", config.SETTINGS.main.hostvars_directory, task.host.name)
 
-    with open(f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml", "w",) as out_file:
+    with open(
+        f"{config.SETTINGS.main.hostvars_directory}/{task.host.name}/network_importer.yaml",
+        "w",
+    ) as out_file:
         out_file.write(yaml.dump(task.host.data["obj"].hostvars, default_flow_style=False))
         LOGGER.debug(
             "%s - Host variables saved in %s/%s/network_importer.yaml",
@@ -135,7 +138,8 @@ def check_if_reachable(task: Task) -> Result:
         results = task.run(task=tcp_ping, ports=[port_to_check])
     except:  # noqa: E722 # pylint: disable=bare-except
         LOGGER.debug(
-            "An exception occured while running the reachability test (tcp_ping)", exc_info=True,
+            "An exception occured while running the reachability test (tcp_ping)",
+            exc_info=True,
         )
         return Result(host=task.host, failed=True)
 

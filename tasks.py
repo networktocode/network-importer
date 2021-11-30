@@ -271,7 +271,9 @@ def cli(context, name=NAME, image_ver=IMAGE_VER):
 
 
 def compose_netbox(
-    context, var_envs, netbox_docker_ver="release",
+    context,
+    var_envs,
+    netbox_docker_ver="release",
 ):
     """Create Netbox instance for Travis testing.
 

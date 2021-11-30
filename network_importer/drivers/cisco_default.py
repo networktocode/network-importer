@@ -128,7 +128,8 @@ class NetworkImporterDriver(DefaultNetworkImporterDriver):
             results = task.run(task=netmiko_send_command, command_string="show vlan", use_genie=True)
         except NornirSubTaskError:
             LOGGER.debug(
-                "An exception occured while pulling the vlans information", exc_info=True,
+                "An exception occured while pulling the vlans information",
+                exc_info=True,
             )
             return Result(host=task.host, failed=True)
 
