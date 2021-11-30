@@ -512,7 +512,7 @@ class NautobotVlan(Vlan):
                 try:
                     device = self.diffsync.get(self.diffsync.device, identifier=device_name)
                 except ObjectNotFound:
-                    LOGGER.error(
+                    LOGGER.warning(
                         "Found an associated device on Vlan %s that doesn't exist (%s)",
                         self.get_unique_id(),
                         device_name,
