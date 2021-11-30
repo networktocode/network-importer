@@ -37,7 +37,7 @@ def test_sort_by_digits():
         6,
     )
     assert sort_by_digits("Eth0") == (0,)
-    assert sort_by_digits("Eth") == ()
+    assert not sort_by_digits("Eth")
 
 
 def test_is_interface_physical():
