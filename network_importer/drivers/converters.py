@@ -116,7 +116,9 @@ def convert_cisco_genie_cdp_neighbors_details(device_name, data):
                 continue
 
             LOGGER.warning(
-                "%s | More than 1 neighbor found for %s, SKIPPING", device_name, intf_name,
+                "%s | More than 1 neighbor found for %s, SKIPPING",
+                device_name,
+                intf_name,
             )
             results.neighbors[intf_name] = []
 

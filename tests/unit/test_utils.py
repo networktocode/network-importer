@@ -24,8 +24,18 @@ def test_sort_by_digits():
     Test sort by digits
     """
 
-    assert sort_by_digits("Eth0/2/3") == (0, 2, 3,)
-    assert sort_by_digits("Eth0/2/543/14/6") == (0, 2, 543, 14, 6,)
+    assert sort_by_digits("Eth0/2/3") == (
+        0,
+        2,
+        3,
+    )
+    assert sort_by_digits("Eth0/2/543/14/6") == (
+        0,
+        2,
+        543,
+        14,
+        6,
+    )
     assert sort_by_digits("Eth0") == (0,)
     assert sort_by_digits("Eth") == ()
 

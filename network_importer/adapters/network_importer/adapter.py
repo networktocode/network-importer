@@ -283,7 +283,11 @@ class NetworkImporterAdapter(BaseAdapter):
         Returns:
             IPAddress
         """
-        ip_address = self.ip_address(address=address, device_name=device.name, interface_name=interface.name,)
+        ip_address = self.ip_address(
+            address=address,
+            device_name=device.name,
+            interface_name=interface.name,
+        )
 
         if config.SETTINGS.main.import_ips:
             LOGGER.debug("%s | Import %s for %s::%s", self.name, ip_address.address, device.name, interface.name)
@@ -431,7 +435,11 @@ class NetworkImporterAdapter(BaseAdapter):
             self.nornir.filter(filter_func=valid_and_reachable_devs)
             .filter(filter_func=hosts_for_cabling)
             .with_processors([GetNeighbors()])
-            .run(task=dispatcher, method="get_neighbors", on_failed=True,)
+            .run(
+                task=dispatcher,
+                method="get_neighbors",
+                on_failed=True,
+            )
         )
 
         nbr_cables = 0

@@ -57,7 +57,11 @@ def test_nb_inventory_filtered(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv_filtered = NetBoxAPIInventory(
-        limit="el-paso", settings=dict(address="http://mock", token="12349askdnfanasdf",)  # nosec
+        limit="el-paso",
+        settings=dict(
+            address="http://mock",
+            token="12349askdnfanasdf",
+        ),  # nosec
     ).load()  # nosec
 
     assert len(inv_filtered.hosts.keys()) == 1
@@ -83,7 +87,11 @@ def test_nb_inventory_exclude(requests_mock):
     requests_mock.get("http://mock/api/dcim/platforms/", json=data2)
 
     inv = NetBoxAPIInventory(
-        settings=dict(address="http://mock", token="12349askdnfanasdf", filter="exclude=platform",)  # nosec  # nosec
+        settings=dict(
+            address="http://mock",
+            token="12349askdnfanasdf",
+            filter="exclude=platform",
+        )  # nosec  # nosec
     ).load()  # nosec
 
     assert len(inv.hosts.keys()) == 6

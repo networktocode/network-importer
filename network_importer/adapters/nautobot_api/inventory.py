@@ -18,10 +18,15 @@ class NautobotAPIInventory(NetworkImporterInventory):
     """Nautobot API Inventory Class."""
 
     # pylint: disable=dangerous-default-value, too-many-branches, too-many-statements
-    def __init__(self, *args, **kwargs: Any,) -> None:
+    def __init__(
+        self,
+        *args,
+        **kwargs: Any,
+    ) -> None:
         """Nornir Inventory Plugin for Nautobot API."""
         super().__init__(
-            *args, **kwargs,
+            *args,
+            **kwargs,
         )
 
         try:

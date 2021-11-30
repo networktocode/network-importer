@@ -294,7 +294,8 @@ class NetboxIPAddress(IPAddress):
 
         try:
             interface = self.diffsync.get(
-                self.diffsync.interface, identifier=dict(device_name=self.device_name, name=self.interface_name),
+                self.diffsync.interface,
+                identifier=dict(device_name=self.device_name, name=self.interface_name),
             )
             nb_params["assigned_object_type"] = "dcim.interface"
             nb_params["assigned_object_id"] = interface.remote_id
@@ -400,7 +401,8 @@ class NetboxIPAddressPre29(NetboxIPAddress):
 
         try:
             interface = self.diffsync.get(
-                self.diffsync.interface, identifier=dict(device_name=self.device_name, name=self.interface_name),
+                self.diffsync.interface,
+                identifier=dict(device_name=self.device_name, name=self.interface_name),
             )
             nb_params["interface"] = interface.remote_id
         except ObjectNotFound:
@@ -501,7 +503,10 @@ class NetboxPrefix(Prefix):
             LOGGER.info("Updated Prefix %s (%s) in NetBox", self.prefix, self.remote_id)
         except pynetbox.core.query.RequestError as exc:
             LOGGER.warning(
-                "Unable to update perfix %s in %s (%s)", self.prefix, self.diffsync.name, exc.error,
+                "Unable to update perfix %s in %s (%s)",
+                self.prefix,
+                self.diffsync.name,
+                exc.error,
             )
             return None
 

@@ -65,7 +65,9 @@ class NautobotAPIAdapter(BaseAdapter):
         for tag in self.settings.model_flag_tags:
             if tag in nautobot_obj["tags"]:
                 LOGGER.debug(
-                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.", tag, nautobot_obj,
+                    "Tag (%s) found for object %s. Marked for diffsync flag assignment.",
+                    tag,
+                    nautobot_obj,
                 )
                 return True
         return False
@@ -76,7 +78,9 @@ class NautobotAPIAdapter(BaseAdapter):
 
         if model_flag and self._is_tag_present(nautobot_obj):
             LOGGER.info(
-                "DiffSync model flag (%s) applied to object %s", model_flag, nautobot_obj,
+                "DiffSync model flag (%s) applied to object %s",
+                model_flag,
+                nautobot_obj,
             )
             diffsync_obj.model_flags = model_flag
         return diffsync_obj
@@ -173,7 +177,11 @@ class NautobotAPIAdapter(BaseAdapter):
 
         for nb_prefix in prefixes:
 
-            prefix = self.prefix(prefix=nb_prefix.prefix, site_name=site.name, remote_id=nb_prefix.id,)
+            prefix = self.prefix(
+                prefix=nb_prefix.prefix,
+                site_name=site.name,
+                remote_id=nb_prefix.id,
+            )
             prefix = self.apply_model_flag(prefix, nb_prefix)
 
             if nb_prefix.vlan:

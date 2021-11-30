@@ -19,7 +19,11 @@ from network_importer.adapters.netbox_api.settings import InventorySettings
 class NetBoxAPIInventory(NetworkImporterInventory):
     """Netbox API Inventory Class."""
 
-    def __init__(self, *args, **kwargs: Any,) -> None:
+    def __init__(
+        self,
+        *args,
+        **kwargs: Any,
+    ) -> None:
         """Nornir Inventory Plugin for Netbox API."""
         super().__init__(*args, **kwargs)
 
