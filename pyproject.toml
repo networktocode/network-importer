@@ -18,12 +18,12 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.6.1"
 pynetbox = "^5.0"
 toml = "^0.10"
 nornir = "^3.0"
 termcolor = "^1.1"
-click = "^8.0.3"
+click = "^7.1 || ^8.0"
 pydantic = "^1.6"
 genie = "~21.4.0"
 pyats = "~21.4.0"
