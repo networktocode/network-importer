@@ -4,7 +4,7 @@ The network importer is a tool/library to analyze and/or synchronize an existing
 
 The main use cases for the network importer:
 
-- Import an existing network into a SOT (Nautobot) as a first step to automate a brownfield network
+- Import an existing network into a SOT (Nautobot or NetBox) as a first step to automate a brownfield network
 - Check the differences between the running network and the Source of Truth
 
 ## Quick Start
