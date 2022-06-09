@@ -1,5 +1,6 @@
 """BaseAdapter for the network importer."""
 from diffsync import DiffSync
+from diffsync.exceptions import ObjectNotFound
 from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 
 
@@ -50,9 +51,10 @@ class BaseAdapter(DiffSync):
         modelname = vlan.get_type()
         uid = vlan.get_unique_id()
 
-        existing_obj = self.get(modelname, uid)
-        if existing_obj:
-            return existing_obj, False
+        try:
+            return self.get(modelname, uid), False
+        except ObjectNotFound:
+            pass
 
         self.add(vlan)
         if site:
@@ -73,9 +75,10 @@ class BaseAdapter(DiffSync):
         modelname = obj.get_type()
         uid = obj.get_unique_id()
 
-        existing_obj = self.get(modelname, uid)
-        if existing_obj:
-            return existing_obj, False
+        try:
+            return self.get(modelname, uid), False
+        except ObjectNotFound:
+            pass
 
         self.add(obj)
 
