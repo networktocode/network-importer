@@ -126,6 +126,9 @@ jobs:
   integration_nautobot:
     name: "Integration Test - Nautobot"
     runs-on: "ubuntu-20.04"
+    strategy:
+      matrix:
+        nautobot-version: ["1.0.3", "1.1.6", "1.2.12", "1.3.1"]
     steps:
       - name: "Check out repository code"
         uses: "actions/checkout@v2"
@@ -145,7 +148,7 @@ jobs:
           poetry install
           invoke nautobot-integration-tests
     env:
-      NAUTOBOT_VERSION: "1.0.1"
+      NAUTOBOT_VERSION: "${{ matrix.nautobot-version }}"
     needs:
       - "pytest"
   integration_netbox210:
