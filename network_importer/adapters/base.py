@@ -50,8 +50,9 @@ class BaseAdapter(DiffSync):
         modelname = vlan.get_type()
         uid = vlan.get_unique_id()
 
-        if uid in self._data[modelname]:
-            return self._data[modelname][uid], False
+        existing_obj = self.get(modelname, uid)
+        if existing_obj:
+            return existing_obj, False
 
         self.add(vlan)
         if site:
@@ -72,8 +73,9 @@ class BaseAdapter(DiffSync):
         modelname = obj.get_type()
         uid = obj.get_unique_id()
 
-        if uid in self._data[modelname]:
-            return self._data[modelname][uid], False
+        existing_obj = self.get(modelname, uid)
+        if existing_obj:
+            return existing_obj, False
 
         self.add(obj)
 
