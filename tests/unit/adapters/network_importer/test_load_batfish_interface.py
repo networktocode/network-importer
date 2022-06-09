@@ -154,7 +154,7 @@ def test_load_batfish_interface_intf_ether_sub(network_importer_base, site_sfo, 
     assert not intf.is_lag_member
     assert intf.allowed_vlans == ["sfo__201"]
 
-    assert "sfo__201" in adapter._data["vlan"]  # pylint: disable=W0212
+    assert any("sfo__201" == str(obj) for obj in adapter.get_all("vlan"))
 
 
 def test_load_batfish_interface_intf_lag_member(network_importer_base, site_sfo, dev_spine1):
