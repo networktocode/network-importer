@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "network-importer"
-version = "3.0.3"
+version = "3.0.4"
 description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 homepage = "https://github.com/networktocode/network-importer"
@@ -96,7 +96,7 @@ notes = """,
     FIXME,
     XXX,
     """
-    
+
 [tool.pytest.ini_options]
 testpaths = [
     "tests"
@@ -105,4 +105,3 @@ testpaths = [
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-
