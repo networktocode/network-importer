@@ -1,10 +1,11 @@
 # Network Importer
 
-The network importer is a tool/library to analyze and/or synchronize an existing network with a Network Source of Truth (SOT), it's designed to be idempotent and by default it's only showing the difference between the running network and the remote SOT. 
+The network importer is a tool/library to analyze and/or synchronize an existing network with a Network Source of Truth (SOT), it's designed to be idempotent and by default it's only showing the difference between the running network and the remote SOT.
 
-The main use cases for the network importer: 
- - Import an existing network into a SOT (Netbox) as a first step to automate a brownfield network
- - Check the differences between the running network and the Source of Truth
+The main use cases for the network importer:
+
+- Import an existing network into a SOT (Nautobot or NetBox) as a first step to automate a brownfield network
+- Check the differences between the running network and the Source of Truth
 
 ## Quick Start
 
