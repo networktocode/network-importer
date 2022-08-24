@@ -46,7 +46,7 @@ class NetBoxAPIInventory(NetworkImporterInventory):
             else:
                 build_filter_params(self.limit.split((",")), self.filter_parameters)
 
-        if "exclude" not in self.filter_parameters.keys():
+        if "exclude" not in self.filter_parameters:
             self.filter_parameters["exclude"] = "config_context"
 
         # Instantiate netbox session using pynetbox
