@@ -6,7 +6,6 @@ import sys
 from typing import Any, List
 import pynautobot
 from pydantic import ValidationError
-from distutils.util import strtobool
 
 from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
