@@ -42,7 +42,10 @@ class NautobotAPIInventory(NetworkImporterInventory):
         if self.settings.filter is not None:
             build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
 
-        if self.limit != "False":  # Click sends limit in as a string, not a boolean.
+        if self.limit == "False":  # Click sends limit in as a string, not a boolean.
+            self.limit = False
+
+        if self.limit:
             if "=" not in self.limit:
                 self.filter_parameters["name"] = self.limit
             else:
