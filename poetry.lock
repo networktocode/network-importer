@@ -1041,7 +1041,7 @@ dev = ["pre-commit", "tox"]
 
 [[package]]
 name = "prettytable"
-version = "3.3.0"
+version = "3.4.0"
 description = "A simple Python library for easily displaying tabular data in a visually appealing ASCII table format"
 category = "main"
 optional = false
@@ -1082,7 +1082,7 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [[package]]
 name = "pyats"
-version = "22.7.1"
+version = "22.7"
 description = "pyATS - Python Automation Test System"
 category = "main"
 optional = false
@@ -2051,7 +2051,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8.0"
-content-hash = "69563786fe7526bd1a9e818e2ae58d58907ac6b0b8e5e96ebaf80d35e10e8179"
+content-hash = "2d254257daf0bf6b9cc4407c221489eac83a6a4921fc755a167d7f696757283c"
 
 [metadata.files]
 aiofiles = [
@@ -2914,8 +2914,8 @@ pluggy = [
     {file = "pluggy-0.13.1.tar.gz", hash = "sha256:15b2acde666561e1298d71b523007ed7364de07029219b604cf808bfa1c765b0"},
 ]
 prettytable = [
-    {file = "prettytable-3.3.0-py3-none-any.whl", hash = "sha256:d1c34d72ea2c0ffd6ce5958e71c428eb21a3d40bf3133afe319b24aeed5af407"},
-    {file = "prettytable-3.3.0.tar.gz", hash = "sha256:118eb54fd2794049b810893653b20952349df6d3bc1764e7facd8a18064fa9b0"},
+    {file = "prettytable-3.4.0-py3-none-any.whl", hash = "sha256:8ea12e615fee421090ca3954c2e006280f7ecdf4adf940dbc1c6ec014d4eca9d"},
+    {file = "prettytable-3.4.0.tar.gz", hash = "sha256:d16747b5108c252bf065ea1cd239aab3c87bd8bb10a9f7973c9f192bbcfed26e"},
 ]
 protobuf = [
     {file = "protobuf-3.20.1-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3cc797c9d15d7689ed507b165cd05913acb992d78b379f6014e013f9ecb20996"},
@@ -2982,21 +2982,21 @@ py = [
     {file = "py-1.11.0.tar.gz", hash = "sha256:51c75c4126074b472f746a24399ad32f6053d1b34b68d2fa41e558e6f4a98719"},
 ]
 pyats = [
-    {file = "pyats-22.7.1-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:b44e384408d145883fb422f01c2b2afeaf62a958663fd06b0b973816e5fc2f13"},
-    {file = "pyats-22.7.1-cp310-cp310-macosx_10_16_x86_64.whl", hash = "sha256:8a23d6f6098ad3762ccf60deb3ff68facc07f528f4004118d3023367c64d7df3"},
-    {file = "pyats-22.7.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:f0a0785d2b4b4c87458c51af2e4822018edcca37e39709482089907f5cf4e781"},
-    {file = "pyats-22.7.1-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:40bddb8371a4b8edf7eb82e82cf399ec7fd6b46de1bbd3d1859c33e97c716683"},
-    {file = "pyats-22.7.1-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:9c2a34a9c17fb2f1098ef1367f59e578b7bf10acca15ec9a1233ecde37726c05"},
-    {file = "pyats-22.7.1-cp37-cp37m-macosx_10_16_x86_64.whl", hash = "sha256:a8cbb37283549df13a94a2bbd3f9fc2b0c0b07bc37a91f0ee1fa263fd4638344"},
-    {file = "pyats-22.7.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:0fd5ac4cb16d59d8b859b3828b50ad0403eb362ba50339473be16a8cfcdba5e3"},
-    {file = "pyats-22.7.1-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:60bcc862fd557630aa5c5a48df4edc6a287b50a762697f010e3f40a6ef9d4451"},
-    {file = "pyats-22.7.1-cp38-cp38-macosx_10_16_x86_64.whl", hash = "sha256:3630f518b852a938f2af447aed81d43d029eb873b3786a267554617dbc5dcc91"},
-    {file = "pyats-22.7.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:f8568166be46df93a57ffa4cbcd5f01137e0f0bbcbfa15899af0e6772a121cfc"},
-    {file = "pyats-22.7.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:10f2b24e400d023001c822daa88a521d282deab92cebfc1665bfd11f78a2820a"},
-    {file = "pyats-22.7.1-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:214b493d3dec19ce09ec40b8a1cd550d6fc60a75bf1e1c4e92e155ca8b951248"},
-    {file = "pyats-22.7.1-cp39-cp39-macosx_10_16_x86_64.whl", hash = "sha256:8ec4bb4f98f35fb4d1dbcd5f9c752b7a85a6732e320955c3cd9dc4d8a83eb5c0"},
-    {file = "pyats-22.7.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:e65721726af85a25f826407cfa58d742abd066b88aaa9ad80fd47224809206db"},
-    {file = "pyats-22.7.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:41d42c4bb7973d63061ec33840be8065acf02cda952c4798af2754ed75377f08"},
+    {file = "pyats-22.7-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:73995f87c79e97fc0bb464d756ee998ca9a9b4459f3763a9b863909aa92ed9c5"},
+    {file = "pyats-22.7-cp310-cp310-macosx_10_16_x86_64.whl", hash = "sha256:553e72807a86653cff8153353995fd448b0e50f69359783111ae1e779898c990"},
+    {file = "pyats-22.7-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:8661adb58fdff516d68f9dab7a9beae0de662f28c1dd3e9296c65a44f8dafc35"},
+    {file = "pyats-22.7-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:959dc6aa8f656537963aef1d13ced31ff26d8ca2d3beb452c30376d108eef4aa"},
+    {file = "pyats-22.7-cp37-cp37m-macosx_10_10_x86_64.whl", hash = "sha256:271914f2fc566ce3354c38201bc1bd73d573b36f456ede9b68af098b79aa6db5"},
+    {file = "pyats-22.7-cp37-cp37m-macosx_10_16_x86_64.whl", hash = "sha256:01714283d877934eea5e16351ef92db95b9181a4d2e84848d063e49a674911d7"},
+    {file = "pyats-22.7-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:5ec3ee4c87b7c042d13f9454e681b796f4f0e21aa7676e31f565690b95315ab3"},
+    {file = "pyats-22.7-cp38-cp38-macosx_10_10_x86_64.whl", hash = "sha256:164df45c17a8a33d9b91994975dba51916a51498aefc75a8a703df187c77e672"},
+    {file = "pyats-22.7-cp38-cp38-macosx_10_16_x86_64.whl", hash = "sha256:1fcf909deda4ed7ae784669fc98f85a6df77e499e75bf00069cc57e3c3c9b705"},
+    {file = "pyats-22.7-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:90e9f446be67406a8d053d7baa3402dce7f4144b64bbaac28e72f10f8468cfbf"},
+    {file = "pyats-22.7-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:4d516ad4fc014077b68be134c2a0cb5f6dd06e03aa12bebe6cfe5ed44f4b92ff"},
+    {file = "pyats-22.7-cp39-cp39-macosx_10_10_x86_64.whl", hash = "sha256:836f7e647f854a3112503717e9453524200b305237271f29ea2c57a34ee92f34"},
+    {file = "pyats-22.7-cp39-cp39-macosx_10_16_x86_64.whl", hash = "sha256:b612a6ec551bb9d8f68edbf12ba6cc6673af861192e1e4bd77aa6fece4748193"},
+    {file = "pyats-22.7-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:5d83c5ac76be574a02cc944ffd874589b66fc39e5ba9e66cd7ceea49d709c50e"},
+    {file = "pyats-22.7-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:b3e72460bafae29d8603b78693f992b274226c4b7c7ff358bcd04a36fba5e010"},
 ]
 "pyats.aereport" = [
     {file = "pyats.aereport-22.7-cp310-cp310-macosx_10_10_x86_64.whl", hash = "sha256:d155f684b209cbd9738af31e8422e0151150900bc29647c596057833a5e869a9"},
