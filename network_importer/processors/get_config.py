@@ -88,7 +88,8 @@ class GetConfig(BaseProcessor):
 
         if os.path.exists(self.config_filename[host.name]):
             current_config = Path(self.config_filename[host.name]).read_text()
-            self.previous_md5[host.name] = hashlib.md5(current_config.encode("utf-8")).hexdigest()
+            # Bandit skip as the MD5 is used for hash value only, not for security.
+            self.previous_md5[host.name] = hashlib.md5(current_config.encode("utf-8")).hexdigest()  # nosec
 
     def subtask_instance_completed(self, task: Task, host: Host, result: MultiResult) -> None:
         """Verify the configuration returned and store it to disk.
@@ -137,7 +138,8 @@ class GetConfig(BaseProcessor):
 
         host.has_config = True
 
-        self.current_md5[host.name] = hashlib.md5(conf.encode("utf-8")).hexdigest()
+        # Skipping the Bandit test as MD5 is used for hash test, not for secure encryption.
+        self.current_md5[host.name] = hashlib.md5(conf.encode("utf-8")).hexdigest()  # nosec
         # changed = False
 
         if host.name in self.previous_md5 and self.previous_md5[host.name] == self.current_md5[host.name]:
