@@ -40,7 +40,7 @@ class NetBoxAPIInventory(NetworkImporterInventory):
         if self.settings.filter is not None:
             build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
 
-        if self.limit:
+        if self.limit != "False":
             if "=" not in self.limit:
                 self.filter_parameters["name"] = self.limit
             else:

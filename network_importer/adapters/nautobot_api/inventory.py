@@ -6,6 +6,7 @@ import sys
 from typing import Any, List
 import pynautobot
 from pydantic import ValidationError
+from distutils.util import strtobool
 
 from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
@@ -42,7 +43,7 @@ class NautobotAPIInventory(NetworkImporterInventory):
         if self.settings.filter is not None:
             build_filter_params(self.settings.filter.split((",")), self.filter_parameters)
 
-        if self.limit:
+        if self.limit != "False":  # Click sends limit in as a string, not a boolean.
             if "=" not in self.limit:
                 self.filter_parameters["name"] = self.limit
             else:
