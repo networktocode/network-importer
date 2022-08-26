@@ -55,7 +55,8 @@ class NetworkImporterAdapter(BaseAdapter):
 
             self.nornir.inventory.hosts[hostname].has_config = True
 
-            if host.site_name not in sites.keys():
+            # Check that the host site_name is in the sites dictionary.
+            if host.site_name not in sites:
                 site = self.site(name=host.site_name)
                 sites[host.site_name] = site
                 self.add(site)

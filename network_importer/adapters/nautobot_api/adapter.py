@@ -123,7 +123,7 @@ class NautobotAPIAdapter(BaseAdapter):
             nb_device = result["device"]
             site_name = nb_device["site"].get("slug")
 
-            if site_name not in sites.keys():
+            if site_name not in sites:
                 site = self.site(name=site_name, remote_id=nb_device["site"].get("id"))
                 sites[site_name] = site
                 self.add(site)

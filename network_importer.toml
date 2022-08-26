@@ -3,7 +3,14 @@ import_ips = true
 import_prefixes = true
 # import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
 # import_intf_status = false     # If set as False, interface status will be ignore all together
-# import_vlans = "config"         # Valid options are ["cli", "config", true, false]
+#############################################################
+#  IMPORTANT FOR VLAN IMPORT
+#
+# FOR IMPORT VLANS, PLEASE RUN CHECK MODE FIRST. If you get way too many VLANs on that, then the recommendation
+# is to use "cli" as the import mode rather than config.
+#
+#############################################################
+# import_vlans = "cli"         # Valid options are ["cli", "config", true, false]
 excluded_platforms_cabling = ["cisco_asa"]
 
 # Directory where the configurations can be find, organized in Batfish format
@@ -20,6 +27,7 @@ backend = "nautobot"            # Valid options are ["nautobot", "netbox"]
 # The information to connect to Nautobot needs to be provided, either in the config file or as environment variables
 # These settings are specific to the Nautobot inventory, please check the documentation of your inventory for the 
 # exist list of of available settings.
+# For the address, include the scheme (http/https)
 # address = ""                   # Alternative Env Variable : NAUTOBOT_ADDRESS
 # token = ""  # Alternative Env Variable : NAUTOBOT_TOKEN
 # verify_ssl = true                                   # Alternative Env Variable : NAUTOBOT_VERIFY_SSL

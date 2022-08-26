@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "network-importer"
-version = "3.0.5"
+version = "3.1.0"
 description = "Network Importer tool to import an existing network into a Database / Source Of Truth"
 authors = ["Network to Code, LLC <opensource@networktocode.com>"]
 homepage = "https://github.com/networktocode/network-importer"
@@ -18,15 +18,15 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.6.1"
+python = "^3.8.0"
 pynetbox = "^5.0"
 toml = "^0.10"
 nornir = "^3.0"
 termcolor = "^1.1"
 click = "^7.1 || ^8.0"
 pydantic = "^1.6"
-genie = "~21.4.0"
-pyats = "~21.4.0"
+genie = "^22.7"
+pyats = "^22.7"
 netmiko = "^3.3"
 ntc-templates = "^2.0"
 structlog = "^20.1.0"
@@ -46,7 +46,7 @@ pytest = "^5.4"
 pdbpp = "^0.10.2"
 requests_mock = "^1.7"
 pyyaml = "^5.3"
-black = {version="21.10b0", python="^3.6.2"}
+black = "^22.6"
 pydocstyle = "^5.0.2"
 yamllint = "^1.20.0"
 invoke = "^1.4.1"
@@ -80,7 +80,6 @@ no-docstring-rgx="^(_|test_)"
 # Pylint and Black disagree about how to format multi-line arrays; Black wins.
 disable = """,
     line-too-long,
-    bad-continuation,
     duplicate-code,
     too-few-public-methods,
     consider-using-with,
