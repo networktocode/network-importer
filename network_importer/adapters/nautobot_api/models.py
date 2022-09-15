@@ -519,8 +519,13 @@ class NautobotVlan(Vlan):
                     )
                     continue
 
-                tag_id = device.get_device_tag_id()
-                nb_params["tags"].append(tag_id)
+                try:
+                    tag_id = device.get_device_tag_id()
+                    if tag_id:
+                        nb_params["tags"].append(tag_id)
+                except pynautobot.core.query.RequestError:
+                    # If there is an error with tag retrieval, ignore tags
+                    pass
 
         return nb_params
 
