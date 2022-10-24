@@ -72,7 +72,7 @@ The table below present the capabilities in term of : Read, Create, Update and D
 
 ### Network Importer Adapter
 
-The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage Nornir to gather some additional information like the list of LLDP/CPD neighbors or the list of vlans.
+The Network Importer Adapter is designed to read the status of the network primarily from Batfish but it can also leverage Nornir to gather some additional information like the list of LLDP/CDP neighbors or the list of vlans.
 
 ## Drivers
 
