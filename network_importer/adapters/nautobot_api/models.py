@@ -525,7 +525,7 @@ class NautobotVlan(Vlan):
                         nb_params["tags"].append(tag_id)
                 except pynautobot.core.query.RequestError:
                     # If there is an error with tag retrieval, ignore tags
-                    pass
+                    LOGGER.warning("Error with tag retrieval for device %s. Ignoring.", device_name)
 
         return nb_params
 
