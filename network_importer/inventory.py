@@ -82,12 +82,12 @@ class NetworkImporterInventory:
 
                 if not self.global_group.connection_options["napalm"].extras:
                     self.global_group.connection_options["napalm"].extras = {"optional_args": {"secret": self.password}}
-                elif isinstance(dict, self.global_group.connection_options["napalm"].extras):
+                elif isinstance(self.global_group.connection_options["napalm"].extras, dict):
                     if "optional_args" not in self.global_group.connection_options["napalm"].extras:
                         self.global_group.connection_options["napalm"].extras["optional_args"] = {
                             "secret": self.password
                         }
-                    elif isinstance(dict, self.global_group.connection_options["napalm"].extras["optional_args"]):
+                    elif isinstance(self.global_group.connection_options["napalm"].extras["optional_args"], dict):
                         self.global_group.connection_options["napalm"].extras["optional_args"]["secret"] = self.password
 
 
