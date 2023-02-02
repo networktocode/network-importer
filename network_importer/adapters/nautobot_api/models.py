@@ -48,9 +48,9 @@ class NautobotDevice(Device):
             return self.device_tag_id
 
         tag = self.diffsync.nautobot.extras.tags.get(name=f"device={self.name}")
-
         if not tag:
-            tag = self.diffsync.nautobot.extras.tags.create(name=f"device={self.name}", slug=f"device__{self.name}")
+            tag = self.diffsync.nautobot.extras.tags.create(
+                name=f"device={self.name}", slug=''.join(c if c.isalnum() else '_' for c in self.name))
 
         self.device_tag_id = tag.id
         return self.device_tag_id
