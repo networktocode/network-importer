@@ -1,7 +1,6 @@
 To use this local branch:
 ```
-git clone git@github.com:craigcpj/network-importer.git
-
+git clone https://github.com/craigcpj/network-importer.git
 pip install network-importer/
 ```
 # Network Importer
