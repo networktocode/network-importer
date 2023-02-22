@@ -1,3 +1,7 @@
+To use this local branch:
+git clone this repo
+pip install network-importer/
+
 # Network Importer
 
 The network importer is a tool/library to analyze and/or synchronize an existing network with a Network Source of Truth (SOT), it's designed to be idempotent and by default it's only showing the difference between the running network and the remote SOT.
