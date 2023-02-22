@@ -124,8 +124,8 @@ class NautobotInterface(Interface):
         elif "switchport_mode" in attrs and attrs["switchport_mode"] == "TRUNK":
             nb_params["mode"] = "tagged"
         elif ("switchport_mode" in attrs and attrs["switchport_mode"] == "NONE") and attrs["mode"] == "L3_SUB_VLAN":
-            LOGGER.warning("NB_PARAMS: %s", nb_params)
-            LOGGER.warning("ATTRS: %s", attrs)
+            LOGGER.info("NB_PARAMS: %s", nb_params)
+            LOGGER.info("ATTRS: %s", attrs)
             nb_params["mode"] = "tagged"
 
         # if is None:
