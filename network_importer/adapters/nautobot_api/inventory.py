@@ -142,6 +142,9 @@ class NautobotAPIInventory(NetworkImporterInventory):
 
             if host.hostname and host.platform:
                 host.is_reachable = True
+            else:
+                host.is_reachable = False
+                host.not_reachable_reason = "hostname or platform not defined in nautobot"
 
             # Assign temporary dict to outer dict
 
