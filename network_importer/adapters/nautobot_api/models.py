@@ -655,11 +655,12 @@ class NautobotCable(Cable):
             )
             if not interface_a:
                 LOGGER.info(
-                    "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                    "CABLE: Unable to create Cable %s in %s, unable to find the interface %s %s %s",
                     item.get_unique_id(),
                     diffsync.name,
                     ids["device_a_name"],
                     ids["interface_a_name"],
+                    item,
                 )
                 return item
 
