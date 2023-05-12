@@ -7,6 +7,10 @@ The main use cases for the network importer:
 - Import an existing network into a SOT (Nautobot or NetBox) as a first step to automate a brownfield network
 - Check the differences between the running network and the Source of Truth
 
+This application is intended to run __outside__ of Nautobot. 
+
+![Architecture](docs/images/batfish_network_importer.png)
+
 ## Quick Start
 
 - [Getting Started](docs/getting_started.md)

@@ -3,6 +3,9 @@ network_importer.egg-info
 *.zip
 *.log
 
+# Default config backup folder
+configs/
+
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/
