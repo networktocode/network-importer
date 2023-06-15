@@ -49,7 +49,7 @@ class NetworkImporterDiff(Diff):
                     intfs_regs[action].append(child_name)
 
             else:
-                raise Exception("invalid DiffElement")
+                raise Exception("invalid DiffElement")  # pylint: disable=broad-exception-raised
 
         sorted_intfs = intfs_regs["create"]
         sorted_intfs += intfs_regs["update"]
