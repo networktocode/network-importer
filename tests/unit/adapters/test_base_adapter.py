@@ -5,7 +5,6 @@ from network_importer.adapters.base import BaseAdapter
 
 
 def test_init_no_settings_class():
-
     adapter = BaseAdapter(nornir="nornir_object", settings=None)
     assert adapter.nornir == "nornir_object"
     assert adapter.settings is None

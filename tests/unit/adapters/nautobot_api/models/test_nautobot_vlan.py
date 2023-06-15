@@ -24,7 +24,6 @@ def test_vlan_create_from_pynautobot(nautobot_api_base):
 
 
 def test_vlan_create_from_pynautobot_with_tags(nautobot_api_base):
-
     api = pynautobot.api(url="http://mock_nautobot", token="1234567890")
 
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/vlan_101_tags_01.json"))
@@ -52,7 +51,6 @@ def test_vlan_create_from_pynautobot_with_tags(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="eb697742-364d-4714-b585-a267c64d7720")
     nautobot_api_base.add(vlan)
 
@@ -66,7 +64,6 @@ def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_with_partial_attrs(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, name="MYVLAN", site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 
@@ -96,7 +93,6 @@ def test_translate_attrs_for_nautobot_with_partial_attrs(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_with_attrs(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 
@@ -127,7 +123,6 @@ def test_translate_attrs_for_nautobot_with_attrs(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_with_missing_devices(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 
@@ -150,7 +145,6 @@ def test_translate_attrs_for_nautobot_with_missing_devices(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_missing_site(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="NOTPRESENT", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 
@@ -160,7 +154,6 @@ def test_translate_attrs_for_nautobot_missing_site(nautobot_api_base):
 
 
 def test_update_clean_tags_no_incoming_tags(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 
@@ -176,7 +169,6 @@ def test_update_clean_tags_no_incoming_tags(nautobot_api_base):
 
 
 def test_update_clean_tags_with_incoming_tags(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e")
     nautobot_api_base.add(vlan)
 

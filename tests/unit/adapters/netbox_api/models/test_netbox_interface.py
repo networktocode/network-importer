@@ -24,7 +24,6 @@ def assert_baseline(data):
 
 
 def test_translate_attrs_for_netbox_wrong_device(netbox_api_base):
-
     intf = NetboxInterface(device_name="HQ-CORE-SW01", name="ge-0/0/0")
     netbox_api_base.add(intf)
 
@@ -33,7 +32,6 @@ def test_translate_attrs_for_netbox_wrong_device(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_device_no_remote_id(netbox_api_base):
-
     netbox_api_base.add(NetboxDevice(name="HQ-CORE-SW01", site_name="nyc"))
     intf = NetboxInterface(device_name="HQ-CORE-SW01", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -43,7 +41,6 @@ def test_translate_attrs_for_netbox_device_no_remote_id(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -59,7 +56,6 @@ def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_type(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -78,7 +74,6 @@ def test_translate_attrs_for_netbox_type(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_description(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -99,7 +94,6 @@ def test_translate_attrs_for_netbox_description(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_mode(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -122,7 +116,6 @@ def test_translate_attrs_for_netbox_mode(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_vlan(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -168,7 +161,6 @@ def test_translate_attrs_for_netbox_vlan(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_vlan_false(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=False, backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -187,7 +179,6 @@ def test_translate_attrs_for_netbox_vlan_false(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_vlan_no(netbox_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans="no", backend="netbox")))
     intf = NetboxInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     netbox_api_base.add(intf)
@@ -206,7 +197,6 @@ def test_translate_attrs_for_netbox_vlan_no(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_lag_member(netbox_api_base):
-
     parent = NetboxInterface(device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id=50)
     netbox_api_base.add(parent)
 

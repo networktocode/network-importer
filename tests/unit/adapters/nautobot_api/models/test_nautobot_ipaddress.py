@@ -9,7 +9,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
-
     ipaddr = NautobotIPAddress(
         address="10.10.10.1/24",
         device_name="HQ-CORE-SW02",
@@ -28,7 +27,6 @@ def test_translate_attrs_for_nautobot_with_intf(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_wo_intf(nautobot_api_base):
-
     ipaddr = NautobotIPAddress(
         address="10.10.10.1/24",
         device_name="HQ-CORE-SW02",
@@ -56,7 +54,6 @@ def test_create_from_pynautobot(nautobot_api_base):
 
 
 def test_create_ip_address_interface(requests_mock, nautobot_api_base):
-
     with open(f"{ROOT}/../fixtures/ip_address.json") as file:
         data = yaml.safe_load(file)
 
@@ -72,7 +69,6 @@ def test_create_ip_address_interface(requests_mock, nautobot_api_base):
 
 
 def test_create_ip_address_no_interface(requests_mock, nautobot_api_base):
-
     with open(f"{ROOT}/../fixtures/ip_address.json") as file:
         data = yaml.safe_load(file)
 

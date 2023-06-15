@@ -16,7 +16,6 @@ from network_importer.models import IPAddress, Prefix
 
 
 def test_add_prefix_from_ip_base(network_importer_base, site_sfo):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
 
@@ -29,7 +28,6 @@ def test_add_prefix_from_ip_base(network_importer_base, site_sfo):
 
 
 def test_add_prefix_from_ip_mask_32(network_importer_base, site_sfo):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
 
@@ -41,7 +39,6 @@ def test_add_prefix_from_ip_mask_32(network_importer_base, site_sfo):
 
 
 def test_add_prefix_from_ip_mask_31(network_importer_base, site_sfo):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
 
