@@ -19,7 +19,6 @@ from network_importer.models import Interface, IPAddress, Prefix
 
 
 def test_load_batfish_ipaddress_w_ip_w_prefix_no_vlan(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -36,7 +35,6 @@ def test_load_batfish_ipaddress_w_ip_w_prefix_no_vlan(network_importer_base, sit
 
 
 def test_load_batfish_ipaddress_wo_ip_wo_prefix(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -55,7 +53,6 @@ def test_load_batfish_ipaddress_wo_ip_wo_prefix(network_importer_base, site_sfo,
 
 
 def test_load_batfish_ipaddress_w_ip_wo_prefix(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -73,7 +70,6 @@ def test_load_batfish_ipaddress_w_ip_wo_prefix(network_importer_base, site_sfo, 
 
 
 def test_load_batfish_ipaddress_wo_ip_w_prefix(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)

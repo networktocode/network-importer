@@ -101,7 +101,6 @@ def test_is_mac_address():
 
 
 def test_build_filter_params():
-
     # base implementation
     params = {}
     build_filter_params(["site=nyc", "device=dev"], params)

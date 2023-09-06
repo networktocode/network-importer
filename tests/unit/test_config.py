@@ -8,7 +8,6 @@ TEST_BACKEND = list(DEFAULT_BACKENDS.keys())[0]
 
 
 def test_configure_backend_w_backend():
-
     result = _configure_backend(Settings(main=dict(backend=TEST_BACKEND)))
     assert result.inventory.inventory_class is not None
     assert result.adapters.sot_class is not None
@@ -25,7 +24,6 @@ def test_configure_backend_w_backend():
 
 
 def test_configure_backend_wo_backend():
-
     with pytest.raises(ConfigLoadFatalError):
         _configure_backend(Settings())
 

@@ -68,7 +68,6 @@ class NetworkImporterDriver:
         LOGGER.debug("Executing get_neighbor for %s (%s)", task.host.name, task.host.platform)
 
         if config.SETTINGS.main.import_cabling == "lldp":
-
             try:
                 result = task.run(task=napalm_get, getters=["lldp_neighbors"])
             except:  # noqa: E722 # pylint: disable=bare-except
@@ -82,7 +81,6 @@ class NetworkImporterDriver:
             return Result(host=task.host, result={"neighbors": neighbors})
 
         if config.SETTINGS.main.import_cabling == "cdp":
-
             try:
                 result = task.run(task=netmiko_send_command, command_string="show cdp neighbors detail", use_genie=True)
             except NornirSubTaskError:

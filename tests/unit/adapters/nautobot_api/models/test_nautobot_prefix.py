@@ -8,7 +8,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def test_translate_attrs_for_nautobot_default(nautobot_api_base):
-
     prefix = NautobotPrefix(
         diffsync=nautobot_api_base,
         prefix="10.1.111.0/24",
@@ -23,7 +22,6 @@ def test_translate_attrs_for_nautobot_default(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_with_vlan(nautobot_api_base):
-
     prefix = NautobotPrefix(
         diffsync=nautobot_api_base,
         prefix="10.1.111.0/24",
@@ -43,7 +41,6 @@ def test_translate_attrs_for_nautobot_with_vlan(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_with_absent_vlan(nautobot_api_base):
-
     prefix = NautobotPrefix(
         diffsync=nautobot_api_base,
         prefix="10.1.111.0/24",
@@ -58,7 +55,6 @@ def test_translate_attrs_for_nautobot_with_absent_vlan(nautobot_api_base):
 
 
 def test_create_prefix(requests_mock, nautobot_api_base):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/prefix_no_vlan.json"))
 
     requests_mock.post("http://mock_nautobot/api/ipam/prefixes/", json=data, status_code=201)
@@ -72,7 +68,6 @@ def test_create_prefix(requests_mock, nautobot_api_base):
 
 
 def test_update_prefix(requests_mock, nautobot_api_base):
-
     data_no_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/prefix_no_vlan.json"))
     data_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/prefix_vlan.json"))
 
@@ -87,7 +82,6 @@ def test_update_prefix(requests_mock, nautobot_api_base):
 
 
 def test_create_prefix_with_vlan(requests_mock, nautobot_api_base):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/prefix_vlan.json"))
 
     requests_mock.post("http://mock_nautobot/api/ipam/prefixes/", json=data, status_code=201)
@@ -101,7 +95,6 @@ def test_create_prefix_with_vlan(requests_mock, nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_w_vlan(nautobot_api_base):
-
     prefix = NautobotPrefix(
         diffsync=nautobot_api_base,
         prefix="10.1.111.0/24",
@@ -118,7 +111,6 @@ def test_translate_attrs_for_nautobot_w_vlan(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_wo_vlan(nautobot_api_base):
-
     prefix = NautobotPrefix(
         diffsync=nautobot_api_base,
         prefix="10.1.111.0/24",

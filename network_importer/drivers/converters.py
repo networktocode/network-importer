@@ -42,7 +42,6 @@ def convert_cisco_genie_lldp_neighbors_details(device_name, data):
 
         # intf_name = canonical_interface_name(intf_name)
         for nei_intf_name in list(intf_data["port_id"].keys()):
-
             # nei_intf_name_long = canonical_interface_name(nei_intf_name)
             if is_interface_lag(nei_intf_name):
                 LOGGER.debug(

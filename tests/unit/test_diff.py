@@ -5,7 +5,6 @@ from network_importer.diff import NetworkImporterDiff
 
 
 def test_diff(diff_children_nyc_dev1):
-
     interfaces = NetworkImporterDiff.order_children_interface(children=diff_children_nyc_dev1)
     assert isinstance(interfaces, Iterable)
 

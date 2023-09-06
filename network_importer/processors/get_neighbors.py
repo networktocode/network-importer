@@ -111,7 +111,6 @@ class GetNeighbors(BaseProcessor):
 
         interfaces = list(result[0].result["neighbors"].keys())
         for interface in interfaces:
-
             neighbors = result[0].result["neighbors"][interface]
 
             if len(neighbors) > 1:

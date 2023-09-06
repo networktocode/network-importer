@@ -14,7 +14,6 @@ FIXTURE_29 = "../fixtures/netbox_29"
 
 
 def test_vlan_create_from_pynetbox(netbox_api_base):
-
     api = pynetbox.api(url="http://mock", token="1234567890")
 
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_29}/vlan_101_no_tag.json"))
@@ -28,7 +27,6 @@ def test_vlan_create_from_pynetbox(netbox_api_base):
 
 
 def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
-
     api = pynetbox.api(url="http://mock", token="1234567890")
 
     data = yaml.safe_load(open(f"{ROOT}/{FIXTURE_29}/vlan_101_tags_01.json"))
@@ -52,7 +50,6 @@ def test_vlan_create_from_pynetbox_with_tags(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -66,7 +63,6 @@ def test_translate_attrs_for_netbox_no_attrs(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_with_partial_attrs(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, name="MYVLAN", site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -82,7 +78,6 @@ def test_translate_attrs_for_netbox_with_partial_attrs(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -99,7 +94,6 @@ def test_translate_attrs_for_netbox_with_attrs(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_with_missing_devices(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -115,7 +109,6 @@ def test_translate_attrs_for_netbox_with_missing_devices(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_missing_site(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="NOTPRESENT", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -125,7 +118,6 @@ def test_translate_attrs_for_netbox_missing_site(netbox_api_base):
 
 
 def test_update_clean_tags_no_incoming_tags(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 
@@ -141,7 +133,6 @@ def test_update_clean_tags_no_incoming_tags(netbox_api_base):
 
 
 def test_update_clean_tags_with_incoming_tags(netbox_api_base):
-
     vlan = NetboxVlan(vid=100, site_name="HQ", remote_id=30)
     netbox_api_base.add(vlan)
 

@@ -22,7 +22,6 @@ def assert_baseline(data):
 
 
 def test_translate_attrs_for_nautobot_wrong_device(nautobot_api_base):
-
     intf = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/0")
     nautobot_api_base.add(intf)
 
@@ -31,7 +30,6 @@ def test_translate_attrs_for_nautobot_wrong_device(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_device_no_remote_id(nautobot_api_base):
-
     nautobot_api_base.add(NautobotDevice(name="HQ-CORE-SW01", site_name="nyc"))
     intf = NautobotInterface(device_name="HQ-CORE-SW01", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -41,7 +39,6 @@ def test_translate_attrs_for_nautobot_device_no_remote_id(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -57,7 +54,6 @@ def test_translate_attrs_for_nautobot_no_attrs(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_type(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -76,7 +72,6 @@ def test_translate_attrs_for_nautobot_type(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_description(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -97,7 +92,6 @@ def test_translate_attrs_for_nautobot_description(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_mode(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=True, backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -120,7 +114,6 @@ def test_translate_attrs_for_nautobot_mode(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
-
     vlan = NautobotVlan(vid=100, site_name="HQ", remote_id="601077ce-ac88-4b36-bbc7-23d655dc3958")
     nautobot_api_base.add(vlan)
 
@@ -168,7 +161,6 @@ def test_translate_attrs_for_nautobot_vlan(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_vlan_false(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans=False, backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -189,7 +181,6 @@ def test_translate_attrs_for_nautobot_vlan_false(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_vlan_no(nautobot_api_base):
-
     config.load(config_data=dict(main=dict(import_vlans="no", backend="nautobot")))
     intf = NautobotInterface(device_name="HQ-CORE-SW02", name="ge-0/0/0")
     nautobot_api_base.add(intf)
@@ -210,7 +201,6 @@ def test_translate_attrs_for_nautobot_vlan_no(nautobot_api_base):
 
 
 def test_translate_attrs_for_nautobot_lag_member(nautobot_api_base):
-
     parent = NautobotInterface(
         device_name="HQ-CORE-SW01", name="ge-0/0/4", remote_id="ea085648-5684-4362-a8dd-edfa151faaec"
     )

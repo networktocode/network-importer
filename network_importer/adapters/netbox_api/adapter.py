@@ -183,7 +183,6 @@ class NetBoxAPIAdapter(BaseAdapter):
         prefixes = self.netbox.ipam.prefixes.filter(site=site.name, status="active")
 
         for nb_prefix in prefixes:
-
             prefix = self.prefix(
                 prefix=nb_prefix.prefix,
                 site_name=site.name,

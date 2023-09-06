@@ -41,7 +41,6 @@ class NetworkImporterDiff(Diff):
                     intfs_regs[action].append(child_name)
 
             elif action in ["update", "create"]:
-
                 if "is_lag" in child.source_attrs and child.source_attrs["is_lag"]:
                     intfs_lags[action].append(child_name)
                 elif "is_lag_member" in child.source_attrs and child.source_attrs["is_lag_member"]:
