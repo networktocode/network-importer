@@ -51,6 +51,7 @@ pydocstyle = "*"
 yamllint = "*"
 invoke = "*"
 flake8 = "*"
+toml = "*"
 
 
 
