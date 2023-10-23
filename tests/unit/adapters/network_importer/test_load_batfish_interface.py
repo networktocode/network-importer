@@ -107,7 +107,6 @@ SERIAL_1 = {
 
 
 def test_load_batfish_interface_loopback(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -123,7 +122,6 @@ def test_load_batfish_interface_loopback(network_importer_base, site_sfo, dev_sp
 
 
 def test_load_batfish_interface_phy_intf_ether_std(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -139,7 +137,6 @@ def test_load_batfish_interface_phy_intf_ether_std(network_importer_base, site_s
 
 
 def test_load_batfish_interface_intf_ether_sub(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -158,7 +155,6 @@ def test_load_batfish_interface_intf_ether_sub(network_importer_base, site_sfo, 
 
 
 def test_load_batfish_interface_intf_lag_member(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -175,7 +171,6 @@ def test_load_batfish_interface_intf_lag_member(network_importer_base, site_sfo,
 
 
 def test_load_batfish_interface_intf_lag(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -192,7 +187,6 @@ def test_load_batfish_interface_intf_lag(network_importer_base, site_sfo, dev_sp
 
 
 def test_add_batfish_interface_intf_serial(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -229,7 +223,6 @@ def test_load_batfish_interface_description(network_importer_base, site_sfo, dev
 
 
 def test_load_batfish_intf_no_import_vlans_sub_intf(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -243,7 +236,6 @@ def test_load_batfish_intf_no_import_vlans_sub_intf(network_importer_base, site_
 
 
 def test_load_batfish_intf_no_import_vlans_lag(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)
@@ -257,7 +249,6 @@ def test_load_batfish_intf_no_import_vlans_lag(network_importer_base, site_sfo, 
 
 
 def test_load_batfish_intf_no_import_vlans_lag_members(network_importer_base, site_sfo, dev_spine1):
-
     adapter = network_importer_base
     adapter.add(site_sfo)
     adapter.add(dev_spine1)

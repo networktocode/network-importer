@@ -47,7 +47,6 @@ class NetworkImporterAdapter(BaseAdapter):
 
         # Create all devices and site object from Nornir Inventory
         for hostname, host in self.nornir.inventory.hosts.items():
-
             if len(self.bfi.q.nodeProperties(nodes=f'"{hostname}"').answer()) == 0:
                 self.nornir.inventory.hosts[hostname].has_config = False
                 LOGGER.warning("Unable to find information for %s in Batfish, SKIPPING", hostname)
@@ -121,7 +120,6 @@ class NetworkImporterAdapter(BaseAdapter):
         if config.SETTINGS.main.import_vlans:
             bf_vlans = self.bfi.q.switchedVlanProperties(nodes=f'"{device.name}"').answer()
             for bf_vlan in bf_vlans.frame().itertuples():
-
                 if config.SETTINGS.main.import_vlans in ["config", True]:
                     vlan, created = self.get_or_add(
                         self.vlan(name=f"vlan-{bf_vlan.VLAN_ID}", vid=bf_vlan.VLAN_ID, site_name=site.name)
@@ -402,7 +400,6 @@ class NetworkImporterAdapter(BaseAdapter):
         p2p_links = self.bfi.q.layer3Edges().answer()
         existing_cables = []
         for link in p2p_links.frame().itertuples():
-
             if link.Interface.hostname not in device_names:
                 continue
 
@@ -544,9 +541,7 @@ class NetworkImporterAdapter(BaseAdapter):
 
         cables = self.get_all(self.cable)
         for cable in list(cables):
-
             for side in ["a", "z"]:
-
                 if not is_cable_side_valid(cable, side):
                     break
 

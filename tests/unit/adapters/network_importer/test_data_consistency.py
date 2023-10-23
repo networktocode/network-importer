@@ -16,7 +16,6 @@ from network_importer.models import Interface, Vlan
 
 
 def test_check_data_consistency(network_importer_base):
-
     adapter = network_importer_base
     vlan110 = Vlan(vid="110", site_name="sfo")
     vlan120 = Vlan(vid="120", site_name="sfo")

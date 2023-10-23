@@ -101,7 +101,6 @@ class TimeTracker:
         perflog_file_path = config.SETTINGS.logs.performance_log_directory + "/" + perflog_filename
 
         with open(perflog_file_path, "w") as file_:
-
             if self.nbr_devices:
                 file_.write(f"Report for {self.nbr_devices} devices\n")
 

@@ -8,7 +8,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def test_nautobot_get_device_tag_id():
-
     device = NautobotDevice(
         name="dev12", site_name="HQ", remote_id=32, device_tag_id="eb697742-364d-4714-b585-a267c64d7720"
     )
@@ -16,7 +15,6 @@ def test_nautobot_get_device_tag_id():
 
 
 def test_nautobot_get_device_tag_id_get_tag(requests_mock, nautobot_api_base):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/tag_01_list.json"))
     requests_mock.get("http://mock_nautobot/api/extras/tags/?name=device%3Ddev1", json=data, status_code=200)
 
@@ -27,7 +25,6 @@ def test_nautobot_get_device_tag_id_get_tag(requests_mock, nautobot_api_base):
 
 
 def test_get_device_tag_id_create_tag(requests_mock, nautobot_api_base, empty_nautobot_query):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/tag_01.json"))
     requests_mock.get(
         "http://mock_nautobot/api/extras/tags/?name=device%3Ddev1", json=empty_nautobot_query, status_code=200

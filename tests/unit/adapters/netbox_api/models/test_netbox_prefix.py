@@ -8,7 +8,6 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 def test_translate_attrs_for_netbox_default(netbox_api_base):
-
     prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=44)
 
     expected_nb_params = {"prefix": "10.1.111.0/24", "status": "active", "site": 10}
@@ -18,7 +17,6 @@ def test_translate_attrs_for_netbox_default(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_with_vlan(netbox_api_base):
-
     prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=44)
 
     expected_nb_params = {"prefix": "10.1.111.0/24", "status": "active", "site": 10, "vlan": 23}
@@ -28,7 +26,6 @@ def test_translate_attrs_for_netbox_with_vlan(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_with_absent_vlan(netbox_api_base):
-
     prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=44)
 
     expected_nb_params = {"prefix": "10.1.111.0/24", "status": "active", "site": 10}
@@ -38,7 +35,6 @@ def test_translate_attrs_for_netbox_with_absent_vlan(netbox_api_base):
 
 
 def test_create_prefix(requests_mock, netbox_api_base):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json"))
 
     requests_mock.post("http://mock/api/ipam/prefixes/", json=data, status_code=201)
@@ -52,7 +48,6 @@ def test_create_prefix(requests_mock, netbox_api_base):
 
 
 def test_update_prefix(requests_mock, netbox_api_base):
-
     data_no_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_no_vlan.json"))
     data_vlan = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json"))
 
@@ -67,7 +62,6 @@ def test_update_prefix(requests_mock, netbox_api_base):
 
 
 def test_create_prefix_with_vlan(requests_mock, netbox_api_base):
-
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/netbox_28/prefix_vlan.json"))
 
     requests_mock.post("http://mock/api/ipam/prefixes/", json=data, status_code=201)
@@ -81,7 +75,6 @@ def test_create_prefix_with_vlan(requests_mock, netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_w_vlan(netbox_api_base):
-
     prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=30)
     netbox_api_base.add(prefix)
 
@@ -93,7 +86,6 @@ def test_translate_attrs_for_netbox_w_vlan(netbox_api_base):
 
 
 def test_translate_attrs_for_netbox_wo_vlan(netbox_api_base):
-
     prefix = NetboxPrefix(diffsync=netbox_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=30)
     netbox_api_base.add(prefix)
 
