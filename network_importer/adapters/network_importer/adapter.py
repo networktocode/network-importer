@@ -18,6 +18,7 @@ from network_importer.exceptions import AdapterLoadFatalError
 from network_importer.inventory import reachable_devs, valid_and_reachable_devs
 from network_importer.tasks import check_if_reachable, warning_not_reachable
 from network_importer.drivers import dispatcher
+from nornir_napalm.plugins.tasks import napalm_get
 from network_importer.processors.get_neighbors import GetNeighbors, hosts_for_cabling
 from network_importer.processors.get_vlans import GetVlans
 from network_importer.utils import (
@@ -401,9 +402,11 @@ class NetworkImporterAdapter(BaseAdapter):
         existing_cables = []
         for link in p2p_links.frame().itertuples():
             if link.Interface.hostname not in device_names:
+                LOGGER.debug("A SIDE DEVICE NOT IN: %s / %s", link.Interface.hostname, device_names)
                 continue
 
             if link.Remote_Interface.hostname not in device_names:
+                LOGGER.debug("Z SIDE DEVICE NOT IN: %s / %s", link.Remote_Interface.hostname, device_names)
                 continue
 
             cable = self.cable(
