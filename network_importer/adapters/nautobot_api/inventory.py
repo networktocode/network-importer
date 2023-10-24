@@ -4,14 +4,17 @@
 
 import sys
 from typing import Any, List
-import pynautobot
-from pydantic import ValidationError
 
+import pynautobot
 from nornir.core.inventory import Defaults, Groups, Hosts, Inventory, ParentGroups, ConnectionOptions
 from nornir.core.plugins.inventory import InventoryPluginRegister
+from pydantic import ValidationError
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
+
+from network_importer.adapters.nautobot_api.settings import InventorySettings
 from network_importer.inventory import NetworkImporterInventory, NetworkImporterHost
 from network_importer.utils import build_filter_params
-from network_importer.adapters.nautobot_api.settings import InventorySettings
 
 
 class NautobotAPIInventory(NetworkImporterInventory):
@@ -58,6 +61,14 @@ class NautobotAPIInventory(NetworkImporterInventory):
         self.session = pynautobot.api(url=self.settings.address, token=self.settings.token)
         if not self.settings.verify_ssl:
             self.session.http_session.verify = False
+
+        if self.settings.http_retries:
+            retries = Retry(total=self.settings.http_retries,
+                            backoff_factor=0.5,
+                            status_forcelist=[429, 500, 502, 503, 504, ],
+                            allowed_methods=False
+                            )
+            self.session.http_session.mount(self.session.base_url, HTTPAdapter(max_retries=retries))
 
     def load(self):
         """Load inventory by fetching devices from nautobot."""
