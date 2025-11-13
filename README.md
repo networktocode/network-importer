@@ -11,6 +11,10 @@ This application is intended to run __outside__ of Nautobot.
 
 ![Architecture](docs/images/batfish_network_importer.png)
 
+## Deprecation Notice
+
+This application is being put into maintenance mode. Additional features may be implemented for Nautobot 1.x. The functionality for Nautobot is being moved to the [Device Onboarding](https://docs.nautobot.com/projects/device-onboarding/en/latest/) application for Nautobot 2.x. The last NetBox support was version 2.x.
+
 ## Quick Start
 
 - [Getting Started](docs/getting_started.md)
