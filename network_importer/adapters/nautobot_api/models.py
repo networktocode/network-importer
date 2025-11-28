@@ -124,6 +124,10 @@ class NautobotInterface(Interface):
             nb_params["mode"] = "access"
         elif "switchport_mode" in attrs and attrs["switchport_mode"] == "TRUNK":
             nb_params["mode"] = "tagged"
+        elif ("switchport_mode" in attrs and attrs["switchport_mode"] == "NONE") and attrs["mode"] == "L3_SUB_VLAN":
+            LOGGER.info("NB_PARAMS: %s", nb_params)
+            LOGGER.info("ATTRS: %s", attrs)
+            nb_params["mode"] = "tagged"
 
         # if is None:
         #     intf_properties["enabled"] = intf.active
@@ -652,11 +656,12 @@ class NautobotCable(Cable):
             )
             if not interface_a:
                 LOGGER.info(
-                    "Unable to create Cable %s in %s, unable to find the interface %s %s",
+                    "CABLE: Unable to create Cable %s in %s, unable to find the interface %s %s %s",
                     item.get_unique_id(),
                     diffsync.name,
                     ids["device_a_name"],
                     ids["interface_a_name"],
+                    item,
                 )
                 return item
 

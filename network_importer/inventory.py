@@ -13,7 +13,7 @@ class NetworkImporterHost(Host):
     site_name: Optional[str]
     """Name of the site this device belong to."""
 
-    is_reacheable: Optional[bool]
+    is_reachable: Optional[bool] = ""
     """Global Flag to indicate if we are able to connect to a device"""
 
     status: Optional[str] = "ok"
