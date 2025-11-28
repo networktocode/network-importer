@@ -3,7 +3,7 @@ import pytest
 
 import pynetbox
 import pynautobot
-from diffsync import DiffSync
+from diffsync import Adapter
 from diffsync.diff import DiffElement
 
 # from diffsync.exceptions import ObjectNotCreated, ObjectNotUpdated, ObjectNotDeleted
@@ -78,7 +78,7 @@ def dev_spine2():
     return Device(name="spine2", site_name="sfo")
 
 
-class GenericBackend(DiffSync):
+class GenericBackend(Adapter):
     """An example semi-abstract subclass of DiffSync."""
 
     site = Site
@@ -141,9 +141,9 @@ class BackendA(GenericBackend):
 @pytest.fixture
 def backend_a():
     """Provide an instance of BackendA subclass of DiffSync."""
-    diffsync = BackendA()
-    diffsync.load()
-    return diffsync
+    adapter = BackendA()
+    adapter.load()
+    return adapter
 
 
 class BackendB(GenericBackend):
@@ -182,9 +182,9 @@ class BackendB(GenericBackend):
 @pytest.fixture
 def backend_b():
     """Provide an instance of BackendB subclass of DiffSync."""
-    diffsync = BackendB()
-    diffsync.load()
-    return diffsync
+    adapter = BackendB()
+    adapter.load()
+    return adapter
 
 
 @pytest.fixture
@@ -208,37 +208,37 @@ def diff_children_nyc_dev1():
 @pytest.fixture
 def netbox_api_empty():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
-    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
+    adapter = NetBoxAPIAdapter(nornir=None, settings={})
+    adapter.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
-    return diffsync
+    return adapter
 
 
 @pytest.fixture
 def netbox_api_base():
     """Provide an instance of NetBoxAPIAdapter with pynetbox initiliazed."""
-    diffsync = NetBoxAPIAdapter(nornir=None, settings={})
-    diffsync.netbox = pynetbox.api(url="http://mock", token="1234567890")
+    adapter = NetBoxAPIAdapter(nornir=None, settings={})
+    adapter.netbox = pynetbox.api(url="http://mock", token="1234567890")
 
-    diffsync.add(NetboxSite(name="HQ", remote_id=10))
-    diffsync.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
-    diffsync.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
-    diffsync.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
+    adapter.add(NetboxSite(name="HQ", remote_id=10))
+    adapter.add(NetboxDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    adapter.add(NetboxInterface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id=302))
+    adapter.add(NetboxVlan(vid=111, site_name="HQ", remote_id=23))
 
-    return diffsync
+    return adapter
 
 
 @pytest.fixture
 def network_importer_base():
     """Provide an instance of NetworkImporterAdapter with pynetbox initiliazed."""
-    diffsync = NetworkImporterAdapter(nornir=None, settings={})
+    adapter = NetworkImporterAdapter(nornir=None, settings={})
 
-    diffsync.add(Site(name="HQ"))
-    diffsync.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
-    diffsync.add(Interface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"))
-    diffsync.add(Vlan(vid=111, site_name="HQ"))
+    adapter.add(Site(name="HQ"))
+    adapter.add(Device(name="HQ-CORE-SW02", site_name="HQ", remote_id=29))
+    adapter.add(Interface(name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02"))
+    adapter.add(Vlan(vid=111, site_name="HQ"))
 
-    return diffsync
+    return adapter
 
 
 @pytest.fixture
@@ -256,28 +256,28 @@ def empty_netbox_query():
 @pytest.fixture
 def nautobot_api_base():
     """Provide an instance of NautobotAPIAdapter with pynautoboot initiliazed."""
-    diffsync = NautobotAPIAdapter(nornir=None, settings={})
-    diffsync.nautobot = pynautobot.api(url="http://mock_nautobot", token="1234567890")
+    adapter = NautobotAPIAdapter(nornir=None, settings={})
+    adapter.nautobot = pynautobot.api(url="http://mock_nautobot", token="1234567890")
 
-    diffsync.add(NautobotSite(name="HQ", remote_id="a325e477-62fe-47f0-8b67-acf411b1868f"))
-    diffsync.add(NautobotDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id="e0633a07-c3e2-41b0-a1df-4627392acf0a"))
-    diffsync.add(
+    adapter.add(NautobotSite(name="HQ", remote_id="a325e477-62fe-47f0-8b67-acf411b1868f"))
+    adapter.add(NautobotDevice(name="HQ-CORE-SW02", site_name="HQ", remote_id="e0633a07-c3e2-41b0-a1df-4627392acf0a"))
+    adapter.add(
         NautobotInterface(
             name="TenGigabitEthernet1/0/1", device_name="HQ-CORE-SW02", remote_id="fecc1d8f-99b1-491d-9bdf-1dcb394e27a1"
         )
     )
-    diffsync.add(NautobotVlan(vid=111, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e"))
+    adapter.add(NautobotVlan(vid=111, site_name="HQ", remote_id="464a2de3-fd5e-4b65-a58d-e0a2a617c12e"))
 
-    return diffsync
+    return adapter
 
 
 @pytest.fixture
 def nautobot_api_empty():
     """Provide an instance of NautobotAPIAdapter with pynautobot initiliazed."""
-    diffsync = NautobotAPIAdapter(nornir=None, settings={})
-    diffsync.nautobot = pynautobot.api(url="http://mock", token="1234567890")
+    adapter = NautobotAPIAdapter(nornir=None, settings={})
+    adapter.nautobot = pynautobot.api(url="http://mock", token="1234567890")
 
-    return diffsync
+    return adapter
 
 
 @pytest.fixture

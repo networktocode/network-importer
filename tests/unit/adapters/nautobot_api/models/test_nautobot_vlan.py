@@ -16,7 +16,7 @@ def test_vlan_create_from_pynautobot(nautobot_api_base):
     data = yaml.safe_load(open(f"{ROOT}/../fixtures/vlan_101_no_tag.json"))
     pnb = pynautobot.core.response.Record(values=data, api=api, endpoint="eb697742-364d-4714-b585-a267c64d7720")
 
-    item = NautobotVlan.create_from_pynautobot(diffsync=nautobot_api_base, obj=pnb, site_name="nyc")
+    item = NautobotVlan.create_from_pynautobot(adapter=nautobot_api_base, obj=pnb, site_name="nyc")
     assert isinstance(item, NautobotVlan) is True
     assert item.remote_id == "eb697742-364d-4714-b585-a267c64d7720"
     assert item.vid == 101
@@ -33,7 +33,7 @@ def test_vlan_create_from_pynautobot_with_tags(nautobot_api_base):
         NautobotDevice(name="devA", site_name="nyc", remote_id="eb697742-364d-4714-b585-a267c64d7720")
     )
 
-    item = NautobotVlan.create_from_pynautobot(diffsync=nautobot_api_base, obj=pnb, site_name="nyc")
+    item = NautobotVlan.create_from_pynautobot(adapter=nautobot_api_base, obj=pnb, site_name="nyc")
     assert isinstance(item, NautobotVlan) is True
     assert item.remote_id == "eb697742-364d-4714-b585-a267c64d7720"
     assert item.vid == 101
@@ -43,7 +43,7 @@ def test_vlan_create_from_pynautobot_with_tags(nautobot_api_base):
     nautobot_api_base.add(
         NautobotDevice(name="devB", site_name="nyc", remote_id="eb697742-364d-4714-b585-a267c64d7731")
     )
-    item = NautobotVlan.create_from_pynautobot(diffsync=nautobot_api_base, obj=pnb, site_name="nyc")
+    item = NautobotVlan.create_from_pynautobot(adapter=nautobot_api_base, obj=pnb, site_name="nyc")
     assert isinstance(item, NautobotVlan) is True
     assert item.remote_id == "eb697742-364d-4714-b585-a267c64d7720"
     assert item.vid == 101

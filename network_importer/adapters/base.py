@@ -1,10 +1,10 @@
 """BaseAdapter for the network importer."""
-from diffsync import DiffSync
+from diffsync import Adapter
 from diffsync.exceptions import ObjectNotFound
 from network_importer.models import Site, Device, Interface, IPAddress, Cable, Vlan, Prefix
 
 
-class BaseAdapter(DiffSync):
+class BaseAdapter(Adapter):
     """Base Adapter for the network importer."""
 
     site = Site

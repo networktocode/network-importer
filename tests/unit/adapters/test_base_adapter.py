@@ -1,6 +1,6 @@
 """test for the base adapter."""
-from typing import List, Optional
-from pydantic import BaseSettings
+from typing import List, Optional, Type
+from pydantic_settings import BaseSettings
 from network_importer.adapters.base import BaseAdapter
 
 
@@ -21,12 +21,12 @@ def test_init_with_settings_class():
         """Fake adapter settings."""
 
         first: List[str] = list()
-        second: Optional[str]
+        second: Optional[str] = None
 
     class MyAdapter(BaseAdapter):
         """test adapter."""
 
-        settings_class = MyAdapterSettings
+        settings_class: Type[BaseSettings] = MyAdapterSettings
 
         def load(self):
             """load must be defined."""

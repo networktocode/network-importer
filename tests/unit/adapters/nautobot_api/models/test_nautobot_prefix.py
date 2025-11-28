@@ -9,7 +9,7 @@ ROOT = os.path.abspath(os.path.dirname(__file__))
 
 def test_translate_attrs_for_nautobot_default(nautobot_api_base):
     prefix = NautobotPrefix(
-        diffsync=nautobot_api_base,
+        adapter=nautobot_api_base,
         prefix="10.1.111.0/24",
         site_name="HQ",
         remote_id="014b6519-bf43-40f7-a40f-d5abb9828cd2",
@@ -23,7 +23,7 @@ def test_translate_attrs_for_nautobot_default(nautobot_api_base):
 
 def test_translate_attrs_for_nautobot_with_vlan(nautobot_api_base):
     prefix = NautobotPrefix(
-        diffsync=nautobot_api_base,
+        adapter=nautobot_api_base,
         prefix="10.1.111.0/24",
         site_name="HQ",
         remote_id="014b6519-bf43-40f7-a40f-d5abb9828cd2",
@@ -42,7 +42,7 @@ def test_translate_attrs_for_nautobot_with_vlan(nautobot_api_base):
 
 def test_translate_attrs_for_nautobot_with_absent_vlan(nautobot_api_base):
     prefix = NautobotPrefix(
-        diffsync=nautobot_api_base,
+        adapter=nautobot_api_base,
         prefix="10.1.111.0/24",
         site_name="HQ",
         remote_id="014b6519-bf43-40f7-a40f-d5abb9828cd2",
@@ -59,7 +59,7 @@ def test_create_prefix(requests_mock, nautobot_api_base):
 
     requests_mock.post("http://mock_nautobot/api/ipam/prefixes/", json=data, status_code=201)
     ip_address = NautobotPrefix.create(
-        diffsync=nautobot_api_base, ids=dict(prefix="10.1.111.0/24", site_name="HQ"), attrs={}
+        adapter=nautobot_api_base, ids=dict(prefix="10.1.111.0/24", site_name="HQ"), attrs={}
     )
 
     assert isinstance(ip_address, NautobotPrefix) is True
@@ -75,7 +75,7 @@ def test_update_prefix(requests_mock, nautobot_api_base):
 
     requests_mock.get(f"http://mock_nautobot/api/ipam/prefixes/{remote_id}/", json=data_no_vlan, status_code=200)
     requests_mock.patch(f"http://mock_nautobot/api/ipam/prefixes/{remote_id}/", json=data_vlan, status_code=200)
-    prefix = NautobotPrefix(diffsync=nautobot_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=remote_id)
+    prefix = NautobotPrefix(adapter=nautobot_api_base, prefix="10.1.111.0/24", site_name="HQ", remote_id=remote_id)
 
     prefix.update(attrs=dict(vlan="HQ__111"))
     assert prefix.vlan == "HQ__111"
@@ -86,7 +86,7 @@ def test_create_prefix_with_vlan(requests_mock, nautobot_api_base):
 
     requests_mock.post("http://mock_nautobot/api/ipam/prefixes/", json=data, status_code=201)
     prefix = NautobotPrefix.create(
-        diffsync=nautobot_api_base, ids=dict(prefix="10.1.111.0/24", site_name="HQ"), attrs=dict(vlan="HQ__111")
+        adapter=nautobot_api_base, ids=dict(prefix="10.1.111.0/24", site_name="HQ"), attrs=dict(vlan="HQ__111")
     )
 
     assert isinstance(prefix, NautobotPrefix) is True
@@ -96,7 +96,7 @@ def test_create_prefix_with_vlan(requests_mock, nautobot_api_base):
 
 def test_translate_attrs_for_nautobot_w_vlan(nautobot_api_base):
     prefix = NautobotPrefix(
-        diffsync=nautobot_api_base,
+        adapter=nautobot_api_base,
         prefix="10.1.111.0/24",
         site_name="HQ",
         remote_id="171f82fc-8ab8-4840-9ae3-8337821be2fb",
@@ -112,7 +112,7 @@ def test_translate_attrs_for_nautobot_w_vlan(nautobot_api_base):
 
 def test_translate_attrs_for_nautobot_wo_vlan(nautobot_api_base):
     prefix = NautobotPrefix(
-        diffsync=nautobot_api_base,
+        adapter=nautobot_api_base,
         prefix="10.1.111.0/24",
         site_name="HQ",
         remote_id="171f82fc-8ab8-4840-9ae3-8337821be2fb",

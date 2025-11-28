@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import List, Dict, Optional, Union
 
 import toml
-from pydantic import BaseSettings, ValidationError
+from pydantic import ValidationError, Field
+from pydantic_settings import BaseSettings
 from typing_extensions import Literal
 
 from network_importer.exceptions import ConfigLoadFatalError
@@ -39,49 +40,25 @@ DEFAULT_BACKENDS = {
 
 class BatfishSettings(BaseSettings):
     """Settings definition for the Batfish section of the configuration."""
-
-    address: str = "localhost"
-    network_name: str = "network-importer"
-    snapshot_name: str = "latest"
-    port_v1: int = 9997
-    port_v2: int = 9996
-    use_ssl: bool = False
-    api_key: Optional[str]
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {
-            "address": {"env": "BATFISH_ADDRESS"},
-            "network_name": {"env": "BATFISH_NETWORK_NAME"},
-            "snapshot_name": {"env": "BATFISH_SNAPSHOT_NAME"},
-            "api_key": {"env": "BATFISH_API_KEY"},
-            "port_v1": {"env": "BATFISH_PORT_V1"},
-            "port_v2": {"env": "BATFISH_PORT_V2"},
-            "use_ssl": {"env": "BATFISH_USE_SSL"},
-        }
+    
+    address: str = Field(default="localhost", env="BATFISH_ADDRESS")
+    network_name: str = Field(default="network-importer", env="BATFISH_NETWORK_NAME")
+    snapshot_name: str = Field(default="latest", env="BATFISH_SNAPSHOT_NAME")
+    port_v1: int = Field(default=9997, env="BATFISH_PORT_V1")
+    port_v2: int = Field(default=9996, env="BATFISH_PORT_V2")
+    use_ssl: bool = Field(default=False, env="BATFISH_USE_SSL")
+    api_key: Optional[str] = Field(default=None, env="BATFISH_API_KEY")
 
 
 class NetworkSettings(BaseSettings):
     """Settings definition for the Network section of the configuration."""
-
-    login: Optional[str]
-    password: Optional[str]
-    enable: bool = True
-
-    netmiko_extras: Optional[dict]
-    napalm_extras: Optional[dict]
-
-    fqdns: List[str] = list()  # List of valid FQDN that can be found in the network
-
-    class Config:
-        """Additional parameters to automatically map environment variable to some settings."""
-
-        fields = {
-            "login": {"env": "NETWORK_DEVICE_LOGIN"},
-            "password": {"env": "NETWORK_DEVICE_PWD"},
-            "enable": {"env": "NETWORK_DEVICE_ENABLE"},
-        }
+    
+    login: Optional[str] = Field(default=None, env="NETWORK_DEVICE_LOGIN")
+    password: Optional[str] = Field(default=None, env="NETWORK_DEVICE_PWD")
+    enable: bool = Field(default=True, env="NETWORK_DEVICE_ENABLE")
+    netmiko_extras: Optional[dict] = None
+    napalm_extras: Optional[dict] = None
+    fqdns: List[str] = Field(default_factory=list, env="NETWORK_DEVICE_FQDNS")
 
 
 class LogsSettings(BaseSettings):
@@ -113,7 +90,7 @@ class MainSettings(BaseSettings):
 
     configs_directory: str = "configs"
 
-    backend: Optional[Literal["nautobot", "netbox"]]
+    backend: Optional[Literal["nautobot", "netbox"]] = None
     """Only Netbox and Nautobot backend are included by default, if you want to use another backend
     you must leave backend empty and define inventory.inventory_class and adapters.sot_class manually."""
 
@@ -126,10 +103,10 @@ class AdaptersSettings(BaseSettings):
     """Settings definition for the Adapters section of the configuration."""
 
     network_class: str = "network_importer.adapters.network_importer.adapter.NetworkImporterAdapter"
-    network_settings: Optional[dict]
+    network_settings: Optional[dict] = None
 
-    sot_class: Optional[str]
-    sot_settings: Optional[dict]
+    sot_class: Optional[str] = None
+    sot_settings: Optional[dict] = None
 
 
 class DriversSettings(BaseSettings):
@@ -145,8 +122,8 @@ class InventorySettings(BaseSettings):
     if the use_primary_ip flag is disabled, the inventory will try to use the hostname to the device
     """
 
-    inventory_class: Optional[str]
-    settings: Optional[dict]
+    inventory_class: Optional[str] = None
+    settings: Optional[dict] = None
 
     supported_platforms: List[str] = list()
 

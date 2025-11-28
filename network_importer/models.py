@@ -28,8 +28,8 @@ class Site(DiffSyncModel):
     _children = {"vlan": "vlans", "prefix": "prefixes"}
 
     name: str
-    prefixes: List = list()
-    vlans: List[str] = list()
+    prefixes: List = list()  # Correct as is, no need for Optional since it's initialized as an empty list
+    vlans: List[str] = list()  # Same here
 
 
 class Device(DiffSyncModel):
@@ -44,13 +44,12 @@ class Device(DiffSyncModel):
     _children = {"interface": "interfaces"}
 
     name: str
-    site_name: Optional[str]
+    site_name: Optional[str] = None
     interfaces: List = list()
-
-    platform: Optional[str]
-    model: Optional[str]
-    role: Optional[str]
-    vendor: Optional[str]
+    platform: Optional[str] = None
+    model: Optional[str] = None
+    role: Optional[str] = None
+    vendor: Optional[str] = None
 
 
 class Interface(DiffSyncModel):  # pylint: disable=too-many-instance-attributes
@@ -64,7 +63,6 @@ class Interface(DiffSyncModel):  # pylint: disable=too-many-instance-attributes
     _shortname = ("name",)
     _attributes = (
         "description",
-        # "mtu",
         "is_virtual",
         "is_lag",
         "is_lag_member",
@@ -79,20 +77,20 @@ class Interface(DiffSyncModel):  # pylint: disable=too-many-instance-attributes
     name: str
     device_name: str
 
-    description: Optional[str]
-    mtu: Optional[int]
-    speed: Optional[int]
-    mode: Optional[str]  # TRUNK, ACCESS, L3, NONE
+    description: Optional[str] = None
+    mtu: Optional[int] = None
+    speed: Optional[int] = None
+    mode: Optional[str] = None  # TRUNK, ACCESS, L3, NONE
     switchport_mode: Optional[str] = "NONE"
-    active: Optional[bool]
-    is_virtual: Optional[bool]
-    is_lag: Optional[bool]
-    is_lag_member: Optional[bool]
-    parent: Optional[str]
+    active: Optional[bool] = None
+    is_virtual: Optional[bool] = None
+    is_lag: Optional[bool] = None
+    is_lag_member: Optional[bool] = None
+    parent: Optional[str] = None
 
     lag_members: List[str] = list()
     allowed_vlans: List[str] = list()
-    access_vlan: Optional[str]
+    access_vlan: Optional[str] = None
 
     ips: List[str] = list()
 
@@ -114,7 +112,7 @@ class IPAddress(DiffSyncModel):
 class Prefix(DiffSyncModel):
     """Prefix Model based on DiffSyncModel.
 
-    An Prefix must be associated with a Site and must be unique within a site.
+    A Prefix must be associated with a Site and must be unique within a site.
     """
 
     _modelname = "prefix"
@@ -122,8 +120,8 @@ class Prefix(DiffSyncModel):
     _attributes = ("vlan",)
 
     prefix: str
-    site_name: Optional[str]
-    vlan: Optional[str]
+    site_name: Optional[str] = None
+    vlan: Optional[str] = None
 
 
 class Cable(DiffSyncModel):
@@ -142,9 +140,9 @@ class Cable(DiffSyncModel):
     device_z_name: str
     interface_z_name: str
 
-    source: Optional[str]
+    source: Optional[str] = None
     is_valid: bool = True
-    error: Optional[str]
+    error: Optional[str] = None
 
     def __init__(self, *args, **kwargs):
         """Ensure the cable is unique by ordering the devices alphabetically."""
@@ -201,7 +199,7 @@ class Vlan(DiffSyncModel):
 
     vid: int
     site_name: str
-    name: Optional[str]
+    name: Optional[str] = None
 
     associated_devices: List[str] = list()
 

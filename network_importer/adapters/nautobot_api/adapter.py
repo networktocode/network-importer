@@ -201,7 +201,7 @@ class NautobotAPIAdapter(BaseAdapter):
         vlans = self.nautobot.ipam.vlans.filter(site=site.name)
 
         for nb_vlan in vlans:
-            vlan = self.vlan.create_from_pynautobot(diffsync=self, obj=nb_vlan, site_name=site.name)
+            vlan = self.vlan.create_from_pynautobot(adapter=self, obj=nb_vlan, site_name=site.name)
             self.add(vlan)
             site.add_child(vlan)
 
@@ -326,7 +326,7 @@ class NautobotAPIAdapter(BaseAdapter):
 
         ips = self.nautobot.ipam.ip_addresses.filter(device=device.name)
         for ipaddr in ips:
-            ip_address = self.ip_address.create_from_pynautobot(diffsync=self, obj=ipaddr, device_name=device.name)
+            ip_address = self.ip_address.create_from_pynautobot(adapter=self, obj=ipaddr, device_name=device.name)
             ip_address, _ = self.get_or_add(ip_address)
 
             interface = self.get(
