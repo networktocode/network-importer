@@ -3,6 +3,8 @@ import logging
 
 import pynautobot
 from nornir.core.task import Result, Task
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 import network_importer.config as config  # pylint: disable=import-error
 from network_importer.adapters.nautobot_api.settings import InventorySettings
@@ -33,6 +35,14 @@ def query_device_info_from_nautobot(task: Task) -> Result:
         nautobot.http_session.verify = False
     else:
         nautobot.http_session.verify = True
+
+    if inventory_settings.http_retries:
+        retries = Retry(total=inventory_settings.http_retries,
+                        backoff_factor=0.5,
+                        status_forcelist=[429, 500, 502, 503, 504, ],
+                        allowed_methods=False
+                        )
+        nautobot.http_session.mount(nautobot.base_url, HTTPAdapter(max_retries=retries))
 
     # Set a Results dictionary
     results = {

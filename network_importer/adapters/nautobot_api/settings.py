@@ -18,6 +18,7 @@ class InventorySettings(BaseSettings):
     address: Optional[str] = "http://localhost"
     token: Optional[str] = None
     verify_ssl: Union[bool, str] = True
+    http_retries: Optional[int] = 0
 
     use_primary_ip: Optional[bool] = True
     fqdn: Optional[str] = None
@@ -30,4 +31,5 @@ class InventorySettings(BaseSettings):
             "address": {"env": "NAUTOBOT_ADDRESS"},
             "token": {"env": "NAUTOBOT_TOKEN"},
             "verify_ssl": {"env": "NAUTOBOT_VERIFY_SSL"},
+            "http_retries": {"env": "NAUTOBOT_HTTP_RETRY"},
         }
