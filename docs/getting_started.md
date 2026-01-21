@@ -11,7 +11,7 @@ pip install network-importer
 
 ### Pre-requisite
 
-To operate, the Network Importer is dependents on the following items:
+To operate, the Network Importer is dependent on the following items:
 - A device inventory (defined in Nautobot or NetBox for now)
 - Batfish 
 - A valid configuration file
@@ -20,11 +20,11 @@ To operate, the Network Importer is dependents on the following items:
 
 A device inventory must be already available in Nautobot or NetBox, if you don't have your devices in Nautobot or NetBox yet you can use the [onboarding plugin for Nautobot](https://github.com/nautobot/nautobot-plugin-device-onboarding) or the [onboarding plugin for NetBox](https://github.com/networktocode/ntc-netbox-plugin-onboarding/) to easily import your devices. 
 
-To be able to connect to the device the following information needs to be defined :
-- Primary ip address (or valid fqdn)
+To be able to connect to the device the following information needs to be defined:
+- Primary IP address (or valid fqdn)
 - Platform (must be a valid Netmiko driver or have a valid Napalm driver defined)
 
-> Connecting to the device is not mandatory but some features depends on it: configuration update, mostly cabling and potentially vlan update.
+> Connecting to the device is not mandatory but some features depend on it: configuration update, mostly cabling and potentially vlan updates.
 
 ##### Validate your inventory
 
@@ -55,7 +55,7 @@ You can validate the status of your inventory with the command `network-importer
 
 #### Batfish
 
-The Network Importer requires to have access to a working batfish environment, you can easily start one using docker or use a Batfish Enterprise instance.
+The Network Importer requires access to a working batfish environment, you can easily start one using docker or use a Batfish Enterprise instance.
 
 You can start a local batfish instance with the following command 
 ```
@@ -65,7 +65,7 @@ docker run -d -p 9997:9997 -p 9996:9996 batfish/batfish:2020.10.08.667
 #### Configuration file
 
 The information to connect to NetBox must be provided either via environment variables or via the configuration file.
-The configuration file below present the most standard options that can be provided to control the behavior of the Network Importer. 
+The configuration file below presents the most standard options that can be provided to control the behavior of the Network Importer. 
 
 Please check the [documentation of the configuration file](configuration.md) for the complete list of all options.
 
@@ -74,24 +74,24 @@ Please check the [documentation of the configuration file](configuration.md) for
 # import_ips = true 
 # import_prefixes = false
 # import_cabling = "lldp"       # Valid options are ["lldp", "cdp", "config", false]
-# import_intf_status = false     # If set as False, interface status will be ignore all together
+# import_intf_status = false     # If set as False, interface status will be ignored all together
 # import_vlans = "config"         # Valid options are ["cli", "config", true, false]
 # excluded_platforms_cabling = ["cisco_asa"]
 
-# Directory where the configurations can be find, organized in Batfish format
+# Directory where the configurations can be found, organized in Batfish format
 # configs_directory= "configs"
 
 backend = "nautobot"            # Valid options are ["nautobot", "netbox"]
 
 [inventory]
-# Define a list of supported platform, 
-# if defined all devices without platform or with a different platforms will be removed from the inventory
+# Define a list of supported platforms, 
+# if defined all devices without a platform or with different platforms will be removed from the inventory
 # supported_platforms = [ "cisco_ios", "cisco_nxos" ]
 
 [inventory.settings]
 # The information to connect to Nautobot needs to be provided, either in the config file or as environment variables
 # These settings are specific to the Nautobot inventory, please check the documentation of your inventory for the 
-# exist list of of available settings.
+# existing list of of available settings.
 address = "http://localhost:8080"                   # Alternative Env Variable : NAUTOBOT_ADDRESS
 token = "113954578a441fbe487e359805cd2cb6e9c7d317"  # Alternative Env Variable : NAUTOBOT_TOKEN
 verify_ssl = true                                   # Alternative Env Variable : NAUTOBOT_VERIFY_SSL
@@ -116,11 +116,11 @@ address= "localhost"    # Alternative Env Variable : BATFISH_ADDRESS
 
 The Network Importer can run either in `check` mode or in `apply` mode. 
  - In `check` mode, no modification will be made to the SOT, the differences will be printed on the screen
- - in `apply` mode, the SOT will be updated will all interfaces, IPs, vlans etc
+ - in `apply` mode, the SOT will be updated with all interfaces, IPs, vlans etc
 
 #### Check Mode
 
-In check mode the Network Importer is working in read-only mode.
+In `check` mode the Network Importer is working in read-only mode.
 
 The first time, it's encouraged to run the Network Importer in `check` mode to guarantee that no change will be made to the SOT.
 
@@ -131,14 +131,14 @@ This command will print on the screen a list of all changes that have been detec
 
 #### Apply Mode
 
-If you are confident with the changes reported in check mode, you can run the network importer in apply mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
+If you are confident with the changes reported in `check` mode, you can run the Network Importer in `apply` mode to update your SOT to align with your network. The Network Importer will attempt to create/update or delete all elements in the SOT that do not match what has been observed in the network.
 
 ```
 network-importer apply [--update-configs] [--limit="site=nyc"]
 ```
 
-> !! Running in Apply mode may result in loss of data in your SOT, as the network importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
-> Before running in Apply mode, it's highly encouraged to do a backup of your database.
+> !! Running in `apply` mode may result in loss of data in your SOT, as the Network Importer will attempt to delete all Interfaces and IP addresses that are not present in the network. !!
+> Before running in `apply` mode, it's highly encouraged to do a backup of your database.
 
 ## Development
 
